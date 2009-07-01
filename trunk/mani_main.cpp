@@ -2436,7 +2436,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 {
- // Msg("Client [%s] Put in Server\n",playername );
+//  Msg("Client [%s] Put in Server\n",playername );
 
 	if (level_changed)
 	{
@@ -9909,13 +9909,13 @@ void CAdminPlugin::DisconnectPlayer(player_t *player)
 	{
 		// No redirection required
 		PrintToClientConsole( player->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
-		engine->ClientCommand( player->entity, "disconnect\n");
+		engine->ClientCommand( player->entity, "wait;wait;wait;wait;wait;wait;wait;disconnect\n");
 	}
 	else
 	{
 		// Redirection required
 		PrintToClientConsole( player->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
-		Q_snprintf(disconnect, sizeof (disconnect), "disconnect; connect %s\n", mani_reserve_slots_redirect.GetString());
+		Q_snprintf(disconnect, sizeof (disconnect), "wait;wait;wait;wait;wait;wait;wait;connect %s\n", mani_reserve_slots_redirect.GetString());
 		engine->ClientCommand( player->entity, disconnect);
 	}
 
@@ -21677,7 +21677,7 @@ bool	CAdminPlugin::IsTampered(void)
 // Msg("Checksum string %i\n", checksum);
 //  Msg("Offset required %i\n", checksum - plus1);
 
-	if (checksum != (plus1 + 8264))
+	if (checksum != (plus1 + 8265))
 	{
 		return true;
 	}

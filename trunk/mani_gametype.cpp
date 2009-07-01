@@ -186,6 +186,7 @@ void ManiGameType::Init(void)
 	teleport_allowed = base_key_ptr->GetInt("teleport_allowed", 1);
 	fire_allowed = base_key_ptr->GetInt("fire_allowed", 1);
 	advert_decal_allowed = base_key_ptr->GetInt("advert_decal_allowed", 1);
+	death_beam_allowed = base_key_ptr->GetInt("death_beam_allowed", 1);
 
 	KeyValues *temp_ptr;
 
@@ -508,6 +509,13 @@ bool		ManiGameType::IsAdvertDecalAllowed(void)
 	return ((advert_decal_allowed == 0) ? false:true);
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Returns true if death beam allowed
+//---------------------------------------------------------------------------------
+bool		ManiGameType::IsDeathBeamAllowed(void)
+{
+	return ((death_beam_allowed == 0) ? false:true);
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Check whether we use CBase suicide or ClientCommmand('kill')
@@ -685,6 +693,7 @@ void	ManiGameType::DefaultValues(void)
 	teleport_allowed = 1;
 	fire_allowed = 1;
 	advert_decal_allowed = 1;
+	death_beam_allowed = 1;
 
 	return ;
 }
