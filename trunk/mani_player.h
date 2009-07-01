@@ -101,6 +101,7 @@ extern	PLUGIN_RESULT	ProcessMaDamage( int index);
 extern	PLUGIN_RESULT	ProcessMaSounds( int index);
 extern	PLUGIN_RESULT	ProcessMaQuake( int index);
 extern	PLUGIN_RESULT	ProcessMaDeathBeam ( int index);
+extern	int				GetNumberOfActivePlayers(void );
 
 
 

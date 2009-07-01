@@ -216,6 +216,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_adverts.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_autokickban.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_client.cpp">
 				</File>
 				<File
@@ -283,6 +286,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_replace.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_reservedslot.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_skins.cpp">
@@ -417,6 +423,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_adverts.h">
 				</File>
 				<File
+					RelativePath=".\mani_autokickban.h">
+				</File>
+				<File
 					RelativePath=".\mani_client.h">
 				</File>
 				<File
@@ -490,6 +499,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_replace.h">
+				</File>
+				<File
+					RelativePath=".\mani_reservedslot.h">
 				</File>
 				<File
 					RelativePath=".\mani_skins.h">

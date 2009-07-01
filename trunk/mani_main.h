@@ -42,9 +42,9 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaB, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaB"
-#define PLUGIN_VERSION_ID "V1.2BetaB\n"
+#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaC, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaC"
+#define PLUGIN_VERSION_ID "V1.2BetaC\n"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)
@@ -102,32 +102,9 @@ struct	cexec_t
 	char	alias[512];
 };
 
-struct reserve_slot_t
-{
-	char	steam_id[128];
-};
-
 struct ping_immunity_t
 {
 	char	steam_id[128];
-};
-
-struct active_player_t
-{
-	edict_t	*entity;
-	char	steam_id[128];
-	char	ip_address[128];
-	char	name[128];
-	int		user_id;
-	float	ping;
-	float	time_connected;
-	bool	is_spectator;
-	int		index;
-};
-
-struct disconnected_player_t
-{
-	bool	in_use;
 };
 
 struct msay_t

@@ -106,7 +106,6 @@ void	ManiClient::NetworkIDValidated(player_t *player_ptr)
 
 	if (IsPotentialAdmin(player_ptr, &index))
 	{
-Msg("1\n");
 		// Check levels
 		if (active_admin_list[player_ptr->index - 1] == -1)
 		{
@@ -873,7 +872,7 @@ bool ManiClient::OldAddClient
 			}
 		}
 		else
-		{
+		{ 
 			for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
 			{
 				if (mani_reverse_immunity_flags.GetInt() == 1)
@@ -1374,10 +1373,12 @@ void	ManiClient::RebuildFlags
 	}
 	else
 	{
+		client_ptr->has_immunity_potential = false;
+
 		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
 		{
 			client_ptr->immunity_flags[i] = client_ptr->original_immunity_flags[i];
-			if (client_ptr->admin_flags[i]) client_ptr->has_admin_potential = true;
+			if (client_ptr->immunity_flags[i]) client_ptr->has_immunity_potential = true;
 			client_ptr->grouped_immunity_flags[i] = false;
 		}
 
@@ -1414,6 +1415,9 @@ void	ManiClient::ConvertOldClientToNewClient
 {
 	client_t	*client_ptr;
 	int			client_index = -1;
+	bool		by_steam = false;
+	bool		by_ip = false;
+	bool		by_name = false;
 
 	// Find existing client record
 	client_index = FindClientIndex(old_client_ptr->steam_id, true, true);
@@ -1423,7 +1427,19 @@ void	ManiClient::ConvertOldClientToNewClient
 		if (client_index == -1)
 		{
 			client_index = FindClientIndex(old_client_ptr->name, true, true);
+			if (client_index != -1)
+			{
+				by_name = true;
+			}
 		}
+		else
+		{
+			by_ip = true;
+		}
+	}
+	else
+	{
+		by_steam = true;
 	}
 
 	if (client_index == -1)
@@ -1453,20 +1469,29 @@ void	ManiClient::ConvertOldClientToNewClient
 	// Copy core information about player
 	if (old_client_ptr->steam_id && !FStrEq(old_client_ptr->steam_id,""))
 	{
-		AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
-		Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, old_client_ptr->steam_id);
+		if (!by_steam)
+		{
+			AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
+			Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, old_client_ptr->steam_id);
+		}
 	}
 
 	if (old_client_ptr->ip_address && !FStrEq(old_client_ptr->ip_address,""))
 	{
-		AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
-		Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, old_client_ptr->ip_address);
+		if (!by_ip)
+		{
+			AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
+			Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, old_client_ptr->ip_address);
+		}
 	}
 
 	if (old_client_ptr->name && !FStrEq(old_client_ptr->name,""))
 	{
-		AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
-		Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, old_client_ptr->name);
+		if (!by_name)
+		{
+			AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
+			Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, old_client_ptr->name);
+		}
 	}
 
 	if (old_client_ptr->password && !FStrEq(old_client_ptr->password,""))
@@ -6336,7 +6361,7 @@ void		ManiClient::ProcessSetFlag
 	}
 	else
 	{
-		OutputHelpText(player_ptr, svr_command,	"Processed immunity	flags to client	[%s]", client_ptr->name);
+		OutputHelpText(player_ptr, svr_command,	"Processed immunity flags to client [%s]", client_ptr->name);
 		ComputeImmunityLevels();
 	}
 

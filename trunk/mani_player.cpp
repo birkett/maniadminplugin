@@ -48,6 +48,7 @@
 #include "mani_client.h"
 #include "mani_client_flags.h"
 #include "mani_gametype.h"
+#include "mani_reservedslot.h"
 #include "mani_skins.h"
 
 extern IFileSystem	*filesystem;
@@ -2220,3 +2221,28 @@ PLUGIN_RESULT	ProcessMaQuake
 	return PLUGIN_STOP;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Get the number of players attached to the server.
+//---------------------------------------------------------------------------------
+int GetNumberOfActivePlayers(void)
+{
+	int	number_of_players = 0;
+	player_t	player;
+
+	for (int i = 1; i <= max_players; i ++)
+	{
+		player.index = i;
+		if (FindPlayerByIndex(&player))
+		{
+			if (!player.is_bot)
+			{
+				if (!disconnected_player_list[i - 1].in_use)
+				{
+					number_of_players ++;
+				}
+			}
+		}
+	}
+
+	return number_of_players;
+}
