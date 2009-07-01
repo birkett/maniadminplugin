@@ -42,9 +42,9 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.1.0zj, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.1.0zj"
-#define PLUGIN_VERSION_ID "V1.1.0zj\n"
+#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.1.0zk, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.1.0zk"
+#define PLUGIN_VERSION_ID "V1.1.0zk\n"
 
 const int	gametypes_min_version = 1;
 
