@@ -15,6 +15,7 @@ NAME=mani_admin_plugin
 
 # source files that should be compiled and linked into the binary
 SRC_FILES = 	mani_adverts.cpp \
+		mani_autokickban.cpp \
 		mani_client.cpp \
 		mani_convar.cpp \
 		mani_crontab.cpp \
@@ -38,6 +39,7 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_player.cpp \
 		mani_quake.cpp \
 		mani_replace.cpp \
+		mani_reservedslot.cpp \
 		mani_skins.cpp \
 		mani_sounds.cpp \
 		mani_stats.cpp \

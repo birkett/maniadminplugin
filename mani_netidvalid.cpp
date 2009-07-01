@@ -47,6 +47,8 @@
 #include "mani_player.h"
 #include "mani_stats.h"
 #include "mani_client.h"
+#include "mani_reservedslot.h"
+#include "mani_autokickban.h"
 #include "mani_netidvalid.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
@@ -199,7 +201,7 @@ void ManiNetIDValid::ClientActive(edict_t *pEntity)
 			player.health = playerinfo->GetHealth();
 			player.is_dead = playerinfo->IsDead();
 			Q_strcpy(player.name, playerinfo->GetName());
-			Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
+			player.player_info = playerinfo;
 			player.is_bot = false;
 			GetIPAddressFromPlayer(&player);
 			this->NetworkIDValidated(&player);
@@ -300,6 +302,20 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	Msg("Mani -> Network ID [%s] Validated\n", player_ptr->steam_id);
 
 	if (ProcessPluginPaused()) return ;
+
+
+	if (gpManiAutoKickBan->NetworkIDValidated(player_ptr))
+	{
+		// Player was let through
+		if (mani_reserve_slots.GetInt() == 1)
+		{
+			if (!gpManiReservedSlot->NetworkIDValidated(player_ptr))
+			{
+				// Joining player was kicked so return immediately
+				return ;
+			}
+		}
+	}
 
 	gpManiClient->NetworkIDValidated(player_ptr);
 
