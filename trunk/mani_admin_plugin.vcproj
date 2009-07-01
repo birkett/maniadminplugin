@@ -282,6 +282,9 @@ copy C:\MyDev\plugin_output\Release\mani_admin_plugin.pdb .\
 					RelativePath=".\mani_timers.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_vars.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_vfuncs.cpp">
 				</File>
 				<File
@@ -433,6 +436,9 @@ copy C:\MyDev\plugin_output\Release\mani_admin_plugin.pdb .\
 				</File>
 				<File
 					RelativePath=".\mani_timers.h">
+				</File>
+				<File
+					RelativePath=".\mani_vars.h">
 				</File>
 				<File
 					RelativePath=".\mani_vfuncs.h">

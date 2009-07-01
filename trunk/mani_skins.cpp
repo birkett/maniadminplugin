@@ -58,6 +58,7 @@
 #include "mani_skins.h"
 #include "KeyValues.h"
 #include "mani_vfuncs.h"
+#include "mani_vars.h"
 #include "cbaseentity.h"
 
 
@@ -718,7 +719,7 @@ void ForceSkinType
 				chosen_skin --;
 				if (chosen_skin == -1)
 				{
-					Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+					Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 					return;
 				}
 			}
@@ -758,7 +759,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->admin_t_model))
 								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -781,7 +782,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->admin_ct_model))
 								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -823,7 +824,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_t_model))
 								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -846,7 +847,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_ct_model))
 								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -882,13 +883,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->t_model))
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 					}
@@ -910,13 +911,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->ct_model))
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 					}
@@ -1578,7 +1579,7 @@ PLUGIN_RESULT	ProcessMaSetSkin
 //		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 //		CBaseEntity_SetModelIndex(pPlayer, skin_list[found_skin].model_index);
 
-		Prop_SetModelIndex(target_player_list[i].entity, skin_list[found_skin].model_index);
+		Prop_SetVal(target_player_list[i].entity, MANI_PROP_MODEL_INDEX, skin_list[found_skin].model_index);
 		LogCommand (player.entity, "skinned user [%s] [%s] with skin %s\n", target_player_list[i].name, target_player_list[i].steam_id, skin_name);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{

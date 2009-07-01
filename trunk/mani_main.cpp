@@ -91,6 +91,7 @@ typedef unsigned long DWORD;
 #include "mani_sprayremove.h"
 #include "mani_warmuptimer.h"
 #include "mani_vfuncs.h"
+#include "mani_vars.h"
 
 #include "shareddefs.h"
 #include "cbaseentity.h"
@@ -844,6 +845,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 
 
 
+	LoadWeapons("Unknown");
 	gpManiGameType->Init();
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
@@ -1043,7 +1045,6 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		LoadSounds();
 		LoadSkins();
 		SkinResetTeamID();
-		LoadWeapons("Unknown");
 		FreeTKPunishments();
 		gpManiGhost->Init();
 		gpManiCustomEffects->Init();
@@ -1183,6 +1184,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	int		total_load_index;
 
 	// Reset game type info (mp_teamplay may have changed)
+	LoadWeapons(pMapName);
 	gpManiGameType->Init();
 	total_load_index = ManiGetTimer();
 
@@ -1344,7 +1346,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	// Required for vote time restriction
 	map_start_time = gpGlobals->curtime;
 
-	LoadWeapons(pMapName);
 	LoadAdmins();
 	LoadImmunity();
 	LoadQuakeSounds();
@@ -9222,7 +9223,7 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 
 	int health = 0;
 //	health = m_pCBaseEntity->GetHealth();
-	health = Prop_GetHealth(attacker->entity);
+	health = Prop_GetVal(attacker->entity, MANI_PROP_HEALTH, 0);
 	if (health <= 0) return;
 		
 	health -= ((damage_to_inflict >= 0) ? damage_to_inflict : damage_to_inflict * -1);
@@ -9231,7 +9232,7 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		health = 0;
 	}
 
-	Prop_SetHealth(attacker->entity, health);
+	Prop_SetVal(attacker->entity, MANI_PROP_HEALTH, health);
 //	m_pCBaseEntity->SetHealth(health);
 
 	if (health <= 0)
@@ -11078,7 +11079,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 			continue;
 		}
 
-		int target_cash = Prop_GetAccount(target_player_list[i].entity);
+		int target_cash = Prop_GetVal(target_player_list[i].entity, MANI_PROP_ACCOUNT,0);
 		//target_cash = ((int *)target_player_list[i].entity->GetUnknown() + offset);
 
 		int new_cash = 0;
@@ -11103,7 +11104,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 			AdminSayToAll(&player, mani_admincash_anonymous.GetInt(), "changed player %s cash reserves", target_player_list[i].name); 
 		}
 
-		Prop_SetAccount(target_player_list[i].entity, new_cash);
+		Prop_SetVal(target_player_list[i].entity, MANI_PROP_ACCOUNT, new_cash);
 		//*target_cash = new_cash;
 	}
 
@@ -11205,7 +11206,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 
 		int target_health;
-		target_health = Prop_GetHealth(target_player_list[i].entity);
+		target_health = Prop_GetVal(target_player_list[i].entity, MANI_PROP_HEALTH, 0);
 //		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
 //		target_health = m_pCBaseEntity->GetHealth();
 
@@ -11237,7 +11238,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 		else
 		{
-			Prop_SetHealth(target_player_list[i].entity, new_health);
+			Prop_SetVal(target_player_list[i].entity, MANI_PROP_HEALTH, new_health);
 //			m_pCBaseEntity->SetHealth(new_health);
 		}
 	}
@@ -12341,7 +12342,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderMode
 
 		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
 		//m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
-		Prop_SetRenderMode(target_player_list[i].entity, render_mode);
+		Prop_SetVal(target_player_list[i].entity, MANI_PROP_RENDER_MODE, render_mode);
 		LogCommand (player.entity, "set user rendermode [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
@@ -12440,7 +12441,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX
 		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
 		//m_pCBaseEntity->m_nRenderFX = render_mode;
 		
-		Prop_SetRenderFX(target_player_list[i].entity, render_mode);
+		Prop_SetVal(target_player_list[i].entity, MANI_PROP_RENDER_FX, render_mode);
 		LogCommand (player.entity, "set user renderfx [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
