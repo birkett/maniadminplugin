@@ -21775,3 +21775,42 @@ public:
 
 CChangeLevelHook g_ChangeLevelHook;
 
+class CRespawnEntitiesHook : public ConCommand
+{
+   // This will hold the pointer original gamedll say command
+   ConCommand *m_pGameDLLRespawnEntitiesCommand;
+public:
+   CRespawnEntitiesHook() : ConCommand("respawn_entities", NULL, "exploit fixed by mani", FCVAR_GAMEDLL), m_pGameDLLRespawnEntitiesCommand(NULL)
+   { }
+
+   // Override Init
+   void Init()
+   {
+      // Try to find the gamedll say command
+      ConCommandBase *pPtr = cvar->GetCommands();
+      while (pPtr)
+      {
+         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "respawn_entities") == 0)
+            break;
+         // Nasty
+         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
+      }
+      if (!pPtr)
+	  {
+         Msg("Didn't find respawn_entities command ptr!!!!\n");
+		 return;
+	  }
+
+      m_pGameDLLRespawnEntitiesCommand = (ConCommand *) pPtr;
+
+      // Call base class' init function
+      ConCommand::Init();
+   }
+
+   void Dispatch()
+   {
+	   return;
+   }
+};
+
+CRespawnEntitiesHook g_RespawnEntitiesHook;
