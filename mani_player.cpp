@@ -794,7 +794,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	}
 
 
-	Q_memset(&add_player, 0, sizeof(player_t));
+	Q_memset(&add_player, 0, sizeof(player_settings_t));
 	time(&current_time);
 	Q_strcpy(add_player.steam_id, player->steam_id);
 	Q_strcpy(add_player.name, player->name);
