@@ -29,7 +29,10 @@
 #include <math.h>
 #include <time.h>
 #ifndef __linux__
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
 #include <winsock.h>
+
 #endif
 #include <mysql.h>
 
@@ -100,6 +103,8 @@ typedef unsigned long DWORD;
 #include "mani_chattrigger.h"
 #include "mani_warmuptimer.h"
 #include "mani_mysql.h"
+#include "mani_mysql_thread.h"
+#include "mani_vfuncs.h"
 
 
 #include "shareddefs.h"
@@ -133,6 +138,9 @@ ITempEntsSystem *temp_ents = NULL;
 IUniformRandomStream *randomStr = NULL;
 IEngineTrace *enginetrace = NULL;
 ISpatialPartition *partition = NULL;
+
+bool g_PluginLoaded = false;
+bool g_PluginLoadedOnce = false;
 
 CGlobalVars *gpGlobals = NULL;
 char *mani_version = PLUGIN_VERSION;
@@ -177,6 +185,11 @@ bool VFUNC mysetclientlistening(IVoiceServer* VoiceServer, int iReceiver, int iS
 {
 	bool new_listen;
 
+	if (!g_PluginLoaded)
+	{
+		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, bListen);
+	}
+
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
 	{
 		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, new_listen);
@@ -187,6 +200,32 @@ bool VFUNC mysetclientlistening(IVoiceServer* VoiceServer, int iReceiver, int iS
 	}
 }
 
+//	virtual bool			LevelInit( char const *pMapName, 
+//									char const *pMapEntities, char const *pOldLevel, 
+//									char const *pLandmarkName, bool loadGame, bool background ) = 0;
+
+DEFVFUNC_(org_LevelInit, bool, (IServerGameDLL* pServerGameDLL, char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background));
+
+bool VFUNC myLevelInit(IServerGameDLL *pServerGameDLL, char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background)
+{
+	if (!g_PluginLoaded)
+	{
+		return (org_LevelInit(pServerGameDLL, pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
+	}
+
+	char	*pReplaceEnts = NULL;
+
+	// Copy the map entities
+	if (!gpManiSpawnPoints->AddSpawnPoints(&pReplaceEnts, pMapEntities))
+	{
+		return (org_LevelInit(pServerGameDLL, pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
+	}
+
+	bool result = org_LevelInit(pServerGameDLL, pMapName, pReplaceEnts, pOldLevel, pLandmarkName, loadGame, background);
+	free(pReplaceEnts);
+	return result;
+}
+
 //	virtual void PlayerDecal( IRecipientFilter& filer, float delay,
 //		const Vector* pos, int player, int entity ) = 0;
 
@@ -194,6 +233,12 @@ DEFVFUNC_(te_PlayerDecal, void, (ITempEntsSystem *pTESys, IRecipientFilter& filt
 
 void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)
 {
+	if (!g_PluginLoaded)
+	{
+		te_PlayerDecal(pTESys, filter, delay, pos, player, entity);
+		return;
+	}
+
 //	Msg("Spray detected !!\n");
 	if (gpManiSprayRemove->SprayFired(pos, player))
 	{
@@ -455,6 +500,7 @@ public:
 			PLUGIN_RESULT	ProcessMaOffset( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
 			PLUGIN_RESULT	ProcessMaTeamIndex( int index,  bool svr_command,  int argc,  char *command_string);
 			PLUGIN_RESULT	ProcessMaOffsetScan( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *start_range, char *end_range);
+			PLUGIN_RESULT	ProcessMaOffsetScanF( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *start_range, char *end_range);
 			PLUGIN_RESULT	ProcessMaSlap( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *damage_string);
 			PLUGIN_RESULT	ProcessMaCash( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *amount, int mode);
 			PLUGIN_RESULT	ProcessMaHealth( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *amount, int mode);
@@ -705,6 +751,12 @@ CAdminPlugin::CAdminPlugin()
 
 CAdminPlugin::~CAdminPlugin()
 {
+	if (mysql_thread)
+	{
+		mysql_thread->Unload();
+		delete mysql_thread;
+		mysql_thread = NULL;
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -840,7 +892,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		return false;
 	}
 
-	serverdll = (IServerGameDLL*) gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
+	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
 	if(serverdll)
  	{
 		Msg("Loaded servergamedll interface at %p\n", serverdll);
@@ -848,8 +900,8 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	else 
 	{
 		// Hack for unreleased interface version
-		Msg("Falling back to ServerGameDLL004\n");
-		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
+		Msg("Falling back to ServerGameDLL003\n");
+		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
 		if(serverdll)
  		{
 			Msg("Loaded servergamedll interface at %p\n", serverdll);
@@ -1134,19 +1186,34 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 
 	// Hook our changelevel here
 	//HOOKVFUNC(engine, 0, OrgEngineChangeLevel, ManiChangeLevelHook);
-//	HOOKVFUNC(engine, 43, OrgEngineEntityMessageBegin, ManiEntityMessageBeginHook);
+	//HOOKVFUNC(engine, 43, OrgEngineEntityMessageBegin, ManiEntityMessageBeginHook);
 	//HOOKVFUNC(engine, 44, OrgEngineMessageEnd, ManiMessageEndHook);
 
-	if (voiceserver && gpManiGameType->IsVoiceAllowed())
+	if (voiceserver && gpManiGameType->IsVoiceAllowed() && !g_PluginLoadedOnce)
 	{
 		Msg("Hooking voiceserver\n");
 		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
 	}
 
-	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
+	if (effects && gpManiGameType->GetAdvancedEffectsAllowed() && !g_PluginLoadedOnce)
 	{
+		Msg("Hooking decals\n");
 		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
 	}
+
+	if (!g_PluginLoadedOnce && gpManiGameType->IsSpawnPointHookAllowed())
+	{
+		Msg("Hooking spawnpoints\n");
+		HOOKVFUNC(serverdll, gpManiGameType->GetSpawnPointHookOffset(), org_LevelInit, myLevelInit);
+	}
+
+	mysql_thread = new ManiMySQLThread();
+
+	// Fire up the database
+	mysql_thread->Load();
+
+	g_PluginLoaded = true;
+	g_PluginLoadedOnce = true;
 
 	return true;
 }
@@ -1170,6 +1237,11 @@ void CAdminPlugin::Unload( void )
 	FreeSkins();
 	FreeTeamList();
 	FreeTKPunishments();
+
+	mysql_thread->Unload();
+	delete mysql_thread;
+	mysql_thread = NULL;
+
 
 	FreeList((void **) &rcon_list, &rcon_list_size);
 	FreeList((void **) &vote_rcon_list, &vote_rcon_list_size);
@@ -1197,6 +1269,8 @@ void CAdminPlugin::Unload( void )
 	FreeLanguage();
 
 	gameeventmanager->RemoveListener( this ); // make sure we are unloaded from the event system
+
+	g_PluginLoaded = false;
 }
 
 //---------------------------------------------------------------------------------
@@ -1937,6 +2011,11 @@ void CAdminPlugin::GameFrame( bool simulating )
 	// Simulate NetworkIDValidate
 	gpManiNetIDValid->GameFrame();
 
+	if (mysql_thread)
+	{
+		mysql_thread->GameFrame();
+	}
+
 	gpManiSprayRemove->GameFrame();
 	gpManiWarmupTimer->GameFrame();
 
@@ -2433,6 +2512,8 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 	if (level_changed)
 	{
 		level_changed = false;
+		
+// SetupTeamList(engine->GetEntityCount());
 
 		if (ProcessPluginPaused())	return;
 
@@ -2778,6 +2859,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 	else if (FStrEq( pcmd, "ma_offset" ))	return (ProcessMaOffset(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_teamindex" ))	return (ProcessMaTeamIndex(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0)));
 	else if (FStrEq( pcmd, "ma_offsetscan" ))	return (ProcessMaOffsetScan(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
+	else if (FStrEq( pcmd, "ma_offsetscanf" ))	return (ProcessMaOffsetScanF(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
 	else if (FStrEq( pcmd, "ma_client" ))	return (gpManiClient->ProcessMaClient(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
 	else if (FStrEq( pcmd, "ma_clientgroup" ))	return (gpManiClient->ProcessMaClientGroup(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
 	else if (FStrEq( pcmd, "ma_slap" ))	return (ProcessMaSlap(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
@@ -5765,11 +5847,7 @@ void CAdminPlugin::ProcessExplodeAtCurrentPosition( player_t *player)
 // pPlayer->m_MoveType = MOVETYPE_NONE;
 		// pPlayer->m_MoveType = MOVETYPE_NOCLIP;
 //		pPlayer->m_fFlags = FL_KILLME;
-/*		CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-		pBase->Ignite(100 ,false, 12, false);
-		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-		pCombat->Ignite(30 ,false, 12, false);
-	}
+
 /*
 	if (mani_render_mode == kRenderNormal) mani_render_mode = kRenderTransColor;
 	else if (mani_render_mode == kRenderTransColor) mani_render_mode = kRenderTransTexture;
@@ -7920,8 +7998,8 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 		spawn_player.user_id = event->GetInt("userid", -1);
 		if (spawn_player.user_id == -1) return;
 		if (!FindPlayerByUserID(&spawn_player)) return;
-		CBaseEntity *pPlayer = spawn_player.entity->GetUnknown()->GetBaseEntity();
-		ProcessSetColour(pPlayer, 255, 255, 255, 255 );
+		//CBaseEntity *pPlayer = spawn_player.entity->GetUnknown()->GetBaseEntity();
+		ProcessSetColour(spawn_player.entity, 255, 255, 255, 255 );
 
 		ForceSkinType(&spawn_player);
 		gpManiSpawnPoints->Spawn(&spawn_player);
@@ -8622,10 +8700,11 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 	// Hurt the player
 	int sound_index = rand() % 3;
 
-	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
+//	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
 
 	int health = 0;
-	health = m_pCBaseEntity->GetHealth();
+//	health = m_pCBaseEntity->GetHealth();
+	health = Prop_GetHealth(attacker->entity);
 	if (health <= 0) return;
 		
 	health -= ((damage_to_inflict >= 0) ? damage_to_inflict : damage_to_inflict * -1);
@@ -8634,7 +8713,8 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		health = 0;
 	}
 
-	m_pCBaseEntity->SetHealth(health);
+	Prop_SetHealth(attacker->entity, health);
+//	m_pCBaseEntity->SetHealth(health);
 
 	if (health <= 0)
 	{
@@ -9120,6 +9200,7 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_offset" )) {ProcessMaOffset(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_teamindex" )) {ProcessMaTeamIndex(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_offsetscan" )) {ProcessMaOffsetScan(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
+		else if (FStrEq(ncmd, "@ma_offsetscanf" )) {ProcessMaOffsetScanF(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
 		else if (FStrEq(ncmd, "@ma_client" )) {gpManiClient->ProcessMaClient(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
 		else if (FStrEq(ncmd, "@ma_clientgroup" )) {gpManiClient->ProcessMaClientGroup(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
 		else if (FStrEq(ncmd, "@ma_ban" )) {ProcessMaBan(player.index, false, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
@@ -9790,7 +9871,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaOffsetScan
 	SayToPlayer(&player, "Checking offsets %i to %i", start_offset, end_offset);
 
 	// Careful :)
-	if (end_offset > 2000) end_offset = 2000;
+	if (end_offset > 5000) end_offset = 5000;
 	if (start_offset < 0) end_offset = 0;
 
 	int	target_value = Q_atoi(target_string);
@@ -9805,6 +9886,89 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaOffsetScan
 		{
 			LogCommand (player.entity, "Offset [%i] = [%i]\n", i, *offset_ptr);
 			SayToPlayer(&player, "Offset [%i] = [%i]", i, *offset_ptr);
+			found_match = true;
+		}
+	}
+
+	if (!found_match)
+	{
+		SayToPlayer(&player, "Did not find any matches");
+	}
+
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_offsetscanf (debug) command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	CAdminPlugin::ProcessMaOffsetScanF
+(
+ int index, 
+ bool svr_command, 
+ int argc, 
+ char *command_string, 
+ char *target_string,
+ char *start_range,
+ char *end_range
+)
+{
+	player_t player;
+	int	admin_index;
+	player.entity = NULL;
+
+	if (war_mode)
+	{
+		return PLUGIN_CONTINUE;
+	}
+
+	if (svr_command) return PLUGIN_CONTINUE;
+
+	// Check if player is admin
+
+	player.index = index;
+	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, "ma_offsetscanf", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
+
+	if (argc < 4) 
+	{
+		SayToPlayer(&player, "Mani Admin Plugin: %s <value to look for> <start offset> <end offset>", command_string);
+		return PLUGIN_STOP;
+	}
+
+	int start_offset = Q_atoi(start_range);
+	int end_offset = Q_atoi(end_range);
+
+	if (start_offset > end_offset)
+	{
+		end_offset = Q_atoi(start_range);
+		start_offset = Q_atoi(end_range);
+	}
+
+#ifdef __linux__
+	SayToPlayer(&player, "Linux Server");
+#else
+	SayToPlayer(&player, "Windows Server");
+#endif
+
+	LogCommand (player.entity, "Checking offsets %i to %i\n", start_offset, end_offset);
+	SayToPlayer(&player, "Checking offsets %i to %i", start_offset, end_offset);
+
+	// Careful :)
+	if (end_offset > 5000) end_offset = 5000;
+	if (start_offset < 0) end_offset = 0;
+
+	float	target_value = Q_atof(target_string);
+
+	bool found_match = false;
+	for (int i = start_offset; i <= end_offset; i++)
+	{
+		float *offset_ptr;
+		offset_ptr = ((float *)player.entity->GetUnknown() + i);
+
+		if (*offset_ptr == target_value)
+		{
+			LogCommand (player.entity, "Offset [%i] = [%f]\n", i, *offset_ptr);
+			SayToPlayer(&player, "Offset [%i] = [%f]", i, *offset_ptr);
 			found_match = true;
 		}
 	}
@@ -10156,8 +10320,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 
 		int target_health;
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		target_health = m_pCBaseEntity->GetHealth();
+		target_health = Prop_GetHealth(target_player_list[i].entity);
+//		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+//		target_health = m_pCBaseEntity->GetHealth();
 
 		int new_health = 0;
 
@@ -10187,7 +10352,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 		else
 		{
-			m_pCBaseEntity->SetHealth(new_health);
+			Prop_SetHealth(target_player_list[i].entity, new_health);
+//			m_pCBaseEntity->SetHealth(new_health);		
 		}
 	}
 
@@ -10826,8 +10992,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDecal
 
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
-	Vector eyepos = pPlayer->EyePosition();
-	QAngle angles = pPlayer->EyeAngles();
+	Vector eyepos = CBaseEntity_EyePosition(pPlayer);
+	QAngle angles = CBaseEntity_EyeAngles(pPlayer);
 
 	// If from server break out here
 	if (svr_command) return PLUGIN_STOP;
@@ -11011,8 +11177,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 		return PLUGIN_CONTINUE;
 	}
 
-	if (!sv_cheats) return PLUGIN_CONTINUE;
-
 	if (!svr_command)
 	{
 		// Check if player is admin
@@ -11090,22 +11254,22 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 		}
 
 		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
-		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(weapon_slot);
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, weapon_slot);
 		if (!pWeapon) continue;
 
 		int	ammo_index;
 
 		if (primary_fire)
 		{
-			ammo_index = pWeapon->GetPrimaryAmmoType();
+			ammo_index = CBaseCombatWeapon_GetPrimaryAmmoType(pWeapon);
 		}
 		else
 		{
-			ammo_index = pWeapon->GetSecondaryAmmoType();
+			ammo_index = CBaseCombatWeapon_GetSecondaryAmmoType(pWeapon);
 		}
 
-        pCombat->GiveAmmo(amount, ammo_index, suppress_noise);
+		CBaseCombatCharacter_GiveAmmo(pCombat, amount, ammo_index, suppress_noise);
 
 		LogCommand (player.entity, "gave user [%s] [%s] ammo\n", target_player_list[i].name, target_player_list[i].steam_id);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -11142,8 +11306,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour
 	{
 		return PLUGIN_CONTINUE;
 	}
-
-	if (!sv_cheats) return PLUGIN_CONTINUE;
 
 	if (!svr_command)
 	{
@@ -11210,8 +11372,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		ProcessSetColour(m_pCBaseEntity, red, green, blue, alpha);
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		ProcessSetColour(target_player_list[i].entity, red, green, blue, alpha);
 		
 		LogCommand (player.entity, "set user color [%s] [%s] to [%i] [%i] [%i] [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, red, blue, green, alpha);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -11248,8 +11410,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColourWeapon
 	{
 		return PLUGIN_CONTINUE;
 	}
-
-	if (!sv_cheats) return PLUGIN_CONTINUE;
 
 	if (!svr_command)
 	{
@@ -11352,14 +11512,18 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGravity
 		return PLUGIN_CONTINUE;
 	}
 
-	if (!sv_cheats) return PLUGIN_CONTINUE;
-
 	if (!svr_command)
 	{
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_GRAVITY, war_mode, &admin_index)) return PLUGIN_STOP;
+	}
+
+	if (!gpManiGameType->IsGravityAllowed())
+	{
+		OutputHelpText(&player, svr_command, "Gravity not setup in gametypes.txt !!\n");
+		return PLUGIN_STOP;
 	}
 
 	if (argc < 3) 
@@ -11411,9 +11575,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGravity
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
+		int offset = gpManiGameType->GetGravityOffset();
 
-		m_pCBaseEntity->SetGravity(gravity * 0.01);
+		float *gravity_ptr;
+		gravity_ptr = ((float *)target_player_list[i].entity->GetUnknown() + offset);
+		*gravity_ptr = (gravity * 0.01);
 
 		LogCommand (player.entity, "set user gravity [%s] [%s] to [%f]\n", target_player_list[i].name, target_player_list[i].steam_id, gravity);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -11510,8 +11676,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderMode
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
+		Prop_SetRenderMode(target_player_list[i].entity, render_mode);
 		
 		LogCommand (player.entity, "set user rendermode [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -11608,8 +11775,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		m_pCBaseEntity->m_nRenderFX = render_mode;
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//m_pCBaseEntity->m_nRenderFX = render_mode;
+		
+		Prop_SetRenderFX(target_player_list[i].entity, render_mode);
 		
 		LogCommand (player.entity, "set user renderfx [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -12491,8 +12660,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaPosition
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
 	Vector pos = player.player_info->GetAbsOrigin();
-	Vector eyepos = pPlayer->EyePosition();
-	QAngle angles = pPlayer->EyeAngles();
+	Vector eyepos = CBaseEntity_EyePosition(pPlayer);
+	QAngle angles = CBaseEntity_EyeAngles(pPlayer);
 
 	SayToPlayer(&player, "Absolute Position XYZ = %.5f %.5f %.5f", pos.x, pos.y, pos.z);
 	SayToPlayer(&player, "Eye Position XYZ = %.5f %.5f %.5f", eyepos.x, eyepos.y, eyepos.z);
@@ -12856,13 +13025,17 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDropC4
 		if (bomb_player.player_info->IsHLTV()) continue;
 
 		CBaseEntity *pPlayer = bomb_player.entity->GetUnknown()->GetBaseEntity();
-		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(4);
+
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 4);
+
 		if (pWeapon)
 		{
-			if (FStrEq("weapon_c4", pWeapon->GetName()))
+			if (FStrEq("weapon_c4", CBaseCombatWeapon_GetName(pWeapon)))
 			{
-				pCombat->Weapon_Drop(pWeapon);
+				CBasePlayer *pBase = (CBasePlayer *) pPlayer;
+				CBasePlayer_WeaponDrop(pBase, pWeapon);
+
 				if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 				{
 					AdminSayToAll(&player, mani_admindropc4_anonymous.GetInt(), "forced player %s to drop the C4", bomb_player.name); 
@@ -14426,6 +14599,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteCancel
 		return PLUGIN_CONTINUE;
 	}
 
+	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+
 	player.entity = NULL;
 
 	if (!svr_command)
@@ -14487,6 +14662,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRandom
 	{
 		return PLUGIN_CONTINUE;
 	}
+
+	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	player.entity = NULL;
 
@@ -14625,6 +14802,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVote
 	{
 		return PLUGIN_CONTINUE;
 	}
+
+	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	player.entity = NULL;
 
@@ -14813,6 +14992,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteExtend
 	{
 		return PLUGIN_CONTINUE;
 	}
+
+	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	player.entity = NULL;
 
@@ -15013,6 +15194,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteQuestion
 		return PLUGIN_CONTINUE;
 	}
 
+	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+
 	player.entity = NULL;
 
 	if (!svr_command)
@@ -15162,6 +15345,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRCon
 	{
 		return PLUGIN_CONTINUE;
 	}
+
+	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	player.entity = NULL;
 
@@ -18718,6 +18903,26 @@ CON_COMMAND(ma_timeleft, "Prints timeleft information")
 	return;
 }
 
+CON_COMMAND(ma_sql, "ma_sql <sql to run>")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+
+	char	trimmed_say[2048];
+	int say_argc;
+
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+
+	request_list_t *request_list_ptr = NULL;
+	Msg("1\n");
+	mysql_thread->AddRequest(0, &request_list_ptr);
+	Msg("2\n");
+	mysql_thread->AddSQL(request_list_ptr, 0, "%s", &(trimmed_say[say_argv[0].index]));
+	Msg("3\n");
+	mysql_thread->PostRequest(request_list_ptr);
+	Msg("4\n");
+}
+
 static void WarModeChanged ( ConVar *var, char const *pOldString )
 {
 	if (!FStrEq(pOldString, var->GetString()))
@@ -18885,7 +19090,7 @@ bool	CAdminPlugin::IsTampered(void)
 //Msg("Offset required %i\n", checksum - plus1);
 //while(1);
 
-	if (checksum != (plus1 + 8399))
+	if (checksum != (plus1 + 8400))
 	{
 		return true;
 	}

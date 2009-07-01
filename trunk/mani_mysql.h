@@ -28,6 +28,8 @@
 
 #ifndef __linux__
 #include <winsock.h>
+#else
+#include <pthread.h>
 #endif
 #include <mysql.h>
 
@@ -56,6 +58,7 @@ private:
 	MYSQL_ROW		row;
 	int			error_code;
 	int			timer_id;
+
 };
 
 #endif

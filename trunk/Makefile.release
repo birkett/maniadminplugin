@@ -16,6 +16,7 @@ NAME=mani_admin_plugin
 # source files that should be compiled and linked into the binary
 SRC_FILES = 	mani_adverts.cpp \
 		mani_autokickban.cpp \
+		mani_chattrigger.cpp \
 		mani_client.cpp \
 		mani_convar.cpp \
 		mani_crontab.cpp \
@@ -33,6 +34,7 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_memory.cpp \
 		mani_menu.cpp \
 		mani_mysql.cpp \
+		mani_mysql_thread.cpp \
 		mani_netidvalid.cpp \
 		mani_output.cpp \
 		mani_panel.cpp \
@@ -51,6 +53,7 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_timers.cpp \
 		mani_victimstats.cpp \
 		mani_voice.cpp \
+		mani_warmuptimer.cpp \
 		mani_weapon.cpp \
 		mrecipientfilter.cpp \
 		serverplugin_convar.cpp
@@ -74,7 +77,7 @@ CPP_LIB=/usr/lib/gcc/i386-redhat-linux/3.4.3/libstdc++.a \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl -s tier0_i486.so vstdlib_i486.so
+LDFLAGS=-lm -ldl -lpthread -s tier0_i486.so vstdlib_i486.so
 #LDFLAGS=-lm -ldl -s tier0_i486.so vstdlib_i486.so
 
 #############################################################################

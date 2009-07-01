@@ -769,6 +769,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 
 	// Do BSearch in waiting list
 	// this stops duplicates entering the list
+	player_key_address = &player_key;
 	if (mani_stats_by_steam_id.GetInt() == 1)
 	{
 		// Do BSearch for steam ID in player settings list
@@ -793,7 +794,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	}
 
 
-	Q_memset(&add_player, 0, sizeof(player_t));
+	Q_memset(&add_player, 0, sizeof(player_settings_t));
 	time(&current_time);
 	Q_strcpy(add_player.steam_id, player->steam_id);
 	Q_strcpy(add_player.name, player->name);
@@ -827,6 +828,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	}
 
 	// Do BSearch in waiting list again, we should find the player this time
+	player_key_address = &player_key;
 	if (mani_stats_by_steam_id.GetInt() == 1)
 	{
 		// Do BSearch for steam ID in player settings list
