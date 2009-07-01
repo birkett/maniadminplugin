@@ -69,6 +69,8 @@ public:
 
 	bool		IsVoiceAllowed(void);
 	int			GetVoiceOffset(void);
+	bool		IsSprayHookAllowed(void);
+	int			GetSprayHookOffset(void);
 
 	bool		IsSetColourAllowed(void);
 	int			GetAlphaRenderMode(void);
@@ -84,6 +86,9 @@ public:
 	bool		IsDrugAllowed(void);
 	bool		IsDeathBeamAllowed(void);
 
+	// Dystopia requires this
+	bool		IsBrowseAllowed(void);
+
 	bool		IsAdvertDecalAllowed(void);
 
 	int			GetMaxMessages(void);
@@ -93,6 +98,7 @@ public:
 	
 	int			GetIndexFromGroup(const char *group_id);
 	bool		IsValidActiveTeam(int	index);
+	char		*GetTeamSpawnPointClassName(int index);
 	int			GetTeamShortTranslation(int index);
 	int			GetTeamTranslation(int index);
 	int			GetOpposingTeam(int index);
@@ -110,6 +116,7 @@ private:
 	struct team_class_t
 	{
 		int		team_index;
+		char	spawnpoint_class_name[128];
 		int		team_translation_index;
 		int		team_short_translation_index;
 		char	group[32];
@@ -144,6 +151,9 @@ private:
 	int			voice_allowed;
 	int			voice_offset;
 
+	int			spray_hook_allowed;
+	int			spray_hook_offset;
+
 	int			max_messages;
 	int			set_colour;
 	int			alpha_render_mode;
@@ -156,6 +166,8 @@ private:
 	int			death_beam_allowed;
 	int			advert_decal_allowed;
 //	int			client_suicide;
+	// Dystopia requires this
+	int			browse_allowed;
 
 };
 

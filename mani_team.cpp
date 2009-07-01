@@ -43,6 +43,9 @@
 #include "mani_parser.h"
 #include "mani_gametype.h"
 #include "mani_team.h"
+#include "cbaseentity.h"
+//#include "team_spawnpoint.h"
+
 
 extern IFileSystem	*filesystem;
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -90,6 +93,9 @@ void SetupTeamList(int edict_count)
 				AddToList((void **) &team_list, sizeof(team_t), &team_list_size);
 				team_list[team_list_size - 1].team_ptr = team_ptr;
 				Msg("Team index [%i] Name [%s]\n", team_ptr->GetTeamNumber(), team_ptr->GetName());
+
+				//CTeamSpawnPoint *pSpawnpoint = new CTeamSpawnPoint();
+				//team_ptr->AddSpawnpoint((CTeamSpawnPoint *) pSpawnpoint);
 			}
 
 			if (FStrEq("cs_gamerules", pEntity->GetClassName()))

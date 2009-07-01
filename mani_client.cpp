@@ -2010,6 +2010,24 @@ void	ManiClient::GetClients(KeyValues *ptr)
 			Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, temp_string);
 		}
 
+		/* Handle single admin group */
+		Q_strcpy(temp_string, kv_ptr->GetString("admingroups", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
+			Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_string);
+			Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+		}
+
+		/* Handle single immunity group */
+		Q_strcpy(temp_string, kv_ptr->GetString("immunitygroups", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
+			Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_string);
+			Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+		}
+
 		// Steam IDs
 		temp_ptr = kv_ptr->FindKey("steam", false);
 		if (temp_ptr)
@@ -2421,8 +2439,10 @@ void		ManiClient::WriteClients(void)
 			}
 		}
 
+		if (client_list[i].admin_group_list_size == 1) client->SetString("admingroups", client_list[i].admin_group_list[0].group_id);
+
 		// Write Admin Groups if needed
-		if (client_list[i].admin_group_list_size != 0)
+		if (client_list[i].admin_group_list_size > 1)
 		{
 			KeyValues *admingroup = client->FindKey("admingroups", true);
 
@@ -2481,8 +2501,10 @@ void		ManiClient::WriteClients(void)
 			}
 		}
 		
+		if (client_list[i].immunity_group_list_size == 1) client->SetString("immunitygroups", client_list[i].immunity_group_list[0].group_id);
+
 		// Write Immunity Groups if needed
-		if (client_list[i].immunity_group_list_size != 0)
+		if (client_list[i].immunity_group_list_size > 1)
 		{
 			KeyValues *immunitygroup = client->FindKey("immunitygroups", true);
 
@@ -4090,6 +4112,11 @@ void	ManiClient::ProcessMaClientHelp
 	OutputHelpText(player_ptr, svr_command, "Sub commands :->");
 	OutputHelpText(player_ptr, svr_command, "    Status (Lists all client names for the server)");
 	OutputHelpText(player_ptr, svr_command, "    Status <Name> (Shows details of specified client)");
+	OutputHelpText(player_ptr, svr_command, "    aflag (Shows all admin flags)");
+	OutputHelpText(player_ptr, svr_command, "    aflag <flag name> (Describes the admin flag)");
+	OutputHelpText(player_ptr, svr_command, "    iflag (Shows all immunity flags)");
+	OutputHelpText(player_ptr, svr_command, "    iflag <flag name> (Describes the immunity flag)");
+	OutputHelpText(player_ptr, svr_command, "    Status <Name> (Shows details of specified client)");
 	OutputHelpText(player_ptr, svr_command, "  ");
 	OutputHelpText(player_ptr, svr_command, "    AddClient <Name> (Must be unique)");
 	OutputHelpText(player_ptr, svr_command, "    AddSteam <ID> \"Steam ID\"");
@@ -4297,6 +4324,36 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 		else if (argc == 2)
 		{
 			ProcessAllClientStatus(&player, svr_command);
+		}
+		else
+		{	
+			invalid_args = true;
+		}
+	}
+	else if (FStrEq(sub_command, "aflag"))
+	{
+		if (argc == 3)
+		{
+			ProcessClientFlagDesc(MANI_ADMIN_TYPE, &player, svr_command, param1);
+		}
+		else if (argc == 2)
+		{
+			ProcessAllClientFlagDesc(MANI_ADMIN_TYPE, &player, svr_command);
+		}
+		else
+		{	
+			invalid_args = true;
+		}
+	}	
+	else if (FStrEq(sub_command, "iflag"))
+	{
+		if (argc == 3)
+		{
+			ProcessClientFlagDesc(MANI_IMMUNITY_TYPE, &player, svr_command, param1);
+		}
+		else if (argc == 2)
+		{
+			ProcessAllClientFlagDesc(MANI_ADMIN_TYPE, &player, svr_command);
 		}
 		else
 		{	
@@ -6962,6 +7019,73 @@ void		ManiClient::ProcessRemoveGroup
 //---------------------------------------------------------------------------------
 // Purpose: Handle ma_client sub command Status
 //---------------------------------------------------------------------------------
+void		ManiClient::ProcessAllClientFlagDesc
+(
+ int	type,
+ player_t *player_ptr, 
+ bool svr_command
+ )
+{
+	if (type == MANI_ADMIN_TYPE)
+	{
+		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
+		{
+			OutputHelpText(player_ptr, svr_command, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
+		{
+			OutputHelpText(player_ptr, svr_command, "%-20s %s", immunity_flag_list[i].flag, immunity_flag_list[i].flag_desc);
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Handle ma_client sub command Status
+//---------------------------------------------------------------------------------
+void		ManiClient::ProcessClientFlagDesc
+(
+ int	type,
+ player_t *player_ptr, 
+ bool svr_command,
+ char *param1
+ )
+{
+	if (type == MANI_ADMIN_TYPE)
+	{
+		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
+		{
+			if (FStruEq(admin_flag_list[i].flag, param1))
+			{
+				OutputHelpText(player_ptr, svr_command, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
+				return;
+			}
+
+		}
+
+		OutputHelpText(player_ptr, svr_command, "Admin flag [%s] does not exist !!");
+	}
+	else
+	{
+		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
+		{
+			if (FStruEq(immunity_flag_list[i].flag, param1))
+			{
+				OutputHelpText(player_ptr, svr_command, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
+				return;
+			}
+		}
+
+		OutputHelpText(player_ptr, svr_command, "Immunity flag [%s] does not exist !!");
+	}
+
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Handle ma_client sub command Status
+//---------------------------------------------------------------------------------
 void		ManiClient::ProcessAllClientStatus
 (
  player_t *player_ptr, 
@@ -7756,6 +7880,12 @@ void	ManiClient::InitAdminFlags(void)
 	Q_strcpy(admin_flag_list[ALLOW_CLIENT_ADMIN].flag, ALLOW_CLIENT_ADMIN_FLAG);
 	Q_strcpy(admin_flag_list[ALLOW_CLIENT_ADMIN].flag_desc,ALLOW_CLIENT_ADMIN_DESC);
 
+	Q_strcpy(admin_flag_list[ALLOW_PERM_BAN].flag, ALLOW_PERM_BAN_FLAG);
+	Q_strcpy(admin_flag_list[ALLOW_PERM_BAN].flag_desc,ALLOW_PERM_BAN_DESC);
+
+	Q_strcpy(admin_flag_list[ALLOW_SPRAY_TAG].flag, ALLOW_SPRAY_TAG_FLAG);
+	Q_strcpy(admin_flag_list[ALLOW_SPRAY_TAG].flag_desc,ALLOW_SPRAY_TAG_DESC);
+
 }
 
 static int sort_admin_level ( const void *m1,  const void *m2) 
@@ -7796,7 +7926,3 @@ where c.user_id = cs.user_id
 and cs.server_id = 1
 order by 1, 4, 5,6,7,9, 8, 11, 10
 */
-
-
-
-

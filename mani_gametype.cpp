@@ -187,6 +187,7 @@ void ManiGameType::Init(void)
 	fire_allowed = base_key_ptr->GetInt("fire_allowed", 1);
 	advert_decal_allowed = base_key_ptr->GetInt("advert_decal_allowed", 1);
 	death_beam_allowed = base_key_ptr->GetInt("death_beam_allowed", 1);
+	browse_allowed = base_key_ptr->GetInt("browse_allowed", 1);
 
 	KeyValues *temp_ptr;
 
@@ -223,6 +224,19 @@ void ManiGameType::Init(void)
 #endif
 	}
 
+	// Allow advanced effects via te
+	temp_ptr = base_key_ptr->FindKey("spray_hook_control", false);
+	if (temp_ptr)
+	{
+		Msg("Found spray hook control\n");
+
+		spray_hook_allowed = 1;
+#ifdef __linux__
+        spray_hook_offset = temp_ptr->GetInt("linux_offset", 28);
+#else
+		spray_hook_offset = temp_ptr->GetInt("win_offset", 28);
+#endif
+	}
 
 	cash_allowed = 0;
 
@@ -271,6 +285,7 @@ void ManiGameType::Init(void)
 				Q_memset(&temp_team, 0, sizeof(team_class_t));
 
 				temp_team.team_index = team_ptr->GetInt("index", -1);
+				Q_strcpy(temp_team.spawnpoint_class_name,team_ptr->GetString("spawnpoint_class_name", "NULL"));
 				temp_team.team_short_translation_index = team_ptr->GetInt("short_translation_index", 0); // CT, T, C, R etc
 				temp_team.team_translation_index = team_ptr->GetInt("translation_index", 0); // Long proper name
 				Q_strcpy(temp_team.group, team_ptr->GetString("group","#DEF"));
@@ -429,6 +444,22 @@ int		ManiGameType::GetMaxMessages(void)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Returns true if spray hook is allowed
+//---------------------------------------------------------------------------------
+bool		ManiGameType::IsSprayHookAllowed(void)
+{
+	return ((spray_hook_allowed == 0) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns virtual function index for effects list
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetSprayHookOffset(void)
+{
+	return (spray_hook_offset);
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Returns true if voice hooking is allowed
 //---------------------------------------------------------------------------------
 bool		ManiGameType::IsVoiceAllowed(void)
@@ -443,8 +474,6 @@ int		ManiGameType::GetVoiceOffset(void)
 {
 	return (voice_offset);
 }
-
-
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if cash is allowed for the mod
 //---------------------------------------------------------------------------------
@@ -518,6 +547,14 @@ bool		ManiGameType::IsDeathBeamAllowed(void)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Returns true if browsing is allowed
+//---------------------------------------------------------------------------------
+bool		ManiGameType::IsBrowseAllowed(void)
+{
+	return ((browse_allowed == 0) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Check whether we use CBase suicide or ClientCommmand('kill')
 //---------------------------------------------------------------------------------
 /*bool		ManiGameType::IsClientSuicide(void)
@@ -587,6 +624,22 @@ bool	ManiGameType::IsValidActiveTeam(int	index)
 	}
 
 	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns the spawnpoint class name for team
+//---------------------------------------------------------------------------------
+char	*ManiGameType::GetTeamSpawnPointClassName(int index)
+{
+	if (this->IsValidActiveTeam(index))
+	{
+		if (!FStrEq(team_class_list[index].spawnpoint_class_name,""))
+		{
+			return (team_class_list[index].spawnpoint_class_name);
+		}
+	}
+
+	return NULL;
 }
 
 //---------------------------------------------------------------------------------
@@ -682,6 +735,7 @@ void	ManiGameType::DefaultValues(void)
 	advanced_effects_code_offset = 110;
 	max_messages = 22;
 	voice_allowed = 0;
+	spray_hook_allowed = 0;
 //	client_suicide = 1;
 	kills_allowed = 0;
 	set_colour = 1;
@@ -694,6 +748,7 @@ void	ManiGameType::DefaultValues(void)
 	fire_allowed = 1;
 	advert_decal_allowed = 1;
 	death_beam_allowed = 1;
+	browse_allowed = 1;
 
 	return ;
 }

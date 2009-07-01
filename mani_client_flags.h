@@ -207,6 +207,13 @@
 #define	ALLOW_CLIENT_ADMIN_FLAG	("client")
 #define	ALLOW_CLIENT_ADMIN_DESC ("Create Clients")
 
+#define	ALLOW_PERM_BAN (51)					//Perma ban access
+#define	ALLOW_PERM_BAN_FLAG	("pban")
+#define	ALLOW_PERM_BAN_DESC ("Permanent Ban")
+
+#define	ALLOW_SPRAY_TAG (52)					//Spray Tag checking
+#define	ALLOW_SPRAY_TAG_FLAG	("spray")
+#define	ALLOW_SPRAY_TAG_DESC ("Spray Tag Tracking")
 
 //*******************************************************************
 //*******************************************************************

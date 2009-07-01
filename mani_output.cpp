@@ -58,6 +58,7 @@ extern	int	max_players;
 extern	bf_write *msg_buffer;
 extern	int	text_message_index;
 
+say_argv_t		say_argv[MAX_SAY_ARGC];
 static	int	map_count = -1;
 static	char mani_log_filename[512]="temp.log";
 
@@ -1306,4 +1307,109 @@ void OutputHelpText
 	{
 		SayToPlayer(player_ptr, "%s\n", tempString);
 	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the Parse the saystring
+//---------------------------------------------------------------------------------
+void	ParseSayString
+(
+ const char *say_string, 
+ char *trimmed_string_out,
+ int  *say_argc
+)
+{
+	char trimmed_string[2048];
+	int i;
+	int j;
+	char terminate_char;
+	bool found_quotes;
+	int say_length;
+
+	*say_argc = 0;
+
+	for (i = 0; i < MAX_SAY_ARGC; i++)
+	{
+		// Reset strings for safety
+		Q_strcpy(say_argv[i].argv_string,"");
+		say_argv[i].index = 0;
+	}
+
+	if (!say_string) return;
+
+	say_length = Q_strlen(say_string);
+	if (say_length == 0)
+	{
+		return;
+	}
+
+	if (say_length == 1)
+	{
+		// Only one character in string
+		Q_strcpy(trimmed_string, say_string);
+		Q_strcpy(say_argv[0].argv_string, say_string);
+		say_argv[0].index = 0;
+		*say_argc = *say_argc + 1;
+		return;
+	}
+
+	// Check if quotes are needed to be removed
+	if (say_string[0] == '\"' && say_string[Q_strlen(say_string) - 1] == '\"')
+	{
+		Q_snprintf(trimmed_string, sizeof(trimmed_string), "%s", &(say_string[1]));
+		trimmed_string[Q_strlen(trimmed_string) - 1] = '\0';
+	}
+	else
+	{
+		Q_snprintf(trimmed_string, sizeof(trimmed_string), "%s", say_string);
+	}
+
+	Q_strcpy(trimmed_string_out, trimmed_string);
+
+	// Extract tokens
+	i = 0;
+	
+	while (*say_argc != MAX_SAY_ARGC)
+	{
+		// Find first non white space
+		while (trimmed_string[i] == ' ' && trimmed_string[i] != '\0') i++;
+
+		if (trimmed_string[i] == '\0')	return;
+
+		say_argv[*say_argc].index = i;
+
+		found_quotes = false;
+		if (trimmed_string[i] == '\"')
+		{
+			// Use quote to terminate string
+			found_quotes = true;
+			terminate_char = '\"';
+			i++;
+		}
+		else
+		{
+			// Use next space to terminate string
+			terminate_char = ' ';
+		}
+
+		if (trimmed_string[i] == '\0')	return;
+
+		j = 0;
+
+		while (trimmed_string[i] != terminate_char && trimmed_string[i] != '\0')
+		{
+			// Copy char
+			say_argv[*say_argc].argv_string[j] = trimmed_string[i];
+			j++;
+			i++;
+		}
+
+		say_argv[*say_argc].argv_string[j] = '\0';
+		*say_argc = *say_argc + 1;
+		if (trimmed_string[i] == '\0') return;
+		if (found_quotes) i++;
+		if (trimmed_string[i] == '\0') return;
+	}
+
+	return;
 }

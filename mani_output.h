@@ -28,6 +28,16 @@
 
 #include "mani_player.h"
 
+#define MAX_SAY_ARGC (10)
+
+struct say_argv_t
+{
+	char	argv_string[2048];
+	int		index;
+};
+
+extern say_argv_t		say_argv[MAX_SAY_ARGC];
+
 extern void	AdminSayToAdmin(player_t *player,const char	*fmt, ...);
 extern void	SayToAdmin(player_t	*player,const char	*fmt, ...);
 extern void	AdminSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
@@ -46,6 +56,8 @@ extern void ClientMsg(Color	*col, const unsigned int seconds, const bool admin_o
 extern void ClientMsgSinglePlayer( edict_t *pEntity, const unsigned int seconds,  const int	level, const char* fmt, ... );
 extern void	PrintToClientConsole(edict_t *pEntity, char *fmt, ... );
 extern void OutputHelpText( player_t	*player_ptr, bool		to_server_console, char		*fmt, ...);
+extern void	ParseSayString(const char *say_string, char *trimmed_string_out, int *say_argc);
+
 
 
 #endif

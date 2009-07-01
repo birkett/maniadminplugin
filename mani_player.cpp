@@ -1674,7 +1674,7 @@ void	DeleteOldPlayerSettings(void)
 //---------------------------------------------------------------------------------
 // Purpose: Handle menu selection via settings selection
 //---------------------------------------------------------------------------------
-void	ShowSettingsPrimaryMenu(player_t *player)
+void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 {
 	/* Draw Main Menu */
 	int	 range = 0;
@@ -1795,8 +1795,16 @@ void	ShowSettingsPrimaryMenu(player_t *player)
 	}
 
 	if (menu_list_size == 0) return;
-	DrawStandardMenu(player, "Press Esc to alter settings", "Configure your settings", true);
-	
+
+	// List size may have changed
+	if (next_index > menu_list_size)
+	{
+		// Reset index
+		next_index = 0;
+	}
+
+	DrawSubMenu (player, "Press Esc to alter settings", "Configure your settings", next_index, "manisettings", "manisettings", false, -1);
+
 	return;
 }
 
@@ -1816,7 +1824,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 	if (1 == engine->Cmd_Argc())
 	{
 		// User typed manisettings at console
-		ShowSettingsPrimaryMenu(&player);
+		ShowSettingsPrimaryMenu(&player, 0);
 		return PLUGIN_STOP;
 	}
 
@@ -1830,35 +1838,40 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		{
 			// Get next index for menu
 			next_index = Q_atoi(engine->Cmd_Argv(2));
-			argv_offset = 2;
+			argv_offset = 2; 
 		}
 
 		char *menu_command = engine->Cmd_Argv(1 + argv_offset);
 
-		if (FStrEq (menu_command, "damagetype") && 
+		if (FStrEq (menu_command, "manisettings"))
+		{
+			ShowSettingsPrimaryMenu(&player, next_index);
+			return PLUGIN_STOP;
+		}
+		else if (FStrEq (menu_command, "damagetype") && 
 			mani_show_victim_stats.GetInt() != 0)
 		{
 			ProcessMaDamage (player.index);
-			ShowSettingsPrimaryMenu(&player);
+			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
 		}
 		else if (FStrEq (menu_command, "quake") &&
 			mani_quake_sounds.GetInt() != 0)
 		{
 			ProcessMaQuake (player.index);
-			ShowSettingsPrimaryMenu(&player);
+			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
 		}		
 		else if (FStrEq (menu_command, "sounds"))
 		{
 			ProcessMaSounds (player.index);
-			ShowSettingsPrimaryMenu(&player);
+			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
 		}		
 		else if (FStrEq (menu_command, "deathbeam"))
 		{
 			ProcessMaDeathBeam (player.index);
-			ShowSettingsPrimaryMenu(&player);
+			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
 		}		
 		else if (FStrEq (menu_command, "joinskin"))
@@ -1877,7 +1890,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_ADMIN_T_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player);
+						ShowSettingsPrimaryMenu(&player, 0);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1894,7 +1907,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_ADMIN_CT_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player);
+						ShowSettingsPrimaryMenu(&player, 0);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1910,7 +1923,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_RESERVE_T_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player);
+						ShowSettingsPrimaryMenu(&player, 0);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1926,7 +1939,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_RESERVE_CT_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player);
+						ShowSettingsPrimaryMenu(&player, 0);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1936,7 +1949,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 			// Handle skin choice menu
 			if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_T_SKIN, menu_command))
 			{
-				ShowSettingsPrimaryMenu(&player);
+				ShowSettingsPrimaryMenu(&player, 0);
 			}
 			return PLUGIN_STOP;
 		}
@@ -1945,7 +1958,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 			// Handle skin choice menu
 			if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_CT_SKIN, menu_command))
 			{
-				ShowSettingsPrimaryMenu(&player);
+				ShowSettingsPrimaryMenu(&player, 0);
 			}
 			return PLUGIN_STOP;
 		}

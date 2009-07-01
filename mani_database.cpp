@@ -128,6 +128,7 @@ bool ManiDatabase::LoadDatabaseFile(void)
 	Q_strcpy(db_password, kv_ptr->GetString("db_password"));
 	Q_strcpy(db_name, kv_ptr->GetString("db_name"));
 	Q_strcpy(db_table_prefix, kv_ptr->GetString("db_table_prefix","map_"));
+	Q_strcpy(db_socket_path, kv_ptr->GetString("db_socket_path"));
 	db_port = kv_ptr->GetInt("db_port", 3306);
 	db_timeout = kv_ptr->GetInt("db_timeout", 10);
 	if (kv_ptr->GetInt("db_enabled", 0) == 1)

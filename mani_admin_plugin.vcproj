@@ -15,8 +15,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="..\plugin_output\Debug"
+			IntermediateDirectory="..\plugin_output\Debug"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -24,40 +24,48 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\public,..\..\public\tier0,..\..\public\tier1,..\..\dlls,..\..\game_shared"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;serverplugin_emptyONLY"
+				AdditionalIncludeDirectories="..\public,..\public\tier0,..\public\tier1,..\dlls,..\game_shared,.\mysql\win_32\include\"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile=".\Debug/serverplugin_empty.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile="..\plugin_output\Debug/mani_admin_plugin.pch"
+				AssemblerListingLocation="..\plugin_output\Debug/"
+				ObjectFile="..\plugin_output\Debug/"
+				ProgramDataBaseFileName="..\plugin_output\Debug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="attrib -r ..\..\..\bin\serverplugin_empty.dll
-copy &quot;$(TargetPath)&quot; ..\..\..\bin\serverplugin_empty.dll
+				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll
+copy &quot;$(TargetPath)&quot; ..\bin\
+copy &quot;$(TargetPath)&quot; ..\base\common\
+copy &quot;$(TargetPath)&quot; C:\csserver\cstrike\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\hl2mp\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\dod\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\hl2ctf\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\dystopia\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\gmod\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 "
-				Outputs="..\..\..\bin\serverplugin_empty.dll"/>
+				Outputs="..\bin\mani_admin_plugin.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
-				OutputFile=".\Debug/serverplugin_empty.dll"
+				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib"
+				OutputFile="..\plugin_output\Debug/mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\lib\public,..\lib\common"
-				IgnoreDefaultLibraryNames="LIBC"
+				AdditionalLibraryDirectories="..\lib\public,..\lib\common,.\mysql\win_32\lib"
+				IgnoreDefaultLibraryNames="LIBCMT"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/serverplugin_empty.pdb"
+				ProgramDatabaseFile="..\plugin_output\Debug/mani_admin_plugin.pdb"
 				GenerateMapFile="TRUE"
-				MapFileName=".\Debug/serverplugin_empty.map"
+				MapFileName="..\plugin_output\Debug/mani_admin_plugin.map"
 				SubSystem="2"
-				ImportLibrary=".\Debug/serverplugin_empty.lib"
+				ImportLibrary="..\plugin_output\Debug/mani_admin_plugin.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -246,6 +254,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_ghost.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_hlxinterface.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_language.cpp">
 				</File>
 				<File
@@ -295,6 +306,12 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_sounds.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_spawnpoints.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_sprayremove.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_stats.cpp">
@@ -456,6 +473,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_ghost.h">
 				</File>
 				<File
+					RelativePath=".\mani_hlxinterface.h">
+				</File>
+				<File
 					RelativePath=".\mani_hook.h">
 				</File>
 				<File
@@ -508,6 +528,12 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_sounds.h">
+				</File>
+				<File
+					RelativePath=".\mani_spawnpoints.h">
+				</File>
+				<File
+					RelativePath=".\mani_sprayremove.h">
 				</File>
 				<File
 					RelativePath=".\mani_stats.h">

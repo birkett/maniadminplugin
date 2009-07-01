@@ -48,6 +48,7 @@ public:
 	char	*GetDBPassword(void) {return db_password;}
 	char	*GetDBName(void) {return db_name;}
 	char	*GetDBTablePrefix(void) {return db_table_prefix;}
+	char	*GetDBSocketPath(void) {return db_socket_path;}
 	int		GetDBPort(void) {return db_port;}
 
 private:
@@ -62,6 +63,7 @@ private:
 	char	db_name[256];
 	int		db_port;
 	char	db_table_prefix[128];
+	char	db_socket_path[256];
 
 	// Game server information (probably in wrong class really)
 	int		server_id;
