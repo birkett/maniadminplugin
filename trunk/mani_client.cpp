@@ -161,7 +161,6 @@ void	ManiClient::ComputeAdminLevels(void)
 
 	if (admin_level_list_size == 0) return;
 
-Msg("Compute Admin Levels\n");
 	// Create a list of admin indexes that are on the server and
 	// have level_ids
 	for (int i = 1; i <= max_players; i++)
@@ -181,11 +180,9 @@ Msg("Compute Admin Levels\n");
 				player.is_bot = false;
 
 				GetIPAddressFromPlayer(&player);
-Msg("Name [%s] Steam ID [%s]\n", player.name, player.steam_id);
 
 				if (IsPotentialAdmin(&player, &index))
 				{
-Msg("Potential Admin [%s]\n", player.steam_id);
 					if (client_list[index].admin_level_id != -1)
 					{
 						// Add list of admins on server that 
@@ -223,7 +220,6 @@ Msg("Potential Admin [%s]\n", player.steam_id);
 			if (admin_level_list[i].level_id >= min_level &&
 				player_list[j].level_id > admin_level_list[i].level_id)
 			{
-Msg("Filtered player [%s]\n", client_list[i].name);
 				// Player here is at a lower level so apply filtering
 				for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
 				{
@@ -678,22 +674,6 @@ bool ManiClient::OldAddClient
 
 	Q_memset(client_ptr, 0, sizeof(old_style_client_t));
 
-	if (mani_reverse_admin_flags.GetInt() == 1)
-	{
-		for (i = 0; i < MAX_ADMIN_FLAGS + MAX_IMMUNITY_FLAGS; i++)
-		{
-			client_ptr->flags[i] = false;
-		}
-	}
-	else
-	{
-		for (i = 0; i < MAX_ADMIN_FLAGS + MAX_IMMUNITY_FLAGS; i++)
-		{
-			client_ptr->flags[i] = true;
-		}
-	}
-
-
 	i = 0;
 
 	if (file_details[i] != ';')
@@ -873,6 +853,43 @@ bool ManiClient::OldAddClient
 		}			
 	}
 
+	if (!found_group)
+	{
+		// Setup flags for individual access
+		if (is_admin)
+		{
+			for (int i = 0; i < MAX_ADMIN_FLAGS; i ++)
+			{
+				if (mani_reverse_admin_flags.GetInt() == 1)
+				{
+					client_ptr->flags[i] = false;
+				}
+				else
+				{
+					client_ptr->flags[i] = true;
+				}
+
+				client_ptr->flags[ALLOW_CLIENT_ADMIN] = true;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
+			{
+				if (mani_reverse_immunity_flags.GetInt() == 1)
+				{
+					client_ptr->flags[i] = true;
+				}
+				else
+				{
+					client_ptr->flags[i] = false;
+				}
+			}
+
+			client_ptr->flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
+		}
+	}
+
 	while (file_details[i] != '\0' && found_group == false)
 	{
 		if (is_admin)
@@ -900,13 +917,13 @@ bool ManiClient::OldAddClient
 			{
 				if (file_details[i] == immunity_flag_list[k].flag[0])
 				{
-					if (mani_reverse_admin_flags.GetInt() == 1)
+					if (mani_reverse_immunity_flags.GetInt() == 1)
 					{
-						client_ptr->flags[k] = true;
+						client_ptr->flags[k] = false;
 					}
 					else
 					{	
-						client_ptr->flags[k] = false;
+						client_ptr->flags[k] = true;
 					}
 
 					break;
@@ -937,11 +954,19 @@ void ManiClient::OldAddAdminGroup(char *file_details)
 		return;
 	}
 
-	// default admin to have absolute power
 	for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
 	{
-		admin_group.flags[k] = true;
+		if (mani_reverse_admin_flags.GetInt() == 1)
+		{
+			admin_group.flags[k] = false;
+		}
+		else
+		{
+			admin_group.flags[k] = true;
+		}
 	}
+
+	admin_group.flags[ALLOW_CLIENT_ADMIN] = true;
 
 	Q_strcpy(admin_group.group_id, "");
 
@@ -984,8 +1009,16 @@ void ManiClient::OldAddAdminGroup(char *file_details)
 		{
 			if (file_details[i] == admin_flag_list[k].flag[0])
 			{
-				admin_group.flags[k] = false;
-				break;
+				if (mani_reverse_admin_flags.GetInt() == 1)
+				{
+					admin_group.flags[k] = true;
+					break;
+				}
+				else
+				{
+					admin_group.flags[k] = false;
+					break;
+				}
 			}
 		}
 
@@ -1012,11 +1045,19 @@ void ManiClient::OldAddImmunityGroup(char *immunity_details)
 		return;
 	}
 
-	// default immunity to have absolute power
 	for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
 	{
-		immunity_group.flags[k] = false;
+		if (mani_reverse_immunity_flags.GetInt() == 1)
+		{
+			immunity_group.flags[k] = true;
+		}
+		else
+		{
+			immunity_group.flags[k] = false;
+		}
 	}
+
+	immunity_group.flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
 
 	Q_strcpy(immunity_group.group_id, "");
 
@@ -1059,9 +1100,18 @@ void ManiClient::OldAddImmunityGroup(char *immunity_details)
 		{
 			if (immunity_details[i] == immunity_flag_list[k].flag[0])
 			{
-				immunity_group.flags[k] = true;
-				break;
+				if (mani_reverse_immunity_flags.GetInt() == 1)
+				{
+					immunity_group.flags[k] = false;
+					break;
+				}
+				else
+				{
+					immunity_group.flags[k] = true;
+					break;
+				}
 			}
+
 		}
 
 		i++;
@@ -5370,7 +5420,7 @@ void		ManiClient::ProcessAddGroupType
 			}
 			else
 			{
-				for (int x = 0; x < MAX_ADMIN_FLAGS; x ++)
+				for (int x = 0; x < MAX_IMMUNITY_FLAGS; x ++)
 				{
 					immunity_group_list[group_index].flags[x] = ((flag_add) ? true:false);
 				}

@@ -1125,6 +1125,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 			return false;
 		}
 
+		gpManiNetIDValid->Load();
 		gpManiClient->Init();
 		InitPanels();	// Fails if plugin loaded on server startup but placed here in case user runs plugin_load
 		ResetActivePlayers();
@@ -1341,6 +1342,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	{
 		team_scores.team_score[i] = 0;
 	}
+
+	gpManiNetIDValid->LevelInit();
 
 	InitEffects();
 	InitCheatPingList();
@@ -21538,9 +21541,10 @@ bool	CAdminPlugin::IsTampered(void)
 	checksum += 0x342F;
 
 // Msg("Checksum string %i\n", checksum);
-//  Msg("Offset required %i\n", checksum - plus1);
+//Msg("Offset required %i\n", checksum - plus1);
+//while(1);
 
-	if (checksum != (plus1 + 8394))
+	if (checksum != (plus1 + 8395))
 	{
 		return true;
 	}
