@@ -894,7 +894,6 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 		last_maps = GetLastMapsPlayed(&maps_to_skip, mani_vote_dont_show_last_maps.GetInt());
 
 		// Exclude maps already played by pretending they are already selected.
-		int exclude = 0;
 		for (int i = 0; i < map_in_cycle_list_size; i++)
 		{
 			bool exclude_map = false;

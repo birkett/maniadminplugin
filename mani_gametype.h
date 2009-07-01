@@ -26,6 +26,8 @@
 #ifndef MANI_GAMETYPE_H
 #define MANI_GAMETYPE_H
 
+class CBaseEntity;
+
 // Define known game types so far
 #define MANI_GAME_UNKNOWN (0)
 #define MANI_GAME_CSS_STR "Counter-Strike: Source"
@@ -61,6 +63,11 @@
 //#define MANI_VFUNC_GET_TEAM_NUMBER (13)
 //#define MANI_VFUNC_GET_TEAM_NAME (14)
 #define MANI_VFUNC_GET_VELOCITY (15)
+#define MANI_VFUNC_WEAPON_SWITCH (16)
+#define MANI_VFUNC_USER_CMDS (17)
+#define MANI_VFUNC_GIVE_ITEM (18)
+#define MANI_VFUNC_MAP (19)
+#define MANI_VFUNC_COMMIT_SUICIDE (20)
 
 //Property defs
 #define MANI_PROP_HEALTH		(0)
@@ -73,6 +80,16 @@
 #define MANI_PROP_ARMOR			(7)
 //#define MANI_PROP_SCORE			(8)
 #define MANI_PROP_MODEL_INDEX	(9)
+#define MANI_PROP_VEC_ORIGIN	(10)
+#define MANI_PROP_ANG_ROTATION	(11)
+
+// Var indexes
+#define MANI_VAR_DEATHS			(0)
+#define MANI_VAR_FRAGS			(1)
+#define MANI_VAR_GRAVITY		(2)
+#define MANI_VAR_FRICTION		(3)
+#define MANI_VAR_ELASTICITY		(4)
+
 
 class ManiGameType
 {
@@ -84,7 +101,7 @@ public:
 	void		Init(void);
 	const char	*GetGameType(void);
 	bool		IsGameType(const char *game_str);
-	bool		IsGameType(int game_index);
+	bool		IsGameType(int game_index) {return ((game_index == game_type_index) ? true:false);}
 	bool		GetAdvancedEffectsAllowed(void);
 	void		SetAdvancedEffectsAllowed(bool allowed);
 	int			GetAdvancedEffectsVFuncOffset(void);
@@ -100,13 +117,14 @@ public:
 	int			GetVoiceOffset(void);
 	bool		IsSprayHookAllowed(void);
 	int			GetSprayHookOffset(void);
+	bool		IsSpawnPointHookAllowed(void);
+	int			GetSpawnPointHookOffset(void);
 
 	bool		IsSetColourAllowed(void);
 	int			GetAlphaRenderMode(void);
 
 	bool		IsAMXMenuAllowed(void);
 
-	// Dod requires next 5
 	bool		IsSlapAllowed(void);
 	bool		IsTeleportAllowed(void);
 	bool		IsFireAllowed(void);
@@ -120,9 +138,8 @@ public:
 
 	int			GetMaxMessages(void);
 //	bool		IsClientSuicide(void);
-	bool		IsKillsAllowed(void);
-	int			GetKillsOffset(void);
-	
+	int			DebugOn() { return debug_log; }
+
 	int			GetIndexFromGroup(const char *group_id);
 	bool		IsValidActiveTeam(int	index);
 	char		*GetTeamSpawnPointClassName(int index);
@@ -137,6 +154,7 @@ public:
 	int			GetVFuncIndex(int index);
 	int         GetPropIndex(int  index);
 	bool		CanUseProp(int index);
+	int			GetPtrIndex(CBaseEntity *pCBE, int index);
 
 private:
 	void		GetProps(KeyValues *kv_ptr);
@@ -174,18 +192,20 @@ private:
 	int			spectator_allowed;
 	char		spectator_group[32];
 
-	int			kills_allowed;
-	int			kills_offset;
-
 	int			voice_allowed;
 	int			voice_offset;
 
 	int			spray_hook_allowed;
 	int			spray_hook_offset;
 
+	int			spawn_point_allowed;
+	int			spawn_point_offset;
+
 	int			max_messages;
 	int			set_colour;
 	int			alpha_render_mode;
+
+	int			debug_log;
 
 	// Dod requires this
 	int			slap_allowed;
@@ -200,6 +220,17 @@ private:
 
 	int			vfunc_index[200];
 	int			prop_index[200];
+
+	struct	var_t
+	{
+		int		index;
+		char	name[64];
+	};
+
+	var_t		var_index[200];
+
+	FILE *fh;
+
 };
 
 extern	ManiGameType *gpManiGameType;

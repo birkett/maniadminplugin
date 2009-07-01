@@ -620,7 +620,7 @@ void SkinTeamJoin
 		return;
 	}
 
-	if (player_ptr->player_info->IsFakeClient()) return;
+	if (player_ptr->is_bot) return;
 	if (player_ptr->player_info->IsHLTV()) return;
 
 	player_settings_t	*player_settings;
@@ -727,7 +727,7 @@ void ForceSkinType
 		return;
 	}
 
-	if (player_ptr->player_info->IsFakeClient()) return;
+	if (player_ptr->is_bot) return;
 	if (player_ptr->player_info->IsHLTV()) return;
 
 	player_settings_t	*player_settings;
@@ -1179,7 +1179,7 @@ bool	IsSkinValidForPlayer
 
 		for (int i = 0; i < skin_list_size; i ++)
 		{
-			if (skin_list[i].skin_type = skin_type)
+			if (skin_list[i].skin_type == skin_type)
 			{
 				*skin_index_ptr = i;
 				return true;
@@ -1587,24 +1587,6 @@ PLUGIN_RESULT	ProcessMaSetSkin
 	}
 
 	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Force Skin client cvars on ClientActive
-//---------------------------------------------------------------------------------
-void	ForceSkinCExec(player_t *player_ptr)
-{
-
-	if (war_mode) return;
-
-	if (mani_skins_force_cl_minmodels.GetInt() && gpManiGameType->IsGameType(MANI_GAME_CSS))
-	{
-		engine->ClientCommand(player_ptr->entity, "cl_minmodels 1");
-		engine->ClientCommand(player_ptr->entity, "cl_min_t 4");
-		engine->ClientCommand(player_ptr->entity, "cl_min_ct 4");
-	}
-
-	return;
 }
 
 //---------------------------------------------------------------------------------

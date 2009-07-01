@@ -36,24 +36,25 @@
 
 extern CBaseEntity *EdictToCBE(edict_t *pEdict);
 
-extern QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr);
+extern const QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr);
 extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity);
 extern Vector CBaseEntity_EyePosition (CBaseEntity *pThisPtr);
-extern void CBaseEntity_GetVelocity(CBaseEntity *pThisPtr, Vector *vVelocity, AngularImpulse *vAngVelocity);
-
+extern void CBaseEntity_GetVelocity(CBaseEntity *pThisPtr, Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
 extern CBaseCombatCharacter *CBaseEntity_MyCombatCharacterPointer(CBaseEntity *pThisPtr);
 extern void CBaseEntity_SetModelIndex(CBaseEntity *pThisPtr, int iIndex);
-
-extern void CBasePlayer_Ignite(CBasePlayer *pThisPtr, float flFlameLifetime, bool bNPCOnly, float flSize, bool bCalledByLevelDesigner);
-extern bool CBasePlayer_RemovePlayerItem(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon);
-extern void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon);
-
+extern void CBasePlayer_Ignite(CBasePlayer *pThisPtr, float flFlameLifetime, bool bNPCOnly = true, float flSize = 0.0f, bool bCalledByLevelDesigner = false );
+extern bool CBasePlayer_RemovePlayerItem(CBasePlayer *pThisPtr, CBaseCombatWeapon *pItem);
+extern void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL);
+extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0 );
 extern int  CBaseCombatWeapon_GetPrimaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern int  CBaseCombatWeapon_GetSecondaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern const char *CBaseCombatWeapon_GetName(CBaseCombatWeapon *pThisPtr);
-
 extern CBaseCombatWeapon *CBaseCombatCharacter_Weapon_GetSlot(CBaseCombatCharacter *pThisPtr, int slot);
-extern void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int amount, int ammo_index, bool suppress_noise);
+extern void CBaseCombatCharacter_Weapon_Switch(CBaseCombatCharacter *pThisPtr, CBaseCombatWeapon *pWeapon, int viewmodelindex = 0);
+extern void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int iCount, int iAmmoIndex, bool bSuppressSound = false );
+
+extern datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr);
+extern void CBasePlayer_CommitSuicide(CBasePlayer *pThisPtr);
 
 // Prop manager calls
 extern	int	Prop_GetHealth(edict_t *pEntity);
@@ -74,6 +75,8 @@ extern	bool Prop_SetArmor(edict_t *pEntity, int NewValue);
 //extern	bool Prop_SetScore(edict_t *pEntity, int NewValue);
 extern	int Prop_GetModelIndex(edict_t *pEntity);
 extern	bool Prop_SetModelIndex(edict_t *pEntity, int NewValue);
+extern	Vector *Prop_GetVecOrigin(edict_t *pEntity);
+extern	QAngle *Prop_GetAngRotation(edict_t *pEntity);
 
 // Debug functions
 extern void	VFunc_CallCBaseEntity(player_t *player_ptr);

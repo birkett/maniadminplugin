@@ -42,6 +42,7 @@ struct main_weapon_t
 {
 	char	name[128];
 	char	core_name[128];
+	int		cost;
 	int	restrict_index;
 };
 

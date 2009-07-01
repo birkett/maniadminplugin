@@ -23,18 +23,30 @@
 
 
 
-#ifndef MANI_TEAM_H
-#define MANI_TEAM_H
+#ifndef MANI_FILE_H
+#define MANI_FILE_H
 
-#include "cbaseentity.h"
+#if defined __WIN32__ || defined _WIN32 || defined WIN32
+	#define PATH_SEP_CHAR	'\\'
+	#define ALT_SEP_CHAR	'/'
+#elif defined __linux__
+	#define PATH_SEP_CHAR	'/'
+	#define ALT_SEP_CHAR	'\\'
+#endif
 
-struct team_t
+class ManiFile
 {
-	CTeam	*team_ptr;
+public:
+	ManiFile();
+	~ManiFile();
+
+	FILE		*Open(char *filename, char *attrib);
+	void		Close(FILE *fh);
+	int			Write(const void *pOutput, int size, FILE *fh);
+	char		*ReadLine(char *pOutput, int maxChars, FILE *fh);
+	void		PathFormat(char *buffer, size_t len, const char *fmt, ...);
 };
 
-extern  CGameRules *gamerules_ptr;
-extern	void FreeTeamList(void);
-extern	bool IsOnSameTeam (player_t *victim, player_t *attacker);
+extern	ManiFile *gpManiFile;
 
 #endif
