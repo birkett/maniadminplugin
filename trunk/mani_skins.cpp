@@ -617,8 +617,8 @@ void SkinTeamJoin
 		return;
 	}
 
-	if (player_ptr->player_info->IsFakeClient()) return;
 	if (player_ptr->player_info->IsHLTV()) return;
+	if (FStrEq(player_ptr->steam_id, "BOT")) return;
 
 	player_settings_t	*player_settings;
 	player_settings = FindPlayerSettings(player_ptr);
@@ -726,7 +726,7 @@ void ForceSkinType
 		return;
 	}
 
-	if (player_ptr->player_info->IsFakeClient()) return;
+	if (FStrEq(player_ptr->steam_id, "BOT")) return;
 	if (player_ptr->player_info->IsHLTV()) return;
 
 	player_settings_t	*player_settings;

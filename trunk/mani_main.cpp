@@ -150,6 +150,7 @@ int			explosion_index = 0;
 int			orangelight_index = 0;
 int			bluelight_index = 0;
 int			purplelaser_index = 0;
+int			spray_glow_index = 0;
 
 cheat_cvar_t	*cheat_cvar_list = NULL;
 cheat_cvar_t	*cheat_cvar_list2 = NULL;
@@ -191,7 +192,7 @@ DEFVFUNC_(te_PlayerDecal, void, (ITempEntsSystem *pTESys, IRecipientFilter& filt
 
 void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)
 {
-	Msg("Spray detected !!\n");
+//	Msg("Spray detected !!\n");
 	if (gpManiSprayRemove->SprayFired(pos, player))
 	{
 		// We let this one through.
@@ -1386,6 +1387,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	orangelight_index = engine->PrecacheModel( "sprites/orangelight1.vmt", true );
 	bluelight_index = engine->PrecacheModel( "sprites/bluelight1.vmt", true );
 	purplelaser_index = engine->PrecacheModel( "sprites/purplelaser1.vmt", true );
+	spray_glow_index = engine->PrecacheModel( "sprites/blueglow2.vmt", true );
 
 	if (!first_map_loaded)
 	{
@@ -2167,7 +2169,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return;
 	if (player.player_info->IsHLTV()) return;
-	if (player.player_info->IsFakeClient()) return;
+	if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) return;
 
 	gpManiGhost->ClientActive(&player);
 	gpManiVictimStats->ClientActive(&player);
@@ -2986,8 +2988,8 @@ bool	CAdminPlugin::ProcessCheatCVarPing(player_t *player, const char *pcmd)
 {
 	if (!FindPlayerByEntity(player)) return false;
 	if (player->is_bot) return false;
-	if (player->player_info->IsFakeClient()) return false;
 	if (player->player_info->IsHLTV()) return false;
+	if (FStrEq(player->player_info->GetNetworkIDString(),"BOT")) return false;
 
 	if (cheat_ping_list[player->index - 1].waiting_for_control)
 	{
@@ -3051,8 +3053,8 @@ void	CAdminPlugin::UpdateCurrentPlayerList(void)
 		player.index = i;
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.is_bot) continue;
-		if (player.player_info->IsFakeClient()) continue;
 		if (player.player_info->IsHLTV()) continue;
+		if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) continue;
 
 		// Must be a player connected
 		cheat_ping_list[i - 1].connected = true;
@@ -3998,7 +4000,8 @@ void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) || 
 			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) ||
 			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_MUTE) ||
-			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP)) 
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) || 
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_SPRAY_TAG)) 
 			 && !war_mode)
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
@@ -7748,7 +7751,8 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 					int player_user_id = playerinfo->GetUserID();
 					if (player_user_id == user_id)
 					{
-						if (punish_mode_list[i - 1].frozen && !playerinfo->IsFakeClient())
+						if (punish_mode_list[i - 1].frozen && 
+							FStrEq(playerinfo->GetNetworkIDString(),"BOT") == false)
 						{
 							engine->ClientCommand(pPlayerEdict,"drop\n");
 						}
@@ -18599,7 +18603,7 @@ bool	CAdminPlugin::IsTampered(void)
 //Msg("Offset required %i\n", checksum - plus1);
 //while(1);
 
-	if (checksum != (plus1 + 8397))
+	if (checksum != (plus1 + 8398))
 	{
 		return true;
 	}

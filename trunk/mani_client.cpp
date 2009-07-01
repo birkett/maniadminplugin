@@ -171,10 +171,10 @@ void	ManiClient::ComputeAdminLevels(void)
 			if (playerinfo && playerinfo->IsConnected())
 			{
 				if (playerinfo->IsHLTV()) continue;
-				if (playerinfo->IsFakeClient()) continue;
+				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
+				if (FStrEq(player.steam_id, "BOT")) continue;
 				player.index = i;
 				Q_strcpy(player.name, playerinfo->GetName());
-				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
 				player.entity = pEntity;
 				player.is_bot = false;
 
@@ -188,12 +188,12 @@ void	ManiClient::ComputeAdminLevels(void)
 						AddToList((void **) &player_list, sizeof(player_level_t), &player_list_size);
 						player_list[player_list_size - 1].client_index = index;
 						player_list[player_list_size - 1].level_id = client_list[index].admin_level_id;
-						for (int i = 0; i < MAX_ADMIN_FLAGS; i ++)
+						for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
 						{
-							client_list[i].admin_flags[i] = client_list[i].original_admin_flags[i];
-							if (client_list[i].grouped_admin_flags[i])
+							client_list[index].admin_flags[j] = client_list[index].original_admin_flags[j];
+							if (client_list[index].grouped_admin_flags[j])
 							{
-								client_list[i].admin_flags[i] = true;
+								client_list[index].admin_flags[j] = true;
 							}
 						}
 					}
@@ -257,11 +257,11 @@ void	ManiClient::ComputeImmunityLevels(void)
 			if (playerinfo && playerinfo->IsConnected())
 			{
 				if (playerinfo->IsHLTV()) continue;
-				if (playerinfo->IsFakeClient()) continue;
+				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
+				if (FStrEq(player.steam_id, "BOT")) continue;
 
 				player.index = i;
 				Q_strcpy(player.name, playerinfo->GetName());
-				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
 				player.entity = pEntity;
 				player.is_bot = false;
 
@@ -275,12 +275,12 @@ void	ManiClient::ComputeImmunityLevels(void)
 						AddToList((void **) &player_list, sizeof(player_level_t), &player_list_size);
 						player_list[player_list_size - 1].client_index = index;
 						player_list[player_list_size - 1].level_id = client_list[index].immunity_level_id;
-						for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
+						for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
 						{
-							client_list[i].immunity_flags[i] = client_list[i].original_immunity_flags[i];
-							if (client_list[i].grouped_immunity_flags[i])
+							client_list[index].immunity_flags[j] = client_list[index].original_immunity_flags[j];
+							if (client_list[index].grouped_immunity_flags[j])
 							{
-								client_list[i].immunity_flags[i] = true;
+								client_list[index].immunity_flags[j] = true;
 							}
 						}
 					}
@@ -673,6 +673,40 @@ bool ManiClient::OldAddClient
 
 	Q_memset(client_ptr, 0, sizeof(old_style_client_t));
 
+	// Setup flags for individual access
+	if (is_admin)
+	{
+		for (int i = 0; i < MAX_ADMIN_FLAGS; i ++)
+		{
+			if (mani_reverse_admin_flags.GetInt() == 1)
+			{
+				client_ptr->flags[i] = false;
+			}
+			else
+			{
+				client_ptr->flags[i] = true;
+			}
+		}
+
+		client_ptr->flags[ALLOW_CLIENT_ADMIN] = true;
+	}
+	else
+	{ 
+		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
+		{
+			if (mani_reverse_immunity_flags.GetInt() == 1)
+			{
+				client_ptr->flags[i] = true;
+			}
+			else
+			{
+				client_ptr->flags[i] = false;
+			}
+		}
+
+		client_ptr->flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
+	}
+
 	i = 0;
 
 	if (file_details[i] != ';')
@@ -852,85 +886,69 @@ bool ManiClient::OldAddClient
 		}			
 	}
 
-	if (!found_group)
+	if (found_group)
 	{
 		// Setup flags for individual access
 		if (is_admin)
 		{
 			for (int i = 0; i < MAX_ADMIN_FLAGS; i ++)
 			{
-				if (mani_reverse_admin_flags.GetInt() == 1)
-				{
-					client_ptr->flags[i] = false;
-				}
-				else
-				{
-					client_ptr->flags[i] = true;
-				}
-
-				client_ptr->flags[ALLOW_CLIENT_ADMIN] = true;
+				client_ptr->flags[i] = false;
 			}
 		}
 		else
 		{ 
 			for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
 			{
-				if (mani_reverse_immunity_flags.GetInt() == 1)
-				{
-					client_ptr->flags[i] = true;
-				}
-				else
-				{
-					client_ptr->flags[i] = false;
-				}
+				client_ptr->flags[i] = false;
 			}
-
-			client_ptr->flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
 		}
 	}
-
-	while (file_details[i] != '\0' && found_group == false)
+	else
 	{
-		if (is_admin)
+		while (file_details[i] != '\0')
 		{
-			for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
+			if (is_admin)
 			{
-				if (file_details[i] == admin_flag_list[k].flag[0])
+				for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
 				{
-					if (mani_reverse_admin_flags.GetInt() == 1)
+					if (file_details[i] == admin_flag_list[k].flag[0])
 					{
-						client_ptr->flags[k] = true;
-					}
-					else
-					{	
-						client_ptr->flags[k] = false;
-					}
+						if (mani_reverse_admin_flags.GetInt() == 1)
+						{
+							client_ptr->flags[k] = true;
+						}
+						else
+						{	
+							client_ptr->flags[k] = false;
+						}
 
-					break;
+						break;
+					}
 				}
 			}
-		}
-		else
-		{
-			for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
+			else
 			{
-				if (file_details[i] == immunity_flag_list[k].flag[0])
+				for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
 				{
-					if (mani_reverse_immunity_flags.GetInt() == 1)
+					if (file_details[i] == immunity_flag_list[k].flag[0])
 					{
-						client_ptr->flags[k] = false;
-					}
-					else
-					{	
-						client_ptr->flags[k] = true;
-					}
+						if (mani_reverse_immunity_flags.GetInt() == 1)
+						{
+							client_ptr->flags[k] = false;
+						}
+						else
+						{	
+							client_ptr->flags[k] = true;
+						}
 
-					break;
+						break;
+					}
 				}
 			}
-		}
 
-		i++;
+			i++;
+		}
 	}
 
 	Msg("\n");
@@ -7254,6 +7272,39 @@ void		ManiClient::ProcessClientStatus
 	for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
 	{
 		if (client_ptr->original_immunity_flags[i])
+		{
+			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", immunity_flag_list[i].flag);
+			Q_strcat(temp_string, temp_string2);
+			found_flag = true;
+		}
+	}
+
+	if (found_flag)
+	{
+		OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+	}
+
+	Q_strcpy(temp_string, "Active Admin Flags : ");
+	for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
+	{
+		if (client_ptr->admin_flags[i])
+		{
+			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", admin_flag_list[i].flag);
+			Q_strcat(temp_string, temp_string2);
+			found_flag = true;
+		}
+	}
+
+	if (found_flag)
+	{
+		OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+	}
+
+	found_flag = false;
+	Q_strcpy(temp_string, "Active Immunity Flags : ");
+	for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
+	{
+		if (client_ptr->immunity_flags[i])
 		{
 			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", immunity_flag_list[i].flag);
 			Q_strcat(temp_string, temp_string2);

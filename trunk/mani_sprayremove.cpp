@@ -64,6 +64,7 @@ extern	ConVar	*sv_lan;
 extern	int	max_players;
 extern	bool war_mode;
 extern	int	purplelaser_index;
+extern	int	spray_glow_index;
 
 
 inline bool FStruEq(const char *sz1, const char *sz2)
@@ -133,9 +134,23 @@ bool ManiSprayRemove::SprayFired(const Vector *pos, int index)
 	if (index > max_players) return true;
 
 	player_t player;
-
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return true;
+
+	// Block sprays
+	if (mani_spray_tag_block_mode.GetInt() == 1)
+	{
+		if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+		{
+			SayToPlayer(&player, "%s", mani_spray_tag_block_message.GetString());
+		}
+		else
+		{
+			SayToPlayerColoured(&player, "%s", mani_spray_tag_block_message.GetString());
+		}
+
+		return false;
+	}
 
 	// Got player
 	if (player.is_bot) return true;
@@ -237,20 +252,27 @@ int ManiSprayRemove::IsSprayValid(player_t *player_ptr)
 		}
 	}
 
+	if (mani_spray_tag_spray_highlight.GetInt() == 0)
+	{
+		return spray_index;
+	}
+
 	// Show beam to spray position
 	if (spray_index != -1 &&
-        gpManiGameType->GetAdvancedEffectsAllowed() && 
-		gpManiGameType->IsDeathBeamAllowed())
+        gpManiGameType->GetAdvancedEffectsAllowed())
 	{
-		MRecipientFilter mrf; // this is my class, I'll post it later.
-		mrf.MakeReliable();
-		mrf.AddPlayer(player_ptr->index);
+		if (mani_spray_tag_spray_highlight.GetInt() == 1 &&
+			gpManiGameType->IsDeathBeamAllowed())
+		{
+			MRecipientFilter mrf; // this is my class, I'll post it later.
+			mrf.MakeReliable();
+			mrf.AddPlayer(player_ptr->index);
 
-		Vector source = player_ptr->player_info->GetAbsOrigin();
+			Vector source = player_ptr->player_info->GetAbsOrigin();
 
-		source.z += 50;
+			source.z += 50;
 
-		temp_ents->BeamPoints((IRecipientFilter &)mrf,
+			temp_ents->BeamPoints((IRecipientFilter &)mrf,
 							0, // Delay
 							&source, // Start Vector
 							&(spray_list[spray_index].position), // End Vector
@@ -265,6 +287,17 @@ int ManiSprayRemove::IsSprayValid(player_t *player_ptr)
 							0.1, // Noise amplitude
 							255, 255, 255, 255,
 							5);
+		}
+		else if (mani_spray_tag_spray_highlight.GetInt() == 2 ||
+			(mani_spray_tag_spray_highlight.GetInt() == 1 && 
+			 !gpManiGameType->IsDeathBeamAllowed()))
+		{
+			MRecipientFilter mrf; // this is my class, I'll post it later.
+			mrf.MakeReliable();
+			mrf.AddPlayer(player_ptr->index);
+
+			temp_ents->GlowSprite((IRecipientFilter &) mrf, 0, &(spray_list[spray_index].position), spray_glow_index, 15, 0.8, 255);
+		}
 	}
 
 	return spray_index;
@@ -306,7 +339,15 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 				player_t *target_player_ptr;
 		
 				target_player_ptr = (player_t *) &(target_player_list[i]);
-				SayToPlayer(target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
+				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+				{
+					SayToPlayer(target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
+				}
+				else
+				{
+					SayToPlayerColoured(target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
+				}
+
 				LogCommand (admin_ptr->entity, "Warned player [%s] [%s] for spray tag", target_player_ptr->name, target_player_ptr->steam_id);
 				break;
 			}

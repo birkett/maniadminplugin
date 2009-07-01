@@ -47,6 +47,7 @@ extern void CSayToAll(const char	*fmt, ...);
 extern void	SayToAll(bool echo, const char	*fmt, ...);
 extern void	SayToDead(const char *fmt, ...);
 extern void	SayToPlayer(player_t *player, const char *fmt, ...);
+extern void	SayToPlayerColoured(player_t *player, const char *fmt, ...);
 extern void	SayToTeam(bool ct_side, bool t_side, bool spectator, const char *fmt, ...);
 extern void	OutputToConsole(edict_t *pEntity, bool svr_command, char *fmt, ...);
 extern void	DirectLogCommand(char *fmt, ... );

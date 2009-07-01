@@ -341,9 +341,11 @@ ConVar mani_spawnpoints_mode ("mani_spawnpoints_mode", "0", 0, "Extra spawnpoint
 ConVar mani_spawnpoints_radius_limit ("mani_spawnpoints_radius_limit", "128", 0, "Radius to check for other players when spawning", true, 50, true, 1000);
 
 ConVar mani_spray_tag ("mani_spray_tag", "0", 0, "Tracking of player sprays, 0 = Disabled, 1 = Enabled", true, 0, true, 1);
+ConVar mani_spray_tag_block_mode ("mani_spray_tag_block_mode", "0", 0, "0 = Allow all sprays to be shown, 1 = Block all sprays from being shown", true, 0, true, 1);
+ConVar mani_spray_tag_block_message ("mani_spray_tag_block_message", "Sprays are blocked on this server !!", 0, "Message shown to player when they try to do a spray and it is blocked");
 ConVar mani_spray_tag_spray_duration ("mani_spray_tag_spray_duration", "120", 0, "Time in seconds allowed for each spray before track is lost", true, 10, true, 600);
-ConVar mani_spray_tag_spray_distance_limit ("mani_spray_tag_spray_distance_limit", "500", 0, "Radius limit from current position in which sprays will be detected", true, 0, true, 1);
-ConVar mani_spray_tag_spray_highlight ("mani_spray_tag_spray_highlight", "1", 0, "Highlights the spray that the system thinks you are referring too", true, 0, true, 1);
+ConVar mani_spray_tag_spray_distance_limit ("mani_spray_tag_spray_distance_limit", "500", 0, "Radius limit from current position in which sprays will be detected", true, 1, true, 3000);
+ConVar mani_spray_tag_spray_highlight ("mani_spray_tag_spray_highlight", "1", 0, "Highlights the spray that the system thinks you are referring to", true, 0, true, 2);
 ConVar mani_spray_tag_ban_time ("mani_spray_tag_ban_time", "60", 0, "Time in minutes that a player will be banned for", true, 1, true, 86400);
 ConVar mani_spray_tag_warning_message ("mani_spray_tag_warning_message", "Please stop using your spray", 0, "This phrase is said to player when using Spray Tag tracking warning option"); 
 ConVar mani_spray_tag_kick_message ("mani_spray_tag_kick_message", "You have been kicked for using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking kick option"); 
