@@ -94,7 +94,7 @@ extern	void	ResetActivePlayers(void);
 extern	void	ProcessPlayerSettings(void);
 extern	void	FreePlayerSettings(void);
 extern	void	FreePlayerNameSettings(void);
-extern	void	ShowSettingsPrimaryMenu(player_t *player);
+extern	void	ShowSettingsPrimaryMenu(player_t *player, int next_index);
 extern	PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity);
 
 extern	PLUGIN_RESULT	ProcessMaDamage( int index);

@@ -48,6 +48,7 @@
 #include "mani_admin.h"
 #include "mani_menu.h"
 #include "mani_panel.h"
+#include "mani_gametype.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	INetworkStringTableContainer *networkstringtable;
@@ -191,6 +192,8 @@ PLUGIN_RESULT	ProcessMaFavourites
 	player_t player;
 	player.entity = NULL;
 
+	if (!gpManiGameType->IsBrowseAllowed()) return PLUGIN_CONTINUE;
+
 	if (war_mode) return PLUGIN_CONTINUE;
 
 	if (!svr_command)
@@ -235,6 +238,8 @@ PLUGIN_RESULT	ProcessMaFavourites
 void ProcessMenuMaFavourites( player_t *player, int next_index, int argv_offset )
 {
 	const int argc = engine->Cmd_Argc();
+
+	if (!gpManiGameType->IsBrowseAllowed()) return;
 
 	if (argc - argv_offset == 2)
 	{
@@ -335,6 +340,9 @@ void	DrawMOTD(MRecipientFilter *mrf)
 //---------------------------------------------------------------------------------
 void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 {
+
+	if (!gpManiGameType->IsBrowseAllowed()) return;
+
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
    
 	msg_buffer->WriteString("info"); // menu name

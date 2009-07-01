@@ -26,7 +26,7 @@
 #ifndef MANI_ADMIN_H
 #define MANI_ADMIN_H
 
-#define MAX_ADMIN_FLAGS (49)
+#define MAX_ADMIN_FLAGS (50)
 
 struct admin_t
 {

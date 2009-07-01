@@ -88,6 +88,7 @@ typedef unsigned long DWORD;
 #include "mani_mapadverts.h"
 #include "mani_downloads.h"
 #include "mani_victimstats.h"
+#include "mani_sprayremove.h"
 
 
 #include "shareddefs.h"
@@ -170,6 +171,21 @@ bool VFUNC mysetclientlistening(IVoiceServer* VoiceServer, int iReceiver, int iS
 	else
 	{
 		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, bListen);
+	}
+}
+
+//	virtual void PlayerDecal( IRecipientFilter& filer, float delay,
+//		const Vector* pos, int player, int entity ) = 0;
+
+DEFVFUNC_(te_PlayerDecal, void, (ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity));
+
+void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)
+{
+//	Msg("Spray detected !!\n");
+	if (gpManiSprayRemove->SprayFired(pos, player))
+	{
+		// We let this one through.
+		te_PlayerDecal(pTESys, filter, delay, pos, player, entity);
 	}
 }
 
@@ -397,7 +413,7 @@ public:
 			void			ProcessBanType( player_t *player );
 			void			ProcessKickType( player_t *player );
 			void			ProcessMapManagementType( player_t *player, int admin_index );
-			void			ProcessPlayerManagementType( player_t *player, int admin_index );
+			void			ProcessPlayerManagementType( player_t *player, int admin_index, int next_index );
 			void			ProcessPunishType( player_t *player, int admin_index, int next_index );
 			void			ProcessVoteType( player_t *player, int admin_index, int next_index );
 			void			ProcessConfigOptions( edict_t *pEntity );
@@ -1144,6 +1160,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		gpManiGhost->Init();
 		gpManiCustomEffects->Init();
 		gpManiMapAdverts->Init();
+		gpManiSprayRemove->Load();
 	}
 
 
@@ -1164,6 +1181,11 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	{
 		Msg("Hooking voiceserver\n");
 		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
+	}
+
+	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
+	{
+		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
 	}
 
 	return true;
@@ -1447,6 +1469,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	LoadSkins();
 	FreeTKPunishments();
 	gpManiMapAdverts->Init();
+	gpManiSprayRemove->LevelInit();
 
 	//Get reserve player list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/reserveslots.txt", mani_path.GetString());
@@ -1787,7 +1810,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		}
 
 		filesystem->Close(file_handle);
-		qsort(autokick_steam_list, autokick_steam_list_size, sizeof(autokick_steam_t), sort_autokick_steam); 
 	}
 
 	//Get autokickban IP list
@@ -1825,6 +1847,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddAutoKickSteamID(autokickban_id);
 		}
 		filesystem->Close(file_handle);
+		qsort(autokick_steam_list, autokick_steam_list_size, sizeof(autokick_steam_t), sort_autokick_steam); 
 	}
 
 	//Get autokickban Name list
@@ -1941,6 +1964,8 @@ void CAdminPlugin::GameFrame( bool simulating )
 	{
 		return;
 	}
+
+	gpManiSprayRemove->GameFrame();
 
 	if (mani_protect_against_cheat_cvars.GetInt() == 1)
 	{
@@ -2226,6 +2251,8 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 	{
 		return;
 	}
+
+	gpManiSprayRemove->ClientDisconnect(&player);
 
 	// Handle player settings
 	PlayerSettingsDisconnect(&player);
@@ -2779,6 +2806,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 	else if (FStrEq( pcmd, "ma_kick" ))	return (ProcessMaKick(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
+	else if (FStrEq( pcmd, "ma_spray" )) return (gpManiSprayRemove->ProcessMaSpray(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_slay" ))	return (ProcessMaSlay(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_offset" ))	return (ProcessMaOffset(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_teamindex" ))	return (ProcessMaTeamIndex(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0)));
@@ -3387,7 +3415,8 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 				!admin_list[admin_index].flags[ALLOW_SLAY] &&
 				!admin_list[admin_index].flags[ALLOW_BAN] &&
 				!admin_list[admin_index].flags[ALLOW_CEXEC_MENU] &&
-				!admin_list[admin_index].flags[ALLOW_SWAP])
+				!admin_list[admin_index].flags[ALLOW_SWAP] &&
+				!admin_list[admin_index].flags[ALLOW_SPRAY_TAG])
 				|| war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to manage players\n");
@@ -3395,7 +3424,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 			}
 
 			// Punish command selected via menu or console
-			ProcessPlayerManagementType (&player, admin_index);
+			ProcessPlayerManagementType (&player, admin_index, next_index);
 			return PLUGIN_STOP;
 		}
 		if (FStrEq (menu_command, "mapoptions"))
@@ -3437,6 +3466,22 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 
 			// Slay command selected via menu or console
 			ProcessSlayPlayer (&player, next_index, argv_offset);
+			return PLUGIN_STOP;
+		}
+		if (FStrEq (menu_command, "spray") ||
+			FStrEq (menu_command, "spraywarn") ||
+			FStrEq (menu_command, "spraykick") ||
+			FStrEq (menu_command, "sprayban") ||
+			FStrEq (menu_command, "spraypermban"))
+		{
+			if (!admin_list[admin_index].flags[ALLOW_SPRAY_TAG] || war_mode)
+			{
+				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to check spray tags\n");
+				return PLUGIN_STOP;
+			}
+
+			// Slay command selected via menu or console
+			gpManiSprayRemove->ProcessMaSprayMenu (&player, admin_index, next_index, argv_offset, menu_command);
 			return PLUGIN_STOP;
 		}
 		if (FStrEq (menu_command, "votercon"))
@@ -6376,7 +6421,7 @@ void CAdminPlugin::ProcessMapManagementType(player_t *player, int admin_index )
 //---------------------------------------------------------------------------------
 // Purpose:  Show the player Management screens
 //---------------------------------------------------------------------------------
-void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index )
+void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index, int next_index)
 {
 
 	FreeMenu();
@@ -6437,13 +6482,23 @@ void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin mute");
 	}
 
+	if (admin_list[admin_index].flags[ALLOW_SPRAY_TAG] && !war_mode)
+	{
+		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Spray Tag Tracking");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spray");
+	}
+
 	if (menu_list_size == 0) return;
 
-	AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MENU_BACK));
-	Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin");
+	// List size may have changed
+	if (next_index > menu_list_size)
+	{
+		// Reset index
+		next_index = 0;
+	}
 
-	DrawStandardMenu(player, Translate(M_PLAYER_MANAGE_MENU_ESCAPE), Translate(M_PLAYER_MANAGE_MENU_TITLE), true);
+	DrawSubMenu (player, Translate(M_PLAYER_MANAGE_MENU_ESCAPE), Translate(M_PLAYER_MANAGE_MENU_TITLE), next_index, "admin", "playeroptions", true, -1);
 
 }
 //---------------------------------------------------------------------------------
@@ -8355,7 +8410,7 @@ void CAdminPlugin::ProcessPlayerSay( IGameEvent *event)
 	else if (FStrEq(say_string, "deathbeam") && !war_mode) {ProcessMaDeathBeam(player.index); return;}
 	else if (FStrEq(say_string, "sounds") && !war_mode) {ProcessMaSounds(player.index); return;}
 	else if (FStrEq(say_string, "quake") && !war_mode) {ProcessMaQuake(player.index); return;}
-	else if (FStrEq(say_string, "settings") && !war_mode) {ShowSettingsPrimaryMenu(&player); return;}
+	else if (FStrEq(say_string, "settings") && !war_mode) {ShowSettingsPrimaryMenu(&player, 0); return;}
 	else if (FStrEq(say_string, "timeleft") && !war_mode) {ProcessMaTimeLeft(player.index, false); return;}
 	else if (FStrEq(say_string, "listmaps") && !war_mode) 
 	{
@@ -10277,6 +10332,7 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_unrestrict")) {ProcessMaRestrictWeapon(player.index, false, say_argc, pcmd, pcmd1, "0", false); return false;}
 		else if (FStrEq(ncmd, "@ma_unrestrictall")) {ProcessMaUnRestrictAll(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_kick" )) {ProcessMaKick(player.index, false, say_argc, pcmd,	pcmd1); return false;}
+		else if (FStrEq(ncmd, "@ma_spray" )) {gpManiSprayRemove->ProcessMaSpray(player.index, false); return false;}
 		else if (FStrEq(ncmd, "@ma_slay" )) {ProcessMaSlay(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_offset" )) {ProcessMaOffset(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_teamindex" )) {ProcessMaTeamIndex(player.index, false, say_argc, pcmd); return false;}
@@ -21677,7 +21733,7 @@ bool	CAdminPlugin::IsTampered(void)
 // Msg("Checksum string %i\n", checksum);
 //  Msg("Offset required %i\n", checksum - plus1);
 
-	if (checksum != (plus1 + 8265))
+	if (checksum != (plus1 + 8266))
 	{
 		return true;
 	}
