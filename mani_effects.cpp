@@ -55,6 +55,7 @@
 #include "mani_sounds.h"
 #include "mani_maps.h"
 #include "mani_gametype.h"
+#include "mani_vfuncs.h"
 #include "mani_effects.h"
 #include "cbaseentity.h"
 #include "beam_flags.h"
@@ -327,9 +328,10 @@ void ProcessDruggedFrame(void)
 			CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
 			if (m_pCBaseEntity)
 			{
-				QAngle angle = m_pCBaseEntity->EyeAngles();
+				QAngle angle = CBaseEntity_EyeAngles(m_pCBaseEntity);
+				//QAngle angle = m_pCBaseEntity->EyeAngles();
 				angle.z = drugged_z_angle[rand() % DRUG_STEPS];
-				m_pCBaseEntity->Teleport(NULL, &angle, NULL);
+				CBaseEntity_Teleport(m_pCBaseEntity, NULL, &angle, NULL);
 			}
 
 			punish_mode_list[i].next_drug_update_time = gpGlobals->curtime + DRUG_STEP_TIME;
@@ -454,8 +456,8 @@ void ProcessTimeBombFrame(void)
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, &pos);
 				}
 
-				CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
-				ProcessSetColour(m_pCBaseEntity, 255, next_colour, next_colour, 255 );
+				//CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
+				ProcessSetColour(player.entity, 255, next_colour, next_colour, 255 );
 
 				if (gpManiGameType->GetAdvancedEffectsAllowed())
 				{
@@ -511,8 +513,8 @@ void ProcessTimeBombFrame(void)
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, &pos);
 				}
 
-				CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity();
-				ProcessSetColour(m_pCBaseEntity, 255, 0, 0, 255 );
+				//CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity();
+				ProcessSetColour(player.entity, 255, 0, 0, 255 );
 
 				if (gpManiGameType->GetAdvancedEffectsAllowed())
 				{
@@ -697,8 +699,8 @@ void ProcessFireBombFrame(void)
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, &pos);
 				}
 
-				CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
-				ProcessSetColour(m_pCBaseEntity, next_colour, 255, next_colour, 255 );
+				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
+				ProcessSetColour(player.entity, next_colour, 255, next_colour, 255 );
 
 				if (gpManiGameType->GetAdvancedEffectsAllowed())
 				{
@@ -754,8 +756,8 @@ void ProcessFireBombFrame(void)
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, &pos);
 				}
 
-				CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
-				ProcessSetColour(m_pCBaseEntity, 0, 255, 0, 255 );
+				//  *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
+				ProcessSetColour(player.entity, 0, 255, 0, 255 );
 
 				if (gpManiGameType->GetAdvancedEffectsAllowed())
 				{
@@ -941,8 +943,8 @@ void ProcessFreezeBombFrame(void)
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, &pos);
 				}
 
-				CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
-				ProcessSetColour(m_pCBaseEntity, next_colour, next_colour, 255, 255 );
+				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
+				ProcessSetColour(player.entity, next_colour, next_colour, 255, 255 );
 
 				if (gpManiGameType->GetAdvancedEffectsAllowed())
 				{
@@ -998,8 +1000,8 @@ void ProcessFreezeBombFrame(void)
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, &pos);
 				}
 
-				CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
-				ProcessSetColour(m_pCBaseEntity, 255, 0, 0, 255 );
+				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
+				ProcessSetColour(player.entity, 255, 0, 0, 255 );
 
 				if (gpManiGameType->GetAdvancedEffectsAllowed())
 				{
@@ -1450,7 +1452,8 @@ void	ProcessSlapPlayer
 
 	int health = 0;
 
-	health = m_pCBaseEntity->GetHealth();
+	health = Prop_GetHealth(player->entity);
+	// health = m_pCBaseEntity->GetHealth();
 	if (health <= 0)
 	{
 		return;
@@ -1462,24 +1465,28 @@ void	ProcessSlapPlayer
 		health = 0;
 	}
 
-	m_pCBaseEntity->SetHealth(health);
+	//m_pCBaseEntity->SetHealth(health);
+	Prop_SetHealth(player->entity, health);
 
-	Vector vVel = m_pCBaseEntity->GetLocalVelocity();
+//	Vector vVel = m_pCBaseEntity->GetLocalVelocity();
+
+	Vector vVel;
+	CBaseEntity_GetVelocity(m_pCBaseEntity, &vVel, NULL); 
 
 	if (slap_angle)
 	{
 		vVel.x += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
 		vVel.y += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
-		QAngle angle = m_pCBaseEntity->EyeAngles();
+		QAngle angle = CBaseEntity_EyeAngles(m_pCBaseEntity);
 		angle.x -= 20;
-		m_pCBaseEntity->Teleport(NULL, &angle, &vVel);
+		CBaseEntity_Teleport(m_pCBaseEntity, NULL, &angle, &vVel);
 	}
 	else
 	{
 		vVel.x += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
 		vVel.y += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
 		vVel.z += rand() % 200 + 100;
-		m_pCBaseEntity->Teleport(NULL, NULL, &vVel);
+		CBaseEntity_Teleport(m_pCBaseEntity, NULL, NULL, &vVel);
 	}
 
 	if (health <= 0)
@@ -1519,7 +1526,8 @@ void	ProcessBurnPlayer
 {
 	CBaseEntity *m_pCBaseEntity = player->entity->GetUnknown()->GetBaseEntity(); 
 	CBasePlayer *pBase = (CBasePlayer*) m_pCBaseEntity;
-	pBase->Ignite(burn_time ,false, 12, false);
+	CBasePlayer_Ignite(pBase, burn_time, false, 12, false);
+//	pBase->Ignite(burn_time ,false, 12, false);
 }
 
 //---------------------------------------------------------------------------------
@@ -1559,10 +1567,17 @@ void	ProcessFreezePlayer(player_t *player_ptr, bool admin_called)
 
 	if (punish_mode_list[index].frozen) return;
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-	m_pCBaseEntity->m_MoveType = MOVETYPE_NONE;
-	ProcessSetColour(m_pCBaseEntity, 0, 128, 255, 135 );
-	m_pCBaseEntity->SetRenderMode ((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
+//	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
+
+	Prop_SetMoveType(player_ptr->entity,MOVETYPE_NONE); 
+//	m_pCBaseEntity->m_MoveType = MOVETYPE_NONE;
+	ProcessSetColour(player_ptr->entity, 0, 128, 255, 135 );
+
+	if (gpManiGameType->CanUseProp(MANI_PROP_RENDER_MODE))
+	{
+		//m_pCBaseEntity->SetRenderMode ((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
+		Prop_SetRenderMode(player_ptr->entity, gpManiGameType->GetAlphaRenderMode());
+	}
 
 	punish_mode_list[player_ptr->index].next_frozen_update_time = -999;
 
@@ -1606,10 +1621,17 @@ void	ProcessUnFreezePlayer(player_t *player_ptr)
 
 	if (!punish_mode_list[index].frozen) return;
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-	m_pCBaseEntity->m_MoveType = MOVETYPE_WALK;
-	ProcessSetColour(m_pCBaseEntity, 255, 255, 255, 255 );
-	m_pCBaseEntity->SetRenderMode ((RenderMode_t) 0);
+//	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
+//	m_pCBaseEntity->m_MoveType = MOVETYPE_WALK;
+	Prop_SetMoveType(player_ptr->entity, MOVETYPE_WALK); 
+
+	ProcessSetColour(player_ptr->entity, 255, 255, 255, 255 );
+	if (gpManiGameType->CanUseProp(MANI_PROP_RENDER_MODE))
+	{
+		//m_pCBaseEntity->SetRenderMode ((RenderMode_t) 0);
+		Prop_SetRenderMode(player_ptr->entity, 0);
+	}
+
 	punish_mode_list[index].frozen = 0;
 	punish_mode_list[player_ptr->index].next_frozen_update_time = -999;
 	CheckFrozenGlobal();
@@ -1635,7 +1657,7 @@ void	ProcessTeleportPlayer(player_t *player_to_teleport, Vector *origin_ptr)
 				origin_ptr->y,
 				origin_ptr->z);
 */
-	m_pCBaseEntity->Teleport(origin_ptr, NULL, &vVel);
+	CBaseEntity_Teleport(m_pCBaseEntity, origin_ptr, NULL, &vVel);
 }
 
 //---------------------------------------------------------------------------------
@@ -1643,35 +1665,34 @@ void	ProcessTeleportPlayer(player_t *player_to_teleport, Vector *origin_ptr)
 //---------------------------------------------------------------------------------
 void	ProcessTakeCash (player_t *donator, player_t *receiver)
 {
-	if (!gpManiGameType->IsCashAllowed()) return;
+	if (!gpManiGameType->CanUseProp(MANI_PROP_ACCOUNT)) return;
 
-	int offset = gpManiGameType->GetCashOffset();
 	int cash_to_give = 0;
 
-	int *donators_cash;
-	donators_cash = ((int *)donator->entity->GetUnknown() + offset);
+	int donators_cash = Prop_GetAccount(donator->entity);
+	int receiver_cash = Prop_GetAccount(receiver->entity);
 
-	int *receiver_cash;
-	receiver_cash = ((int *)receiver->entity->GetUnknown() + offset);
+//	receiver_cash = ((int *)receiver->entity->GetUnknown() + offset);
 
-	cash_to_give = *donators_cash * (mani_tk_cash_percent.GetFloat() * 0.01);
+	cash_to_give = donators_cash * (mani_tk_cash_percent.GetFloat() * 0.01);
 
 	if (cash_to_give < 1)
 	{
 		return;
 	}
 
-	if (*receiver_cash + cash_to_give > 16000)
+	if (receiver_cash + cash_to_give > 16000)
 	{
-		*receiver_cash = 160000;
+		Prop_SetAccount(receiver->entity, 160000);
 	}
 	else
 	{
-		*receiver_cash = *receiver_cash + cash_to_give;
+		Prop_SetAccount(receiver->entity, receiver_cash + cash_to_give);
 	}
 
 	// Donators cash should never go negative
-	*donators_cash = *donators_cash - cash_to_give;
+	Prop_SetAccount(donator->entity, donators_cash - cash_to_give);
+	// *donators_cash = *donators_cash - cash_to_give;
 	
 }
 
@@ -1770,9 +1791,10 @@ void    ProcessUnDrugPlayer(player_t *player)
 	CBaseEntity *m_pCBaseEntity = player->entity->GetUnknown()->GetBaseEntity();
 	if (m_pCBaseEntity)
 	{
-		QAngle angle = m_pCBaseEntity->EyeAngles();
+//        QAngle angle = m_pCBaseEntity->EyeAngles();
+        QAngle angle = CBaseEntity_EyeAngles(m_pCBaseEntity);
 		angle.z = 0;
-		m_pCBaseEntity->Teleport(NULL, &angle, NULL);
+		CBaseEntity_Teleport(m_pCBaseEntity, NULL, &angle, NULL);
 	}
 
 	CheckDruggedGlobal();
@@ -1812,8 +1834,8 @@ void	ProcessUnTimeBombPlayer(player_t *player_ptr)
 		return;
 	}
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-	ProcessSetColour(m_pCBaseEntity, 255, 255, 255, 255 );
+	// CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
+	ProcessSetColour(player_ptr->entity, 255, 255, 255, 255 );
 
 	punish_mode_list[player_ptr->index - 1].time_bomb = 0;
 	punish_mode_list[player_ptr->index - 1].next_time_bomb_update_time = -999;
@@ -1856,8 +1878,8 @@ void	ProcessUnFireBombPlayer(player_t *player_ptr)
 		return;
 	}
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-	ProcessSetColour(m_pCBaseEntity, 255, 255, 255, 255 );
+	// CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
+	ProcessSetColour(player_ptr->entity, 255, 255, 255, 255 );
 
 	punish_mode_list[player_ptr->index - 1].fire_bomb = 0;
 	punish_mode_list[player_ptr->index - 1].next_fire_bomb_update_time = -999;
@@ -1899,8 +1921,8 @@ void	ProcessUnFreezeBombPlayer(player_t *player_ptr)
 		return;
 	}
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-	ProcessSetColour(m_pCBaseEntity, 255, 255, 255, 255 );
+	//CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
+	ProcessSetColour(player_ptr->entity, 255, 255, 255, 255 );
 
 	punish_mode_list[player_ptr->index - 1].freeze_bomb = 0;
 	punish_mode_list[player_ptr->index - 1].next_freeze_bomb_update_time = -999;
@@ -1942,8 +1964,8 @@ void	ProcessUnBeaconPlayer(player_t *player_ptr)
 		return;
 	}
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-	ProcessSetColour(m_pCBaseEntity, 255, 255, 255, 255 );
+	//CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
+	ProcessSetColour(player_ptr->entity, 255, 255, 255, 255 );
 
 	punish_mode_list[player_ptr->index - 1].beacon = 0;
 	punish_mode_list[player_ptr->index - 1].next_freeze_bomb_update_time = -999;
@@ -1984,7 +2006,7 @@ void	ProcessDeathBeam(player_t *attacker_ptr, player_t *victim_ptr)
 
 	CBaseEntity *pPlayer = attacker_ptr->entity->GetUnknown()->GetBaseEntity();
 
-	Vector source = pPlayer->EyePosition();
+	Vector source = CBaseEntity_EyePosition(pPlayer);
 	Vector dest = victim_ptr->player_info->GetAbsOrigin();
 
 	temp_ents->BeamPoints((IRecipientFilter &)mrf,
@@ -2008,16 +2030,18 @@ void	ProcessDeathBeam(player_t *attacker_ptr, player_t *victim_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Set Render colour for entity
 //---------------------------------------------------------------------------------
-void	ProcessSetColour(CBaseEntity *pCBaseEntity, int r, int g, int b, int a)
+void	ProcessSetColour(edict_t *pEntity, int r, int g, int b, int a)
 {
 	if (!gpManiGameType->IsSetColourAllowed()) return;
 
-	if (a != 255)
+	if (a != 255 && gpManiGameType->CanUseProp(MANI_PROP_RENDER_MODE))
 	{
-		pCBaseEntity->SetRenderMode((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
+		//pCBaseEntity->SetRenderMode((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
+		Prop_SetRenderMode(pEntity, gpManiGameType->GetAlphaRenderMode());
 	}
 
-	pCBaseEntity->SetRenderColor( r, g, b, a );
+	Prop_SetRenderColor(pEntity, r,g,b,a);
+//	pCBaseEntity->SetRenderColor( r, g, b, a );
 
 }
 

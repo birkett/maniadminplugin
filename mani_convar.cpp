@@ -325,6 +325,7 @@ ConVar mani_skins_force_public ("mani_skins_force_public", "0", 0, "0 = players 
 ConVar mani_skins_setskin_misc_only ("mani_skins_setskin_misc_only", "0", 0, "0 = the setskin command is for all models, 1 = setskin command is only for misc models", true, 0, true, 1); 
 ConVar mani_skins_force_choose_on_join ("mani_skins_force_choose_on_join", "0", 0, "0 = let user type settings to change model, 1 = ask user to choose on team change, 2 = show settings menu on team change", true, 0, true, 2); 
 ConVar mani_skins_random_bot_skins ("mani_skins_random_bot_skins", "0", 0, "0 = bots use default skin, 1 = bots choose random public skin", true, 0, true, 1); 
+ConVar mani_skins_force_cl_minmodels ("mani_skins_force_cl_minmodels", "0", 0, "0 = dont force cl_minmodels on client when joining, 1 = force cl_minmodels 1, cl_min_t = 4, cl_min_ct 4 on client join", true, 0, true, 1); 
 
 ConVar mani_show_death_beams ("mani_show_death_beams", "0", 0, "0 = Disable show beams, 1 = Enable show beams", true, 0, true, 1); 
 

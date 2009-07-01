@@ -57,6 +57,7 @@
 #include "mani_maps.h"
 #include "mani_skins.h"
 #include "KeyValues.h"
+#include "mani_vfuncs.h"
 #include "cbaseentity.h"
 
 
@@ -667,8 +668,6 @@ void ForceSkinType
 		return;
 	}
 
-	CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
-
 	if (player_ptr->is_bot && mani_skins_random_bot_skins.GetInt() == 1)
 	{
 		int skin_type = 0;
@@ -719,7 +718,7 @@ void ForceSkinType
 				chosen_skin --;
 				if (chosen_skin == -1)
 				{
-					pPlayer->SetModelIndex(skin_list[i].model_index);
+					Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 					return;
 				}
 			}
@@ -759,7 +758,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->admin_t_model))
 								{
-									pPlayer->SetModelIndex(skin_list[i].model_index);
+									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -782,7 +781,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->admin_ct_model))
 								{
-									pPlayer->SetModelIndex(skin_list[i].model_index);
+									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -824,7 +823,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_t_model))
 								{
-									pPlayer->SetModelIndex(skin_list[i].model_index);
+									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -847,7 +846,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_ct_model))
 								{
-									pPlayer->SetModelIndex(skin_list[i].model_index);
+									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 									return;
 								}
 							}
@@ -883,13 +882,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							pPlayer->SetModelIndex(skin_list[i].model_index);
+							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->t_model))
 						{
-							pPlayer->SetModelIndex(skin_list[i].model_index);
+							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 							return;
 						}
 					}
@@ -911,13 +910,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							pPlayer->SetModelIndex(skin_list[i].model_index);
+							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->ct_model))
 						{
-							pPlayer->SetModelIndex(skin_list[i].model_index);
+							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
 							return;
 						}
 					}
@@ -1576,9 +1575,10 @@ PLUGIN_RESULT	ProcessMaSetSkin
 			continue;
 		}
 
-		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
-		pPlayer->SetModelIndex(skin_list[found_skin].model_index);
+//		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
+//		CBaseEntity_SetModelIndex(pPlayer, skin_list[found_skin].model_index);
 
+		Prop_SetModelIndex(target_player_list[i].entity, skin_list[found_skin].model_index);
 		LogCommand (player.entity, "skinned user [%s] [%s] with skin %s\n", target_player_list[i].name, target_player_list[i].steam_id, skin_name);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
@@ -1587,6 +1587,24 @@ PLUGIN_RESULT	ProcessMaSetSkin
 	}
 
 	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Force Skin client cvars on ClientActive
+//---------------------------------------------------------------------------------
+void	ForceSkinCExec(player_t *player_ptr)
+{
+
+	if (war_mode) return;
+
+	if (mani_skins_force_cl_minmodels.GetInt() && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		engine->ClientCommand(player_ptr->entity, "cl_minmodels 1");
+		engine->ClientCommand(player_ptr->entity, "cl_min_t 4");
+		engine->ClientCommand(player_ptr->entity, "cl_min_ct 4");
+	}
+
+	return;
 }
 
 //---------------------------------------------------------------------------------

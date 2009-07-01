@@ -40,10 +40,18 @@
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="attrib -r ..\..\..\bin\serverplugin_empty.dll
-copy &quot;$(TargetPath)&quot; ..\..\..\bin\serverplugin_empty.dll
+				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll
+copy &quot;$(TargetPath)&quot; ..\bin\
+copy &quot;$(TargetPath)&quot; ..\base\common\
+copy &quot;$(TargetPath)&quot; C:\csserver\cstrike\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\hl2mp\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\dod\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\hl2ctf\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\dystopia\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\gmod\addons\
+copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 "
-				Outputs="..\..\..\bin\serverplugin_empty.dll"/>
+				Outputs="..\bin\mani_admin_plugin.dll"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib"
@@ -100,7 +108,7 @@ copy &quot;$(TargetPath)&quot; ..\..\..\bin\serverplugin_empty.dll
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\public,..\public\tier0,..\public\tier1,..\dlls,..\game_shared"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
@@ -120,22 +128,23 @@ copy &quot;$(TargetPath)&quot; ..\..\..\bin\serverplugin_empty.dll
 				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll
 copy &quot;$(TargetPath)&quot; ..\bin\
 copy &quot;$(TargetPath)&quot; ..\base\common\
-copy &quot;$(TargetPath)&quot; C:\csserver\cstrike\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hl2mp\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\dod\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hl2ctf\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\dystopia\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\gmod\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\cstrike\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2mp\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dod\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\
+copy C:\MyDev\plugin_output\Release\mani_admin_plugin.pdb .\
 "
 				Outputs="..\bin\mani_admin_plugin.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib tier0.lib vstdlib.lib"
 				OutputFile="..\plugin_output\Release/mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\lib\public,..\lib\common"
+				AdditionalLibraryDirectories="..\sdk\lib\public,..\sdk\lib\common"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\plugin_output\Release/mani_admin_plugin.pdb"
 				GenerateMapFile="TRUE"
@@ -179,34 +188,6 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-			<Filter
-				Name="SDK"
-				Filter="">
-				<File
-					RelativePath="..\tier1\bitbuf.cpp">
-				</File>
-				<File
-					RelativePath="..\tier1\convar.cpp">
-				</File>
-				<File
-					RelativePath="..\tier1\interface.cpp">
-				</File>
-				<File
-					RelativePath="..\tier1\KeyValues.cpp">
-				</File>
-				<File
-					RelativePath="..\public\mathlib.cpp">
-				</File>
-				<File
-					RelativePath="..\public\tier0\memoverride.cpp">
-				</File>
-				<File
-					RelativePath=".\serverplugin_convar.cpp">
-				</File>
-				<File
-					RelativePath="..\tier1\utlbuffer.cpp">
-				</File>
-			</Filter>
 			<Filter
 				Name="ManiAdminPlugin"
 				Filter="">
@@ -298,10 +279,16 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_timers.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_vfuncs.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_victimstats.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_voice.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_warmuptimer.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_weapon.cpp">
@@ -310,98 +297,38 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mrecipientfilter.cpp">
 				</File>
 			</Filter>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl">
 			<Filter
 				Name="SDK"
 				Filter="">
 				<File
-					RelativePath="..\game_shared\base_playeranimstate.h">
+					RelativePath="..\sdk\tier1\bitbuf.cpp">
 				</File>
 				<File
-					RelativePath="..\dlls\baseanimating.h">
+					RelativePath="..\sdk\tier1\convar.cpp">
 				</File>
 				<File
-					RelativePath="..\dlls\basecombatcharacter.h">
+					RelativePath="..\sdk\tier1\interface.cpp">
 				</File>
 				<File
-					RelativePath="..\game_shared\basecombatweapon_shared.h">
+					RelativePath="..\sdk\tier1\KeyValues.cpp">
 				</File>
 				<File
-					RelativePath="..\dlls\baseentity.h">
+					RelativePath="..\sdk\public\mathlib.cpp">
 				</File>
 				<File
-					RelativePath="..\game_shared\baseentity_shared.h">
+					RelativePath="..\sdk\public\tier0\memoverride.cpp">
 				</File>
 				<File
-					RelativePath="..\game_shared\baseplayer_shared.h">
+					RelativePath=".\serverplugin_convar.cpp">
 				</File>
 				<File
-					RelativePath="..\public\basetypes.h">
-				</File>
-				<File
-					RelativePath="..\public\tier1\bitbuf.h">
-				</File>
-				<File
-					RelativePath="..\public\Color.h">
-				</File>
-				<File
-					RelativePath="..\public\tier0\dbg.h">
-				</File>
-				<File
-					RelativePath="..\public\eiface.h">
-				</File>
-				<File
-					RelativePath="..\public\filesystem.h">
-				</File>
-				<File
-					RelativePath="..\public\vstdlib\ICommandLine.h">
-				</File>
-				<File
-					RelativePath="..\public\igameevents.h">
-				</File>
-				<File
-					RelativePath="..\public\inetchannel.h">
-				</File>
-				<File
-					RelativePath="..\public\inetchannelinfo.h">
-				</File>
-				<File
-					RelativePath="..\public\tier1\interface.h">
-				</File>
-				<File
-					RelativePath="..\public\dlls\iplayerinfo.h">
-				</File>
-				<File
-					RelativePath="..\public\engine\iserverplugin.h">
-				</File>
-				<File
-					RelativePath="..\public\tier1\KeyValues.h">
-				</File>
-				<File
-					RelativePath="..\dlls\player.h">
-				</File>
-				<File
-					RelativePath="..\public\vstdlib\random.h">
-				</File>
-				<File
-					RelativePath="..\public\vstdlib\strtools.h">
-				</File>
-				<File
-					RelativePath="..\public\tier1\utlbuffer.h">
-				</File>
-				<File
-					RelativePath="..\public\tier1\utlmemory.h">
-				</File>
-				<File
-					RelativePath="..\public\tier1\utlvector.h">
-				</File>
-				<File
-					RelativePath="..\public\vstdlib\vstdlib.h">
+					RelativePath="..\sdk\tier1\utlbuffer.cpp">
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl">
 			<Filter
 				Name="ManiAdminPlugin"
 				Filter="">
@@ -502,10 +429,16 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_timers.h">
 				</File>
 				<File
+					RelativePath=".\mani_vfuncs.h">
+				</File>
+				<File
 					RelativePath=".\mani_victimstats.h">
 				</File>
 				<File
 					RelativePath=".\mani_voice.h">
+				</File>
+				<File
+					RelativePath=".\mani_warmuptimer.h">
 				</File>
 				<File
 					RelativePath=".\mani_weapon.h">
@@ -523,13 +456,95 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mrecipientfilter.h">
 				</File>
 			</Filter>
+			<Filter
+				Name="SDK"
+				Filter="">
+				<File
+					RelativePath="..\sdk\game_shared\base_playeranimstate.h">
+				</File>
+				<File
+					RelativePath="..\sdk\dlls\baseanimating.h">
+				</File>
+				<File
+					RelativePath="..\sdk\dlls\basecombatcharacter.h">
+				</File>
+				<File
+					RelativePath="..\sdk\game_shared\basecombatweapon_shared.h">
+				</File>
+				<File
+					RelativePath="..\sdk\dlls\baseentity.h">
+				</File>
+				<File
+					RelativePath="..\sdk\game_shared\baseentity_shared.h">
+				</File>
+				<File
+					RelativePath="..\sdk\game_shared\baseplayer_shared.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\basetypes.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\bitbuf.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\Color.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier0\dbg.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\eiface.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\filesystem.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\vstdlib\ICommandLine.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\igameevents.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\inetchannel.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\inetchannelinfo.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\interface.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\dlls\iplayerinfo.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\engine\iserverplugin.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\KeyValues.h">
+				</File>
+				<File
+					RelativePath="..\sdk\dlls\player.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\vstdlib\random.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\vstdlib\strtools.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\utlbuffer.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\utlmemory.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\utlvector.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\vstdlib\vstdlib.h">
+				</File>
+			</Filter>
 		</Filter>
-		<File
-			RelativePath="..\lib\public\tier0.lib">
-		</File>
-		<File
-			RelativePath="..\lib\public\vstdlib.lib">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
