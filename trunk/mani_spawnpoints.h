@@ -44,9 +44,14 @@ private:
 	void		GetCoordList(KeyValues *kv_ptr, int team_number);
 	bool		IsToClose(player_t *player_ptr);
 
+	struct		spawn_vector_t
+	{
+		float	x,y,z;
+	};
+
 	struct		spawn_team_t
 	{
-		Vector			*spawn_list;
+		spawn_vector_t			*spawn_list;
 		int				spawn_list_size;
 		int				last_spawn_index;
 	};

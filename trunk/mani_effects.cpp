@@ -2020,6 +2020,33 @@ void	ProcessSetColour(CBaseEntity *pCBaseEntity, int r, int g, int b, int a)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Set Render colour for entity
+//---------------------------------------------------------------------------------
+void	ProcessSetWeaponColour(CBaseEntity *pCBaseEntity, int r, int g, int b, int a)
+{
+	if (!gpManiGameType->IsSetColourAllowed()) return;
+
+	CBaseCombatCharacter *pCombat = pCBaseEntity->MyCombatCharacterPointer();
+
+	if (!pCombat) return;
+
+	for (int i = 0; i < 10; i++)
+	{
+		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(i);
+
+		if (pWeapon)
+		{
+			if (a != 255)
+			{
+				pWeapon->SetRenderMode((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
+			}
+
+			pWeapon->SetRenderColor( r, g, b, a );
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Check if any players marked as drugged
 //---------------------------------------------------------------------------------
 static

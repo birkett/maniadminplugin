@@ -821,6 +821,59 @@ PLUGIN_RESULT	ProcessMaMap
 
 	return PLUGIN_STOP;
 }
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_skipmap command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ProcessMaSkipMap
+(
+ int index, 
+ bool svr_command, 
+ int argc, 
+ char *command_string
+)
+{
+	player_t player;
+	int	admin_index;
+	player.entity = NULL;
+
+	if (!svr_command)
+	{
+		// Check if player is admin
+		player.index = index;
+		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
+	}
+
+	// Change the map
+	char		changemap_cmd[128];
+
+	int	valid_map = engine->IsMapValid(next_map);
+	if (valid_map != 0)
+	{
+		Q_snprintf( changemap_cmd, sizeof(changemap_cmd), "changelevel %s\n", next_map);
+		LogCommand (player.entity, "%s", changemap_cmd);
+		override_changelevel = 0;
+		override_setnextmap = false;
+
+		engine->ServerCommand(changemap_cmd);
+//		engine->ChangeLevel(map_name, NULL);
+		return PLUGIN_STOP;
+	}
+
+	LogCommand(player.entity, "User attempted to change to mapname  [%s] using ma_skipmap\n", next_map);
+
+	if (svr_command)
+	{
+		OutputToConsole(player.entity, svr_command, "Map [%s] is not a valid .bsp map file\n", next_map);
+	}
+	else
+	{
+		SayToPlayer(&player, "Map [%s] is not a valid .bsp map file", next_map);
+	}
+
+	return PLUGIN_STOP;
+}
 //---------------------------------------------------------------------------------
 // Purpose: Process the mani_map_cycle_mode cvar change
 //---------------------------------------------------------------------------------
@@ -1014,6 +1067,21 @@ CON_COMMAND(ma_map, "Changes the server to a new map, ma_map <map name>")
 			engine->Cmd_Argc(), // Number of arguments
 			engine->Cmd_Argv(0), // Command
 			engine->Cmd_Argv(1) // map name
+			);
+
+	return;
+}
+
+CON_COMMAND(ma_skipmap, "Changes the server to the next map in the cycle, ma_map")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+	ProcessMaSkipMap
+			(
+			0, // Client index
+			true,  // Sever console command type
+			engine->Cmd_Argc(), // Number of arguments
+			engine->Cmd_Argv(0) // Command
 			);
 
 	return;

@@ -82,7 +82,6 @@ ManiSpawnPoints::ManiSpawnPoints()
 		spawn_team[i].last_spawn_index = 0;
 	}
 
-
 	gpManiSpawnPoints = this;
 }
 
@@ -100,9 +99,10 @@ void ManiSpawnPoints::CleanUp(void)
 	// Cleanup
 	for (int i = 0; i < 10; i ++)
 	{
-		if (spawn_team[i].spawn_list_size)
+		if (spawn_team[i].spawn_list_size != 0)
 		{
 			free(spawn_team[i].spawn_list);
+			spawn_team[i].spawn_list = NULL;
 			spawn_team[i].spawn_list_size = 0;
 			spawn_team[i].last_spawn_index = 0;
 		}
@@ -157,12 +157,17 @@ void		ManiSpawnPoints::Spawn(player_t *player_ptr)
 
 			CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
 
+			Vector Pos;
 			Vector vVel;
 			vVel.x = 0;
 			vVel.y = 0;
 			vVel.z = 0;
 
-			m_pCBaseEntity->Teleport(&(spawn_team[player_ptr->team].spawn_list[iSpawn]), NULL, &vVel);
+			Pos.x = spawn_team[player_ptr->team].spawn_list[iSpawn].x;
+			Pos.y = spawn_team[player_ptr->team].spawn_list[iSpawn].y;
+			Pos.z = spawn_team[player_ptr->team].spawn_list[iSpawn].z;
+
+			m_pCBaseEntity->Teleport(&Pos, NULL, &vVel);
 			spawn_team[player_ptr->team].last_spawn_index = iSpawn;
 			return;
 		}
@@ -308,6 +313,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		}
 		else
 		{
+			Msg("Team number [%i]\n", team_number);
 			GetCoordList(kv_map_ptr, team_number);
 		}
 
@@ -329,7 +335,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 void ManiSpawnPoints::GetCoordList(KeyValues *kv_ptr, int team_number)
 {
 	KeyValues *kv_xyz_ptr;
-	Vector	coord;
+	spawn_vector_t	coord;
 	bool	failed;
 	bool	first_run = true;
 
@@ -362,7 +368,7 @@ void ManiSpawnPoints::GetCoordList(KeyValues *kv_ptr, int team_number)
 		coord.z = kv_xyz_ptr->GetFloat(NULL, 0);
 		kv_xyz_ptr = kv_xyz_ptr->GetNextValue();
 
-		AddToList((void **) &(spawn_team[team_number].spawn_list), sizeof(Vector), &(spawn_team[team_number].spawn_list_size));
+		AddToList((void **) &(spawn_team[team_number].spawn_list), sizeof(spawn_vector_t), &(spawn_team[team_number].spawn_list_size));
 		spawn_team[team_number].spawn_list[spawn_team[team_number].spawn_list_size - 1] = coord;
 		if (!kv_xyz_ptr)
 		{

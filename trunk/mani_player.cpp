@@ -804,6 +804,10 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	add_player.teleport_coords_list = NULL;
 	add_player.teleport_coords_list_size = 0;
 	add_player.last_connected = current_time;
+	for (int i = 0; i < 8; i ++)
+	{
+		add_player.bit_array[i] = 0;
+	}
 
 	if (mani_stats_by_steam_id.GetInt() == 1)
 	{
@@ -867,6 +871,48 @@ player_settings_t *FindPlayerSettings (player_t *player)
 	return &(active_player_settings[player->index - 1]);
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Find player settings from our list of players active on the server
+//---------------------------------------------------------------------------------
+bool	FindPlayerFlag (player_settings_t *player_settings_ptr, int flag_index)
+{
+	int	int_index = 0;
+	int	bit_index = 0;
+    
+	if (!flag_index == 0)
+	{
+		int_index = flag_index / 32;
+	}
+
+	bit_index = flag_index - (int_index * 32);
+
+	return ((player_settings_ptr->bit_array[int_index] & (0x01 << bit_index)) ? true:false);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Set one of the player flags to either true or false
+//---------------------------------------------------------------------------------
+void	SetPlayerFlag (player_settings_t *player_settings_ptr, int flag_index, bool flag_value)
+{
+	int	int_index = 0;
+	int	bit_index = 0;
+    
+	if (!flag_index == 0)
+	{
+		int_index = flag_index / 32;
+	}
+
+	bit_index = flag_index - (int_index * 32);
+
+	if (flag_value)
+	{
+		player_settings_ptr->bit_array[int_index] |= (0x01 << bit_index);
+	}
+	else
+	{
+		player_settings_ptr->bit_array[int_index] &= (0xffffffff - (0x01 << bit_index));
+	}
+}
 //---------------------------------------------------------------------------------
 // Purpose: Update a players settings
 //---------------------------------------------------------------------------------
@@ -1014,6 +1060,11 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 		filesystem->Write((void *) &(ps_list[i]->t_model), sizeof(ps_list[i]->t_model), file_handle);
 		filesystem->Write((void *) &(ps_list[i]->ct_model), sizeof(ps_list[i]->ct_model), file_handle);
 		filesystem->Write((void *) &(ps_list[i]->language), sizeof(ps_list[i]->language), file_handle);
+
+		for (int j = 0; j < 8; j ++)
+		{
+			filesystem->Write((void *) &(ps_list[i]->bit_array[j]), sizeof(ps_list[i]->bit_array[j]), file_handle);
+		}
 		
 		filesystem->Write((void *) &(ps_list[i]->teleport_coords_list_size), sizeof(ps_list[i]->teleport_coords_list_size), file_handle);
 		if (ps_list[i]->teleport_coords_list_size != 0)
@@ -1246,6 +1297,63 @@ void	ReadPlayerSettings(void)
 						filesystem->Read(&(ps.t_model), sizeof(ps.t_model), file_handle);
 						filesystem->Read(&(ps.ct_model), sizeof(ps.ct_model), file_handle);
 						filesystem->Read(&(ps.language), sizeof(ps.language), file_handle);
+
+						filesystem->Read(&(ps.teleport_coords_list_size), sizeof(ps.teleport_coords_list_size),	file_handle);
+						ps.teleport_coords_list	= NULL;
+
+						if (ps.teleport_coords_list_size !=	0)
+						{
+							int	temp_list_size = ps.teleport_coords_list_size;
+							for	(int i = 0;	i <	temp_list_size;	i++)
+							{
+								teleport_coords_t tc;
+								float	x,y,z;
+
+								filesystem->Read(&(tc.map_name), sizeof(tc.map_name), file_handle);
+								filesystem->Read(&x, sizeof(float),	file_handle);
+								filesystem->Read(&y, sizeof(float),	file_handle);
+								filesystem->Read(&z, sizeof(float),	file_handle);
+
+								tc.coords.x	= x;
+								tc.coords.y	= x;
+								tc.coords.z	= x;
+								// Need	to add a new map to	the	list
+								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
+								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
+							}	
+						}
+
+						AddToList((void	**)	&player_settings_list, sizeof(player_settings_t	*),	&player_settings_list_size);
+						player_settings_list[player_settings_list_size - 1]	= (player_settings_t *)	malloc (sizeof(player_settings_t));
+						*(player_settings_list[player_settings_list_size - 1]) = ps;
+					}
+
+					break;
+				}
+			case 4:
+				{
+					// Get player settings into	memory (Version 3)
+					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					{
+						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
+						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
+						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
+						filesystem->Read(&(ps.last_connected), sizeof(ps.last_connected), file_handle);
+						filesystem->Read(&(ps.show_death_beam), sizeof(ps.show_death_beam), file_handle);
+
+						filesystem->Read(&(ps.admin_t_model), sizeof(ps.admin_t_model), file_handle);
+						filesystem->Read(&(ps.admin_ct_model), sizeof(ps.admin_ct_model), file_handle);
+						filesystem->Read(&(ps.immunity_t_model), sizeof(ps.immunity_t_model), file_handle);
+						filesystem->Read(&(ps.immunity_ct_model), sizeof(ps.immunity_ct_model), file_handle);
+						filesystem->Read(&(ps.t_model), sizeof(ps.t_model), file_handle);
+						filesystem->Read(&(ps.ct_model), sizeof(ps.ct_model), file_handle);
+						filesystem->Read(&(ps.language), sizeof(ps.language), file_handle);
+
+						for (int i = 0; i < 8; i++)
+						{
+							filesystem->Read(&(ps.bit_array[i]), sizeof(ps.bit_array[i]), file_handle);
+						}
 
 						filesystem->Read(&(ps.teleport_coords_list_size), sizeof(ps.teleport_coords_list_size),	file_handle);
 						ps.teleport_coords_list	= NULL;
@@ -1520,6 +1628,64 @@ void	ReadPlayerSettings(void)
 
 					break;
 				}
+			case 4:
+				{
+					// Get player settings into	memory (Version 1)
+					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					{
+						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
+						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
+						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
+						filesystem->Read(&(ps.last_connected), sizeof(ps.last_connected), file_handle);
+						filesystem->Read(&(ps.show_death_beam), sizeof(ps.show_death_beam), file_handle);
+
+						filesystem->Read(&(ps.admin_t_model), sizeof(ps.admin_t_model), file_handle);
+						filesystem->Read(&(ps.admin_ct_model), sizeof(ps.admin_ct_model), file_handle);
+						filesystem->Read(&(ps.immunity_t_model), sizeof(ps.immunity_t_model), file_handle);
+						filesystem->Read(&(ps.immunity_ct_model), sizeof(ps.immunity_ct_model), file_handle);
+						filesystem->Read(&(ps.t_model), sizeof(ps.t_model), file_handle);
+						filesystem->Read(&(ps.ct_model), sizeof(ps.ct_model), file_handle);
+						filesystem->Read(&(ps.language), sizeof(ps.language), file_handle);
+
+						for (int i = 0; i < 8; i++)
+						{
+							filesystem->Read(&(ps.bit_array[i]), sizeof(ps.bit_array[i]), file_handle);
+						}
+
+						filesystem->Read(&(ps.teleport_coords_list_size), sizeof(ps.teleport_coords_list_size),	file_handle);
+						ps.teleport_coords_list	= NULL;
+
+						if (ps.teleport_coords_list_size !=	0)
+						{
+							int	temp_list_size = ps.teleport_coords_list_size;
+							for	(int i = 0;	i <	temp_list_size;	i++)
+							{
+								teleport_coords_t tc;
+								float	x,y,z;
+
+								filesystem->Read(&(tc.map_name), sizeof(tc.map_name), file_handle);
+								filesystem->Read(&x, sizeof(float),	file_handle);
+								filesystem->Read(&y, sizeof(float),	file_handle);
+								filesystem->Read(&z, sizeof(float),	file_handle);
+
+								tc.coords.x	= x;
+								tc.coords.y	= x;
+								tc.coords.z	= x;
+								// Need	to add a new map to	the	list
+								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
+								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
+							}	
+						}
+
+						AddToList((void **) &player_settings_name_list, sizeof(player_settings_t), &player_settings_name_list_size);
+						player_settings_name_list[player_settings_name_list_size - 1] = (player_settings_t *) malloc (sizeof(player_settings_t));
+						*(player_settings_name_list[player_settings_name_list_size - 1]) = ps;
+					}
+
+					break;
+				}
+
 			default : break;
 			}
 
@@ -1566,9 +1732,38 @@ int	DeriveVersion
 	{
 		return 2;
 	}
-	else
+	else if (FStrEq(version_string, "V1.1.0s") ||
+		FStrEq(version_string, "V1.1.0t") ||
+		FStrEq(version_string, "V1.1.0u") ||
+		FStrEq(version_string, "V1.1.0v") ||
+		FStrEq(version_string, "V1.1.0w") ||
+		FStrEq(version_string, "V1.1.0x") ||
+		FStrEq(version_string, "V1.1.0y") ||
+		FStrEq(version_string, "V1.1.0z") ||
+		FStrEq(version_string, "V1.1.0za") ||
+		FStrEq(version_string, "V1.1.0zb") ||
+		FStrEq(version_string, "V1.1.0zc") ||
+		FStrEq(version_string, "V1.1.0zd") ||
+		FStrEq(version_string, "V1.1.0ze") ||
+		FStrEq(version_string, "V1.1.0zf") ||
+		FStrEq(version_string, "V1.1.0zg") ||
+		FStrEq(version_string, "V1.1.0zh") ||
+		FStrEq(version_string, "V1.1.0zi") ||
+		FStrEq(version_string, "V1.1.0zj") ||
+		FStrEq(version_string, "V1.1.0zk") ||
+		FStrEq(version_string, "V1.1.0zl") ||
+		FStrEq(version_string, "V1.1.0zm") ||
+		FStrEq(version_string, "V1.2BetaA") ||
+		FStrEq(version_string, "V1.2BetaB") ||
+		FStrEq(version_string, "V1.2BetaC") ||
+		FStrEq(version_string, "V1.2BetaD") ||
+		FStrEq(version_string, "V1.2BetaE"))
 	{
 		return 3;
+	}
+	else
+	{
+		return 4;
 	}
 }
 

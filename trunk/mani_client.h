@@ -26,8 +26,8 @@
 #ifndef MANI_CLIENT_H
 #define MANI_CLIENT_H
 
-#define MAX_ADMIN_FLAGS (53)
-#define MAX_IMMUNITY_FLAGS (26)
+#define MAX_ADMIN_FLAGS (54)
+#define MAX_IMMUNITY_FLAGS (27)
 
 #define MANI_ADMIN_TYPE (0)
 #define MANI_IMMUNITY_TYPE (1)
@@ -68,6 +68,7 @@ public:
 
 	bool			IsAdmin(player_t *player_ptr, int *client_index);
 	bool			IsImmune(player_t *player_ptr, int *client_index);
+	bool			IsImmuneNoPlayer(player_t *player_ptr, int *client_index);
 	bool			IsAdminAllowed(player_t *player, char *command, int admin_flag, bool check_war, int *admin_index);
 	inline	bool	IsAdminAllowed(int admin_index, int flag) const {return client_list[admin_index].admin_flags[flag];}
 	inline	bool	IsImmunityAllowed(int immunity_index, int flag) const {return client_list[immunity_index].immunity_flags[flag];}

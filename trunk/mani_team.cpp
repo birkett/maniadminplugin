@@ -94,8 +94,6 @@ void SetupTeamList(int edict_count)
 				team_list[team_list_size - 1].team_ptr = team_ptr;
 				Msg("Team index [%i] Name [%s]\n", team_ptr->GetTeamNumber(), team_ptr->GetName());
 
-				//CTeamSpawnPoint *pSpawnpoint = new CTeamSpawnPoint();
-				//team_ptr->AddSpawnpoint((CTeamSpawnPoint *) pSpawnpoint);
 			}
 
 			if (FStrEq("cs_gamerules", pEntity->GetClassName()))
@@ -114,77 +112,19 @@ void SetupTeamList(int edict_count)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Find team manager
+// Purpose: Find Team entry by index
 //---------------------------------------------------------------------------------
-void SwitchTeam(player_t	*player_ptr)
+CTeam	*FindTeam (int team_index)
 {
-	int	old_team;
-	int	new_team;
-	int	old_team_index;
-	int	new_team_index;
-
-	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team))
+	for (int i = 0; i < team_list_size; i++)
 	{
-		return;
-	}
-
-	old_team = player_ptr->team;
-	new_team = gpManiGameType->GetOpposingTeam(old_team);
-
-	for (int i = 0; i < team_list_size; i ++)
-	{
-		if (new_team == team_list[i].team_ptr->GetTeamNumber())
+		if (team_list[i].team_ptr->GetTeamNumber() == team_index)
 		{
-			new_team_index = i;
-		}
-		else if (old_team == team_list[i].team_ptr->GetTeamNumber())
-		{
-			old_team_index = i;
+			return ((CTeam *) team_list[i].team_ptr);
 		}
 	}
 
-	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity();
-	CBasePlayer *base_player = (CBasePlayer *) m_pCBaseEntity;
-
-Msg("Remove player\n");
-	team_list[old_team_index].team_ptr->RemovePlayer((CBasePlayer *) base_player);
-	team_list[new_team_index].team_ptr->AddPlayer((CBasePlayer *) base_player);
-Msg("Change index\n");
-	m_pCBaseEntity->m_iTeamNum = new_team_index;
-Msg("Add new player\n");
-
-}
-//---------------------------------------------------------------------------------
-// Purpose: Find team manager
-//---------------------------------------------------------------------------------
-void ReSpawnPlayer(CBasePlayer *player_ptr)
-{
-
-	Msg("FPlayerCanRespawn\n", player_ptr->GetClassName());
-/*
-	if (player_ptr->player_info->IsHLTV()) return;
-	if (player_ptr->team != TEAM_B && player_ptr->team != TEAM_A) return;
-
-	for (int i = 0; i < team_list_size; i ++)
-	{
-		if (team_list[i].team_ptr->GetTeamNumber() == player_ptr->team)
-		{
-			CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
-			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-			pPlayer->m_lifeState = LIFE_RESPAWNABLE;
-			CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-			gamerules_ptr->PlayerSpawn(pBase);
-//			pPlayer->Spawn();
-			team_list[i].team_ptr->SpawnPlayer(pBase);
-//			pBase->pl.deadflag = false;
-//			pPlayer->m_lifeState = LIFE_ALIVE;
-			//pBase->StopObserverMode();
-//			pPlayer->SetHealth(100);
-
-			break;
-		}
-	}
-	*/
+	return (CTeam *) NULL;
 }
 
 //---------------------------------------------------------------------------------

@@ -215,6 +215,11 @@
 #define	ALLOW_SPRAY_TAG_FLAG	("spray")
 #define	ALLOW_SPRAY_TAG_DESC ("Spray Tag Tracking")
 
+#define	ALLOW_GRAVITY (53)					//Gravity access
+#define	ALLOW_GRAVITY_FLAG	("grav")
+#define	ALLOW_GRAVITY_DESC ("Gravity")
+
+
 //*******************************************************************
 //*******************************************************************
 //*******************************************************************
@@ -358,7 +363,15 @@
 #define	IMMUNITY_ALLOW_COLOUR_DESC ("Color")
 
 #define	IMMUNITY_ALLOW_BASIC_IMMUNITY (25)			//immunity flag
-#define	IMMUNITY_ALLOW_BASIC_IMMUNITY_FLAG ("immunity")		
+#define	IMMUNITY_ALLOW_BASIC_IMMUNITY_FLAG ("Immunity")		
 #define	IMMUNITY_ALLOW_BASIC_IMMUNITY_DESC ("Basic Immunity")
+
+#define	IMMUNITY_ALLOW_GRAVITY (26)			//immunity flag
+#define	IMMUNITY_ALLOW_GRAVITY_FLAG ("grav")		
+#define	IMMUNITY_ALLOW_GRAVITY_DESC ("Gravity")
+
+#define	IMMUNITY_ALLOW_FRICTION (27)			//immunity flag
+#define	IMMUNITY_ALLOW_FRICTION_FLAG ("friction")		
+#define	IMMUNITY_ALLOW_FRICTION_DESC ("Friction")
 
 #endif

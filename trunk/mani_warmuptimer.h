@@ -23,46 +23,25 @@
 
 
 
-#ifndef MANI_SPRAYREMOVE_H
-#define MANI_SPRAYREMOVE_H
+#ifndef MANI_AUTORR_H
+#define MANI_AUTORR_H
 
-class ManiSprayRemove
+class ManiWarmupTimer
 {
-public:
-	ManiSprayRemove();
-	~ManiSprayRemove();
 
-	void		Load(void);
+public:
+	ManiWarmupTimer();
+	~ManiWarmupTimer();
+
 	void		LevelInit(void);
 	void		GameFrame(void);
-	void		ClientDisconnect(player_t *player_ptr);
-	bool		SprayFired(const Vector *pos, int	index);
-	void		ManiSprayRemove::ProcessMaSprayMenu( player_t *admin_ptr, int admin_index, int next_index, int argv_offset, const char *menu_command);
-	PLUGIN_RESULT	ManiSprayRemove::ProcessMaSpray( int index,  bool svr_command);
 
 private:
 
-	struct		spray_t
-	{
-		char	name[64];
-		char	steam_id[64];
-		char	password[128];
-		char	ip_address[128];
-		int		user_id;
-		bool	in_use;
-		float	end_time;
-		Vector	position;
-	};
-
-	spray_t		spray_list[MANI_MAX_PLAYERS];
-	bool		check_list;
-	float		game_timer;
-
-	void		CleanUp(void);
-	int			IsSprayValid(player_t	*player_ptr);
-
+	bool		check_timer;
+	float		next_check;
 };
 
-extern	ManiSprayRemove *gpManiSprayRemove;
+extern	ManiWarmupTimer *gpManiWarmupTimer;
 
 #endif
