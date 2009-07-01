@@ -281,6 +281,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_mysql.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_mysql_thread.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_netidvalid.cpp">
 				</File>
 				<File
@@ -327,6 +330,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_timers.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_vfuncs.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_victimstats.cpp">
@@ -380,6 +386,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath="..\public\Color.h">
+				</File>
+				<File
+					RelativePath="..\public\tier1\convar.h">
 				</File>
 				<File
 					RelativePath="..\public\tier0\dbg.h">
@@ -509,6 +518,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_mysql.h">
 				</File>
 				<File
+					RelativePath=".\mani_mysql_thread.h">
+				</File>
+				<File
 					RelativePath=".\mani_netidvalid.h">
 				</File>
 				<File
@@ -555,6 +567,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_timers.h">
+				</File>
+				<File
+					RelativePath=".\mani_vfuncs.h">
 				</File>
 				<File
 					RelativePath=".\mani_victimstats.h">

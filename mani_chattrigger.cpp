@@ -180,9 +180,6 @@ bool		ManiChatTriggers::ProcessIgnore
  bool from_event
  )
 {
-
-	CTeam *team_ptr;
-
 	// This came from an event so just return true
 	if (from_event) return true;
 
@@ -190,18 +187,20 @@ bool		ManiChatTriggers::ProcessIgnore
 
 	// Get CTeam pointer so we can use the proper team name in the log message
 	// This will probably blow up on some mod when the CTeam header is changed :/
+	// Yup this blows up on hl2mp so I've switched to using the gametypes.txt file
+	// instead.
 
-	team_ptr = FindTeam(player_ptr->team);
-	if (team_ptr)
+	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return false;
+
+	char *team_name = gpManiGameType->GetTeamLogName(player_ptr->team);
+
+	if ( teamonly )
 	{
-		if ( teamonly )
-		{
-			this->UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_ptr->GetName() , chat_string );
-		}
-		else
-		{
-			this->UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_ptr->GetName(), chat_string );
-		}
+		this->UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
+	}
+	else
+	{
+		this->UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
 	}
 
 	// Fire the event so other plugins can see it

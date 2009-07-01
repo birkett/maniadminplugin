@@ -31,6 +31,9 @@
 #include <time.h>
 #ifndef __linux__
 #include <winsock.h>
+#else
+#include <pthread.h>
+#include <errno.h>
 #endif
 #include <mysql.h>
 #include <mysqld_error.h>
@@ -59,6 +62,8 @@ extern	IVEngineServer	*engine; // helper functions (messaging clients, loading c
 extern	IFileSystem	*filesystem;
 extern	IServerGameDLL	*serverdll;
 extern	CGlobalVars *gpGlobals;
+extern	int	max_players;
+extern	bool	war_mode;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -118,8 +123,6 @@ bool ManiMySQL::Init(void)
 		Msg( "%s\n", mysql_error(my_data));
 	}
 
-//timer_id = ManiGetTimer();
-
 	// Linux only !!
 #ifdef __linux__
 	if (FStrEq(gpManiDatabase->GetDBHost(), "localhost") ||
@@ -172,13 +175,10 @@ bool ManiMySQL::Init(void)
 		Msg( "%s\n", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
-//Msg("mysql_real_connect() time %f\n", ManiGetTimerDuration(timer_id));
 		return false;
 	}
 	
-//Msg("mysql_real_connect() time %f\n", ManiGetTimerDuration(timer_id));
 
-//timer_id = ManiGetTimer();
 	if ( mysql_select_db( my_data, gpManiDatabase->GetDBName()) != 0 ) 
 	{
 		error_code = mysql_errno(my_data);
@@ -186,10 +186,8 @@ bool ManiMySQL::Init(void)
 		Msg( "%s\n", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
-//Msg("mysql_select_db() time %f\n", ManiGetTimerDuration(timer_id));
 		return false;
 	}
-//Msg("mysql_select_db() time %f\n", ManiGetTimerDuration(timer_id));
 
 	return true;
 }
@@ -219,8 +217,6 @@ bool ManiMySQL::ExecuteQuery
 	Q_vsnprintf( temp_string, sizeof(temp_string), sql_query, argptr );
 	va_end   ( argptr );
 
-//timer_id = ManiGetTimer();
-
 	if (mysql_query( my_data, temp_string ) != 0)
 	{
 		error_code = mysql_errno(my_data);
@@ -229,11 +225,8 @@ bool ManiMySQL::ExecuteQuery
 		Msg( "%s\n", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
-//Msg("time %f mysql_query([%s])\n", ManiGetTimerDuration(timer_id), temp_string);
 		return false;
 	}
-
-//Msg("time %f mysql_query([%s])\n", ManiGetTimerDuration(timer_id), temp_string);
 
 	res_ptr = mysql_store_result( my_data );
 	if (res_ptr)
@@ -270,8 +263,6 @@ bool ManiMySQL::ExecuteQuery
 	Q_vsnprintf( temp_string, sizeof(temp_string), sql_query, argptr );
 	va_end   ( argptr );
 
-//timer_id = ManiGetTimer();
-
 	if (mysql_query( my_data, temp_string ) != 0)
 	{
 		error_code = mysql_errno(my_data);
@@ -280,10 +271,8 @@ bool ManiMySQL::ExecuteQuery
 		Msg( "%s\n", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
-//Msg("time %f mysql_query([%s])\n", ManiGetTimerDuration(timer_id), temp_string);
 		return false;
 	}
-//Msg("time %f mysql_query([%s])\n", ManiGetTimerDuration(timer_id), temp_string);
 
 	res_ptr = mysql_store_result( my_data );
 	return true;

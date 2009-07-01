@@ -36,25 +36,28 @@ public:
 	void		Spawn(player_t *player_ptr);
 	void		Load(char	*map_name);
 	void		LevelInit(char	*map_name);
+	bool		AddSpawnPoints(char **pReplaceEnts, const char *pMapEntities);
 
 private:
+
+	struct		spawn_vector_t
+	{
+		float	vx,vy,vz;
+		float	ax,ay,az;
+	};
+
+	struct		spawn_team_t
+	{
+		spawn_vector_t	*spawn_list;
+		int				spawn_list_size;
+		int				last_spawn_index;
+	};
 
 	void		CleanUp(void);
 	void		LoadData(char	*map_name);
 	void		GetCoordList(KeyValues *kv_ptr, int team_number);
 	bool		IsToClose(player_t *player_ptr);
-
-	struct		spawn_vector_t
-	{
-		float	x,y,z;
-	};
-
-	struct		spawn_team_t
-	{
-		spawn_vector_t			*spawn_list;
-		int				spawn_list_size;
-		int				last_spawn_index;
-	};
+	bool		DecodeString(char *input_string, spawn_vector_t *coord, int coord_index);
 
 	// Handle up to 10 teams
 	spawn_team_t	spawn_team[10];

@@ -29,6 +29,9 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#ifdef WIN32
+#include <windows.h>
+#endif
 #include "interface.h"
 #include "filesystem.h"
 #include "engine/iserverplugin.h"
@@ -70,22 +73,30 @@ void FreeTeamList(void)
 	FreeList((void **) &team_list, &team_list_size);
 }
 
+/*typedef int ( __thiscall * cteam_GetTeamNumberFunc ) (CTeam *pTeam, DWORD iTeam) ; 
+typedef const char * ( __fastcall * cteam_GetNameFunc ) (CTeam *pTeam, DWORD iTeam) ; 
+typedef int	( __fastcall * IVEngineServer_PrecacheModelFunc ) (IVEngineServer *pEngine, DWORD iEngine, const char *s, bool preload); */
+/*extern te_PlayerDecalFunc te_PlayerDecal ;
+te_PlayerDecalFunc te_PlayerDecal = 0; 
+void* te_PlayerDecalRaw_Org = 0; 
+CVirtualCallGate te_PlayerDecalGate;;
+*/
 //---------------------------------------------------------------------------------
 // Purpose: Find team manager
 //---------------------------------------------------------------------------------
 void SetupTeamList(int edict_count)
 {
 	
-	return;
-
 	FreeList((void **) &team_list, &team_list_size);
+
+	return;
 
 	for (int i = 0; i < edict_count; i++)
 	{
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
 		if(pEntity)
 		{
-			if (Q_stristr(pEntity->GetClassName(), "team_manager") != NULL)
+			if (Q_stristr(pEntity->GetClassName(), "_team_") != NULL)
 			{
 				CBaseEntity *pTeam = pEntity->GetUnknown()->GetBaseEntity();
 				CTeam *team_ptr = (CTeam *) pTeam;
@@ -106,6 +117,8 @@ void SetupTeamList(int edict_count)
 
 		}
 	}
+
+//__thiscall
 
 	Msg("Found [%i] team manager entities\n", team_list_size);
 
