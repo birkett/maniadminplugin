@@ -89,7 +89,8 @@ typedef unsigned long DWORD;
 #include "mani_downloads.h"
 #include "mani_victimstats.h"
 #include "mani_sprayremove.h"
-
+#include "mani_warmuptimer.h"
+#include "mani_vfuncs.h"
 
 #include "shareddefs.h"
 #include "cbaseentity.h"
@@ -895,7 +896,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		return false;
 	}
 
-	serverdll = (IServerGameDLL*) gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
+	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
 	if(serverdll)
  	{
 		Msg("Loaded servergamedll interface at %p\n", serverdll);
@@ -903,8 +904,8 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	else 
 	{
 		// Hack for unreleased interface version
-		Msg("Falling back to ServerGameDLL004\n");
-		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
+		Msg("Falling back to ServerGameDLL003\n");
+		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
 		if(serverdll)
  		{
 			Msg("Loaded servergamedll interface at %p\n", serverdll);
@@ -1373,6 +1374,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	gpManiGhost->Init();
 	gpManiCustomEffects->Init();
 	gpManiVictimStats->RoundStart();
+	gpManiWarmupTimer->LevelInit();
 
 	// Init votes and menu system
 	for (i = 0; i < MANI_MAX_PLAYERS; i++)
@@ -1966,6 +1968,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 	}
 
 	gpManiSprayRemove->GameFrame();
+	gpManiWarmupTimer->GameFrame();
 
 	if (mani_protect_against_cheat_cvars.GetInt() == 1)
 	{
@@ -2234,6 +2237,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if (!player.is_bot)
 	{
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_JOINSERVER);
+		ForceSkinCExec(&player);
 	}
 }
 
@@ -8154,8 +8158,8 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 		spawn_player.user_id = event->GetInt("userid", -1);
 		if (spawn_player.user_id == -1) return;
 		if (!FindPlayerByUserID(&spawn_player)) return;
-		CBaseEntity *pPlayer = spawn_player.entity->GetUnknown()->GetBaseEntity();
-		ProcessSetColour(pPlayer, 255, 255, 255, 255 );
+		//CBaseEntity *pPlayer = spawn_player.entity->GetUnknown()->GetBaseEntity();
+		ProcessSetColour(spawn_player.entity, 255, 255, 255, 255 );
 
 		ForceSkinType(&spawn_player);
 
@@ -9370,10 +9374,11 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 	// Hurt the player
 	int sound_index = rand() % 3;
 
-	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
+//	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
 
 	int health = 0;
-	health = m_pCBaseEntity->GetHealth();
+//	health = m_pCBaseEntity->GetHealth();
+	health = Prop_GetHealth(attacker->entity);
 	if (health <= 0) return;
 		
 	health -= ((damage_to_inflict >= 0) ? damage_to_inflict : damage_to_inflict * -1);
@@ -9382,7 +9387,8 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		health = 0;
 	}
 
-	m_pCBaseEntity->SetHealth(health);
+	Prop_SetHealth(attacker->entity, health);
+//	m_pCBaseEntity->SetHealth(health);
 
 	if (health <= 0)
 	{
@@ -11217,7 +11223,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 		return PLUGIN_STOP;
 	}
 
-	int offset = gpManiGameType->GetCashOffset();
+	//int offset = gpManiGameType->GetCashOffset();
 
 	// Convert to float and int
 	float fAmount = Q_atof(amount);
@@ -11245,32 +11251,33 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 			continue;
 		}
 
-		int *target_cash;
-		target_cash = ((int *)target_player_list[i].entity->GetUnknown() + offset);
+		int target_cash = Prop_GetAccount(target_player_list[i].entity);
+		//target_cash = ((int *)target_player_list[i].entity->GetUnknown() + offset);
 
 		int new_cash = 0;
 
 		switch (mode)
 		{
 			case (MANI_SET_CASH) :	new_cash = iAmount; break;
-			case (MANI_GIVE_CASH) :	new_cash = iAmount + *target_cash; break;
-			case (MANI_GIVE_CASH_PERCENT) :	new_cash = (int) (((float) *target_cash) * (fAmount + 1.0)); break;
-			case (MANI_TAKE_CASH) :	new_cash = *target_cash - iAmount; break;
-			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) *target_cash) * fAmount); break;
-			default : new_cash = *target_cash;
+			case (MANI_GIVE_CASH) :	new_cash = iAmount + target_cash; break;
+			case (MANI_GIVE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * (fAmount + 1.0)); break;
+			case (MANI_TAKE_CASH) :	new_cash = target_cash - iAmount; break;
+			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * fAmount); break;
+			default : new_cash = target_cash;
 		}
 			
 		if (new_cash < 0) new_cash = 0;
 		else if (new_cash > 16000) new_cash = 16000;
 
-		LogCommand (player.entity, "%s : Player [%s] [%s] had [%i] cash, now has [%i] cash\n", command_string, target_player_list[i].name, target_player_list[i].steam_id, *target_cash, new_cash);
+		LogCommand (player.entity, "%s : Player [%s] [%s] had [%i] cash, now has [%i] cash\n", command_string, target_player_list[i].name, target_player_list[i].steam_id, target_cash, new_cash);
 
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
 			AdminSayToAll(&player, mani_admincash_anonymous.GetInt(), "changed player %s cash reserves", target_player_list[i].name); 
 		}
 
-		*target_cash = new_cash;
+		Prop_SetAccount(target_player_list[i].entity, new_cash);
+		//*target_cash = new_cash;
 	}
 
 	return PLUGIN_STOP;
@@ -11371,8 +11378,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 
 		int target_health;
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		target_health = m_pCBaseEntity->GetHealth();
+		target_health = Prop_GetHealth(target_player_list[i].entity);
+//		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+//		target_health = m_pCBaseEntity->GetHealth();
 
 		int new_health = 0;
 
@@ -11402,7 +11410,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 		else
 		{
-			m_pCBaseEntity->SetHealth(new_health);
+			Prop_SetHealth(target_player_list[i].entity, new_health);
+//			m_pCBaseEntity->SetHealth(new_health);
 		}
 	}
 
@@ -12041,8 +12050,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDecal
 
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
-	Vector eyepos = pPlayer->EyePosition();
-	QAngle angles = pPlayer->EyeAngles();
+	Vector eyepos = CBaseEntity_EyePosition(pPlayer);
+	QAngle angles = CBaseEntity_EyeAngles(pPlayer);
 
 	// If from server break out here
 	if (svr_command) return PLUGIN_STOP;
@@ -12305,22 +12314,22 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 		}
 
 		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
-		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(weapon_slot);
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, weapon_slot);
 		if (!pWeapon) continue;
 
 		int	ammo_index;
 
 		if (primary_fire)
 		{
-			ammo_index = pWeapon->GetPrimaryAmmoType();
+			ammo_index = CBaseCombatWeapon_GetPrimaryAmmoType(pWeapon);
 		}
 		else
 		{
-			ammo_index = pWeapon->GetSecondaryAmmoType();
+			ammo_index = CBaseCombatWeapon_GetSecondaryAmmoType(pWeapon);
 		}
 
-        pCombat->GiveAmmo(amount, ammo_index, suppress_noise);
+		CBaseCombatCharacter_GiveAmmo(pCombat, amount, ammo_index, suppress_noise);
 
 		LogCommand (player.entity, "gave user [%s] [%s] ammo\n", target_player_list[i].name, target_player_list[i].steam_id);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -12425,8 +12434,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		ProcessSetColour(m_pCBaseEntity, red, green, blue, alpha);
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		ProcessSetColour(target_player_list[i].entity, red, green, blue, alpha);
 		
 		LogCommand (player.entity, "set user color [%s] [%s] to [%i] [%i] [%i] [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, red, blue, green, alpha);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -12523,9 +12532,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderMode
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
-		
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
+		Prop_SetRenderMode(target_player_list[i].entity, render_mode);
 		LogCommand (player.entity, "set user rendermode [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
@@ -12621,9 +12630,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		m_pCBaseEntity->m_nRenderFX = render_mode;
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//m_pCBaseEntity->m_nRenderFX = render_mode;
 		
+		Prop_SetRenderFX(target_player_list[i].entity, render_mode);
 		LogCommand (player.entity, "set user renderfx [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
@@ -13504,8 +13514,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaPosition
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
 	Vector pos = player.player_info->GetAbsOrigin();
-	Vector eyepos = pPlayer->EyePosition();
-	QAngle angles = pPlayer->EyeAngles();
+	Vector eyepos = CBaseEntity_EyePosition(pPlayer);
+	QAngle angles = CBaseEntity_EyeAngles(pPlayer);
 
 	SayToPlayer(&player, "Absolute Position XYZ = %.5f %.5f %.5f", pos.x, pos.y, pos.z);
 	SayToPlayer(&player, "Eye Position XYZ = %.5f %.5f %.5f", eyepos.x, eyepos.y, eyepos.z);
@@ -13866,13 +13876,17 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDropC4
 		if (bomb_player.player_info->IsHLTV()) continue;
 
 		CBaseEntity *pPlayer = bomb_player.entity->GetUnknown()->GetBaseEntity();
-		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(4);
+
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 4);
+
 		if (pWeapon)
 		{
-			if (FStrEq("weapon_c4", pWeapon->GetName()))
+			if (FStrEq("weapon_c4", CBaseCombatWeapon_GetName(pWeapon)))
 			{
-				pCombat->Weapon_Drop(pWeapon);
+				CBasePlayer *pBase = (CBasePlayer *) pPlayer;
+				CBasePlayer_WeaponDrop(pBase, pWeapon);
+
 				if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 				{
 					AdminSayToAll(&player, mani_admindropc4_anonymous.GetInt(), "forced player %s to drop the C4", bomb_player.name); 
@@ -21733,7 +21747,7 @@ bool	CAdminPlugin::IsTampered(void)
 // Msg("Checksum string %i\n", checksum);
 //  Msg("Offset required %i\n", checksum - plus1);
 
-	if (checksum != (plus1 + 8266))
+	if (checksum != (plus1 + 8268))
 	{
 		return true;
 	}

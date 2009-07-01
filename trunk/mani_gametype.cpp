@@ -56,6 +56,11 @@ extern	IServerGameDLL	*serverdll;
 
 extern	CGlobalVars *gpGlobals;
 
+static int	UTIL_GetPropertyInt(char *ClassName, char *Property, edict_t *pEntity);
+static bool UTIL_SetPropertyInt(char *ClassName, char *Property, edict_t *pEntity, int NewValue);
+static int	UTIL_FindPropOffset(const char *CombinedProp);
+static bool	UTIL_SplitCombinedProp(const char *source, char *part1, char *part2);
+
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
 	return(Q_strcmp(sz1, sz2) == 0);
@@ -238,7 +243,21 @@ void ManiGameType::Init(void)
 #endif
 	}
 
-	cash_allowed = 0;
+	// Get the network offsets
+	temp_ptr = base_key_ptr->FindKey("props", false);
+	if (temp_ptr)
+	{
+		this->GetProps(temp_ptr);
+	}
+
+	// Get the vfunc offsets
+	temp_ptr = base_key_ptr->FindKey("vfuncs", false);
+	if (temp_ptr)
+	{
+		this->GetVFuncs(temp_ptr);
+	}
+
+/*	cash_allowed = 0;
 
 	// Find cash offset
 	temp_ptr = base_key_ptr->FindKey("cash_offset", false);
@@ -253,7 +272,7 @@ void ManiGameType::Init(void)
 		cash_offset = temp_ptr->GetInt("win_offset", 875);
 #endif
 	}
-
+*/
 	kills_allowed = 0;
 
 	// Find cash offset
@@ -285,10 +304,11 @@ void ManiGameType::Init(void)
 				Q_memset(&temp_team, 0, sizeof(team_class_t));
 
 				temp_team.team_index = team_ptr->GetInt("index", -1);
-				Q_strcpy(temp_team.spawnpoint_class_name,team_ptr->GetString("spawnpoint_class_name", "NULL"));
 				temp_team.team_short_translation_index = team_ptr->GetInt("short_translation_index", 0); // CT, T, C, R etc
 				temp_team.team_translation_index = team_ptr->GetInt("translation_index", 0); // Long proper name
 				Q_strcpy(temp_team.group, team_ptr->GetString("group","#DEF"));
+				Q_strcpy(temp_team.spawnpoint_class_name,team_ptr->GetString("spawnpoint_class_name", "NULL"));
+				Q_strcpy(temp_team.log_name,team_ptr->GetString("log_name", "NULL"));
 
 				switch (temp_team.team_index)
 				{
@@ -334,6 +354,53 @@ void ManiGameType::Init(void)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Get Property offsets
+//---------------------------------------------------------------------------------
+void	ManiGameType::GetProps(KeyValues *kv_ptr)
+{
+
+	const char	*prop_ptr;
+
+	if ((prop_ptr = kv_ptr->GetString("health", NULL)) != NULL) prop_index[MANI_PROP_HEALTH] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("armor", NULL)) != NULL) prop_index[MANI_PROP_ARMOR] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("render_mode", NULL)) != NULL) prop_index[MANI_PROP_RENDER_MODE] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("render_fx", NULL)) != NULL) prop_index[MANI_PROP_RENDER_FX] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("colour", NULL)) != NULL) prop_index[MANI_PROP_COLOUR] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("account", NULL)) != NULL) prop_index[MANI_PROP_ACCOUNT] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("move_type", NULL)) != NULL) prop_index[MANI_PROP_MOVE_TYPE] = UTIL_FindPropOffset(prop_ptr);
+//	if ((prop_ptr = kv_ptr->GetString("deaths", NULL)) != NULL) prop_index[MANI_PROP_DEATHS] = UTIL_FindPropOffset(prop_ptr);
+//	if ((prop_ptr = kv_ptr->GetString("score", NULL)) != NULL) prop_index[MANI_PROP_SCORE] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("model_index", NULL)) != NULL) prop_index[MANI_PROP_MODEL_INDEX] = UTIL_FindPropOffset(prop_ptr);
+
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Get Property offsets
+//---------------------------------------------------------------------------------
+void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
+{
+	vfunc_index[MANI_VFUNC_EYE_ANGLES] = kv_ptr->GetInt("eye_angles", 0x6d);
+	vfunc_index[MANI_VFUNC_TELEPORT] = kv_ptr->GetInt("teleport", 0x5d);
+	vfunc_index[MANI_VFUNC_SET_MODEL_INDEX] = kv_ptr->GetInt("set_model_index", 0x09);
+	vfunc_index[MANI_VFUNC_EYE_POSITION] = kv_ptr->GetInt("eye_position", 0x6c);
+	vfunc_index[MANI_VFUNC_MY_COMBAT_CHARACTER] = kv_ptr->GetInt("my_combat_character", 0x3e);
+	vfunc_index[MANI_VFUNC_IGNITE] = kv_ptr->GetInt("ignite", 0xad);
+	vfunc_index[MANI_VFUNC_REMOVE_PLAYER_ITEM] = kv_ptr->GetInt("remove_player_item", 0xd3);
+	vfunc_index[MANI_VFUNC_GET_WEAPON_SLOT] = kv_ptr->GetInt("get_weapon_slot", 0xd1);
+	vfunc_index[MANI_VFUNC_GIVE_AMMO] = kv_ptr->GetInt("give_ammo", 0xc6);
+	vfunc_index[MANI_VFUNC_WEAPON_DROP] = kv_ptr->GetInt("weapon_drop", 0xcc);
+	vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE] = kv_ptr->GetInt("get_primary_ammo_type", 0x10d);
+	vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE] = kv_ptr->GetInt("get_secondary_ammo_type", 0x10e);
+	vfunc_index[MANI_VFUNC_WEAPON_GET_NAME] = kv_ptr->GetInt("weapon_get_name", 0x107);
+//	vfunc_index[MANI_VFUNC_GET_TEAM_NUMBER] = kv_ptr->GetInt("get_team_number", 0x9c);
+//	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = kv_ptr->GetInt("get_team_name", 0x9d);
+	vfunc_index[MANI_VFUNC_GET_VELOCITY] = kv_ptr->GetInt("get_velocity", 0x75);
+
+	return;
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Return the game type string
 //---------------------------------------------------------------------------------
 const char	*ManiGameType::GetGameType(void)
@@ -349,6 +416,39 @@ bool	ManiGameType::IsGameType(const char *game_str)
 	return ((FStrEq(game_type, game_str) ? true:false));
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Returns true if passed in string = game type string
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetVFuncIndex(int	index)
+{
+#ifdef __linux__
+	return (vfunc_index[index]);
+#else
+	// windows is one less all the time
+	return (vfunc_index[index] - 1);
+#endif
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns true if passed in string = game type string
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetPropIndex(int	index)
+{
+	return (prop_index[index]);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns true if passed in string = game type string
+//---------------------------------------------------------------------------------
+bool	ManiGameType::CanUseProp(int	index)
+{
+	if (prop_index[index] == -1)
+	{
+		return false;
+	}
+
+	return true;
+}
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if passed in integer = game type we know (faster than string compare)
 //---------------------------------------------------------------------------------
@@ -473,21 +573,6 @@ bool		ManiGameType::IsVoiceAllowed(void)
 int		ManiGameType::GetVoiceOffset(void)
 {
 	return (voice_offset);
-}
-//---------------------------------------------------------------------------------
-// Purpose: Returns true if cash is allowed for the mod
-//---------------------------------------------------------------------------------
-bool		ManiGameType::IsCashAllowed(void)
-{
-	return ((cash_allowed == 0) ? false:true);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns cash offset into player
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetCashOffset(void)
-{
-	return (cash_offset);
 }
 
 //---------------------------------------------------------------------------------
@@ -643,6 +728,22 @@ char	*ManiGameType::GetTeamSpawnPointClassName(int index)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Returns the log entry name for team
+//---------------------------------------------------------------------------------
+char	*ManiGameType::GetTeamLogName(int index)
+{
+	if (this->IsValidActiveTeam(index))
+	{
+		if (!FStrEq(team_class_list[index].log_name,""))
+		{
+			return (team_class_list[index].log_name);
+		}
+	}
+
+	return NULL;
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Returns the 'short' translation index for an active team
 //---------------------------------------------------------------------------------
 int		ManiGameType::GetTeamShortTranslation(int index)
@@ -750,6 +851,29 @@ void	ManiGameType::DefaultValues(void)
 	death_beam_allowed = 1;
 	browse_allowed = 1;
 
+	// Default CSS offsets
+	vfunc_index[MANI_VFUNC_EYE_ANGLES] = 0x6d;
+	vfunc_index[MANI_VFUNC_TELEPORT] = 0x5d;
+	vfunc_index[MANI_VFUNC_SET_MODEL_INDEX] = 0x09;
+	vfunc_index[MANI_VFUNC_EYE_POSITION] = 0x6c;
+	vfunc_index[MANI_VFUNC_MY_COMBAT_CHARACTER] = 0x3e;
+	vfunc_index[MANI_VFUNC_IGNITE] = 0xad;
+	vfunc_index[MANI_VFUNC_REMOVE_PLAYER_ITEM] = 0xd3;
+	vfunc_index[MANI_VFUNC_GET_WEAPON_SLOT] = 0xd1;
+	vfunc_index[MANI_VFUNC_GIVE_AMMO] = 0xc6;
+	vfunc_index[MANI_VFUNC_WEAPON_DROP] = 0xcc;
+	vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE] = 0x10d;
+	vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE] = 0x10e;
+	vfunc_index[MANI_VFUNC_WEAPON_GET_NAME] = 0x107;
+//	vfunc_index[MANI_VFUNC_GET_TEAM_NUMBER] = 0x9c;
+//	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = 0x9d;
+	vfunc_index[MANI_VFUNC_GET_VELOCITY] = 0x75;
+
+	for (int i = 0; i < 200; i++)
+	{
+		prop_index[i] = -1;
+	}
+
 	return ;
 }
 
@@ -819,6 +943,159 @@ CON_COMMAND(ma_forcegametype, "Forces the game type detection to run")
 	LoadSkins();
 	return;
 }
+
+//********************************************************
+// Do all the non virtual stuff for setting network vars
+
+CON_COMMAND(ma_getprop, "Debug Tool")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+
+	if (engine->Cmd_Argc() == 1)
+	{
+		ServerClass *sc = serverdll->GetAllServerClasses();
+		while (sc)
+		{
+			Msg("%s\n", sc->GetName());
+			sc = sc->m_pNext;
+		}	
+	}
+	else if (engine->Cmd_Argc() == 2)
+	{
+		ServerClass *sc = serverdll->GetAllServerClasses();
+		while (sc)
+		{
+			if (FStrEq(sc->GetName(), engine->Cmd_Argv(1)))
+			{
+				int NumProps = sc->m_pTable->GetNumProps();
+				for (int i=0; i<NumProps; i++)
+				{
+					Msg("%s\n", sc->m_pTable->GetProp(i)->GetName());
+				}
+
+				return ;
+			}
+			sc = sc->m_pNext;
+		}
+	}
+	else if (engine->Cmd_Argc() == 3)
+	{
+		ServerClass *sc = serverdll->GetAllServerClasses();
+		while (sc)
+		{
+			int NumProps = sc->m_pTable->GetNumProps();
+			for (int i=0; i<NumProps; i++)
+			{
+				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), engine->Cmd_Argv(1)))
+				{
+					Msg("%s.%s\n", sc->GetName(), sc->m_pTable->GetProp(i)->GetName());
+				}
+			}
+
+			sc = sc->m_pNext;
+		}
+	}
+}
+
+static int UTIL_GetPropertyInt(char *ClassName, char *Property, edict_t *pEntity)
+{
+/*	int offset = UTIL_FindOffset(ClassName, Property);
+	if (offset)
+	{
+		int *iptr = (int *)(pEntity->GetUnknown() + offset);
+		return *iptr;
+	}
+	else
+	{
+		return 0;
+	}*/
+}
+
+static bool UTIL_SetPropertyInt(char *ClassName, char *Property, edict_t *pEntity, int NewValue)
+{
+
+/*	int offset = UTIL_FindOffset(ClassName, Property);
+	if (offset)
+	{
+		int *iptr = (int *)(pEntity->GetUnknown() + offset);
+		*iptr = NewValue;
+		pEntity->m_fStateFlags |= FL_EDICT_CHANGED;
+		return true;
+	}   
+	else
+	{
+		return false;
+	}*/
+}
+
+static int UTIL_FindPropOffset(const char *CombinedProp)
+{
+	char	ClassName[256]="";
+	char	Property[256]="";
+
+	if (!UTIL_SplitCombinedProp(CombinedProp, ClassName, Property))
+	{
+		return -1;
+	}
+
+	ServerClass *sc = serverdll->GetAllServerClasses();
+	while (sc)
+	{
+		if (FStrEq(sc->GetName(), ClassName))
+		{
+			int NumProps = sc->m_pTable->GetNumProps();
+			for (int i=0; i<NumProps; i++)
+			{
+				if (stricmp(sc->m_pTable->GetProp(i)->GetName(), Property) == 0)
+				{
+					int offset = sc->m_pTable->GetProp(i)->GetOffset() / 4;
+					Msg("Found %s with offset of %i\n", CombinedProp, offset); 
+					return offset;
+				}
+			}
+			return -1;
+		}
+		sc = sc->m_pNext;
+	}
+
+	return -1;
+}
+
+static bool	UTIL_SplitCombinedProp(const char *source, char *part1, char *part2)
+{
+	int length = strlen(source);
+
+	bool found_split = false;
+	int j = 0;
+
+	for (int i = 0; i < length; i++)
+	{
+		if (found_split)
+		{
+			part2[j] = source[i];
+			j++;
+		}
+		else
+		{
+			part1[i] = source[i];
+		}
+
+		if (!found_split)
+		{
+			if (source[i] == '.')
+			{
+				part1[i] = '\0';
+				found_split = true;
+			}
+		}
+	}
+
+	if (!found_split) return false;
+
+	return true;
+}
+
 
 ManiGameType	g_ManiGameType;
 ManiGameType	*gpManiGameType;

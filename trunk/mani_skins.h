@@ -103,6 +103,7 @@ extern	void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_of
 extern  void SkinPlayerDisconnect (player_t	*player_ptr);
 extern	void SkinResetTeamID(void);
 extern	void ProcessJoinSkinChoiceMenu(   player_t *player_ptr,   int next_index,   int argv_offset,   char *menu_command );
+extern  void	ForceSkinCExec(player_t *player_ptr);
 
 
 #endif

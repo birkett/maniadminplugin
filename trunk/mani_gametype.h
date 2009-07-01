@@ -44,6 +44,35 @@
 #define MANI_GAME_DOD_STR2 "Day Of Defeat: Source"
 #define MANI_GAME_DOD (7)
 
+// VFunc defs
+#define MANI_VFUNC_EYE_ANGLES (0)
+#define MANI_VFUNC_TELEPORT (1)
+#define MANI_VFUNC_SET_MODEL_INDEX (2)
+#define MANI_VFUNC_EYE_POSITION (3)
+#define MANI_VFUNC_MY_COMBAT_CHARACTER (4)
+#define MANI_VFUNC_IGNITE (5)
+#define MANI_VFUNC_REMOVE_PLAYER_ITEM (6)
+#define MANI_VFUNC_GET_WEAPON_SLOT (7)
+#define MANI_VFUNC_GIVE_AMMO (8)
+#define MANI_VFUNC_WEAPON_DROP (9)
+#define MANI_VFUNC_GET_PRIMARY_AMMO_TYPE (10)
+#define MANI_VFUNC_GET_SECONDARY_AMMO_TYPE (11)
+#define MANI_VFUNC_WEAPON_GET_NAME (12)
+//#define MANI_VFUNC_GET_TEAM_NUMBER (13)
+//#define MANI_VFUNC_GET_TEAM_NAME (14)
+#define MANI_VFUNC_GET_VELOCITY (15)
+
+//Property defs
+#define MANI_PROP_HEALTH		(0)
+#define MANI_PROP_RENDER_MODE	(1)
+#define MANI_PROP_RENDER_FX		(2)
+#define MANI_PROP_COLOUR		(3)
+#define MANI_PROP_ACCOUNT		(4)
+#define MANI_PROP_MOVE_TYPE		(5)
+//#define MANI_PROP_DEATHS		(6)
+#define MANI_PROP_ARMOR			(7)
+//#define MANI_PROP_SCORE			(8)
+#define MANI_PROP_MODEL_INDEX	(9)
 
 class ManiGameType
 {
@@ -75,8 +104,6 @@ public:
 	bool		IsSetColourAllowed(void);
 	int			GetAlphaRenderMode(void);
 
-	bool		IsCashAllowed(void);
-	int			GetCashOffset(void);
 	bool		IsAMXMenuAllowed(void);
 
 	// Dod requires next 5
@@ -99,6 +126,7 @@ public:
 	int			GetIndexFromGroup(const char *group_id);
 	bool		IsValidActiveTeam(int	index);
 	char		*GetTeamSpawnPointClassName(int index);
+	char		*GetTeamLogName(int index);
 	int			GetTeamShortTranslation(int index);
 	int			GetTeamTranslation(int index);
 	int			GetOpposingTeam(int index);
@@ -106,10 +134,13 @@ public:
 	const char *GetAdminSkinDir(int index);
 	const char *GetReservedSkinDir(int index);
 	const char *GetPublicSkinDir(int index);
-
+	int			GetVFuncIndex(int index);
+	int         GetPropIndex(int  index);
+	bool		CanUseProp(int index);
 
 private:
-
+	void		GetProps(KeyValues *kv_ptr);
+	void		GetVFuncs(KeyValues *kv_ptr);
 	void		DefaultValues(void);
 	bool		FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr);
 
@@ -123,6 +154,7 @@ private:
 		char	admin_skin_dir[64];
 		char	reserved_skin_dir[64];
 		char	public_skin_dir[64];
+		char	log_name[64];
 	};
 
 	team_class_t	team_class_list[10];
@@ -141,9 +173,6 @@ private:
 	int			spectator_index;
 	int			spectator_allowed;
 	char		spectator_group[32];
-
-	int			cash_allowed;
-	int			cash_offset;
 
 	int			kills_allowed;
 	int			kills_offset;
@@ -169,6 +198,8 @@ private:
 	// Dystopia requires this
 	int			browse_allowed;
 
+	int			vfunc_index[200];
+	int			prop_index[200];
 };
 
 extern	ManiGameType *gpManiGameType;
