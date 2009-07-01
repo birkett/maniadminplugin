@@ -1706,7 +1706,7 @@ void	ShowSettingsPrimaryMenu(player_t *player)
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings quake");
 	}
 
-	if (mani_show_death_beams.GetInt() != 0)
+	if (mani_show_death_beams.GetInt() != 0 && gpManiGameType->IsDeathBeamAllowed())
 	{
 //		char	beam_mode[32];
 
@@ -2152,6 +2152,8 @@ PLUGIN_RESULT	ProcessMaDeathBeam
 	player_t player;
 	player_settings_t *player_settings;
 	player.entity = NULL;
+
+	if (!gpManiGameType->IsDeathBeamAllowed()) return PLUGIN_STOP;
 
 	if (war_mode) return PLUGIN_STOP;
 

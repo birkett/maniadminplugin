@@ -77,11 +77,13 @@ public:
 	int			GetCashOffset(void);
 	bool		IsAMXMenuAllowed(void);
 
-	// Dod requires next 4
+	// Dod requires next 5
 	bool		IsSlapAllowed(void);
 	bool		IsTeleportAllowed(void);
 	bool		IsFireAllowed(void);
 	bool		IsDrugAllowed(void);
+	bool		IsDeathBeamAllowed(void);
+
 	bool		IsAdvertDecalAllowed(void);
 
 	int			GetMaxMessages(void);
@@ -151,6 +153,7 @@ private:
 	int			teleport_allowed;
 	int			drug_allowed;
 	int			fire_allowed;
+	int			death_beam_allowed;
 	int			advert_decal_allowed;
 //	int			client_suicide;
 

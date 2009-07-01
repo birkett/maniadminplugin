@@ -1961,6 +1961,8 @@ void	ProcessDeathBeam(player_t *attacker_ptr, player_t *victim_ptr)
 		return;
 	}
 
+	if (!gpManiGameType->IsDeathBeamAllowed()) return;
+
 	if (attacker_ptr->user_id <= 0) return;
 	if (attacker_ptr->user_id == victim_ptr->user_id) return;
 	if (victim_ptr->is_bot) return;

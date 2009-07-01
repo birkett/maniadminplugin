@@ -42,9 +42,9 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.1.0zd, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.1.0zd"
-#define PLUGIN_VERSION_ID "V1.1.0zd\n"
+#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.1.0ze, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.1.0ze"
+#define PLUGIN_VERSION_ID "V1.1.0ze\n"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)
