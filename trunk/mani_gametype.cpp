@@ -44,9 +44,13 @@
 #include "mani_convar.h"
 #include "mani_memory.h"
 #include "mani_player.h"
-#include "mani_skins.h"
+#include "mani_immunity_flags.h"
 #include "mani_admin.h"
+#include "mani_skins.h"
+#include "mani_output.h"
 #include "mani_gametype.h"
+#include "mani_vfuncs.h"
+#include "mani_file.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
 
@@ -56,6 +60,7 @@ extern	IServerGameDLL	*serverdll;
 
 extern	CGlobalVars *gpGlobals;
 
+static int	UTIL_GetVarValue(CBaseEntity *pCBE, const char *var_id);
 static int	UTIL_GetPropertyInt(char *ClassName, char *Property, edict_t *pEntity);
 static bool UTIL_SetPropertyInt(char *ClassName, char *Property, edict_t *pEntity, int NewValue);
 static int	UTIL_FindPropOffset(const char *CombinedProp);
@@ -73,6 +78,17 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 ManiGameType::ManiGameType()
 {
 	// Init
+	for (int i = 0; i < 200; i++)
+	{
+		var_index[i].index = -2;
+	}
+
+	strcpy(var_index[MANI_VAR_DEATHS].name, "m_iDeaths"); var_index[MANI_VAR_DEATHS].index = -1;
+	strcpy(var_index[MANI_VAR_FRAGS].name, "m_iFrags"); var_index[MANI_VAR_FRAGS].index = -1;
+	strcpy(var_index[MANI_VAR_GRAVITY].name, "m_flGravity"); var_index[MANI_VAR_GRAVITY].index = -1;
+	strcpy(var_index[MANI_VAR_FRICTION].name, "m_flFriction"); var_index[MANI_VAR_FRICTION].index = -1;
+	strcpy(var_index[MANI_VAR_ELASTICITY].name, "m_flElasticity"); var_index[MANI_VAR_ELASTICITY].index = -1;
+
 	gpManiGameType = this;
 }
 
@@ -89,8 +105,21 @@ void ManiGameType::Init(void)
 	char	core_filename[256];
 	team_class_t	temp_team;
 
-	Msg("*********** Loading gametypes.txt ************\n");
+//	Msg("*********** Loading gametypes.txt ************\n");
 	// Read the gametype.txt file
+
+	//Get filename
+	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/gametypes.txt", mani_path.GetString());
+
+	// Check if file exists
+	if (!filesystem->FileExists(core_filename))
+	{
+		for (int i = 0; i < 100; i++)
+		{
+			Msg("WARNING! YOU ARE MISSING GAMETYPES.TXT THIS MUST BE INSTALLED!\n");
+		}
+		return;
+	}
 
 	KeyValues *kv_ptr = new KeyValues("gametypes.txt");
 
@@ -109,7 +138,6 @@ void ManiGameType::Init(void)
 
 	DefaultValues();
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/gametypes.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
 		Msg("Failed to load gametypes.txt\n");
@@ -169,6 +197,7 @@ void ManiGameType::Init(void)
 			if (!base_key_ptr)
 			{
 				kv_ptr->deleteThis();
+				Msg("Failed to find 'Unknown Mod' entry\n");
 				return;
 			}
 		}
@@ -176,6 +205,9 @@ void ManiGameType::Init(void)
 
 	//base_key_ptr should now hold our core key for our game type defaults
 	Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
+#ifdef __linux__
+	Msg("Linux binary @ %s\n", linux_game_bin);
+#endif
 	spectator_allowed = base_key_ptr->GetInt("spectator_allowed", 0);
 	spectator_index = base_key_ptr->GetInt("spectator_index", 1);
 	Q_strcpy(spectator_group, base_key_ptr->GetString("spectator_group", "#SPEC"));
@@ -193,6 +225,7 @@ void ManiGameType::Init(void)
 	advert_decal_allowed = base_key_ptr->GetInt("advert_decal_allowed", 1);
 	death_beam_allowed = base_key_ptr->GetInt("death_beam_allowed", 1);
 	browse_allowed = base_key_ptr->GetInt("browse_allowed", 1);
+	debug_log = base_key_ptr->GetInt("debug_log", 0);
 
 	KeyValues *temp_ptr;
 
@@ -204,7 +237,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("advanced_effects", false);
 	if (temp_ptr)
 	{
-		Msg("Found advanced effects\n");
+//		Msg("Found advanced effects\n");
 #ifdef __linux__
         advanced_effects = temp_ptr->GetInt("enable_linux", 0);
 #else
@@ -215,11 +248,11 @@ void ManiGameType::Init(void)
 	}
 
 
-	// Allow advanced effects via te
+	// Allow voice control functionality
 	temp_ptr = base_key_ptr->FindKey("voice_control", false);
 	if (temp_ptr)
 	{
-		Msg("Found voice control\n");
+//		Msg("Found voice control\n");
 
 		voice_allowed = 1;
 #ifdef __linux__
@@ -229,17 +262,31 @@ void ManiGameType::Init(void)
 #endif
 	}
 
-	// Allow advanced effects via te
+	// Allow spray hooking
 	temp_ptr = base_key_ptr->FindKey("spray_hook_control", false);
 	if (temp_ptr)
 	{
-		Msg("Found spray hook control\n");
+//		Msg("Found spray hook control\n");
 
 		spray_hook_allowed = 1;
 #ifdef __linux__
         spray_hook_offset = temp_ptr->GetInt("linux_offset", 28);
 #else
 		spray_hook_offset = temp_ptr->GetInt("win_offset", 28);
+#endif
+	}
+
+	// Allow Level Init hooking
+	temp_ptr = base_key_ptr->FindKey("spawn_point_control", false);
+	if (temp_ptr)
+	{
+//		Msg("Found spawn point control\n");
+
+		spawn_point_allowed = 1;
+#ifdef __linux__
+        spawn_point_offset = temp_ptr->GetInt("linux_offset", 2);
+#else
+		spawn_point_offset = temp_ptr->GetInt("win_offset", 2);
 #endif
 	}
 
@@ -257,43 +304,11 @@ void ManiGameType::Init(void)
 		this->GetVFuncs(temp_ptr);
 	}
 
-/*	cash_allowed = 0;
-
-	// Find cash offset
-	temp_ptr = base_key_ptr->FindKey("cash_offset", false);
-	if (temp_ptr)
-	{
-		Msg("Found cash offset\n");
-		cash_allowed = 1;
-
-#ifdef __linux__
-		cash_offset = temp_ptr->GetInt("linux_offset", 880);
-#else
-		cash_offset = temp_ptr->GetInt("win_offset", 875);
-#endif
-	}
-*/
-	kills_allowed = 0;
-
-	// Find cash offset
-	temp_ptr = base_key_ptr->FindKey("kills_offset", false);
-	if (temp_ptr)
-	{
-		Msg("Found kills offset\n");
-		kills_allowed = 1;
-
-#ifdef __linux__
-		kills_offset = temp_ptr->GetInt("linux_offset", 747);
-#else
-		kills_offset = temp_ptr->GetInt("win_offset", 742);
-#endif
-	}
-
 	// Handle teams
 	temp_ptr = base_key_ptr->FindKey("teams", false);
 	if (temp_ptr)
 	{
-		Msg ("Found teams\n");
+//		Msg("Found teams\n");
 		KeyValues *team_ptr;
 
 		team_ptr = temp_ptr->GetFirstTrueSubKey();
@@ -335,7 +350,7 @@ void ManiGameType::Init(void)
 				}
 
 				team_class_list[temp_team.team_index] = temp_team;
-				Msg("Found team [%s]\n", temp_team.group);
+//				Msg("Found team [%s]\n", temp_team.group);
 
 				team_ptr = team_ptr->GetNextKey();
 				if (!team_ptr)
@@ -350,7 +365,7 @@ void ManiGameType::Init(void)
 
 	kv_ptr->deleteThis();
 
-	Msg("*********** gametypes.txt loaded ************\n");
+//	Msg("*********** gametypes.txt loaded ************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -371,6 +386,8 @@ void	ManiGameType::GetProps(KeyValues *kv_ptr)
 //	if ((prop_ptr = kv_ptr->GetString("deaths", NULL)) != NULL) prop_index[MANI_PROP_DEATHS] = UTIL_FindPropOffset(prop_ptr);
 //	if ((prop_ptr = kv_ptr->GetString("score", NULL)) != NULL) prop_index[MANI_PROP_SCORE] = UTIL_FindPropOffset(prop_ptr);
 	if ((prop_ptr = kv_ptr->GetString("model_index", NULL)) != NULL) prop_index[MANI_PROP_MODEL_INDEX] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("vec_origin", NULL)) != NULL) prop_index[MANI_PROP_VEC_ORIGIN] = UTIL_FindPropOffset(prop_ptr);
+	if ((prop_ptr = kv_ptr->GetString("ang_rotation", NULL)) != NULL) prop_index[MANI_PROP_ANG_ROTATION] = UTIL_FindPropOffset(prop_ptr);
 
 	return;
 }
@@ -396,6 +413,11 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 //	vfunc_index[MANI_VFUNC_GET_TEAM_NUMBER] = kv_ptr->GetInt("get_team_number", 0x9c);
 //	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = kv_ptr->GetInt("get_team_name", 0x9d);
 	vfunc_index[MANI_VFUNC_GET_VELOCITY] = kv_ptr->GetInt("get_velocity", 0x75);
+	vfunc_index[MANI_VFUNC_WEAPON_SWITCH] = kv_ptr->GetInt("weapon_switch", 0xcd);
+	vfunc_index[MANI_VFUNC_USER_CMDS] = kv_ptr->GetInt("user_cmds", -1); // 0x322 for windows
+	vfunc_index[MANI_VFUNC_GIVE_ITEM] = kv_ptr->GetInt("give_item", -1); // 0x133
+	vfunc_index[MANI_VFUNC_MAP] = kv_ptr->GetInt("map_desc", -1); // 0x0d
+	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = kv_ptr->GetInt("commit_suicide", -1); // 0x0d
 
 	return;
 }
@@ -425,8 +447,32 @@ int		ManiGameType::GetVFuncIndex(int	index)
 	return (vfunc_index[index]);
 #else
 	// windows is one less all the time
-	return (vfunc_index[index] - 1);
+	return (((vfunc_index[index] == -1) ? -1: vfunc_index[index] - 1));
 #endif
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns the index of a variable associated with an entity
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetPtrIndex(CBaseEntity *pCBE, int index)
+{
+	if (var_index[index].index == -1)
+	{
+		// Search for var if first time
+		var_index[index].index = UTIL_GetVarValue(pCBE, var_index[index].name);
+		if (var_index[index].index == -2)
+		{
+			return -1;
+		}
+	}
+	else if (var_index[index].index == -2)
+	{
+		// It was never found on the first go.
+		return -1;
+	}
+
+	// return true ptr
+	return var_index[index].index;
 }
 
 //---------------------------------------------------------------------------------
@@ -452,10 +498,10 @@ bool	ManiGameType::CanUseProp(int	index)
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if passed in integer = game type we know (faster than string compare)
 //---------------------------------------------------------------------------------
-bool	ManiGameType::IsGameType(int game_index)
-{
-	return ((game_index == game_type_index) ? true:false);
-}
+//bool	ManiGameType::IsGameType(int game_index)
+//{
+//	return ((game_index == game_type_index) ? true:false);
+//}
 
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if advanced effects allowed via temp ents
@@ -560,6 +606,22 @@ int		ManiGameType::GetSprayHookOffset(void)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Returns true if spawn point hook allowed
+//---------------------------------------------------------------------------------
+bool		ManiGameType::IsSpawnPointHookAllowed(void)
+{
+	return ((spawn_point_allowed == 0) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns virtual function index for spawn point hook
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetSpawnPointHookOffset(void)
+{
+	return (spawn_point_offset);
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Returns true if voice hooking is allowed
 //---------------------------------------------------------------------------------
 bool		ManiGameType::IsVoiceAllowed(void)
@@ -646,22 +708,6 @@ bool		ManiGameType::IsBrowseAllowed(void)
 {
 	return ((client_suicide == 0) ? false:true);
 }*/
-
-//---------------------------------------------------------------------------------
-// Purpose: Check whether we use decrement frags
-//---------------------------------------------------------------------------------
-bool		ManiGameType::IsKillsAllowed(void)
-{
-	return ((kills_allowed == 0) ? false:true);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns kills offset into player
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetKillsOffset(void)
-{
-	return (kills_offset);
-}
 
 //---------------------------------------------------------------------------------
 // Purpose: Returns alpha render mode
@@ -837,8 +883,8 @@ void	ManiGameType::DefaultValues(void)
 	max_messages = 22;
 	voice_allowed = 0;
 	spray_hook_allowed = 0;
+	spawn_point_allowed = 0;
 //	client_suicide = 1;
-	kills_allowed = 0;
 	set_colour = 1;
 	alpha_render_mode = 1;
 
@@ -850,6 +896,7 @@ void	ManiGameType::DefaultValues(void)
 	advert_decal_allowed = 1;
 	death_beam_allowed = 1;
 	browse_allowed = 1;
+	debug_log = 0;
 
 	// Default CSS offsets
 	vfunc_index[MANI_VFUNC_EYE_ANGLES] = 0x6d;
@@ -868,6 +915,8 @@ void	ManiGameType::DefaultValues(void)
 //	vfunc_index[MANI_VFUNC_GET_TEAM_NUMBER] = 0x9c;
 //	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = 0x9d;
 	vfunc_index[MANI_VFUNC_GET_VELOCITY] = 0x75;
+	vfunc_index[MANI_VFUNC_MAP] = 0x0d;
+	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = 0x14d;
 
 	for (int i = 0; i < 200; i++)
 	{
@@ -887,7 +936,7 @@ bool	ManiGameType::FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr)
 	base_key_ptr = kv->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		return false;
 	}
 
@@ -1050,7 +1099,7 @@ static int UTIL_FindPropOffset(const char *CombinedProp)
 				if (stricmp(sc->m_pTable->GetProp(i)->GetName(), Property) == 0)
 				{
 					int offset = sc->m_pTable->GetProp(i)->GetOffset() / 4;
-					Msg("Found %s with offset of %i\n", CombinedProp, offset); 
+//					Msg("Found %s with offset of %i\n", CombinedProp, offset); 
 					return offset;
 				}
 			}
@@ -1094,6 +1143,164 @@ static bool	UTIL_SplitCombinedProp(const char *source, char *part1, char *part2)
 	if (!found_split) return false;
 
 	return true;
+}
+
+// Search datamap for value
+static
+int	UTIL_GetVarValue(CBaseEntity *pCBE, const char *var_id)
+{
+	datamap_t *dmap = CBaseEntity_GetDataDescMap(pCBE);
+	if (dmap)
+	{
+		while (dmap)
+		{
+			for ( int i = 0; i < dmap->dataNumFields; i++ )
+			{
+				if (dmap->dataDesc[i].fieldName &&
+					strcmp(var_id,dmap->dataDesc[i].fieldName) == 0)
+				{
+					return dmap->dataDesc[i].fieldOffset[0] / 4;
+				}
+			}
+
+			dmap = dmap->baseMap;
+		}
+	}
+
+	return -1;
+}
+
+static	
+void ShowDMap(datamap_t *dmap);
+
+static FILE *fh;
+
+CON_COMMAND(ma_getmap, "Debug Tool")
+{
+	player_t player;
+
+	player.entity = NULL;
+
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+
+	if (engine->Cmd_Argc() < 2)
+	{
+		Msg("Need more args :)\n");
+		return;
+	}
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!FindTargetPlayers(&player, engine->Cmd_Argv(1), IMMUNITY_DONT_CARE))
+	{
+		return;
+	}
+
+	player_t *target_ptr = &(target_player_list[0]);
+
+	CBaseEntity *pPlayer = target_ptr->entity->GetUnknown()->GetBaseEntity();
+
+	Msg("Attempting to get map for player [%s]\n",target_ptr->name);
+
+	datamap_t *dmap = CBaseEntity_GetDataDescMap(pPlayer);
+	if (dmap)
+	{
+		char base_filename[512];
+		Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/clipboard.txt", mani_path.GetString());
+
+		fh = gpManiFile->Open(base_filename, "wb");
+		if (fh == NULL)
+		{
+			Msg("Failed to open file %s\n", base_filename);
+			return;
+		}
+
+		ShowDMap(dmap);
+		gpManiFile->Close(fh);
+	}
+	else
+	{
+		Msg("did not obtain datamap\n");
+	}
+}
+
+static	
+void ShowDMap(datamap_t *dmap)
+{
+	static int indent = 0;
+	char indents[256];
+
+	Q_strcpy(indents,"");
+
+	for (int i = 0; i < indent; i++)
+	{
+		Q_strcat(indents,"\t");
+	}
+
+	while (dmap)
+	{
+		char	classname[128];
+
+		int headerbytes = Q_snprintf(classname, sizeof(classname), "%s%s\n", indents, dmap->dataClassName);
+		gpManiFile->Write(classname, headerbytes, fh);
+		Msg("%s", classname);
+
+		for ( int i = 0; i < dmap->dataNumFields; i++ )
+		{
+			char	field_type[128];
+
+			switch(dmap->dataDesc[i].fieldType)
+			{
+			case FIELD_VOID: Q_snprintf(field_type, sizeof(field_type), "VOID"); break;
+			case FIELD_FLOAT: Q_snprintf(field_type, sizeof(field_type), "FLOAT"); break;
+			case FIELD_STRING: Q_snprintf(field_type, sizeof(field_type), "STRING"); break;
+			case FIELD_VECTOR: Q_snprintf(field_type, sizeof(field_type), "VECTOR"); break;
+			case FIELD_QUATERNION: Q_snprintf(field_type, sizeof(field_type), "QUATERNION"); break;
+			case FIELD_INTEGER: Q_snprintf(field_type, sizeof(field_type), "INTEGER"); break;
+			case FIELD_BOOLEAN: Q_snprintf(field_type, sizeof(field_type), "BOOLEAN"); break;
+			case FIELD_SHORT: Q_snprintf(field_type, sizeof(field_type), "SHORT"); break;
+			case FIELD_CHARACTER: Q_snprintf(field_type, sizeof(field_type), "CHARACTER"); break;
+			case FIELD_COLOR32: Q_snprintf(field_type, sizeof(field_type), "COLOR32"); break;
+			case FIELD_EMBEDDED: Q_snprintf(field_type, sizeof(field_type), "EMBEDDED"); break;
+			case FIELD_CUSTOM: Q_snprintf(field_type, sizeof(field_type), "CUSTOM"); break;
+			case FIELD_CLASSPTR: Q_snprintf(field_type, sizeof(field_type), "CLASSPTR"); break;
+			case FIELD_EHANDLE: Q_snprintf(field_type, sizeof(field_type), "EHANDLE"); break;
+			case FIELD_EDICT: Q_snprintf(field_type, sizeof(field_type), "EDICT"); break;
+			case FIELD_POSITION_VECTOR: Q_snprintf(field_type, sizeof(field_type), "POSITION_VECTOR"); break;
+			case FIELD_TIME: Q_snprintf(field_type, sizeof(field_type), "TIME"); break;
+			case FIELD_TICK: Q_snprintf(field_type, sizeof(field_type), "TICK"); break;
+			case FIELD_MODELNAME: Q_snprintf(field_type, sizeof(field_type), "MODELNAME"); break;
+			case FIELD_SOUNDNAME: Q_snprintf(field_type, sizeof(field_type), "SOUNDNAME"); break;
+			case FIELD_INPUT: Q_snprintf(field_type, sizeof(field_type), "INPUT"); break;
+			case FIELD_FUNCTION: Q_snprintf(field_type, sizeof(field_type), "FUNCTION"); break;
+			case FIELD_VMATRIX: Q_snprintf(field_type, sizeof(field_type), "VMATRIX"); break;
+			case FIELD_VMATRIX_WORLDSPACE: Q_snprintf(field_type, sizeof(field_type), "VMATRIX_WORLDSPACE"); break;
+			case FIELD_MATRIX3X4_WORLDSPACE: Q_snprintf(field_type, sizeof(field_type), "MATRIX3X4_WORLDSPACE"); break;
+			case FIELD_INTERVAL: Q_snprintf(field_type, sizeof(field_type), "INTERVAL"); break;
+			case FIELD_MODELINDEX: Q_snprintf(field_type, sizeof(field_type), "MODELINDEX"); break;
+			case FIELD_MATERIALINDEX: Q_snprintf(field_type, sizeof(field_type), "MATERIALINDEX"); break;
+			default : Q_snprintf(field_type, sizeof(field_type), "UNKNOWN TYPE"); break;
+			}
+			char	address1[32] = "";
+			char	address2[32] = "";
+			char	outstring[1024] = "";
+
+			Q_snprintf(address1,sizeof(address1), " [%p]", dmap->dataDesc[i].inputFunc);
+			Q_snprintf(address2,sizeof(address2), " [%p]", dmap->dataDesc[i].td);
+
+			int bytes = Q_snprintf(outstring, sizeof(outstring), "%s - %s %s (%s)%s (off1: %d  off2: %d)%s\n", indents, dmap->dataDesc[i].fieldName, field_type, dmap->dataDesc[i].externalName, (!dmap->dataDesc[i].inputFunc) ? "":address1, dmap->dataDesc[i].fieldOffset[0], dmap->dataDesc[i].fieldOffset[1], (!dmap->dataDesc[i].td) ? "":address2 );
+			gpManiFile->Write(outstring, bytes, fh);
+			Msg("%s", outstring);
+			if (dmap->dataDesc[i].td)
+			{
+				datamap_t *dmap2 = dmap->dataDesc[i].td;
+				indent ++;
+				ShowDMap(dmap2);
+				indent --;
+			}
+		}
+		dmap = dmap->baseMap; 
+	}
 }
 
 

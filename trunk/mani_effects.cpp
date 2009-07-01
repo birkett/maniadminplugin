@@ -1256,7 +1256,7 @@ const char	*fmt,
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (player.player_info->IsFakeClient()) continue;
+			if (player.is_bot) continue;
 			if (player.team != bomb_target_ptr->team) continue;
 
 			mrf.AddPlayer(player.index);
@@ -1273,7 +1273,7 @@ const char	*fmt,
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (player.player_info->IsFakeClient()) continue;
+			if (player.is_bot) continue;
 			if (!gpManiGameType->IsValidActiveTeam(player.team)) continue;
 
 			mrf.AddPlayer(player.index);
@@ -1390,27 +1390,38 @@ void	SlayPlayer
 		}
 	}
 
-	if (player_ptr->is_bot)
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_COMMIT_SUICIDE) == -1)
 	{
-		char kill_cmd[128];
-		int j = Q_strlen(player_ptr->name) - 1;
-
-		while (j != -1)
+		if (player_ptr->is_bot)
 		{
-			if (player_ptr->name[j] == '\0') break;
-			if (player_ptr->name[j] == ' ') break;
-			j--;
+			char kill_cmd[128];
+			int j = Q_strlen(player_ptr->name) - 1;
+
+			while (j != -1)
+			{
+				if (player_ptr->name[j] == '\0') break;
+				if (player_ptr->name[j] == ' ') break;
+				j--;
+			}
+
+			j++;
+
+			Q_snprintf(kill_cmd, sizeof(kill_cmd), "bot_kill \"%s\"\n", &(player_ptr->name[j]));
+			engine->ServerCommand(kill_cmd);
 		}
-
-		j++;
-
-		Q_snprintf(kill_cmd, sizeof(kill_cmd), "bot_kill \"%s\"\n", &(player_ptr->name[j]));
-		engine->ServerCommand(kill_cmd);
+		else
+		{
+			engine->ClientCommand(player_ptr->entity, "cmd kill\n");
+			//helpers->ClientCommand(player->entity, "kill\n");
+		}
 	}
 	else
 	{
-		engine->ClientCommand(player_ptr->entity, "cmd kill\n");
-		//helpers->ClientCommand(player->entity, "kill\n");
+		CBasePlayer *pPlayer = (CBasePlayer *) EdictToCBE(player_ptr->entity);
+		if (pPlayer)
+		{
+			CBasePlayer_CommitSuicide(pPlayer);
+		}
 	}
 /*	}
 	else
@@ -1424,15 +1435,21 @@ void	SlayPlayer
 	}
 */
 
-	if (!kill_as_suicide && gpManiGameType->IsKillsAllowed())
+	if (!kill_as_suicide)
 	{
-		int offset = gpManiGameType->GetKillsOffset();
+		CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
+		int index;
 
-		int *frags;
-		frags = ((int *)player_ptr->entity->GetUnknown() + offset);
-		*frags = *frags + 1;
+		// Need to save the players score
+		index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
+		if (index != -2)
+		{
+			int *frags;
+			frags = ((int *)pCBE + index);
+			*frags = *frags + 1;
+		}
+
 	}
-
 }
 
 //---------------------------------------------------------------------------------

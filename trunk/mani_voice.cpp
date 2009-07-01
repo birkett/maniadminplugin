@@ -152,7 +152,7 @@ bool IsPlayerValid(player_t *player_ptr)
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
 		if (playerinfo && playerinfo->IsConnected())
 		{
-			if (playerinfo->IsFakeClient()) return false;
+			if (strcmp(playerinfo->GetNetworkIDString(), "BOT") == 0) return false;
 			if (playerinfo->IsHLTV()) return false;
 			player_ptr->team = playerinfo->GetTeamIndex();
 			if (playerinfo->IsDead()) return true;

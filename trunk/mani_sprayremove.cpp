@@ -345,25 +345,8 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 			if (sv_lan && sv_lan->GetInt())
 			{
 				// Lan mode
-				player.user_id = Q_atoi(target);
-				if (!FindPlayerByUserID(&player))
-				{
-					SayToPlayer(admin_ptr, "Did not find player %s", target);
-					return;
-				}
-
-				SayToPlayer(&player, "%s", mani_spray_tag_ban_message.GetString());
-				LogCommand (admin_ptr->entity, "Banned player [%s] [%s] for spray tag for %i minutes", 
-								player.name, 
-								player.steam_id, 
-								mani_spray_tag_ban_time.GetInt());
-
-				// Ban by user id
-				Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-										mani_spray_tag_ban_time.GetInt(), 
-										player.user_id);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
+				SayToPlayer(admin_ptr, "Cannot ban in Lan mode!");
+				return;
 			}
 			else
 			{
@@ -374,7 +357,7 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 					// Player is on server
 					SayToPlayer(&player, "%s", mani_spray_tag_ban_message.GetString());
 					// Ban by user id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", 
+					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
 										mani_spray_tag_ban_time.GetInt(), 
 										player.user_id);
 					LogCommand (admin_ptr->entity, "Banned player [%s] [%s] for spray tag for %i minutes", 
@@ -408,25 +391,8 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 			if (sv_lan && sv_lan->GetInt())
 			{
 				// Lan mode
-				player.user_id = Q_atoi(target);
-				if (!FindPlayerByUserID(&player))
-				{
-					SayToPlayer(admin_ptr, "Did not find player %s", target);
-					return;
-				}
-
-				SayToPlayer(&player, "%s", mani_spray_tag_ban_message.GetString());
-				LogCommand (admin_ptr->entity, "Banned player [%s] [%s] for spray tag for %i minutes", 
-								player.name, 
-								player.steam_id, 
-								mani_spray_tag_ban_time.GetInt());
-
-				// Ban by user id
-				Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-										mani_spray_tag_ban_time.GetInt(), 
-										player.user_id);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
+				SayToPlayer(admin_ptr, "Cannot ban in Lan mode!");
+				return;
 			}
 			else
 			{
@@ -437,7 +403,7 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 					// Player is on server
 					SayToPlayer(&player, "%s", mani_spray_tag_perm_ban_message.GetString());
 					// Ban by user id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", 
+					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
 										0, 
 										player.user_id);
 					LogCommand (admin_ptr->entity, "Banned player [%s] [%s] for spray tag permanently", 

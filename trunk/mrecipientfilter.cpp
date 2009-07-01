@@ -82,7 +82,7 @@ void MRecipientFilter::AddAllPlayers(int maxClients)
 		  continue;
 	  }
 
-	  if (playerinfo->IsFakeClient())
+	  if (strcmp(playerinfo->GetNetworkIDString(),"BOT") == 0)
 	  {
 		  continue;
 	  }

@@ -88,6 +88,8 @@ static	int		GetDefaultWeaponIndex(char *weapon_name);
 static	bool	GetNextWeapon(char *weapon_name, const char *string, int *index);
 static	int		FindWeaponIndex(char *weapon_name);
 
+static void WeaponAddCash(edict_t *pEntity, int cost);
+
 //---------------------------------------------------------------------------------
 // Purpose: Free the weapons used
 //---------------------------------------------------------------------------------
@@ -106,6 +108,7 @@ void	LoadWeapons(const char *pMapName)
 	char	weapon_name[128];
 	char	restrict_filename[256];
 	char	base_filename[256];
+	int		index = 0;
 
 	Msg("**** LOADING WEAPON INFO ****\n");
 
@@ -114,31 +117,56 @@ void	LoadWeapons(const char *pMapName)
 	weapons_restricted = false;
 
 	/* Setup primary and secondary weapons */
-	Q_strcpy(primary_weapon[0].name, "awp");
-	Q_strcpy(primary_weapon[1].name, "g3sg1");
-	Q_strcpy(primary_weapon[2].name, "sg550");
-	Q_strcpy(primary_weapon[3].name, "galil");
-	Q_strcpy(primary_weapon[4].name, "ak47");
-	Q_strcpy(primary_weapon[5].name, "scout");
-	Q_strcpy(primary_weapon[6].name, "sg552");
-	Q_strcpy(primary_weapon[7].name, "famas");
-	Q_strcpy(primary_weapon[8].name, "m4a1");
-	Q_strcpy(primary_weapon[9].name, "aug");
-	Q_strcpy(primary_weapon[10].name, "m3");
-	Q_strcpy(primary_weapon[11].name, "xm1014");
-	Q_strcpy(primary_weapon[12].name, "mac10");
-	Q_strcpy(primary_weapon[13].name, "tmp");
-	Q_strcpy(primary_weapon[14].name, "mp5navy");
-	Q_strcpy(primary_weapon[15].name, "ump45");
-	Q_strcpy(primary_weapon[16].name, "p90");
-	Q_strcpy(primary_weapon[17].name, "m249");
+	Q_strcpy(primary_weapon[index].name, "awp");
+	primary_weapon[index++].cost = 4750;
+	Q_strcpy(primary_weapon[index].name, "g3sg1");
+	primary_weapon[index++].cost = 5000;
+	Q_strcpy(primary_weapon[index].name, "sg550");
+	primary_weapon[index++].cost = 4200;
+	Q_strcpy(primary_weapon[index].name, "galil");
+	primary_weapon[index++].cost = 2000;
+	Q_strcpy(primary_weapon[index].name, "ak47");
+	primary_weapon[index++].cost = 2500;
+	Q_strcpy(primary_weapon[index].name, "scout");
+	primary_weapon[index++].cost = 2750;
+	Q_strcpy(primary_weapon[index].name, "sg552");
+	primary_weapon[index++].cost = 3500;
+	Q_strcpy(primary_weapon[index].name, "famas");
+	primary_weapon[index++].cost = 2250;
+	Q_strcpy(primary_weapon[index].name, "m4a1");
+	primary_weapon[index++].cost = 3100;
+	Q_strcpy(primary_weapon[index].name, "aug");
+	primary_weapon[index++].cost = 3500;
+	Q_strcpy(primary_weapon[index].name, "m3");
+	primary_weapon[index++].cost = 1700;
+	Q_strcpy(primary_weapon[index].name, "xm1014");
+	primary_weapon[index++].cost = 3000;
+	Q_strcpy(primary_weapon[index].name, "mac10");
+	primary_weapon[index++].cost = 1400;
+	Q_strcpy(primary_weapon[index].name, "tmp");
+	primary_weapon[index++].cost = 1250;
+	Q_strcpy(primary_weapon[index].name, "mp5navy");
+	primary_weapon[index++].cost = 1500;
+	Q_strcpy(primary_weapon[index].name, "ump45");
+	primary_weapon[index++].cost = 1700;
+	Q_strcpy(primary_weapon[index].name, "p90");
+	primary_weapon[index++].cost = 2350;
+	Q_strcpy(primary_weapon[index].name, "m249");
+	primary_weapon[index++].cost = 5750;
 
-	Q_strcpy(secondary_weapon[0].name, "glock");
-	Q_strcpy(secondary_weapon[1].name, "usp");
-	Q_strcpy(secondary_weapon[2].name, "p228");
-	Q_strcpy(secondary_weapon[3].name, "deagle");
-	Q_strcpy(secondary_weapon[4].name, "elite");
-	Q_strcpy(secondary_weapon[5].name, "fiveseven");
+	index = 0;
+	Q_strcpy(secondary_weapon[index].name, "glock");
+	secondary_weapon[index++].cost = 400;
+	Q_strcpy(secondary_weapon[index].name, "usp");
+	secondary_weapon[index++].cost = 500;
+	Q_strcpy(secondary_weapon[index].name, "p228");
+	secondary_weapon[index++].cost = 600;
+	Q_strcpy(secondary_weapon[index].name, "deagle");
+	secondary_weapon[index++].cost = 650;
+	Q_strcpy(secondary_weapon[index].name, "elite");
+	secondary_weapon[index++].cost = 800;
+	Q_strcpy(secondary_weapon[index].name, "fiveseven");
+	secondary_weapon[index++].cost = 750;
 
 	for (int i = 0; i < 18; i ++)
 	{
@@ -834,6 +862,7 @@ void PostProcessRebuyCommand(void)
 						{
 							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							WeaponAddCash(player.entity, primary_weapon[i].cost);
 							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 							SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
 						}
@@ -845,6 +874,7 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, primary_weapon[i].cost);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 								}
@@ -859,6 +889,7 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, primary_weapon[i].cost);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 								}
@@ -896,6 +927,7 @@ void PostProcessRebuyCommand(void)
 						{
 							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							WeaponAddCash(player.entity, secondary_weapon[i].cost);
 							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 							SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
 						}
@@ -907,6 +939,7 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, secondary_weapon[i].cost);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 								}
@@ -921,6 +954,7 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, secondary_weapon[i].cost);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 								}
@@ -1599,6 +1633,18 @@ PLUGIN_RESULT	ProcessMaUnRestrictAll
 	weapons_restricted = true;
 
 	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Add cash for a weapon back to a player
+//---------------------------------------------------------------------------------
+static
+void WeaponAddCash(edict_t *pEntity, int cost)
+{
+	int cash = Prop_GetAccount(pEntity);
+	cash += cost;
+	if (cash > 16000) cash = 16000;
+	Prop_SetAccount(pEntity, cash);
 }
 
 

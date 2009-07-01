@@ -210,23 +210,6 @@ bf_write* VFUNC ManiEntityMessageBeginHook(IVEngineServer* EngineServer, MRecipi
 //        <name of the var you want to hold the original func>,
 //        <return type>,
 //        <args INCLUDING a pointer to the type of class it is in the beginning>
-DEFVFUNC_(grules_FPlayerCanRespawn, bool, (CGameRules* GameRules, CBasePlayer *pPlayer));
-
-//just define the func you want to be called instead of the original
-//making sure to include VFUNC between the return type and name
-bool VFUNC MyFPlayerCanRespawn(CGameRules* GameRules, CBasePlayer *pPlayer)
-{
-
-	ReSpawnPlayer(pPlayer);
-	//Msg("FPlayerCanRespawn [%s]\n", pPlayer->GetClassName());
-	return grules_FPlayerCanRespawn(GameRules, pPlayer);
-}
-
-//declare the original func and the gate if in windows. syntax is:
-//DEFVFUNC_
-//        <name of the var you want to hold the original func>,
-//        <return type>,
-//        <args INCLUDING a pointer to the type of class it is in the beginning>
 DEFVFUNC_(grules_DefaultFOV, int, (CGameRules* GameRules));
 
 //just define the func you want to be called instead of the original
@@ -435,7 +418,6 @@ public:
 			void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
 			void			ProcessPlayerTeam(IGameEvent * event);
 			void			ProcessPlayerDeath(IGameEvent * event);
-			void			ShowTampered(void);
 			bool			ProcessAutoKick(player_t *player);
 			bool			ProcessReserveSlotJoin(player_t *player);
 			bool			IsPlayerInReserveList(player_t *player);
@@ -444,7 +426,6 @@ public:
 			void			DisconnectPlayer(player_t *player);
 			void			ProcessCheatCVars(void);
 			void			ProcessHighPingKick(void);
-			bool			IsTampered (void);
 			bool			HookSayCommand(void);
 			bool			HookChangeLevelCommand(void);
 
@@ -763,6 +744,31 @@ CAdminPlugin::~CAdminPlugin()
 {
 }
 
+#define GET_INTERFACE(_store, _type, _version, _max_iterations, _interface_type) \
+{ \
+	char	interface_version[128]; \
+	int i, length; \
+	Q_strcpy(interface_version, _version); \
+	length = Q_strlen(_version); \
+	i = atoi(&(interface_version[length - 3])); \
+	interface_version[length - 3] = '\0'; \
+	AddToList((void **) &interface_list, sizeof(interface_data_t), &interface_list_size); \
+	Q_strcpy(interface_list[interface_list_size - 1].interface_name, _version); \
+	Q_strcpy(interface_list[interface_list_size - 1].base_interface, _version); \
+	for (int j = i; j < i + _max_iterations; j ++) \
+	{ \
+		char new_interface[128]; \
+		Q_snprintf(new_interface, sizeof(new_interface), "%s%03i", interface_version, j); \
+		_store = (_type *) _interface_type (new_interface, NULL); \
+		if(_store) \
+		{ \
+			Q_strcpy(interface_list[interface_list_size - 1].interface_name, new_interface); \
+			break; \
+		} \
+	} \
+	interface_list[interface_list_size - 1].ptr = (char *) _store; \
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: called when the plugin is loaded, load the interface we need from the engine
 //---------------------------------------------------------------------------------
@@ -773,191 +779,72 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	Msg("%s\n", mani_version);
 	Msg("\n");
 
-	if ((playerinfomanager = (IPlayerInfoManager *)gameServerFactory(INTERFACEVERSION_PLAYERINFOMANAGER,NULL)))
-	{
-		Msg("Loaded playerinfomanager interface at %p\n", playerinfomanager);
-	} 
-	else 
-	{
-		Msg( "Failed to load playerinfomanager\n" );
-		return false;
-	}
+	interface_data_t *interface_list = NULL;
+	int	interface_list_size = 0;
 
-	// get the interfaces we want to use
-	if((engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL)))
-	{
-		Msg("Loaded engine interface at %p\n", engine);
-	} 
-	else 
-	{
-		Warning( "Failed to load engine interface\n" );
-		return false;
-	}
-
-	if ((gameeventmanager = (IGameEventManager2 *)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)))
-	{
-		Msg("Loaded events manager interface at %p\n", gameeventmanager);
-	} 
-	else 
-	{
-		Msg( "Failed to events manager interface\n" );
-		return false;
-	}
-
-	if ((filesystem = (IFileSystem*)interfaceFactory(FILESYSTEM_INTERFACE_VERSION, NULL)))
-	{
-		Msg("Loaded filesystem interface at %p\n", filesystem);
-	} 
-	else 
-	{
-		Msg( "Failed to load filesystem interface\n" );
-		return false;
-	}
-
-	if ((helpers = (IServerPluginHelpers*)interfaceFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL)))
-	{
-		Msg("Loaded helpers interface at %p\n", helpers);
-	} 
-	else 
-	{
-		Msg( "Failed to load helpers interface\n" );
-		return false;
-	}
-
-	if ((networkstringtable = (INetworkStringTableContainer *)interfaceFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL)))
-	{
-		Msg("Loaded networkstringtable interface at %p\n", networkstringtable);
-	} 
-	else 
-	{
-		Msg( "Failed to load networkstringtable interface\n" );
-		return false;
-	}
-
-	if ((enginetrace = (IEngineTrace *)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL)))
-	{
-		Msg("Loaded enginetrace interface\n");
-	} 
-	else 
-	{
-		Msg( "Failed to load enginetrace interface\n" );
-		return false;
-	}
-
-	if ((randomStr = (IUniformRandomStream *)interfaceFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL)))
-	{
-		Msg("Loaded random stream interface at %p\n", randomStr);
-	} 
-	else 
-	{
-		Msg( "Failed to load random stream interface\n" );
-		return false;
-	}
-
-	serverents = (IServerGameEnts*)gameServerFactory(INTERFACEVERSION_SERVERGAMEENTS, NULL);
-	if(serverents) 
-	{
-		Msg("Loaded IServerGameEnts interface at %p\n", serverents);
-	} 
-	else 
-	{
-		Msg( "Failed to load IServerGameEnts interface\n" );
-	}
-
-	effects = (IEffects*)gameServerFactory(IEFFECTS_INTERFACE_VERSION, NULL);
-	if(effects) 
-	{
-		Msg("Loaded effects interface at %p\n", effects);
-	} 
-	else 
-	{
-		Msg( "Failed to load effects interface\n" );
-	}
-
-	esounds = (IEngineSound*)interfaceFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL);
-	if (esounds)
-	{
-		Msg("Loaded sounds interface at %p\n", esounds);
-	} 
-	else 
-	{
-		Msg( "Failed to load sounds interface\n" );
-	}
-
-
-	cvar = (ICvar*)interfaceFactory(VENGINE_CVAR_INTERFACE_VERSION, NULL);
-	if(cvar)
- 	{
-		Msg("Loaded cvar interface at %p\n", cvar);
-	} 
-	else 
-	{
-		Msg( "Failed to load cvar interface\n" );
-		return false;
-	}
-
-	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
-	if(serverdll)
- 	{
-		Msg("Loaded servergamedll interface at %p\n", serverdll);
-	} 
-	else 
-	{
-		// Hack for unreleased interface version
-		Msg("Falling back to ServerGameDLL003\n");
-		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-		if(serverdll)
- 		{
-			Msg("Loaded servergamedll interface at %p\n", serverdll);
-		}		
-		else
-		{
-			// Hack for interface 004 not working on older mods
-			Msg("Falling back to ServerGameDLL003\n");
-			serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-			if(serverdll)
- 			{
-				Msg("Loaded servergamedll interface at %p\n", serverdll);
-			}		
-			else		
-			{
-				Msg( "Failed to load servergamedll interface\n" );
-				return false;
-			}
-		}
-	}
-
-	voiceserver = (IVoiceServer*)interfaceFactory(INTERFACEVERSION_VOICESERVER, NULL);
-	if (voiceserver)
-	{
-		Msg("Loaded voiceserver interface at %p\n", voiceserver);
-	} 
-	else 
-	{
-		Msg( "Failed to voiceserver sounds interface\n" );
-	}
-
-	Msg("********************************************************\n");
-
-	if (IsTampered())
-	{
-		ShowTampered();
-		return false;
-	}
-
+	GET_INTERFACE(playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER, 20, gameServerFactory)
+	GET_INTERFACE(engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER, 20, interfaceFactory)
+	GET_INTERFACE(gameeventmanager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2, 20, interfaceFactory)
+	GET_INTERFACE(filesystem, IFileSystem, FILESYSTEM_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(helpers, IServerPluginHelpers, INTERFACEVERSION_ISERVERPLUGINHELPERS, 20, interfaceFactory)
+	GET_INTERFACE(networkstringtable, INetworkStringTableContainer, INTERFACENAME_NETWORKSTRINGTABLESERVER, 20, interfaceFactory)
+	GET_INTERFACE(enginetrace, IEngineTrace, INTERFACEVERSION_ENGINETRACE_SERVER, 20, interfaceFactory)
+	GET_INTERFACE(randomStr, IUniformRandomStream, VENGINE_SERVER_RANDOM_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(serverents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS, 20, gameServerFactory)
+	GET_INTERFACE(effects, IEffects, IEFFECTS_INTERFACE_VERSION, 20, gameServerFactory)
+	GET_INTERFACE(esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(cvar, ICvar, VENGINE_CVAR_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, 20, gameServerFactory)
+	GET_INTERFACE(voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER, 20, interfaceFactory)
 
 	gpGlobals = playerinfomanager->GetGlobalVars();
 	InitCVars( interfaceFactory ); // register any cvars we have defined
 
-	gpManiGameType->Init();
-
-	// Load up game specific settings */
-	/*
-	gameclient = (IServerGameClients*) gameServerFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL);
-	if (!gameclient)
+	// Show interfaces that worked
+	for (int i = 0; i < interface_list_size; i++)
 	{
-		Msg("Failed to load game client dll\n");
-	}*/
+		if (interface_list[i].ptr)
+		{
+			if (strcmp(interface_list[i].base_interface, interface_list[i].interface_name) == 0)
+			{
+				// Base interface used
+				Msg("%p SDK %s\n", interface_list[i].ptr, interface_list[i].base_interface);
+			}
+			else
+			{
+				Msg("%p SDK %s => Upgraded to %s\n", interface_list[i].ptr, interface_list[i].base_interface, interface_list[i].interface_name);
+			}
+		}
+	}
+
+	// Show ones that didn't
+	bool	found_failure = false;
+	for (int i = 0; i < interface_list_size; i++)
+	{
+		if (!interface_list[i].ptr)
+		{
+			if (strcmp(interface_list[i].base_interface, interface_list[i].interface_name) == 0)
+			{
+				// Base interface used
+				Msg("FAILED !! : %s\n", interface_list[i].base_interface);
+				found_failure = true;
+			}
+		}
+	}
+
+	FreeList((void **) &interface_list, &interface_list_size);
+
+	if (found_failure) 
+	{
+		Msg("Failure on loading interface, quitting plugin load\n");
+		return false;
+	}
+
+	Msg("********************************************************\n");
+
+
+
+	gpManiGameType->Init();
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
 	{
@@ -1899,25 +1786,17 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	ProcessPlayerSettings();
 	Msg("Player Lists Loaded in %.4f seconds\n", ManiGetTimerDuration(timer_index));
 
-	if (IsTampered())
-	{
-		ShowTampered();
-		return;
-	}
-	else
-	{
-		gameeventmanager->AddListener( this, "weapon_fire", true );
-		gameeventmanager->AddListener( this, "round_start", true );
-		gameeventmanager->AddListener( this, "round_end", true );
-		gameeventmanager->AddListener( this, "round_freeze_end", true );
-		gameeventmanager->AddListener( this, "player_hurt", true );
-		gameeventmanager->AddListener( this, "player_team", true );
-		gameeventmanager->AddListener( this, "player_death", true );
-		gameeventmanager->AddListener( this, "player_say", true );
+	gameeventmanager->AddListener( this, "weapon_fire", true );
+	gameeventmanager->AddListener( this, "round_start", true );
+	gameeventmanager->AddListener( this, "round_end", true );
+	gameeventmanager->AddListener( this, "round_freeze_end", true );
+	gameeventmanager->AddListener( this, "player_hurt", true );
+	gameeventmanager->AddListener( this, "player_team", true );
+	gameeventmanager->AddListener( this, "player_death", true );
+	gameeventmanager->AddListener( this, "player_say", true );
 //		gameeventmanager->AddListener( this, "player_changename", true );
-		gameeventmanager->AddListener( this, "player_spawn", true );
-		gameeventmanager->AddListener( this, "player_team", true );
-	}
+	gameeventmanager->AddListener( this, "player_spawn", true );
+	gameeventmanager->AddListener( this, "player_team", true );
 
 	Msg("********************************************************\n");
 	Msg(" Mani Admin Plugin Level Init Time = %.3f seconds\n", ManiGetTimerDuration(total_load_index));
@@ -1936,16 +1815,6 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 	{
 		average_ping_list[i].in_use = false;
 	}
-
-	// Get team managers
-	SetupTeamList(edictCount);
-
-//	HOOKVFUNC(gamerules_ptr, 17, grules_DefaultFOV, MyDefaultFOV);
-
-/*	for (int i = 60; i < 65; i ++)
-	{
-		HOOKVFUNC(gamerules_ptr, i, grules_FPlayerCanRespawn, MyFPlayerCanRespawn);
-	}*/
 }
 
 //---------------------------------------------------------------------------------
@@ -2198,7 +2067,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return;
 	if (player.player_info->IsHLTV()) return;
-	if (player.player_info->IsFakeClient()) return;
+	if (strcmp(player.player_info->GetNetworkIDString(),"BOT") == 0) return;
 
 	gpManiGhost->PlayerConnect(&player);
 	gpManiVictimStats->PlayerConnect(&player);
@@ -2237,7 +2106,6 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if (!player.is_bot)
 	{
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_JOINSERVER);
-		ForceSkinCExec(&player);
 	}
 }
 
@@ -2517,7 +2385,6 @@ void CAdminPlugin::ClientSettingsChanged( edict_t *pEdict )
 {
 	if ( playerinfomanager )
 	{
-		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEdict );
 		int	player_index = engine->IndexOfEdict(pEdict);
 
 		if (user_name[player_index - 1].in_use)
@@ -3029,7 +2896,7 @@ bool	CAdminPlugin::ProcessCheatCVarPing(player_t *player, const char *pcmd)
 {
 	if (!FindPlayerByEntity(player)) return false;
 	if (player->is_bot) return false;
-	if (player->player_info->IsFakeClient()) return false;
+	if (strcmp(player->steam_id,"BOT") == 0) return false;
 	if (player->player_info->IsHLTV()) return false;
 
 	if (cheat_ping_list[player->index - 1].waiting_for_control)
@@ -3094,7 +2961,7 @@ void	CAdminPlugin::UpdateCurrentPlayerList(void)
 		player.index = i;
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.is_bot) continue;
-		if (player.player_info->IsFakeClient()) continue;
+		if (strcmp(player.steam_id,"BOT") == 0) continue;
 		if (player.player_info->IsHLTV()) continue;
 
 		// Must be a player connected
@@ -4022,8 +3889,6 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 {
-	int	 range = 0;
-
 	player_t	player;
 
 	player.entity = pEntity;
@@ -6692,8 +6557,8 @@ void CAdminPlugin::ProcessVoteType(player_t *player, int admin_index, int next_i
 
 	if (admin_list[admin_index].flags[ALLOW_MAP_VOTE] && !system_vote.vote_in_progress)
 	{
-		int		m_list_size;
-		map_t	*m_list;
+		int		m_list_size = 0;
+		map_t	*m_list = NULL;
 
 		// Set pointer to correct list
 		switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -7483,8 +7348,8 @@ void CAdminPlugin::ProcessMenuSystemVoteSingleMap( player_t *admin, int next_ind
 	else
 	{
 		char	more_cmd[128];
-		int		m_list_size;
-		map_t	*m_list;
+		int		m_list_size = 0;
+		map_t	*m_list = NULL;
 
 		// Setup player list
 		FreeMenu();
@@ -7533,8 +7398,8 @@ void CAdminPlugin::ProcessMenuSystemVoteSingleMap( player_t *admin, int next_ind
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessMenuSystemVoteBuildMap( player_t *admin, int next_index, int argv_offset )
 {
-	int		m_list_size;
-	map_t	*m_list;
+	int		m_list_size = 0;
+	map_t	*m_list = NULL;
 
 	const int argc = engine->Cmd_Argc();
 
@@ -7633,8 +7498,6 @@ void CAdminPlugin::ProcessMenuSystemVoteBuildMap( player_t *admin, int next_inde
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
 {
-	const int argc = engine->Cmd_Argc();
-
 	if (system_vote.vote_in_progress) return;
 
 	char	delay_type_string[64];
@@ -7653,8 +7516,8 @@ void CAdminPlugin::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_ind
 		Q_strcpy (delay_type_string, "end");
 	}
 
-	int		m_list_size;
-	map_t	*m_list;
+	int		m_list_size = 0;
+	map_t	*m_list = NULL;
 
 	// Setup player list
 	FreeMenu();
@@ -7997,7 +7860,7 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 					int player_user_id = playerinfo->GetUserID();
 					if (player_user_id == user_id)
 					{
-						if (punish_mode_list[i - 1].frozen && !playerinfo->IsFakeClient())
+						if (punish_mode_list[i - 1].frozen && strcmp(playerinfo->GetNetworkIDString(),"BOT") != 0)
 						{
 							engine->ClientCommand(pPlayerEdict,"drop\n");
 						}
@@ -8005,20 +7868,10 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 						{
 							if (!war_mode &&
 								hegrenade && 
-								mani_unlimited_grenades.GetInt() != 0 && 
-								sv_cheats && 
+								mani_unlimited_grenades.GetInt() != 0 &&  
 								gpManiGameType->IsGameType(MANI_GAME_CSS))
 							{
-								if (sv_cheats->GetInt() != 0)
-								{
-									helpers->ClientCommand(pPlayerEdict,"give weapon_hegrenade\n");
-								}
-								else
-								{
-									sv_cheats->SetValue(1);
-									helpers->ClientCommand(pPlayerEdict,"give weapon_hegrenade\n");
-									sv_cheats->SetValue(0);
-								}
+								CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(pPlayerEdict), "weapon_hegrenade");
 							}
 						}
 					}
@@ -8182,20 +8035,10 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 
 		// Give grenade to player if unlimited grenades
 		if (!war_mode &&
-			mani_unlimited_grenades.GetInt() != 0 && 
-			sv_cheats && 
+			mani_unlimited_grenades.GetInt() != 0 &&  
 			gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			if (sv_cheats->GetInt() != 0)
-			{
-				helpers->ClientCommand(spawn_player.entity,"give weapon_hegrenade\n");
-			}
-			else
-			{
-				sv_cheats->SetValue(1);
-				helpers->ClientCommand(spawn_player.entity,"give weapon_hegrenade\n");
-				sv_cheats->SetValue(0);
-			}
+			CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(spawn_player.entity), "weapon_hegrenade");
 		}
 	}
 	else if (FStrEq(eventname, "player_death"))
@@ -9151,6 +8994,7 @@ void CAdminPlugin::ProcessPlayerHurt(IGameEvent * event)
 		Q_strcpy(weapon_name, event->GetString("weapon","NULL"));
 		if (FStrEq("smokegrenade", weapon_name)) return;
 		if (FStrEq("flashbang", weapon_name)) return;
+		if (FStrEq("zombie_claws_of_death", weapon_name)) return;
 	}
 
 	// Is option to show opposite team wound on ?
@@ -9423,7 +9267,6 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 {
 	player_t	victim;
 	player_t	attacker;
-	bool	spawn_protection = false;
 	bool	headshot;
 	char	weapon_name[128];
 
@@ -9452,27 +9295,11 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 		ProcessDeathBeam(&attacker, &victim);
 	}
 
-	ProcessTKDeath(&attacker, &victim);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Show Tampered message
-//---------------------------------------------------------------------------------
-void CAdminPlugin::ShowTampered(void)
-{
-	Msg("****************************************************************************************\n");
-	Msg("****************************************************************************************\n");
-	Msg("*             Mani Admin Plugin has been altered by an unauthorised person             *\n");
-	Msg("* Please go to www.mani-admin-plugin.com to download the unaltered and correct version *\n");
-	Msg("****************************************************************************************\n");
-	Msg("****************************************************************************************\n");
-
-	engine->LogPrint("************************************************************************************************************\n");
-	engine->LogPrint("************************************************************************************************************\n");
-	engine->LogPrint("* [MANI ADMIN PLUGIN] Mani Admin Plugin has been altered by an unauthorised person                         *\n");
-	engine->LogPrint("* [MANI ADMIN PLUGIN] Please go to www.mani-admin-plugin.com to download the unaltered and correct version *\n");
-	engine->LogPrint("************************************************************************************************************\n");
-	engine->LogPrint("************************************************************************************************************\n");
+	if (!FStrEq(weapon_name, "zombie_claws_of_death"))
+	{
+		// For zombie mod
+		ProcessTKDeath(&attacker, &victim);
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -12162,16 +11989,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGive
 		return PLUGIN_STOP;
 	}
 
-	char	give_command[256];
-	char	item_to_give[256];
-
-	Q_snprintf(give_command, sizeof(give_command), "give %s\n", item_name);
-
-	// Make backup as 'give' con command breaks the item_name, target_string and command_string pointers
-	// by re-using the engine->Cmd_ processing
-
-	Q_strncpy( item_to_give, item_name, sizeof( item_to_give ) );
-
 	// Found some players to give items to
 	for (int i = 0; i < target_player_list_size; i++)
 	{
@@ -12189,21 +12006,12 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGive
 			continue;
 		}
 
-		if (sv_cheats->GetInt() == 1)
-		{
-			helpers->ClientCommand(target_player_list[i].entity, give_command);
-		}
-		else
-		{
-			sv_cheats->SetValue(1);
-			helpers->ClientCommand(target_player_list[i].entity, give_command);
-			sv_cheats->SetValue(0);
-		}
+		CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(target_player_list[i].entity), item_name);
 
-		LogCommand (player.entity, "gave user [%s] [%s] item [%s]\n", target_player_list[i].name, target_player_list[i].steam_id, item_to_give);
+		LogCommand (player.entity, "gave user [%s] [%s] item [%s]\n", target_player_list[i].name, target_player_list[i].steam_id, item_name);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(&player, mani_admingive_anonymous.GetInt(), "gave player %s item %s", target_player_list[i].name, item_to_give); 
+			AdminSayToAll(&player, mani_admingive_anonymous.GetInt(), "gave player %s item %s", target_player_list[i].name, item_name); 
 		}
 	}
 
@@ -12287,7 +12095,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 	}
 
 	int	weapon_slot = Q_atoi(weapon_slot_str);
-	int	primary_fire_index = Q_atoi(primary_fire_str);
 	int	amount = Q_atoi(amount_str);
 	bool primary_fire = false;
 
@@ -14225,8 +14032,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMSay
 	if (time_to_display == 0) time_to_display = -1;
 
 	// Build up lines to display
-	int	message_length = Q_strlen (say_string);
-
 	Q_strcpy(temp_line,"");
 	int	j = 0;
 	int	i = 0;
@@ -16572,12 +16377,12 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnAutoKickSteam
 
 			if (svr_command)
 			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID updated\n", command_string);
+				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID [%s] updated\n", player_steam_id);
 				LogCommand (NULL, "Updated steam id [%s] to autokick_steam.txt\n", player_steam_id);
 			}
 			else
 			{
-				SayToPlayer(&player, "Mani Admin Plugin: Steam ID updated", command_string);
+				SayToPlayer(&player, "Mani Admin Plugin: Steam ID [%s] updated", player_steam_id);
 				LogCommand (player.entity, "Updated steam id [%s] to autokick_steam.txt\n", player_steam_id);
 			}
 
@@ -16951,7 +16756,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRandom
 )
 {
 	player_t player;
-	int	admin_index;
+	int	admin_index = -1;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17089,7 +16894,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVote
 )
 {
 	player_t player;
-	int	admin_index;
+	int	admin_index = -1;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17277,7 +17082,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteExtend
 )
 {
 	player_t player;
-	int	admin_index;
+	int	admin_index = -1;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17413,8 +17218,8 @@ bool	CAdminPlugin::AddMapToVote
 )
 {
 	vote_option_t vote_option;
-	map_t	*m_list;
-	int		m_list_size;
+	map_t	*m_list = NULL;
+	int		m_list_size = 0;
 
 	// Set pointer to correct list
 	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -17476,7 +17281,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteQuestion
 )
 {
 	player_t player;
-	int	admin_index;
+	int	admin_index = -1;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17626,7 +17431,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRCon
 )
 {
 	player_t player;
-	int	admin_index;
+	int	admin_index = -1;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17974,7 +17779,7 @@ void	CAdminPlugin::ProcessVotes (void)
 		return;
 	}
 
-	float vote_percentage;
+	float vote_percentage = 0.0;
 
 	switch (system_vote.vote_type)
 	{
@@ -18319,14 +18124,14 @@ void	CAdminPlugin::BuildRandomMapVote (int max_maps)
 	last_map_t *last_maps;
 	int	maps_to_skip;
 	vote_option_t vote_option;
-	map_t	*m_list;
-	int		m_list_size;
+	map_t	*m_list = NULL;
+	int		m_list_size = 0;
 	int		map_index;
 	int		exclude;
 	map_t	select_map;
-	map_t	*select_list;
-	map_t	*temp_ptr;
-	int		select_list_size;
+	map_t	*select_list = NULL;
+	map_t	*temp_ptr = NULL;
+	int		select_list_size = 0;
 	map_t	temp_map;
 
 	select_list = NULL;
@@ -18580,10 +18385,10 @@ void CAdminPlugin::ProcessPlayerVoted( player_t *player, int vote_index)
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessBuildUserVoteMaps(void)
 {
-	last_map_t *last_maps;
+	last_map_t *last_maps = NULL;
 	int	maps_to_skip;
-	map_t	*m_list;
-	int		m_list_size;
+	map_t	*m_list = NULL;
+	int		m_list_size = 0;
 	map_t	select_map;
 
 	FreeList ((void **) &user_vote_map_list, &user_vote_map_list_size);
@@ -21727,33 +21532,6 @@ static int sort_nominations_by_votes_cast ( const void *m1,  const void *m2)
 	struct vote_option_t *mi1 = (struct vote_option_t *) m1;
 	struct vote_option_t *mi2 = (struct vote_option_t *) m2;
 	return (mi2->votes_cast - mi1->votes_cast);
-}
-//---------------------------------------------------------------------------------
-// Purpose: Checks if version string has been altered
-//---------------------------------------------------------------------------------
-bool	CAdminPlugin::IsTampered(void)
-{
-	int checksum = 0;
-	int plus1 = 10000;
-	int str_length = Q_strlen(mani_version);
-
-	for (int i = 0; i < str_length; i ++)
-	{
-		checksum += (int) mani_version[i];
-	}
-
-	checksum += 0x342F;
-
-// Msg("Checksum string %i\n", checksum);
-//  Msg("Offset required %i\n", checksum - plus1);
-
-	if (checksum != (plus1 + 8268))
-	{
-		return true;
-	}
-
-	plus1 += 453;
-	return false;
 }
 
 //**************************************************************************************************

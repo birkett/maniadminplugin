@@ -585,7 +585,7 @@ PLUGIN_RESULT	ProcessMaSetAdminFlag
 )
 {
 	player_t player;
-	int	admin_index;
+	int	admin_index = -1;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -691,7 +691,7 @@ PLUGIN_RESULT	ProcessMaSetAdminFlag
 	// Found an admin to update in memory via admin_index
 	// Loop through flags to set them
 
-	bool add_flag;
+	bool add_flag = true;
 	for (int i = 0; i < Q_strlen(flags); i ++)
 	{
 		if (flags[i] == '+') 
