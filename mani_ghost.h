@@ -34,8 +34,8 @@ public:
 	~ManiGhost();
 
 	void		Init(void); // Run at level init
-	void		PlayerConnect(player_t *player_ptr);
-	void		PlayerDisconnect(player_t *player_ptr);
+	void		ClientActive(player_t *player_ptr);
+	void		ClientDisconnect(player_t *player_ptr);
 	void		PlayerDeath(player_t *player_ptr);
 	void		RoundStart(void);
 	bool		IsGhosting(player_t *player_ptr);

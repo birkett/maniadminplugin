@@ -48,10 +48,8 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
-#include "mani_immunity.h"
-#include "mani_immunity_flags.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_sounds.h"
 #include "mani_effects.h"
 #include "mani_gametype.h"
@@ -1222,7 +1220,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		}
 
 		// Some people don't want the cash option
-		if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->CanUseProp(MANI_PROP_ACCOUNT))
+		if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->IsCashAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_TAKE_CASH_FROM_PLAYER), mani_tk_cash_percent.GetInt());
@@ -1487,7 +1485,7 @@ PLUGIN_RESULT	ProcessMaTKList
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_tklist", ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_tklist", ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current Players in TK Violation list\nViolations needed for ban [%i]\n", mani_tk_offences_for_ban.GetInt());

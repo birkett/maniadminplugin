@@ -42,11 +42,9 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.1.0zk, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.1.0zk"
-#define PLUGIN_VERSION_ID "V1.1.0zk\n"
-
-const int	gametypes_min_version = 1;
+#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaA, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaA"
+#define PLUGIN_VERSION_ID "V1.1BetaA\n"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)
@@ -280,13 +278,6 @@ struct name_change_t
 {
 	char	name[128];
 	bool	in_use;
-};
-
-struct interface_data_t
-{
-	char	interface_name[128];
-	char	*ptr;
-	char	base_interface[128];
 };
 
 struct team_scores_t

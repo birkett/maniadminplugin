@@ -23,44 +23,39 @@
 
 
 
-#ifndef MANI_SPRAYREMOVE_H
-#define MANI_SPRAYREMOVE_H
+#ifndef MANI_NETIDVALID_H
+#define MANI_NETIDVALID_H
 
-class ManiSprayRemove
+#define MANI_STEAM_PENDING ("STEAM_ID_PENDING")
+
+class ManiNetIDValid
 {
 public:
-	ManiSprayRemove();
-	~ManiSprayRemove();
+	ManiNetIDValid();
+	~ManiNetIDValid();
 
 	void		Load(void);
 	void		LevelInit(void);
+	void		ClientActive(edict_t *pEntity);
 	void		GameFrame(void);
 	void		ClientDisconnect(player_t *player_ptr);
-	bool		SprayFired(const Vector *pos, int	index);
-	void		ManiSprayRemove::ProcessMaSprayMenu( player_t *admin_ptr, int admin_index, int next_index, int argv_offset, const char *menu_command);
-	PLUGIN_RESULT	ManiSprayRemove::ProcessMaSpray( int index,  bool svr_command);
 
 private:
+	void		CleanUp(void);
+	void		NetworkIDValidated( player_t *player_ptr );
 
-	struct		spray_t
+	struct net_id_t
 	{
-		char	name[64];
-		char	steam_id[64];
-		int		user_id;
-		bool	in_use;
-		float	end_time;
-		Vector	position;
+		int	player_index;
 	};
 
-	spray_t		spray_list[MANI_MAX_PLAYERS];
-	bool		check_list;
-	float		game_timer;
+	net_id_t	*net_id_list;
+	int			net_id_list_size;
 
-	void		CleanUp(void);
-	int			IsSprayValid(player_t	*player_ptr);
+	float		timeout;
 
 };
 
-extern	ManiSprayRemove *gpManiSprayRemove;
+extern	ManiNetIDValid *gpManiNetIDValid;
 
 #endif

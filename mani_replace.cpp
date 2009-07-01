@@ -42,8 +42,8 @@
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_player.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_output.h"
 #include "mani_replace.h"
 
@@ -148,7 +148,7 @@ bool	CheckForReplacement
 			// found a match
 			if (FStrEq(command_list[i].command_type, "R"))
 			{
-				if (!IsAdminAllowed(player, "ma_kick", ALLOW_RCONSAY, war_mode, &admin_index))
+				if (!gpManiClient->IsAdminAllowed(player, "ma_kick", ALLOW_RCONSAY, war_mode, &admin_index))
 				{
 					return true;
 				}

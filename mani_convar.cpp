@@ -337,13 +337,4 @@ ConVar mani_blind_ghosters ("mani_blind_ghosters", "0", 0, "0 = ghost players on
 ConVar mani_map_adverts ("mani_map_adverts", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1);
 ConVar mani_map_adverts_in_war ("mani_map_adverts_in_war", "0", 0, "Allow adverts in war mode, 0 = disabled, 1 = enabled", true, 0, true, 1);
 
-ConVar mani_spray_tag ("mani_spray_tag", "0", 0, "Tracking of player sprays, 0 = Disabled, 1 = Enabled", true, 0, true, 1);
-ConVar mani_spray_tag_spray_duration ("mani_spray_tag_spray_duration", "120", 0, "Time in seconds allowed for each spray before track is lost", true, 10, true, 600);
-ConVar mani_spray_tag_spray_distance_limit ("mani_spray_tag_spray_distance_limit", "500", 0, "Radius limit from current position in which sprays will be detected", true, 1, true, 3000);
-ConVar mani_spray_tag_spray_highlight ("mani_spray_tag_spray_highlight", "1", 0, "Highlights the spray that the system thinks you are referring too", true, 0, true, 1);
-ConVar mani_spray_tag_ban_time ("mani_spray_tag_ban_time", "60", 0, "Time in minutes that a player will be banned for", true, 1, true, 86400);
-ConVar mani_spray_tag_warning_message ("mani_spray_tag_warning_message", "Please stop using your spray", 0, "This phrase is said to player when using Spray Tag tracking warning option"); 
-ConVar mani_spray_tag_kick_message ("mani_spray_tag_kick_message", "You have been kicked for using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking kick option"); 
-ConVar mani_spray_tag_ban_message ("mani_spray_tag_ban_message", "You have been banned for 60 minutes through using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking ban option"); 
-ConVar mani_spray_tag_perm_ban_message ("mani_spray_tag_perm_ban_message", "You have been permanently banned for using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking permanent ban option"); 
 

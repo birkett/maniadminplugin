@@ -44,15 +44,15 @@
 #include "mani_parser.h"
 #include "mani_player.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_maps.h"
 
 extern	IFileSystem	*filesystem;
 extern	IServerPluginHelpers *helpers;
 extern	IServerPluginHelpers *helpers;
 extern	IVEngineServer *engine;
-extern	IServerPluginCallbacks *gpManiAdminPlugin;
+extern	IServerPluginCallbacks *gpManiClientPlugin;
 extern	CGlobalVars *gpGlobals;
 extern	int	max_players;
 extern	bool war_mode;
@@ -607,7 +607,7 @@ PLUGIN_RESULT	ProcessMaSetNextMap
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -676,7 +676,7 @@ PLUGIN_RESULT	ProcessMaMapList
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_maplist", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_maplist", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current maps in the maplist.txt file\n\n");
@@ -708,7 +708,7 @@ PLUGIN_RESULT	ProcessMaMapCycle
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_mapcycle", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_mapcycle", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current maps in the mapcycle.txt file\n\n");
@@ -740,7 +740,7 @@ PLUGIN_RESULT	ProcessMaVoteMapList
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_votemaplist", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_votemaplist", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current maps in the votemaplist.txt file\n\n");
@@ -774,7 +774,7 @@ PLUGIN_RESULT	ProcessMaMap
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -894,6 +894,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 		last_maps = GetLastMapsPlayed(&maps_to_skip, mani_vote_dont_show_last_maps.GetInt());
 
 		// Exclude maps already played by pretending they are already selected.
+		int exclude = 0;
 		for (int i = 0; i < map_in_cycle_list_size; i++)
 		{
 			bool exclude_map = false;

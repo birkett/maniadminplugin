@@ -92,7 +92,7 @@ ManiVictimStats::~ManiVictimStats()
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on connect
 //---------------------------------------------------------------------------------
-void ManiVictimStats::PlayerConnect(player_t	*player_ptr)
+void ManiVictimStats::ClientActive(player_t	*player_ptr)
 {
 	if (war_mode) return;
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
@@ -103,7 +103,7 @@ void ManiVictimStats::PlayerConnect(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on disconnect
 //---------------------------------------------------------------------------------
-void ManiVictimStats::PlayerDisconnect(player_t	*player_ptr)
+void ManiVictimStats::ClientDisconnect(player_t	*player_ptr)
 {
 	if (war_mode) return;
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS)) return;

@@ -27,6 +27,7 @@
 #define MANI_MEMORY_H
 
 extern	bool AddToList(void **list_ptr, size_t size_of_structure, int *list_size_ptr);
+extern	bool RemoveIndexFromList(void **list_ptr, size_t size_of_structure, int *list_size_ptr, int index);
 extern	bool CreateList(void **list_ptr, size_t size_of_structure, int size_required, int *list_size_ptr);
 extern	void FreeList(void **list_ptr, int *list_size_ptr);
 

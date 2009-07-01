@@ -35,8 +35,8 @@ public:
 	ManiVictimStats();
 	~ManiVictimStats();
 
-	void		PlayerConnect(player_t *player_ptr);
-	void		PlayerDisconnect(player_t *player_ptr);
+	void		ClientActive(player_t *player_ptr);
+	void		ClientDisconnect(player_t *player_ptr);
 	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool headshot,  char *weapon_name );
 	void		PlayerHurt( player_t *victim_ptr,  player_t *attacker_ptr,  IGameEvent * event);
 	void		PlayerSpawn(player_t *player_ptr);

@@ -48,15 +48,11 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
-#include "mani_immunity.h"
-#include "mani_immunity_flags.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_sounds.h"
 #include "mani_gametype.h"
 #include "mani_weapon.h"
-#include "mani_vfuncs.h"
-#include "mani_vars.h"
 #include "cbaseentity.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -89,38 +85,12 @@ static	int		GetDefaultWeaponIndex(char *weapon_name);
 static	bool	GetNextWeapon(char *weapon_name, const char *string, int *index);
 static	int		FindWeaponIndex(char *weapon_name);
 
-static void WeaponAddCash(edict_t *pEntity, int cost);
-
 //---------------------------------------------------------------------------------
 // Purpose: Free the weapons used
 //---------------------------------------------------------------------------------
 void	FreeWeapons(void)
 {
 	FreeList((void **) &weapon_list, &weapon_list_size);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Load weapons information, this must be done before the call to load action models
-//---------------------------------------------------------------------------------
-void	SetWeaponCost(const char *weapon_name, int cost)
-{
-	for (int i = 0; i != 18; i++)
-	{
-		if (strcmp(primary_weapon[i].name, weapon_name) == 0)
-		{
-			primary_weapon[i].cost = cost;
-			return;
-		}
-	}
-
-	for (int i = 0; i != 6; i++)
-	{
-		if (strcmp(secondary_weapon[i].name, weapon_name) == 0)
-		{
-			secondary_weapon[i].cost = cost;
-			return;
-		}
-	}
 }
 
 //---------------------------------------------------------------------------------
@@ -133,7 +103,6 @@ void	LoadWeapons(const char *pMapName)
 	char	weapon_name[128];
 	char	restrict_filename[256];
 	char	base_filename[256];
-	int		index = 0;
 
 	Msg("**** LOADING WEAPON INFO ****\n");
 
@@ -142,56 +111,31 @@ void	LoadWeapons(const char *pMapName)
 	weapons_restricted = false;
 
 	/* Setup primary and secondary weapons */
-	Q_strcpy(primary_weapon[index].name, "awp");
-	primary_weapon[index++].cost = 4750;
-	Q_strcpy(primary_weapon[index].name, "g3sg1");
-	primary_weapon[index++].cost = 5000;
-	Q_strcpy(primary_weapon[index].name, "sg550");
-	primary_weapon[index++].cost = 4200;
-	Q_strcpy(primary_weapon[index].name, "galil");
-	primary_weapon[index++].cost = 2000;
-	Q_strcpy(primary_weapon[index].name, "ak47");
-	primary_weapon[index++].cost = 2500;
-	Q_strcpy(primary_weapon[index].name, "scout");
-	primary_weapon[index++].cost = 2750;
-	Q_strcpy(primary_weapon[index].name, "sg552");
-	primary_weapon[index++].cost = 3500;
-	Q_strcpy(primary_weapon[index].name, "famas");
-	primary_weapon[index++].cost = 2250;
-	Q_strcpy(primary_weapon[index].name, "m4a1");
-	primary_weapon[index++].cost = 3100;
-	Q_strcpy(primary_weapon[index].name, "aug");
-	primary_weapon[index++].cost = 3500;
-	Q_strcpy(primary_weapon[index].name, "m3");
-	primary_weapon[index++].cost = 1700;
-	Q_strcpy(primary_weapon[index].name, "xm1014");
-	primary_weapon[index++].cost = 3000;
-	Q_strcpy(primary_weapon[index].name, "mac10");
-	primary_weapon[index++].cost = 1400;
-	Q_strcpy(primary_weapon[index].name, "tmp");
-	primary_weapon[index++].cost = 1250;
-	Q_strcpy(primary_weapon[index].name, "mp5navy");
-	primary_weapon[index++].cost = 1500;
-	Q_strcpy(primary_weapon[index].name, "ump45");
-	primary_weapon[index++].cost = 1700;
-	Q_strcpy(primary_weapon[index].name, "p90");
-	primary_weapon[index++].cost = 2350;
-	Q_strcpy(primary_weapon[index].name, "m249");
-	primary_weapon[index++].cost = 5750;
+	Q_strcpy(primary_weapon[0].name, "awp");
+	Q_strcpy(primary_weapon[1].name, "g3sg1");
+	Q_strcpy(primary_weapon[2].name, "sg550");
+	Q_strcpy(primary_weapon[3].name, "galil");
+	Q_strcpy(primary_weapon[4].name, "ak47");
+	Q_strcpy(primary_weapon[5].name, "scout");
+	Q_strcpy(primary_weapon[6].name, "sg552");
+	Q_strcpy(primary_weapon[7].name, "famas");
+	Q_strcpy(primary_weapon[8].name, "m4a1");
+	Q_strcpy(primary_weapon[9].name, "aug");
+	Q_strcpy(primary_weapon[10].name, "m3");
+	Q_strcpy(primary_weapon[11].name, "xm1014");
+	Q_strcpy(primary_weapon[12].name, "mac10");
+	Q_strcpy(primary_weapon[13].name, "tmp");
+	Q_strcpy(primary_weapon[14].name, "mp5navy");
+	Q_strcpy(primary_weapon[15].name, "ump45");
+	Q_strcpy(primary_weapon[16].name, "p90");
+	Q_strcpy(primary_weapon[17].name, "m249");
 
-	index = 0;
-	Q_strcpy(secondary_weapon[index].name, "glock");
-	secondary_weapon[index++].cost = 400;
-	Q_strcpy(secondary_weapon[index].name, "usp");
-	secondary_weapon[index++].cost = 500;
-	Q_strcpy(secondary_weapon[index].name, "p228");
-	secondary_weapon[index++].cost = 600;
-	Q_strcpy(secondary_weapon[index].name, "deagle");
-	secondary_weapon[index++].cost = 650;
-	Q_strcpy(secondary_weapon[index].name, "elite");
-	secondary_weapon[index++].cost = 800;
-	Q_strcpy(secondary_weapon[index].name, "fiveseven");
-	secondary_weapon[index++].cost = 750;
+	Q_strcpy(secondary_weapon[0].name, "glock");
+	Q_strcpy(secondary_weapon[1].name, "usp");
+	Q_strcpy(secondary_weapon[2].name, "p228");
+	Q_strcpy(secondary_weapon[3].name, "deagle");
+	Q_strcpy(secondary_weapon[4].name, "elite");
+	Q_strcpy(secondary_weapon[5].name, "fiveseven");
 
 	for (int i = 0; i < 18; i ++)
 	{
@@ -864,16 +808,16 @@ void PostProcessRebuyCommand(void)
 
 	rebuy_string = (char *)engine->GetClientConVarValue(con_command_index + 1, "cl_rebuy");
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
-	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
 
 	if (NULL != Q_strstr(rebuy_string, "PrimaryWeapon"))
 	{
 		// Primary Weapon requested so delete it :)
 
-		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(0);
 		if (pWeapon)
 		{
-			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+			const char *core_weapon_name = pWeapon->GetName();
 
 			for (int i = 0; i < 18; i ++)
 			{
@@ -886,8 +830,7 @@ void PostProcessRebuyCommand(void)
 						if (limit_per_team == 0)
 						{
 							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							WeaponAddCash(player.entity, primary_weapon[i].cost);
+							pBase->RemovePlayerItem(pWeapon);
 							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 							SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
 						}
@@ -898,8 +841,7 @@ void PostProcessRebuyCommand(void)
 								if (weapon_list[primary_weapon[i].restrict_index].ct_count >= limit_per_team)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, primary_weapon[i].cost);
+									pBase->RemovePlayerItem(pWeapon);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 								}
@@ -913,8 +855,7 @@ void PostProcessRebuyCommand(void)
 								if (weapon_list[primary_weapon[i].restrict_index].t_count >= limit_per_team)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, primary_weapon[i].cost);
+									pBase->RemovePlayerItem(pWeapon);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 								}
@@ -934,11 +875,10 @@ void PostProcessRebuyCommand(void)
 	{
 		// Primary Weapon requested so delete it :)
 
-		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-
+		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(1);
 		if (pWeapon)
 		{
-			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+			const char *core_weapon_name = pWeapon->GetName();
 
 			for (int i = 0; i < 6; i ++)
 			{
@@ -951,8 +891,7 @@ void PostProcessRebuyCommand(void)
 						if (limit_per_team == 0)
 						{
 							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							WeaponAddCash(player.entity, secondary_weapon[i].cost);
+							pBase->RemovePlayerItem(pWeapon);
 							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 							SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
 						}
@@ -963,8 +902,7 @@ void PostProcessRebuyCommand(void)
 								if (weapon_list[secondary_weapon[i].restrict_index].ct_count >= limit_per_team)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, secondary_weapon[i].cost);
+									pBase->RemovePlayerItem(pWeapon);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 								}
@@ -978,8 +916,7 @@ void PostProcessRebuyCommand(void)
 								if (weapon_list[secondary_weapon[i].restrict_index].t_count >= limit_per_team)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, secondary_weapon[i].cost);
+									pBase->RemovePlayerItem(pWeapon);
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 								}
@@ -1030,13 +967,12 @@ void RemoveRestrictedWeapons(void)
 				if (player.is_bot) continue;
 
 				CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
-				CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-
+				CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
 				if (!pCombat) continue;
-				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+				CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(0);
 				if (!pWeapon) continue;
 
-				const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+				const char *core_weapon_name = pWeapon->GetName();
 
 				if (FStrEq(core_weapon_name, primary_weapon[i].core_name))
 				{
@@ -1044,7 +980,7 @@ void RemoveRestrictedWeapons(void)
 					if (limit_per_team == 0)
 					{
 						CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-						CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+						pBase->RemovePlayerItem(pWeapon);
 						SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
 					}
 					else
@@ -1054,7 +990,7 @@ void RemoveRestrictedWeapons(void)
 							if (weapon_list[primary_weapon[i].restrict_index].ct_count >= limit_per_team)
 							{
 								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+								pBase->RemovePlayerItem(pWeapon);
 								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 							}
 							else
@@ -1067,7 +1003,7 @@ void RemoveRestrictedWeapons(void)
 							if (weapon_list[primary_weapon[i].restrict_index].t_count >= limit_per_team)
 							{
 								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+								pBase->RemovePlayerItem(pWeapon);
 								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 							}
 							else
@@ -1094,12 +1030,12 @@ void RemoveRestrictedWeapons(void)
 				if (player.is_bot) continue;
 
 				CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
-				CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+				CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
 				if (!pCombat) continue;
-				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+				CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(1);
 				if (!pWeapon) continue;
 
-				const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+				const char *core_weapon_name = pWeapon->GetName();
 
 				if (FStrEq(core_weapon_name, secondary_weapon[i].core_name))
 				{
@@ -1107,7 +1043,7 @@ void RemoveRestrictedWeapons(void)
 					if (limit_per_team == 0)
 					{
 						CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-						CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+						pBase->RemovePlayerItem(pWeapon);
 						SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
 					}
 					else
@@ -1117,7 +1053,7 @@ void RemoveRestrictedWeapons(void)
 							if (weapon_list[secondary_weapon[i].restrict_index].ct_count >= limit_per_team)
 							{
 								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+								pBase->RemovePlayerItem(pWeapon);
 								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 							}
 							else
@@ -1130,7 +1066,7 @@ void RemoveRestrictedWeapons(void)
 							if (weapon_list[secondary_weapon[i].restrict_index].t_count >= limit_per_team)
 							{
 								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+								pBase->RemovePlayerItem(pWeapon);
 								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 							}
 							else
@@ -1264,7 +1200,7 @@ PLUGIN_RESULT	ProcessMaRestrictWeapon
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -1400,7 +1336,7 @@ PLUGIN_RESULT	ProcessMaKnives
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	for (int i = 0; i < weapon_list_size; i++)
@@ -1451,7 +1387,7 @@ PLUGIN_RESULT	ProcessMaPistols
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	for (int i = 0; i < weapon_list_size; i++)
@@ -1512,7 +1448,7 @@ PLUGIN_RESULT	ProcessMaShotguns
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	for (int i = 0; i < weapon_list_size; i++)
@@ -1569,7 +1505,7 @@ PLUGIN_RESULT	ProcessMaNoSnipers
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	for (int i = 0; i < weapon_list_size; i++)
@@ -1640,7 +1576,7 @@ PLUGIN_RESULT	ProcessMaUnRestrictAll
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	// UnRestrict all the weapons
@@ -1658,18 +1594,6 @@ PLUGIN_RESULT	ProcessMaUnRestrictAll
 	weapons_restricted = true;
 
 	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Add cash for a weapon back to a player
-//---------------------------------------------------------------------------------
-static
-void WeaponAddCash(edict_t *pEntity, int cost)
-{
-	int cash = Prop_GetVal(pEntity, MANI_PROP_ACCOUNT,0);
-	cash += cost;
-	if (cash > 16000) cash = 16000;
-	Prop_SetVal(pEntity, MANI_PROP_ACCOUNT, cash);
 }
 
 

@@ -45,14 +45,8 @@
 #include "mani_memory.h"
 #include "mani_player.h"
 #include "mani_skins.h"
-#include "mani_admin.h"
-#include "mani_admin_flags.h"
-#include "mani_output.h"
+#include "mani_client.h"
 #include "mani_gametype.h"
-#include "mani_vfuncs.h"
-#include "mani_vars.h"
-#include "mani_weapon.h"
-#include "mani_file.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
 
@@ -67,46 +61,19 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
+//class ManiGameType
+//class ManiGameType
+//{
+
 ManiGameType::ManiGameType()
 {
 	// Init
-	for (int i = 0; i < 200; i++)
-	{
-		var_index[i].index = -2;
-	}
-
-	strcpy(var_index[MANI_VAR_DEATHS].name, "m_iDeaths"); var_index[MANI_VAR_DEATHS].index = -1;
-	strcpy(var_index[MANI_VAR_FRAGS].name, "m_iFrags"); var_index[MANI_VAR_FRAGS].index = -1;
-	strcpy(var_index[MANI_VAR_GRAVITY].name, "m_flGravity"); var_index[MANI_VAR_GRAVITY].index = -1;
-	strcpy(var_index[MANI_VAR_FRICTION].name, "m_flFriction"); var_index[MANI_VAR_FRICTION].index = -1;
-	strcpy(var_index[MANI_VAR_ELASTICITY].name, "m_flElasticity"); var_index[MANI_VAR_ELASTICITY].index = -1;
-
 	gpManiGameType = this;
 }
 
 ManiGameType::~ManiGameType()
 {
 	// Cleanup
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: GameFrame check if invalid gametypes.txt file
-//---------------------------------------------------------------------------------
-void ManiGameType::GameFrame(void)
-{
-	if (!show_out_of_date) return;
-
-	time_t	current_time;
-
-	time(&current_time);
-	if (current_time > this->next_time_check)
-	{
-		SayToAll(true, "MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!"); 
-		SayToAll(true, "Please download http://www.mani-admin-plugin.com/mani_admin_plugin/gametypes/gametypes.txt");
-		Msg("MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!\n"); 
-		Msg("Please download http://www.mani-admin-plugin.com/mani_admin_plugin/gametypes/gametypes.txt\n");
-		next_time_check = current_time + 30;
-	}
 }
 
 //---------------------------------------------------------------------------------
@@ -117,21 +84,8 @@ void ManiGameType::Init(void)
 	char	core_filename[256];
 	team_class_t	temp_team;
 
-//	Msg("*********** Loading gametypes.txt ************\n");
+	Msg("*********** Loading gametypes.txt ************\n");
 	// Read the gametype.txt file
-
-	//Get filename
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/gametypes.txt", mani_path.GetString());
-
-	// Check if file exists
-	if (!filesystem->FileExists(core_filename))
-	{
-		for (int i = 0; i < 100; i++)
-		{
-			Msg("WARNING! YOU ARE MISSING GAMETYPES.TXT THIS MUST BE INSTALLED!\n");
-		}
-		return;
-	}
 
 	KeyValues *kv_ptr = new KeyValues("gametypes.txt");
 
@@ -150,19 +104,12 @@ void ManiGameType::Init(void)
 
 	DefaultValues();
 
+	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/gametypes.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
 		Msg("Failed to load gametypes.txt\n");
 		kv_ptr->deleteThis();
 		return;
-	}
-
-	this->show_out_of_date = false;
-	int gametypes_version = kv_ptr->GetInt("version", -1);
-	if (gametypes_version < gametypes_min_version)
-	{
-		this->show_out_of_date = true;
-		next_time_check = 0;
 	}
 
 	KeyValues *base_key_ptr;
@@ -217,7 +164,6 @@ void ManiGameType::Init(void)
 			if (!base_key_ptr)
 			{
 				kv_ptr->deleteThis();
-				Msg("Failed to find 'Unknown Mod' entry\n");
 				return;
 			}
 		}
@@ -225,9 +171,6 @@ void ManiGameType::Init(void)
 
 	//base_key_ptr should now hold our core key for our game type defaults
 	Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
-#ifdef __linux__
-	Msg("Linux binary @ %s\n", linux_game_bin);
-#endif
 	spectator_allowed = base_key_ptr->GetInt("spectator_allowed", 0);
 	spectator_index = base_key_ptr->GetInt("spectator_index", 1);
 	Q_strcpy(spectator_group, base_key_ptr->GetString("spectator_group", "#SPEC"));
@@ -244,9 +187,6 @@ void ManiGameType::Init(void)
 	fire_allowed = base_key_ptr->GetInt("fire_allowed", 1);
 	advert_decal_allowed = base_key_ptr->GetInt("advert_decal_allowed", 1);
 	death_beam_allowed = base_key_ptr->GetInt("death_beam_allowed", 1);
-	browse_allowed = base_key_ptr->GetInt("browse_allowed", 1);
-	debug_log = base_key_ptr->GetInt("debug_log", 0);
-	Q_strcpy(team_manager, base_key_ptr->GetString("team_manager", "sdk_team_"));
 
 	KeyValues *temp_ptr;
 
@@ -258,7 +198,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("advanced_effects", false);
 	if (temp_ptr)
 	{
-//		Msg("Found advanced effects\n");
+		Msg("Found advanced effects\n");
 #ifdef __linux__
         advanced_effects = temp_ptr->GetInt("enable_linux", 0);
 #else
@@ -269,11 +209,11 @@ void ManiGameType::Init(void)
 	}
 
 
-	// Allow voice control functionality
+	// Allow advanced effects via te
 	temp_ptr = base_key_ptr->FindKey("voice_control", false);
 	if (temp_ptr)
 	{
-//		Msg("Found voice control\n");
+		Msg("Found voice control\n");
 
 		voice_allowed = 1;
 #ifdef __linux__
@@ -283,63 +223,44 @@ void ManiGameType::Init(void)
 #endif
 	}
 
-	// Allow spray hooking
-	temp_ptr = base_key_ptr->FindKey("spray_hook_control", false);
+
+	cash_allowed = 0;
+
+	// Find cash offset
+	temp_ptr = base_key_ptr->FindKey("cash_offset", false);
 	if (temp_ptr)
 	{
-//		Msg("Found spray hook control\n");
+		Msg("Found cash offset\n");
+		cash_allowed = 1;
 
-		spray_hook_allowed = 1;
 #ifdef __linux__
-        spray_hook_offset = temp_ptr->GetInt("linux_offset", 28);
+		cash_offset = temp_ptr->GetInt("linux_offset", 880);
 #else
-		spray_hook_offset = temp_ptr->GetInt("win_offset", 28);
+		cash_offset = temp_ptr->GetInt("win_offset", 875);
 #endif
 	}
 
-	// Allow Level Init hooking
-	temp_ptr = base_key_ptr->FindKey("spawn_point_control", false);
+	kills_allowed = 0;
+
+	// Find cash offset
+	temp_ptr = base_key_ptr->FindKey("kills_offset", false);
 	if (temp_ptr)
 	{
-//		Msg("Found spawn point control\n");
+		Msg("Found kills offset\n");
+		kills_allowed = 1;
 
-		spawn_point_allowed = 1;
 #ifdef __linux__
-        spawn_point_offset = temp_ptr->GetInt("linux_offset", 2);
+		kills_offset = temp_ptr->GetInt("linux_offset", 747);
 #else
-		spawn_point_offset = temp_ptr->GetInt("win_offset", 2);
+		kills_offset = temp_ptr->GetInt("win_offset", 742);
 #endif
-	}
-
-	// Get the network offsets
-	temp_ptr = base_key_ptr->FindKey("props", false);
-	if (temp_ptr)
-	{
-		this->GetProps(temp_ptr);
-	}
-
-	// Get the vfunc offsets
-	temp_ptr = base_key_ptr->FindKey("vfuncs", false);
-	if (temp_ptr)
-	{
-		this->GetVFuncs(temp_ptr);
-	}
-
-	if (this->IsGameType(MANI_GAME_CSS))
-	{
-		// Handle weapon costs
-		temp_ptr = base_key_ptr->FindKey("weapons", false);
-		if (temp_ptr)
-		{
-			this->GetWeaponDetails(temp_ptr);
-		}
 	}
 
 	// Handle teams
 	temp_ptr = base_key_ptr->FindKey("teams", false);
 	if (temp_ptr)
 	{
-//		Msg("Found teams\n");
+		Msg ("Found teams\n");
 		KeyValues *team_ptr;
 
 		team_ptr = temp_ptr->GetFirstTrueSubKey();
@@ -353,8 +274,6 @@ void ManiGameType::Init(void)
 				temp_team.team_short_translation_index = team_ptr->GetInt("short_translation_index", 0); // CT, T, C, R etc
 				temp_team.team_translation_index = team_ptr->GetInt("translation_index", 0); // Long proper name
 				Q_strcpy(temp_team.group, team_ptr->GetString("group","#DEF"));
-				Q_strcpy(temp_team.spawnpoint_class_name,team_ptr->GetString("spawnpoint_class_name", "NULL"));
-				Q_strcpy(temp_team.log_name,team_ptr->GetString("log_name", "NULL"));
 
 				switch (temp_team.team_index)
 				{
@@ -381,7 +300,7 @@ void ManiGameType::Init(void)
 				}
 
 				team_class_list[temp_team.team_index] = temp_team;
-//				Msg("Found team [%s]\n", temp_team.group);
+				Msg("Found team [%s]\n", temp_team.group);
 
 				team_ptr = team_ptr->GetNextKey();
 				if (!team_ptr)
@@ -396,133 +315,9 @@ void ManiGameType::Init(void)
 
 	kv_ptr->deleteThis();
 
-//	Msg("*********** gametypes.txt loaded ************\n");
+	Msg("*********** gametypes.txt loaded ************\n");
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Get Property offsets
-//---------------------------------------------------------------------------------
-#define GETPROPTYPE(_in_string, _prop_index) \
-	prop_ptr = kv_ptr->GetString(_in_string, NULL); \
-	if (prop_ptr) \
-	{ \
-		Q_strcpy(prop_index[_prop_index].name, prop_ptr); \
-		prop_index[_prop_index].offset = UTIL_FindPropOffset(prop_ptr, type, true); \
-		prop_index[_prop_index].type = type; \
-	} \
-	else \
-	{ \
-		Q_strcpy(prop_index[_prop_index].name, _in_string); \
-		prop_index[_prop_index].type = -1; \
-		prop_index[_prop_index].offset = -1; \
-	}
-
-void	ManiGameType::GetProps(KeyValues *kv_ptr)
-{
-
-	const char	*prop_ptr;
-	int	type = 0;
-
-	GETPROPTYPE("health", MANI_PROP_HEALTH)
-	GETPROPTYPE("armor", MANI_PROP_ARMOR)
-	GETPROPTYPE("render_mode", MANI_PROP_RENDER_MODE)
-	GETPROPTYPE("render_fx", MANI_PROP_RENDER_FX)
-	GETPROPTYPE("colour", MANI_PROP_COLOUR)
-	prop_index[MANI_PROP_COLOUR].type = PROP_COLOUR;
-	GETPROPTYPE("account", MANI_PROP_ACCOUNT)
-	GETPROPTYPE("move_type", MANI_PROP_MOVE_TYPE)
-	GETPROPTYPE("model_index", MANI_PROP_MODEL_INDEX)
-	GETPROPTYPE("vec_origin", MANI_PROP_VEC_ORIGIN)
-	prop_index[MANI_PROP_VEC_ORIGIN].type = PROP_VECTOR;
-	GETPROPTYPE("ang_rotation", MANI_PROP_ANG_ROTATION)
-	prop_index[MANI_PROP_ANG_ROTATION].type = PROP_QANGLE;
-
-	prop_index[MANI_PROP_TEAM_NUMBER].offset = UTIL_FindPropOffset("CTeam.m_iTeamNum", type, true);
-	prop_index[MANI_PROP_TEAM_NUMBER].type = type;
-	Q_strcpy(prop_index[MANI_PROP_TEAM_NUMBER].name, "CTeam.m_iTeamNum");
-
-	prop_index[MANI_PROP_TEAM_SCORE].offset = UTIL_FindPropOffset("CTeam.m_iScore", type, true);
-	prop_index[MANI_PROP_TEAM_SCORE].type = type;
-	Q_strcpy(prop_index[MANI_PROP_TEAM_SCORE].name, "CTeam.m_iScore");
-	prop_index[MANI_PROP_TEAM_NAME].offset = UTIL_FindPropOffset("CTeam.m_szTeamname", type, true);
-	prop_index[MANI_PROP_TEAM_NAME].type = type;
-	Q_strcpy(prop_index[MANI_PROP_TEAM_NAME].name, "CTeam.m_szTeamname");
-
-/*	for (int i = 0; i < MANI_PROP_SIZE; i++)
-	{
-		Msg("Prop [%s] offset [%i] type [%i]\n", prop_index[i].name, prop_index[i].offset, prop_index[i].type);
-	}*/
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Get Property offsets
-//---------------------------------------------------------------------------------
-void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
-{
-	vfunc_index[MANI_VFUNC_EYE_ANGLES] = kv_ptr->GetInt("eye_angles", 0x6d);
-	vfunc_index[MANI_VFUNC_TELEPORT] = kv_ptr->GetInt("teleport", 0x5d);
-	vfunc_index[MANI_VFUNC_SET_MODEL_INDEX] = kv_ptr->GetInt("set_model_index", 0x09);
-	vfunc_index[MANI_VFUNC_EYE_POSITION] = kv_ptr->GetInt("eye_position", 0x6c);
-	vfunc_index[MANI_VFUNC_MY_COMBAT_CHARACTER] = kv_ptr->GetInt("my_combat_character", 0x3e);
-	vfunc_index[MANI_VFUNC_IGNITE] = kv_ptr->GetInt("ignite", 0xad);
-	vfunc_index[MANI_VFUNC_REMOVE_PLAYER_ITEM] = kv_ptr->GetInt("remove_player_item", 0xd3);
-	vfunc_index[MANI_VFUNC_GET_WEAPON_SLOT] = kv_ptr->GetInt("get_weapon_slot", 0xd1);
-	vfunc_index[MANI_VFUNC_GIVE_AMMO] = kv_ptr->GetInt("give_ammo", 0xc6);
-	vfunc_index[MANI_VFUNC_WEAPON_DROP] = kv_ptr->GetInt("weapon_drop", 0xcc);
-	vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE] = kv_ptr->GetInt("get_primary_ammo_type", 0x10d);
-	vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE] = kv_ptr->GetInt("get_secondary_ammo_type", 0x10e);
-	vfunc_index[MANI_VFUNC_WEAPON_GET_NAME] = kv_ptr->GetInt("weapon_get_name", 0x107);
-	vfunc_index[MANI_VFUNC_GET_VELOCITY] = kv_ptr->GetInt("get_velocity", 0x75);
-	vfunc_index[MANI_VFUNC_WEAPON_SWITCH] = kv_ptr->GetInt("weapon_switch", 0xcd);
-	vfunc_index[MANI_VFUNC_USER_CMDS] = kv_ptr->GetInt("user_cmds", -1); // 0x322 for windows
-	vfunc_index[MANI_VFUNC_GIVE_ITEM] = kv_ptr->GetInt("give_item", -1); // 0x133
-	vfunc_index[MANI_VFUNC_MAP] = kv_ptr->GetInt("map_desc", -1); // 0x0d
-	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = kv_ptr->GetInt("commit_suicide", -1); // 0x0d
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Get weapon costs
-//---------------------------------------------------------------------------------
-#define GETWEAPONCOST(_name, _cost) \
-	weapon_cost = kv_ptr->GetInt(#_name, _cost); \
-	SetWeaponCost(#_name, weapon_cost) 
-
-void	ManiGameType::GetWeaponDetails(KeyValues *kv_ptr)
-{
-	int weapon_cost;
-
-	GETWEAPONCOST(awp, 4750);
-	GETWEAPONCOST(g3sg1, 5000);
-	GETWEAPONCOST(sg550, 4200);
-	GETWEAPONCOST(galil, 2000);
-	GETWEAPONCOST(ak47, 2500);
-	GETWEAPONCOST(scout, 2750);
-	GETWEAPONCOST(sg552, 3500);
-	GETWEAPONCOST(famas, 2250);
-	GETWEAPONCOST(m4a1, 3100);
-	GETWEAPONCOST(aug, 3500);
-	GETWEAPONCOST(m3, 1700);
-	GETWEAPONCOST(xm1014, 3000);
-	GETWEAPONCOST(mac10, 1400);
-	GETWEAPONCOST(tmp, 1250);
-	GETWEAPONCOST(mp5navy, 1500);
-	GETWEAPONCOST(ump45, 1700);
-	GETWEAPONCOST(p90, 2350);
-	GETWEAPONCOST(m249, 5750);
-
-	GETWEAPONCOST(glock, 400);
-	GETWEAPONCOST(usp, 500);
-	GETWEAPONCOST(p228, 600);
-	GETWEAPONCOST(deagle, 650);
-	GETWEAPONCOST(elite, 800);
-	GETWEAPONCOST(fiveseven, 750);
-
-	return;
-}
 //---------------------------------------------------------------------------------
 // Purpose: Return the game type string
 //---------------------------------------------------------------------------------
@@ -540,37 +335,11 @@ bool	ManiGameType::IsGameType(const char *game_str)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Returns true if passed in string = game type string
+// Purpose: Returns true if passed in integer = game type we know (faster than string compare)
 //---------------------------------------------------------------------------------
-int		ManiGameType::GetVFuncIndex(int	index)
+bool	ManiGameType::IsGameType(int game_index)
 {
-#ifdef __linux__
-	return (vfunc_index[index]);
-#else
-	// windows is one less all the time
-	return (((vfunc_index[index] == -1) ? -1: vfunc_index[index] - 1));
-#endif
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns true if passed in string = game type string
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetPropIndex(int	index)
-{
-	return (prop_index[index].offset);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns true if passed in string = game type string
-//---------------------------------------------------------------------------------
-bool	ManiGameType::CanUseProp(int	index)
-{
-	if (prop_index[index].offset == -1)
-	{
-		return false;
-	}
-
-	return true;
+	return ((game_index == game_type_index) ? true:false);
 }
 
 //---------------------------------------------------------------------------------
@@ -660,38 +429,6 @@ int		ManiGameType::GetMaxMessages(void)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Returns true if spray hook is allowed
-//---------------------------------------------------------------------------------
-bool		ManiGameType::IsSprayHookAllowed(void)
-{
-	return ((spray_hook_allowed == 0) ? false:true);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns virtual function index for effects list
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetSprayHookOffset(void)
-{
-	return (spray_hook_offset);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns true if spawn point hook allowed
-//---------------------------------------------------------------------------------
-bool		ManiGameType::IsSpawnPointHookAllowed(void)
-{
-	return ((spawn_point_allowed == 0) ? false:true);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns virtual function index for spawn point hook
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetSpawnPointHookOffset(void)
-{
-	return (spawn_point_offset);
-}
-
-//---------------------------------------------------------------------------------
 // Purpose: Returns true if voice hooking is allowed
 //---------------------------------------------------------------------------------
 bool		ManiGameType::IsVoiceAllowed(void)
@@ -705,6 +442,23 @@ bool		ManiGameType::IsVoiceAllowed(void)
 int		ManiGameType::GetVoiceOffset(void)
 {
 	return (voice_offset);
+}
+
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns true if cash is allowed for the mod
+//---------------------------------------------------------------------------------
+bool		ManiGameType::IsCashAllowed(void)
+{
+	return ((cash_allowed == 0) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns cash offset into player
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetCashOffset(void)
+{
+	return (cash_offset);
 }
 
 //---------------------------------------------------------------------------------
@@ -764,20 +518,28 @@ bool		ManiGameType::IsDeathBeamAllowed(void)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Returns true if browsing is allowed
-//---------------------------------------------------------------------------------
-bool		ManiGameType::IsBrowseAllowed(void)
-{
-	return ((browse_allowed == 0) ? false:true);
-}
-
-//---------------------------------------------------------------------------------
 // Purpose: Check whether we use CBase suicide or ClientCommmand('kill')
 //---------------------------------------------------------------------------------
 /*bool		ManiGameType::IsClientSuicide(void)
 {
 	return ((client_suicide == 0) ? false:true);
 }*/
+
+//---------------------------------------------------------------------------------
+// Purpose: Check whether we use decrement frags
+//---------------------------------------------------------------------------------
+bool		ManiGameType::IsKillsAllowed(void)
+{
+	return ((kills_allowed == 0) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Returns kills offset into player
+//---------------------------------------------------------------------------------
+int		ManiGameType::GetKillsOffset(void)
+{
+	return (kills_offset);
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Returns alpha render mode
@@ -825,38 +587,6 @@ bool	ManiGameType::IsValidActiveTeam(int	index)
 	}
 
 	return true;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns the spawnpoint class name for team
-//---------------------------------------------------------------------------------
-char	*ManiGameType::GetTeamSpawnPointClassName(int index)
-{
-	if (this->IsValidActiveTeam(index))
-	{
-		if (!FStrEq(team_class_list[index].spawnpoint_class_name,""))
-		{
-			return (team_class_list[index].spawnpoint_class_name);
-		}
-	}
-
-	return NULL;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns the log entry name for team
-//---------------------------------------------------------------------------------
-char	*ManiGameType::GetTeamLogName(int index)
-{
-	if (this->IsValidActiveTeam(index))
-	{
-		if (!FStrEq(team_class_list[index].log_name,""))
-		{
-			return (team_class_list[index].log_name);
-		}
-	}
-
-	return NULL;
 }
 
 //---------------------------------------------------------------------------------
@@ -952,9 +682,8 @@ void	ManiGameType::DefaultValues(void)
 	advanced_effects_code_offset = 110;
 	max_messages = 22;
 	voice_allowed = 0;
-	spray_hook_allowed = 0;
-	spawn_point_allowed = 0;
 //	client_suicide = 1;
+	kills_allowed = 0;
 	set_colour = 1;
 	alpha_render_mode = 1;
 
@@ -965,35 +694,6 @@ void	ManiGameType::DefaultValues(void)
 	fire_allowed = 1;
 	advert_decal_allowed = 1;
 	death_beam_allowed = 1;
-	browse_allowed = 1;
-	debug_log = 0;
-	Q_strcpy(team_manager,"cs_team");
-
-	// Default CSS offsets
-	vfunc_index[MANI_VFUNC_EYE_ANGLES] = 0x6d;
-	vfunc_index[MANI_VFUNC_TELEPORT] = 0x5d;
-	vfunc_index[MANI_VFUNC_SET_MODEL_INDEX] = 0x09;
-	vfunc_index[MANI_VFUNC_EYE_POSITION] = 0x6c;
-	vfunc_index[MANI_VFUNC_MY_COMBAT_CHARACTER] = 0x3e;
-	vfunc_index[MANI_VFUNC_IGNITE] = 0xad;
-	vfunc_index[MANI_VFUNC_REMOVE_PLAYER_ITEM] = 0xd3;
-	vfunc_index[MANI_VFUNC_GET_WEAPON_SLOT] = 0xd1;
-	vfunc_index[MANI_VFUNC_GIVE_AMMO] = 0xc6;
-	vfunc_index[MANI_VFUNC_WEAPON_DROP] = 0xcc;
-	vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE] = 0x10d;
-	vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE] = 0x10e;
-	vfunc_index[MANI_VFUNC_WEAPON_GET_NAME] = 0x107;
-//	vfunc_index[MANI_VFUNC_GET_TEAM_NUMBER] = 0x9c;
-//	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = 0x9d;
-	vfunc_index[MANI_VFUNC_GET_VELOCITY] = 0x75;
-	vfunc_index[MANI_VFUNC_MAP] = 0x0d;
-	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = 0x14d;
-
-	for (int i = 0; i < 200; i++)
-	{
-		prop_index[i].type = -1;
-		prop_index[i].offset = -1;
-	}
 
 	return ;
 }
@@ -1008,7 +708,7 @@ bool	ManiGameType::FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr)
 	base_key_ptr = kv->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+		Msg("No true subkey found\n");
 		return false;
 	}
 
@@ -1064,7 +764,6 @@ CON_COMMAND(ma_forcegametype, "Forces the game type detection to run")
 	LoadSkins();
 	return;
 }
-
 
 ManiGameType	g_ManiGameType;
 ManiGameType	*gpManiGameType;

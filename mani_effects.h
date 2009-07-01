@@ -104,7 +104,7 @@ extern	void	ProcessUnFreezeBombPlayer(player_t *player_ptr);
 extern	void	ProcessBeaconPlayer(player_t *player_ptr, bool admin_called);
 extern	void	ProcessUnBeaconPlayer(player_t *player_ptr);
 extern	void	ProcessDeathBeam(player_t *attacker_ptr, player_t *victim_ptr);
-extern	void	ProcessSetColour(edict_t *pEntity, int r, int g, int b, int a);
+extern	void	ProcessSetColour(CBaseEntity *pCBaseEntity, int r, int g, int b, int a);
 extern  void	MANI_TraceLineWorldProps( const Vector& vecAbsStart,  const Vector& vecAbsEnd,  unsigned int mask,  int collisionGroup, trace_t *ptr);
 
 #endif

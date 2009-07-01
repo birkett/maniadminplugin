@@ -49,12 +49,10 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_gametype.h"
 #include "mani_effects.h"
-#include "mani_immunity.h"
-#include "mani_immunity_flags.h"
 #include "mani_ghost.h"
 
 extern	IVEngineServer *engine;
@@ -117,10 +115,10 @@ void ManiGhost::Init(void)
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.player_info->IsHLTV()) continue;
 		if (player.is_bot) continue;
-		if (IsClientAdmin(&player, &immunity_index)) continue;
-		if (IsImmune(&player, &immunity_index))
+		if (gpManiClient->IsAdmin(&player, &immunity_index)) continue;
+		if (gpManiClient->IsImmune(&player, &immunity_index))
 		{
-			if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_GHOST])
+			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_GHOST))
 			{
 				continue;
 			}
@@ -156,16 +154,16 @@ void ManiGhost::Init(void)
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on connect
 //---------------------------------------------------------------------------------
-void ManiGhost::PlayerConnect(player_t	*player_ptr)
+void ManiGhost::ClientActive(player_t	*player_ptr)
 {
 	int immunity_index;
 
 	if (player_ptr->is_bot) return;
 	if (player_ptr->player_info->IsHLTV()) return;
-	if (IsClientAdmin(player_ptr, &immunity_index)) return;
-	if (IsImmune(player_ptr, &immunity_index))
+	if (gpManiClient->IsAdmin(player_ptr, &immunity_index)) return;
+	if (gpManiClient->IsImmune(player_ptr, &immunity_index))
 	{
-		if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_GHOST])
+		if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_GHOST))
 		{
 			return;
 		}
@@ -191,7 +189,7 @@ void ManiGhost::PlayerConnect(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on disconnect
 //---------------------------------------------------------------------------------
-void ManiGhost::PlayerDisconnect(player_t	*player_ptr)
+void ManiGhost::ClientDisconnect(player_t	*player_ptr)
 {
 	if (player_ptr->is_bot) return;
 	if (player_ptr->player_info->IsHLTV()) return;
@@ -286,7 +284,7 @@ void ManiGhost::PlayerDeath(player_t *player_ptr)
 	{
 		int	admin_index = -1;
 
-		if (!IsClientAdmin(player_ptr, &admin_index))
+		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
 		{
 			BlindPlayer(player_ptr, 255);
 			SayToPlayer(player_ptr, "You have been temporarily blinded for ghosting on an IP address with another player");

@@ -45,10 +45,8 @@
 #include "mani_player.h"
 #include "mani_menu.h"
 #include "mani_output.h"
-#include "mani_admin.h"
-#include "mani_admin_flags.h"
-#include "mani_immunity.h"
-#include "mani_immunity_flags.h"
+#include "mani_client.h"
+#include "mani_client_flags.h"
 #include "mani_gametype.h"
 #include "mani_skins.h"
 
@@ -154,9 +152,9 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 
 				if (immunity_flag != IMMUNITY_DONT_CARE)
 				{
-					if (IsImmune(&player, &immunity_index))
+					if (gpManiClient->IsImmune(&player, &immunity_index))
 					{
-						if (immunity_list[immunity_index].flags[immunity_flag])
+						if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
 						{
 							continue;
 						}
@@ -187,9 +185,9 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 			if (immunity_flag != IMMUNITY_DONT_CARE)
 			{
 
-				if (IsImmune(&player, &immunity_index))
+				if (gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[immunity_flag])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
 					{
 						continue;
 					}
@@ -283,7 +281,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (player.is_bot) continue;
+			if (player.player_info->IsFakeClient()) continue;
 
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 			target_player_list[target_player_list_size - 1] = player;
@@ -312,9 +310,9 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 				return true;
 			}
 
-			if (IsImmune(&player, &immunity_index))
+			if (gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[immunity_flag])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
 				{
 					return false;
 				}
@@ -345,9 +343,9 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 					return true;
 				}
 	
-				if (IsImmune(&player, &immunity_index))
+				if (gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[immunity_flag])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
 					{
 						return false;
 					}
@@ -388,11 +386,11 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 
 		if (requesting_player->entity && requesting_player->index == temp_player_list[i].index)	immunity_flag = -1;
 
-		if (immunity_flag != IMMUNITY_DONT_CARE && !temp_player_list[i].is_bot)
+		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
 		{
-			if (IsImmune(&(temp_player_list[i]), &immunity_index))
+			if (gpManiClient->IsImmune(&(temp_player_list[i]), &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[immunity_flag])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
 				{
 					FreeList ((void **) &temp_player_list, &temp_player_list_size);
 					return false;
@@ -419,11 +417,11 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 
 		if (requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
 
-		if (immunity_flag != IMMUNITY_DONT_CARE && !temp_player_list[i].is_bot)
+		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
 		{
-			if (IsImmune(&(temp_player_list[i]), &immunity_index))
+			if (gpManiClient->IsImmune(&(temp_player_list[i]), &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[temp_immunity])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, temp_immunity))
 				{
 					FreeList ((void **) &temp_player_list, &temp_player_list_size);
 					return false;
@@ -450,11 +448,11 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 
 		if (requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
 
-		if (immunity_flag != IMMUNITY_DONT_CARE && !temp_player_list[i].is_bot)
+		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
 		{
-			if (IsImmune(&(temp_player_list[i]), &immunity_index))
+			if (gpManiClient->IsImmune(&(temp_player_list[i]), &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[temp_immunity])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, temp_immunity))
 				{
 					FreeList ((void **) &temp_player_list, &temp_player_list_size);
 					return false;
@@ -499,9 +497,9 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 					player_ptr->entity = pEntity;
 					player_ptr->user_id = playerinfo->GetUserID();
 					player_ptr->health = playerinfo->GetHealth();
-					player_ptr->is_dead = playerinfo->IsDead() | playerinfo->IsObserver();
+					player_ptr->is_dead = playerinfo->IsDead();
 
-					if (strcmp(player_ptr->steam_id, "BOT") == 0)
+					if (player_ptr->player_info->IsFakeClient())
 					{
 						player_ptr->is_bot = true;
 						Q_strcpy(player_ptr->ip_address,"");
@@ -543,9 +541,9 @@ bool FindPlayerByUserID(player_t *player_ptr)
 					Q_strcpy(player_ptr->name, playerinfo->GetName());
 					Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
 					player_ptr->health = playerinfo->GetHealth();
-					player_ptr->is_dead = playerinfo->IsDead() | playerinfo->IsObserver();
+					player_ptr->is_dead = playerinfo->IsDead();
 					player_ptr->entity = pEntity;
-					if (strcmp(player_ptr->steam_id, "BOT") == 0)
+					if (player_ptr->player_info->IsFakeClient())
 					{
 						player_ptr->is_bot = true;
 						Q_strcpy(player_ptr->ip_address,"");
@@ -581,11 +579,11 @@ bool FindPlayerByEntity(player_t *player_ptr)
 			player_ptr->user_id = playerinfo->GetUserID();
 			player_ptr->team = playerinfo->GetTeamIndex();
 			player_ptr->health = playerinfo->GetHealth();
-			player_ptr->is_dead = playerinfo->IsDead() | playerinfo->IsObserver();
+			player_ptr->is_dead = playerinfo->IsDead();
 			Q_strcpy(player_ptr->name, playerinfo->GetName());
 			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
 
-			if (strcmp(player_ptr->steam_id, "BOT") == 0)
+			if (player_ptr->player_info->IsFakeClient())
 			{
 				player_ptr->is_bot = true;
 				Q_strcpy(player_ptr->ip_address,"");
@@ -627,10 +625,10 @@ bool FindPlayerByIndex(player_t *player_ptr)
 			Q_strcpy(player_ptr->name, playerinfo->GetName());
 			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
 			player_ptr->health = playerinfo->GetHealth();
-			player_ptr->is_dead = playerinfo->IsDead() | playerinfo->IsObserver();
+			player_ptr->is_dead = playerinfo->IsDead();
 			player_ptr->entity = pEntity;
 
-			if (strcmp(player_ptr->steam_id, "BOT") == 0)
+			if (player_ptr->player_info->IsFakeClient())
 			{
 				Q_strcpy(player_ptr->ip_address,"");
 				player_ptr->is_bot = true;
@@ -732,7 +730,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	player_settings_t	add_player;
 	time_t current_time;
 
-	if (player->is_bot)
+	if (player->player_info->IsFakeClient())
 	{
 		// Is Bot or not connected yet
 		return NULL;
@@ -794,7 +792,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	}
 
 
-	Q_memset(&add_player, 0, sizeof(player_settings_t));
+	Q_memset(&add_player, 0, sizeof(player_t));
 	time(&current_time);
 	Q_strcpy(add_player.steam_id, player->steam_id);
 	Q_strcpy(add_player.name, player->name);
@@ -1675,9 +1673,10 @@ void	DeleteOldPlayerSettings(void)
 //---------------------------------------------------------------------------------
 // Purpose: Handle menu selection via settings selection
 //---------------------------------------------------------------------------------
-void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
+void	ShowSettingsPrimaryMenu(player_t *player)
 {
 	/* Draw Main Menu */
+	int	 range = 0;
 	int  team_index = 0;
 
 	if (war_mode) return;
@@ -1717,7 +1716,6 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings deathbeam");
 	}
 
-	
 	AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "System Sounds : %s",
 											(player_settings->server_sounds == 0) ? "Off":"On");
@@ -1726,9 +1724,9 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 	if (mani_skins_admin.GetInt() != 0)
 	{
 		int admin_index;
-		if (IsClientAdmin(player, &admin_index))
+		if (gpManiClient->IsAdmin(player, &admin_index))
 		{
-			if (admin_list[admin_index].flags[ALLOW_SKINS])
+			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
 			{
 				team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
 				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
@@ -1752,9 +1750,9 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 	if (mani_skins_reserved.GetInt() != 0)
 	{
 		int immunity_index;
-		if (IsImmune(player, &immunity_index))
+		if (gpManiClient->IsImmune(player, &immunity_index))
 		{
-			if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE_SKIN])
+			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
 			{
 				team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
 				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
@@ -1796,16 +1794,8 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 	}
 
 	if (menu_list_size == 0) return;
-
-	// List size may have changed
-	if (next_index > menu_list_size)
-	{
-		// Reset index
-		next_index = 0;
-	}
-
-	DrawSubMenu (player, "Press Esc to alter settings", "Configure your settings", next_index, "manisettings", "manisettings", false, -1);
-
+	DrawStandardMenu(player, "Press Esc to alter settings", "Configure your settings", true);
+	
 	return;
 }
 
@@ -1825,7 +1815,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 	if (1 == engine->Cmd_Argc())
 	{
 		// User typed manisettings at console
-		ShowSettingsPrimaryMenu(&player, 0);
+		ShowSettingsPrimaryMenu(&player);
 		return PLUGIN_STOP;
 	}
 
@@ -1844,35 +1834,30 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 
 		char *menu_command = engine->Cmd_Argv(1 + argv_offset);
 
-		if (FStrEq (menu_command, "manisettings"))
-		{
-			ShowSettingsPrimaryMenu(&player, next_index);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "damagetype") && 
+		if (FStrEq (menu_command, "damagetype") && 
 			mani_show_victim_stats.GetInt() != 0)
 		{
 			ProcessMaDamage (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
+			ShowSettingsPrimaryMenu(&player);
 			return PLUGIN_STOP;
 		}
 		else if (FStrEq (menu_command, "quake") &&
 			mani_quake_sounds.GetInt() != 0)
 		{
 			ProcessMaQuake (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
+			ShowSettingsPrimaryMenu(&player);
 			return PLUGIN_STOP;
 		}		
 		else if (FStrEq (menu_command, "sounds"))
 		{
 			ProcessMaSounds (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
+			ShowSettingsPrimaryMenu(&player);
 			return PLUGIN_STOP;
 		}		
 		else if (FStrEq (menu_command, "deathbeam"))
 		{
 			ProcessMaDeathBeam (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
+			ShowSettingsPrimaryMenu(&player);
 			return PLUGIN_STOP;
 		}		
 		else if (FStrEq (menu_command, "joinskin"))
@@ -1884,14 +1869,14 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		else if (FStrEq (menu_command, "admin_t") && mani_skins_admin.GetInt() != 0)
 		{
 			int admin_index;
-			if (IsClientAdmin(&player, &admin_index))
+			if (gpManiClient->IsAdmin(&player, &admin_index))
 			{
-				if (admin_list[admin_index].flags[ALLOW_SKINS])
+				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
 				{
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_ADMIN_T_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player, 0);
+						ShowSettingsPrimaryMenu(&player);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1901,14 +1886,14 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		else if (FStrEq (menu_command, "admin_ct") && mani_skins_admin.GetInt() != 0 && gpManiGameType->IsTeamPlayAllowed())
 		{
 			int admin_index;
-			if (IsClientAdmin(&player, &admin_index))
+			if (gpManiClient->IsAdmin(&player, &admin_index))
 			{
-				if (admin_list[admin_index].flags[ALLOW_SKINS])
+				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
 				{
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_ADMIN_CT_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player, 0);
+						ShowSettingsPrimaryMenu(&player);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1917,14 +1902,14 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		else if (FStrEq (menu_command, "immunity_t") && mani_skins_reserved.GetInt() != 0)
 		{
 			int immunity_index;
-			if (IsImmune(&player, &immunity_index))
+			if (gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE_SKIN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
 				{
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_RESERVE_T_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player, 0);
+						ShowSettingsPrimaryMenu(&player);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1933,14 +1918,14 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		else if (FStrEq (menu_command, "immunity_ct") && mani_skins_reserved.GetInt() != 0 && gpManiGameType->IsTeamPlayAllowed())
 		{
 			int immunity_index;
-			if (IsImmune(&player, &immunity_index))
+			if (gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE_SKIN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
 				{
 					// Handle skin choice menu
 					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_RESERVE_CT_SKIN, menu_command))
 					{
-						ShowSettingsPrimaryMenu(&player, 0);
+						ShowSettingsPrimaryMenu(&player);
 					}
 					return PLUGIN_STOP;
 				}
@@ -1950,7 +1935,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 			// Handle skin choice menu
 			if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_T_SKIN, menu_command))
 			{
-				ShowSettingsPrimaryMenu(&player, 0);
+				ShowSettingsPrimaryMenu(&player);
 			}
 			return PLUGIN_STOP;
 		}
@@ -1959,7 +1944,7 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 			// Handle skin choice menu
 			if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_CT_SKIN, menu_command))
 			{
-				ShowSettingsPrimaryMenu(&player, 0);
+				ShowSettingsPrimaryMenu(&player);
 			}
 			return PLUGIN_STOP;
 		}

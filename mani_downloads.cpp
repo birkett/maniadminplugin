@@ -46,7 +46,7 @@
 #include "mani_player.h"
 #include "mani_skins.h"
 #include "mani_maps.h"
-#include "mani_admin.h"
+#include "mani_client.h"
 #include "mani_customeffects.h"
 #include "mani_mapadverts.h"
 #include "mani_downloads.h"

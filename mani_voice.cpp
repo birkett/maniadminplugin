@@ -49,8 +49,8 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_gametype.h"
 #include "mani_effects.h"
 #include "mani_voice.h"
@@ -152,7 +152,7 @@ bool IsPlayerValid(player_t *player_ptr)
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
 		if (playerinfo && playerinfo->IsConnected())
 		{
-			if (strcmp(playerinfo->GetNetworkIDString(), "BOT") == 0) return false;
+			if (playerinfo->IsFakeClient()) return false;
 			if (playerinfo->IsHLTV()) return false;
 			player_ptr->team = playerinfo->GetTeamIndex();
 			if (playerinfo->IsDead()) return true;
