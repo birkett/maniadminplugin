@@ -339,6 +339,8 @@ extern ConVar mani_spawnpoints_mode;
 extern ConVar mani_spawnpoints_radius_limit;
 
 extern ConVar mani_spray_tag;
+extern ConVar mani_spray_tag_block_mode;
+extern ConVar mani_spray_tag_block_message;
 extern ConVar mani_spray_tag_spray_duration;
 extern ConVar mani_spray_tag_spray_distance_limit;
 extern ConVar mani_spray_tag_spray_highlight;

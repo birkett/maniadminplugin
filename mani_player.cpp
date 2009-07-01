@@ -282,7 +282,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (player.player_info->IsFakeClient()) continue;
+			if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) continue;
 
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 			target_player_list[target_player_list_size - 1] = player;
@@ -500,7 +500,7 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 					player_ptr->health = playerinfo->GetHealth();
 					player_ptr->is_dead = playerinfo->IsDead();
 
-					if (player_ptr->player_info->IsFakeClient())
+					if (FStrEq(player_ptr->steam_id,"BOT"))
 					{
 						player_ptr->is_bot = true;
 						Q_strcpy(player_ptr->ip_address,"");
@@ -544,7 +544,7 @@ bool FindPlayerByUserID(player_t *player_ptr)
 					player_ptr->health = playerinfo->GetHealth();
 					player_ptr->is_dead = playerinfo->IsDead();
 					player_ptr->entity = pEntity;
-					if (player_ptr->player_info->IsFakeClient())
+					if (FStrEq(player_ptr->steam_id,"BOT"))
 					{
 						player_ptr->is_bot = true;
 						Q_strcpy(player_ptr->ip_address,"");
@@ -584,7 +584,7 @@ bool FindPlayerByEntity(player_t *player_ptr)
 			Q_strcpy(player_ptr->name, playerinfo->GetName());
 			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
 
-			if (player_ptr->player_info->IsFakeClient())
+			if (FStrEq(player_ptr->steam_id,"BOT"))
 			{
 				player_ptr->is_bot = true;
 				Q_strcpy(player_ptr->ip_address,"");
@@ -629,7 +629,7 @@ bool FindPlayerByIndex(player_t *player_ptr)
 			player_ptr->is_dead = playerinfo->IsDead();
 			player_ptr->entity = pEntity;
 
-			if (player_ptr->player_info->IsFakeClient())
+			if (FStrEq(player_ptr->steam_id,"BOT"))
 			{
 				Q_strcpy(player_ptr->ip_address,"");
 				player_ptr->is_bot = true;
@@ -731,7 +731,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	player_settings_t	add_player;
 	time_t current_time;
 
-	if (player->player_info->IsFakeClient())
+	if (FStrEq(player->steam_id,"BOT"))
 	{
 		// Is Bot or not connected yet
 		return NULL;

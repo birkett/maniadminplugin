@@ -1447,7 +1447,8 @@ bool ManiCustomEffects::PlayerByUserID(player_t *player_ptr)
 					player_ptr->team = playerinfo->GetTeamIndex();
 					player_ptr->is_dead = playerinfo->IsDead();
 					player_ptr->entity = pEntity;
-					if (playerinfo->IsFakeClient())
+					Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
+					if (FStrEq(player_ptr->steam_id, "BOT"))
 					{
 						player_ptr->is_bot = true;
 					}
@@ -1480,8 +1481,8 @@ bool ManiCustomEffects::PlayerByIndex(player_t *player_ptr)
 			player_ptr->team = playerinfo->GetTeamIndex();
 			player_ptr->is_dead = playerinfo->IsDead();
 			player_ptr->entity = pEntity;
-
-			if (playerinfo->IsFakeClient())
+			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
+			if (FStrEq(player_ptr->steam_id, "BOT"))
 			{
 				player_ptr->is_bot = true;
 			}

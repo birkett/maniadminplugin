@@ -1252,8 +1252,8 @@ const char	*fmt,
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (player.player_info->IsFakeClient()) continue;
 			if (player.team != bomb_target_ptr->team) continue;
+			if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) continue;
 
 			mrf.AddPlayer(player.index);
 		}
@@ -1269,8 +1269,8 @@ const char	*fmt,
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (player.player_info->IsFakeClient()) continue;
 			if (!gpManiGameType->IsValidActiveTeam(player.team)) continue;
+			if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) continue;
 
 			mrf.AddPlayer(player.index);
 		}

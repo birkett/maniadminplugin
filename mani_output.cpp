@@ -820,6 +820,52 @@ void SayToPlayer(player_t *player, const char	*fmt, ...)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Say to player
+//---------------------------------------------------------------------------------
+void SayToPlayerColoured(player_t *player, const char	*fmt, ...)
+{
+	va_list		argptr;
+	char		tempString[1024];
+	player_t	recipient_player;
+	
+	if (war_mode)
+	{
+		return;
+	}
+
+	va_start ( argptr, fmt );
+	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	va_end   ( argptr );
+
+	MRecipientFilter mrf;
+	mrf.MakeReliable();
+
+	recipient_player.index = player->index;
+	if (!FindPlayerByIndex(&recipient_player))
+	{
+		return;
+	}
+
+	if (recipient_player.is_bot)
+	{
+		return;
+	}
+
+	mrf.AddPlayer(player->index);
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		OutputToConsole(player->entity, false, "%s\n", tempString);
+	}
+//	OutputToConsole(NULL, true, "%s\n", tempString);
+
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+	msg_buffer->WriteByte(3); // Say area
+	msg_buffer->WriteByte(3); // Green
+	msg_buffer->WriteString(tempString);
+	engine->MessageEnd();
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Say string to specific teams
 //---------------------------------------------------------------------------------
 void SayToTeam
