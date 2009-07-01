@@ -95,6 +95,8 @@ typedef unsigned long DWORD;
 #include "mani_netidvalid.h"
 #include "mani_autokickban.h"
 #include "mani_reservedslot.h"
+#include "mani_spawnpoints.h"
+#include "mani_sprayremove.h"
 #include "mani_mysql.h"
 
 
@@ -128,6 +130,7 @@ IVoiceServer *voiceserver = NULL;
 ITempEntsSystem *temp_ents = NULL;
 IUniformRandomStream *randomStr = NULL;
 IEngineTrace *enginetrace = NULL;
+ISpatialPartition *partition = NULL;
 
 CGlobalVars *gpGlobals = NULL;
 char *mani_version = PLUGIN_VERSION;
@@ -178,6 +181,21 @@ bool VFUNC mysetclientlistening(IVoiceServer* VoiceServer, int iReceiver, int iS
 	else
 	{
 		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, bListen);
+	}
+}
+
+//	virtual void PlayerDecal( IRecipientFilter& filer, float delay,
+//		const Vector* pos, int player, int entity ) = 0;
+
+DEFVFUNC_(te_PlayerDecal, void, (ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity));
+
+void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)
+{
+	Msg("Spray detected !!\n");
+	if (gpManiSprayRemove->SprayFired(pos, player))
+	{
+		// We let this one through.
+		te_PlayerDecal(pTESys, filter, delay, pos, player, entity);
 	}
 }
 
@@ -264,7 +282,6 @@ float	next_ping_check;
 int	max_players = 0;
 average_ping_t	average_ping_list[MANI_MAX_PLAYERS];
 check_ping_t	check_ping_list[MANI_MAX_PLAYERS];
-say_argv_t		say_argv[MAX_SAY_ARGC];
 float			chat_flood[MANI_MAX_PLAYERS];
 
 int				last_slapped_player;
@@ -396,7 +413,7 @@ public:
 			void			ProcessBanType( player_t *player );
 			void			ProcessKickType( player_t *player );
 			void			ProcessMapManagementType( player_t *player, int admin_index );
-			void			ProcessPlayerManagementType( player_t *player, int admin_index );
+			void			ProcessPlayerManagementType( player_t *player, int admin_index, int next_index );
 			void			ProcessPunishType( player_t *player, int admin_index, int next_index );
 			void			ProcessVoteType( player_t *player, int admin_index, int next_index );
 			void			ProcessConfigOptions( edict_t *pEntity );
@@ -407,7 +424,7 @@ public:
 			edict_t *		GetEntityForUserID (const int user_id);
 			void			PrettyPrinter(KeyValues *keyValue, int indent);
 			void			ProcessConsoleVotemap( edict_t *pEntity);
-			void			ProcessMenuVotemap( edict_t *pEntity, int next_index, int argv_offset );
+//			void			ProcessMenuVotemap( edict_t *pEntity, int next_index, int argv_offset );
 			void			ProcessPlayerHurt(IGameEvent * event);
 			void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
 			void			ProcessPlayerTeam(IGameEvent * event);
@@ -480,7 +497,6 @@ public:
 			PLUGIN_RESULT	ProcessMaWar( int index,  bool svr_command,  int argc, char *option);
 			PLUGIN_RESULT	ProcessMaSettings( int index);
 			PLUGIN_RESULT	ProcessMaTimeLeft( int index, bool svr_command);
-			void			ParseSayString(const char *say_string, char *trimmed_string_out, int *say_argc);
 			void			TurnOffOverviewMap(void);
 			void			ProcessMapCycleMode (int map_cycle_mode);
 			void			StartSystemVote (void);
@@ -857,7 +873,17 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	} 
 	else 
 	{
-		Msg( "Failed to voiceserver sounds interface\n" );
+		Msg( "Failed to voiceserver interface\n" );
+	}
+
+	partition = (ISpatialPartition*)interfaceFactory(INTERFACEVERSION_SPATIALPARTITION, NULL);
+	if (partition)
+	{
+		Msg("Loaded partition interface at %p\n", partition);
+	} 
+	else 
+	{
+		Msg( "Failed to partition interface\n" );
 	}
 
 	Msg("********************************************************\n");
@@ -1087,6 +1113,8 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		gpManiMapAdverts->Init();
 		gpManiReservedSlot->LevelInit();
 		gpManiAutoKickBan->LevelInit();
+		gpManiSpawnPoints->Load(current_map);
+		gpManiSprayRemove->Load();
 	}
 
 
@@ -1107,6 +1135,11 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	{
 		Msg("Hooking voiceserver\n");
 		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
+	}
+
+	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
+	{
+		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
 	}
 
 	return true;
@@ -1379,6 +1412,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	gpManiMapAdverts->Init();
 	gpManiAutoKickBan->LevelInit();
 	gpManiReservedSlot->LevelInit();
+	gpManiSpawnPoints->LevelInit(current_map);
+	gpManiSprayRemove->LevelInit();
 
 	//Get ping immunity player list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/pingimmunity.txt", mani_path.GetString());
@@ -1892,7 +1927,6 @@ void CAdminPlugin::GameFrame( bool simulating )
 		start_time += 1.0;
 	}
 */
-
 	if (ProcessPluginPaused())
 	{
 		return;
@@ -1900,6 +1934,8 @@ void CAdminPlugin::GameFrame( bool simulating )
 
 	// Simulate NetworkIDValidate
 	gpManiNetIDValid->GameFrame();
+
+	gpManiSprayRemove->GameFrame();
 
 	if (mani_protect_against_cheat_cvars.GetInt() == 1)
 	{
@@ -2178,6 +2214,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 
 	gpManiNetIDValid->ClientDisconnect(&player);
 	gpManiReservedSlot->ClientDisconnect(&player);
+	gpManiSprayRemove->ClientDisconnect(&player);
 
 	// Handle player settings
 	PlayerSettingsDisconnect(&player);
@@ -2554,6 +2591,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq( pcmd, "admin" )) return (ProcessAdminMenu(pEntity));
 	else if ( FStrEq( pcmd, "manisettings")) return (ProcessSettingsMenu(pEntity));
+	else if ( FStrEq( pcmd, "settings")) return (ProcessSettingsMenu(pEntity));
 	else if ( FStrEq( pcmd, "votemap" ) && !war_mode)
 	{
 		if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
@@ -2731,6 +2769,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 	else if (FStrEq( pcmd, "ma_kick" ))	return (ProcessMaKick(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
+	else if (FStrEq( pcmd, "ma_spray" ))	return (gpManiSprayRemove->ProcessMaSpray(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_slay" ))	return (ProcessMaSlay(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_offset" ))	return (ProcessMaOffset(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_teamindex" ))	return (ProcessMaTeamIndex(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0)));
@@ -2846,7 +2885,7 @@ int *say_argc
 
 	if (FStrEq( pcmd, "ma_psay" ))
 	{
-		g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, say_argc);
+		ParseSayString(engine->Cmd_Args(), trimmed_say, say_argc);
 		return(g_ManiAdminPlugin.ProcessMaPSay (engine->IndexOfEdict(pEntity),false, engine->Cmd_Argc(), engine->Cmd_Argv(0), say_argv[0].argv_string, &(trimmed_say[say_argv[1].index])));
 	}
 	else if (FStrEq( pcmd, "adminshowranks" ) || FStrEq( pcmd, "ma_ranks" )) return (ProcessMaRanks(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
@@ -2867,7 +2906,7 @@ int *say_argc
 	else if (FStrEq( pcmd, "adminrcon" ) || FStrEq( pcmd, "ma_rcon" )) return ProcessMaRCon(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), arg_string);
 	else if (FStrEq( pcmd, "admincexec" ) || FStrEq( pcmd, "ma_cexec" ))
 	{
-		g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, say_argc);
+		ParseSayString(engine->Cmd_Args(), trimmed_say, say_argc);
 		return(g_ManiAdminPlugin.ProcessMaCExec (engine->IndexOfEdict(pEntity),false, engine->Cmd_Argc(), engine->Cmd_Argv(0), say_argv[0].argv_string, &(trimmed_say[say_argv[1].index])));
 	}	
 	else if (FStrEq( pcmd, "admincexec_all" ) || FStrEq( pcmd, "ma_cexec_all" )) return ProcessMaCExecAll(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), arg_string);
@@ -3337,7 +3376,9 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAY) &&
 				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) &&
 				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) &&
-				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP))
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MUTE) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SPRAY_TAG))
 				|| war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to manage players\n");
@@ -3345,7 +3386,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 			}
 
 			// Punish command selected via menu or console
-			ProcessPlayerManagementType (&player, admin_index);
+			ProcessPlayerManagementType (&player, admin_index, next_index);
 			return PLUGIN_STOP;
 		}
 		if (FStrEq (menu_command, "mapoptions"))
@@ -3387,6 +3428,22 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 
 			// Slay command selected via menu or console
 			ProcessSlayPlayer (&player, next_index, argv_offset);
+			return PLUGIN_STOP;
+		}
+		if (FStrEq (menu_command, "spray") ||
+			FStrEq (menu_command, "spraywarn") ||
+			FStrEq (menu_command, "spraykick") ||
+			FStrEq (menu_command, "sprayban") ||
+			FStrEq (menu_command, "spraypermban"))
+		{
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SPRAY_TAG) || war_mode)
+			{
+				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to check spray tags\n");
+				return PLUGIN_STOP;
+			}
+
+			// Slay command selected via menu or console
+			gpManiSprayRemove->ProcessMaSprayMenu (&player, admin_index, next_index, argv_offset, menu_command);
 			return PLUGIN_STOP;
 		}
 		if (FStrEq (menu_command, "votercon"))
@@ -6326,7 +6383,7 @@ void CAdminPlugin::ProcessMapManagementType(player_t *player, int admin_index )
 //---------------------------------------------------------------------------------
 // Purpose:  Show the player Management screens
 //---------------------------------------------------------------------------------
-void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index )
+void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index, int next_index)
 {
 
 	FreeMenu();
@@ -6387,13 +6444,23 @@ void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin mute");
 	}
 
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SPRAY_TAG) && !war_mode)
+	{
+		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Spray Tag Tracking");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spray");
+	}
+
 	if (menu_list_size == 0) return;
 
-	AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MENU_BACK));
-	Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin");
+	// List size may have changed
+	if (next_index > menu_list_size)
+	{
+		// Reset index
+		next_index = 0;
+	}
 
-	DrawStandardMenu(player, Translate(M_PLAYER_MANAGE_MENU_ESCAPE), Translate(M_PLAYER_MANAGE_MENU_TITLE), true);
+	DrawSubMenu (player, Translate(M_PLAYER_MANAGE_MENU_ESCAPE), Translate(M_PLAYER_MANAGE_MENU_TITLE), next_index, "admin", "playeroptions", true, -1);
 
 }
 //---------------------------------------------------------------------------------
@@ -7846,6 +7913,7 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 		ProcessSetColour(pPlayer, 255, 255, 255, 255 );
 
 		ForceSkinType(&spawn_player);
+		gpManiSpawnPoints->Spawn(&spawn_player);
 
 		// Reset any effects flags
 		EffectsClientDisconnect(spawn_player.index - 1, true);
@@ -8032,7 +8100,7 @@ void CAdminPlugin::ProcessPlayerSay( IGameEvent *event)
 	else if (FStrEq(say_string, "deathbeam") && !war_mode) {ProcessMaDeathBeam(player.index); return;}
 	else if (FStrEq(say_string, "sounds") && !war_mode) {ProcessMaSounds(player.index); return;}
 	else if (FStrEq(say_string, "quake") && !war_mode) {ProcessMaQuake(player.index); return;}
-	else if (FStrEq(say_string, "settings") && !war_mode) {ShowSettingsPrimaryMenu(&player); return;}
+	else if (FStrEq(say_string, "settings") && !war_mode) {ShowSettingsPrimaryMenu(&player, 0); return;}
 	else if (FStrEq(say_string, "timeleft") && !war_mode) {ProcessMaTimeLeft(player.index, false); return;}
 	else if (FStrEq(say_string, "listmaps") && !war_mode) 
 	{
@@ -9017,6 +9085,7 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_unrestrict")) {ProcessMaRestrictWeapon(player.index, false, say_argc, pcmd, pcmd1, "0", false); return false;}
 		else if (FStrEq(ncmd, "@ma_unrestrictall")) {ProcessMaUnRestrictAll(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_kick" )) {ProcessMaKick(player.index, false, say_argc, pcmd,	pcmd1); return false;}
+		else if (FStrEq(ncmd, "@ma_spray" )) {gpManiSprayRemove->ProcessMaSpray(player.index, false); return false;}
 		else if (FStrEq(ncmd, "@ma_slay" )) {ProcessMaSlay(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_offset" )) {ProcessMaOffset(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_teamindex" )) {ProcessMaTeamIndex(player.index, false, say_argc, pcmd); return false;}
@@ -12196,6 +12265,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaPosition
 	SayToPlayer(&player, "Absolute Position XYZ = %.5f %.5f %.5f", pos.x, pos.y, pos.z);
 	SayToPlayer(&player, "Eye Position XYZ = %.5f %.5f %.5f", eyepos.x, eyepos.y, eyepos.z);
 	SayToPlayer(&player, "Eye Angles XYZ = %.5f %.5f %.5f", angles.x, angles.y, angles.z);
+	OutputToConsole(player.entity, svr_command, "\"x\" \"%.5f\"\n", pos.x);
+	OutputToConsole(player.entity, svr_command, "\"y\" \"%.5f\"\n", pos.y);
+	OutputToConsole(player.entity, svr_command, "\"z\" \"%.5f\"\n", pos.z);
 
 	// If from server break out here
 	if (svr_command) return PLUGIN_STOP;
@@ -12938,7 +13010,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMSay
 	{
 		AddToList((void **) &lines_list, sizeof(msay_t), &lines_list_size);
 		Q_strcpy(lines_list[lines_list_size - 1].line_string, temp_line);
-		Msg("Temp Line [%s]\n", temp_line);
 	}
 
 	// Found some players to talk to
@@ -14950,110 +15021,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRCon
 	return PLUGIN_STOP;
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Process the ma_resetrank command
-//---------------------------------------------------------------------------------
-void	CAdminPlugin::ParseSayString
-(
- const char *say_string, 
- char *trimmed_string_out,
- int  *say_argc
-)
-{
-	char trimmed_string[2048];
-	int i;
-	int j;
-	char terminate_char;
-	bool found_quotes;
-	int say_length;
-
-	*say_argc = 0;
-
-	for (i = 0; i < MAX_SAY_ARGC; i++)
-	{
-		// Reset strings for safety
-		Q_strcpy(say_argv[i].argv_string,"");
-		say_argv[i].index = 0;
-	}
-
-	if (!say_string) return;
-
-	say_length = Q_strlen(say_string);
-	if (say_length == 0)
-	{
-		return;
-	}
-
-	if (say_length == 1)
-	{
-		// Only one character in string
-		Q_strcpy(trimmed_string, say_string);
-		Q_strcpy(say_argv[0].argv_string, say_string);
-		say_argv[0].index = 0;
-		*say_argc = *say_argc + 1;
-		return;
-	}
-
-	// Check if quotes are needed to be removed
-	if (say_string[0] == '\"' && say_string[Q_strlen(say_string) - 1] == '\"')
-	{
-		Q_snprintf(trimmed_string, sizeof(trimmed_string), "%s", &(say_string[1]));
-		trimmed_string[Q_strlen(trimmed_string) - 1] = '\0';
-	}
-	else
-	{
-		Q_snprintf(trimmed_string, sizeof(trimmed_string), "%s", say_string);
-	}
-
-	Q_strcpy(trimmed_string_out, trimmed_string);
-
-	// Extract tokens
-	i = 0;
-	
-	while (*say_argc != MAX_SAY_ARGC)
-	{
-		// Find first non white space
-		while (trimmed_string[i] == ' ' && trimmed_string[i] != '\0') i++;
-
-		if (trimmed_string[i] == '\0')	return;
-
-		say_argv[*say_argc].index = i;
-
-		found_quotes = false;
-		if (trimmed_string[i] == '\"')
-		{
-			// Use quote to terminate string
-			found_quotes = true;
-			terminate_char = '\"';
-			i++;
-		}
-		else
-		{
-			// Use next space to terminate string
-			terminate_char = ' ';
-		}
-
-		if (trimmed_string[i] == '\0')	return;
-
-		j = 0;
-
-		while (trimmed_string[i] != terminate_char && trimmed_string[i] != '\0')
-		{
-			// Copy char
-			say_argv[*say_argc].argv_string[j] = trimmed_string[i];
-			j++;
-			i++;
-		}
-
-		say_argv[*say_argc].argv_string[j] = '\0';
-		*say_argc = *say_argc + 1;
-		if (trimmed_string[i] == '\0') return;
-		if (found_quotes) i++;
-		if (trimmed_string[i] == '\0') return;
-	}
-
-	return;
-}
 
 //---------------------------------------------------------------------------------
 // Purpose: Turn off the overview map function
@@ -17973,7 +17940,7 @@ CON_COMMAND(ma_psay, "ma_psay (<partial user name, user id or steam id> <message
 
 	if (ProcessPluginPaused()) return;
 
-	g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 	g_ManiAdminPlugin.ProcessMaPSay
 					(
 					0, 
@@ -17994,14 +17961,14 @@ CON_COMMAND(ma_msay, "ma_msay (<time 0 = permanent> <partial user name, user id 
 
 	if (ProcessPluginPaused()) return;
 
-	g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 	g_ManiAdminPlugin.ProcessMaMSay
 					(
 					0, 
 					true, 
 					engine->Cmd_Argc(), // Number of arguments
 					engine->Cmd_Argv(0), // The command executed
-					say_argv[0].argv_string, // The player target string
+					say_argv[0].argv_string, // The time to display
 					say_argv[1].argv_string, // The player target string
 					&(trimmed_say[say_argv[2].index]) // The actual say string
 					);
@@ -18016,7 +17983,7 @@ CON_COMMAND(ma_say, "ma_say <message>)")
 
 	if (ProcessPluginPaused()) return;
 
-	g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 	g_ManiAdminPlugin.ProcessMaSay
 					(
 					0, 
@@ -18037,7 +18004,7 @@ CON_COMMAND(ma_csay, "ma_csay <message>)")
 
 	if (ProcessPluginPaused()) return;
 
-	g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 	g_ManiAdminPlugin.ProcessMaCSay
 					(
 					0, 
@@ -18058,7 +18025,7 @@ CON_COMMAND(ma_chat, "ma_chat <message>)")
 
 	if (ProcessPluginPaused()) return;
 
-	g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 	g_ManiAdminPlugin.ProcessMaChat
 					(
 					0, 
@@ -18145,7 +18112,7 @@ CON_COMMAND(ma_cexec, "ma_cexec (<partial user name, user id or steam id> <clien
 
 	if (ProcessPluginPaused()) return;
 
-	g_ManiAdminPlugin.ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 	g_ManiAdminPlugin.ProcessMaCExec
 					(
 					0, 
@@ -18632,7 +18599,7 @@ bool	CAdminPlugin::IsTampered(void)
 //Msg("Offset required %i\n", checksum - plus1);
 //while(1);
 
-	if (checksum != (plus1 + 8396))
+	if (checksum != (plus1 + 8397))
 	{
 		return true;
 	}

@@ -47,6 +47,7 @@
 #include "mani_output.h"
 #include "mani_client.h"
 #include "mani_menu.h"
+#include "mani_gametype.h"
 #include "mani_panel.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -191,6 +192,8 @@ PLUGIN_RESULT	ProcessMaFavourites
 	player_t player;
 	player.entity = NULL;
 
+	if (!gpManiGameType->IsBrowseAllowed()) return PLUGIN_CONTINUE;
+
 	if (war_mode) return PLUGIN_CONTINUE;
 
 	if (!svr_command)
@@ -235,6 +238,8 @@ PLUGIN_RESULT	ProcessMaFavourites
 void ProcessMenuMaFavourites( player_t *player, int next_index, int argv_offset )
 {
 	const int argc = engine->Cmd_Argc();
+
+	if (!gpManiGameType->IsBrowseAllowed()) return;
 
 	if (argc - argv_offset == 2)
 	{

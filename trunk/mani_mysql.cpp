@@ -89,6 +89,8 @@ ManiMySQL::~ManiMySQL()
 bool ManiMySQL::Init(void)
 {
 	static	unsigned int timeout;
+	bool	connection_failed = false;
+	bool	tried_connection = false;
 	
 	timeout = gpManiDatabase->GetDBTimeout();
 
@@ -117,16 +119,53 @@ bool ManiMySQL::Init(void)
 	}
 
 //timer_id = ManiGetTimer();
-	if (mysql_real_connect
-			(
-			my_data, 
-			gpManiDatabase->GetDBHost(),
-			gpManiDatabase->GetDBUser(), 
-			gpManiDatabase->GetDBPassword(), 
-			gpManiDatabase->GetDBName(), 
-			gpManiDatabase->GetDBPort(),
-			NULL, 
-			0 ) == NULL)
+
+	// Linux only !!
+#ifdef __linux__
+	if (FStrEq(gpManiDatabase->GetDBHost(), "localhost") ||
+	    FStrEq(gpManiDatabase->GetDBHost(), "127.0.0.1"))
+	{
+		if (gpManiDatabase->GetDBSocketPath() &&
+			!FStrEq(gpManiDatabase->GetDBSocketPath(), ""))
+		{
+			tried_connection = true;
+
+			if (mysql_real_connect
+				(
+				my_data, 
+				gpManiDatabase->GetDBHost(),
+				gpManiDatabase->GetDBUser(), 
+				gpManiDatabase->GetDBPassword(), 
+				gpManiDatabase->GetDBName(), 
+				gpManiDatabase->GetDBPort(),
+				gpManiDatabase->GetDBSocketPath(), 
+				0 ) == NULL)
+			{
+				connection_failed = true;
+			}
+		}
+	}
+#endif
+
+	// Only if not tried connection yet !!
+	if (!tried_connection)
+	{
+		if (mysql_real_connect
+				(
+				my_data, 
+				gpManiDatabase->GetDBHost(),
+				gpManiDatabase->GetDBUser(), 
+				gpManiDatabase->GetDBPassword(), 
+				gpManiDatabase->GetDBName(), 
+				gpManiDatabase->GetDBPort(),
+				NULL, 
+				0 ) == NULL)
+		{
+			connection_failed = true;
+		}
+	}
+
+	if (connection_failed)
 	{
 		error_code = mysql_errno(my_data);
 		Msg( "mysql_real_connect failed !\n") ;

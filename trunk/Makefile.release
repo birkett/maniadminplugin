@@ -25,6 +25,7 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_effects.cpp \
 		mani_gametype.cpp \
 		mani_ghost.cpp \
+		mani_hlxinterface.cpp \
 		mani_language.cpp \
 		mani_main.cpp \
 		mani_mapadverts.cpp \
@@ -42,6 +43,8 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_reservedslot.cpp \
 		mani_skins.cpp \
 		mani_sounds.cpp \
+		mani_spawnpoints.cpp \
+		mani_sprayremove.cpp \
 		mani_stats.cpp \
 		mani_team.cpp \
 		mani_teamkill.cpp \

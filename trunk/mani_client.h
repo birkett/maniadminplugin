@@ -26,7 +26,7 @@
 #ifndef MANI_CLIENT_H
 #define MANI_CLIENT_H
 
-#define MAX_ADMIN_FLAGS (51)
+#define MAX_ADMIN_FLAGS (53)
 #define MAX_IMMUNITY_FLAGS (26)
 
 #define MANI_ADMIN_TYPE (0)
@@ -219,6 +219,8 @@ private:
 	void		ProcessRemoveGroupType( int type, player_t *player_ptr,  bool svr_command,  char *param1);
 	void		ProcessRemoveLevelType( int type, player_t *player_ptr,  bool svr_command,  char *param1);
 	void		ProcessClientGroupStatus( player_t *player_ptr,  bool svr_command,  char *param1 );
+	void		ProcessClientFlagDesc( int type, player_t *player_ptr,  bool svr_command,  char *param1);
+	void		ProcessAllClientFlagDesc( int type, player_t *player_ptr,  bool svr_command);
 
 	client_t		*client_list;
 	int				client_list_size;

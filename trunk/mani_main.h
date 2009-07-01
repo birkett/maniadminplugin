@@ -28,7 +28,6 @@
 
 // Hash defines
 #define	MAX_WEAPON_ALIAS (10)
-#define MAX_SAY_ARGC (10)
 
 #define MANI_MAX_PLAYERS (64)
 #define MAX_LAST_MAPS (20)
@@ -42,9 +41,9 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaC, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaC"
-#define PLUGIN_VERSION_ID "V1.2BetaC\n"
+#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaD, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaD"
+#define PLUGIN_VERSION_ID "V1.2BetaD\n"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)
@@ -173,12 +172,6 @@ struct	cheat_pinger_t
 	bool	waiting_to_send;
 	bool	connected;
 	int		count;
-};
-
-struct say_argv_t
-{
-	char	argv_string[2048];
-	int		index;
 };
 
 struct kill_progress_t
