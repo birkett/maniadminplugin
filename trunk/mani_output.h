@@ -26,6 +26,8 @@
 #ifndef MANI_OUTPUT_H
 #define MANI_OUTPUT_H
 
+#include "mani_player.h"
+
 extern void	AdminSayToAdmin(player_t *player,const char	*fmt, ...);
 extern void	SayToAdmin(player_t	*player,const char	*fmt, ...);
 extern void	AdminSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
@@ -43,6 +45,7 @@ extern void LogCommand(edict_t *pEntity, char *fmt, ... );
 extern void ClientMsg(Color	*col, const unsigned int seconds, const bool admin_only, const int level, const char* fmt, ... ) ;
 extern void ClientMsgSinglePlayer( edict_t *pEntity, const unsigned int seconds,  const int	level, const char* fmt, ... );
 extern void	PrintToClientConsole(edict_t *pEntity, char *fmt, ... );
+extern void OutputHelpText( player_t	*player_ptr, bool		to_server_console, char		*fmt, ...);
 
 
 #endif

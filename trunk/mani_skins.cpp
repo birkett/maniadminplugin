@@ -48,17 +48,13 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
-#include "mani_immunity.h"
-#include "mani_immunity_flags.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_weapon.h"
 #include "mani_gametype.h"
 #include "mani_maps.h"
 #include "mani_skins.h"
 #include "KeyValues.h"
-#include "mani_vfuncs.h"
-#include "mani_vars.h"
 #include "cbaseentity.h"
 
 
@@ -621,7 +617,7 @@ void SkinTeamJoin
 		return;
 	}
 
-	if (player_ptr->is_bot) return;
+	if (player_ptr->player_info->IsFakeClient()) return;
 	if (player_ptr->player_info->IsHLTV()) return;
 
 	player_settings_t	*player_settings;
@@ -668,6 +664,8 @@ void ForceSkinType
 		// Not on any team
 		return;
 	}
+
+	CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
 
 	if (player_ptr->is_bot && mani_skins_random_bot_skins.GetInt() == 1)
 	{
@@ -719,7 +717,7 @@ void ForceSkinType
 				chosen_skin --;
 				if (chosen_skin == -1)
 				{
-					Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+					pPlayer->SetModelIndex(skin_list[i].model_index);
 					return;
 				}
 			}
@@ -728,7 +726,7 @@ void ForceSkinType
 		return;
 	}
 
-	if (player_ptr->is_bot) return;
+	if (player_ptr->player_info->IsFakeClient()) return;
 	if (player_ptr->player_info->IsHLTV()) return;
 
 	player_settings_t	*player_settings;
@@ -742,9 +740,9 @@ void ForceSkinType
 	{
 		if (mani_skins_admin.GetInt() != 0)
 		{
-			if (IsClientAdmin(player_ptr, &admin_index))
+			if (gpManiClient->IsAdmin(player_ptr, &admin_index))
 			{
-				if (admin_list[admin_index].flags[ALLOW_SKINS])
+				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
 				{
 					// Use admin skin for this player
 					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
@@ -759,7 +757,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->admin_t_model))
 								{
-									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+									pPlayer->SetModelIndex(skin_list[i].model_index);
 									return;
 								}
 							}
@@ -782,7 +780,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->admin_ct_model))
 								{
-									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+									pPlayer->SetModelIndex(skin_list[i].model_index);
 									return;
 								}
 							}
@@ -807,9 +805,9 @@ void ForceSkinType
 	{
 		if (mani_skins_reserved.GetInt() != 0)
 		{
-			if (IsImmune(player_ptr, &immunity_index))
+			if (gpManiClient->IsImmune(player_ptr, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE_SKIN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
 				{
 					// Use admin skin for this player
 					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
@@ -824,7 +822,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_t_model))
 								{
-									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+									pPlayer->SetModelIndex(skin_list[i].model_index);
 									return;
 								}
 							}
@@ -847,7 +845,7 @@ void ForceSkinType
 							{
 								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_ct_model))
 								{
-									Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+									pPlayer->SetModelIndex(skin_list[i].model_index);
 									return;
 								}
 							}
@@ -883,13 +881,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+							pPlayer->SetModelIndex(skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->t_model))
 						{
-							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+							pPlayer->SetModelIndex(skin_list[i].model_index);
 							return;
 						}
 					}
@@ -911,13 +909,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+							pPlayer->SetModelIndex(skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->ct_model))
 						{
-							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+							pPlayer->SetModelIndex(skin_list[i].model_index);
 							return;
 						}
 					}
@@ -1049,9 +1047,9 @@ void ProcessJoinSkinChoiceMenu
 		{
 			int admin_index = -1;
 
-			if (IsClientAdmin(player_ptr, &admin_index))
+			if (gpManiClient->IsAdmin(player_ptr, &admin_index))
 			{
-				if (admin_list[admin_index].flags[ALLOW_SKINS])
+				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
 				{
 					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
 					{
@@ -1079,9 +1077,9 @@ void ProcessJoinSkinChoiceMenu
 		{
 			int immunity_index = -1;
 
-			if (IsImmune(player_ptr, &immunity_index))
+			if (gpManiClient->IsImmune(player_ptr, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE_SKIN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
 				{
 					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
 					{
@@ -1180,7 +1178,7 @@ bool	IsSkinValidForPlayer
 
 		for (int i = 0; i < skin_list_size; i ++)
 		{
-			if (skin_list[i].skin_type == skin_type)
+			if (skin_list[i].skin_type = skin_type)
 			{
 				*skin_index_ptr = i;
 				return true;
@@ -1194,9 +1192,9 @@ bool	IsSkinValidForPlayer
 	{
 		int admin_index = -1;
 
-		if (IsClientAdmin(player_ptr, &admin_index))
+		if (gpManiClient->IsAdmin(player_ptr, &admin_index))
 		{
-			if (admin_list[admin_index].flags[ALLOW_SKINS])
+			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
 			{
 				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
 				{
@@ -1222,9 +1220,9 @@ bool	IsSkinValidForPlayer
 	{
 		int immunity_index = -1;
 
-		if (IsImmune(player_ptr, &immunity_index))
+		if (gpManiClient->IsImmune(player_ptr, &immunity_index))
 		{
-			if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE_SKIN])
+			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
 			{
 				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
 				{
@@ -1444,9 +1442,9 @@ void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 			if (player.is_bot) continue;
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_SETSKIN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_SETSKIN))
 				{
 					continue;
 				}
@@ -1503,7 +1501,7 @@ PLUGIN_RESULT	ProcessMaSetSkin
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_setskin", ALLOW_SETSKINS, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_setskin", ALLOW_SETSKINS, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 3) 
@@ -1576,10 +1574,9 @@ PLUGIN_RESULT	ProcessMaSetSkin
 			continue;
 		}
 
-//		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
-//		CBaseEntity_SetModelIndex(pPlayer, skin_list[found_skin].model_index);
+		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
+		pPlayer->SetModelIndex(skin_list[found_skin].model_index);
 
-		Prop_SetVal(target_player_list[i].entity, MANI_PROP_MODEL_INDEX, skin_list[found_skin].model_index);
 		LogCommand (player.entity, "skinned user [%s] [%s] with skin %s\n", target_player_list[i].name, target_player_list[i].steam_id, skin_name);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{

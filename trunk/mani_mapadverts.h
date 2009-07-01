@@ -35,7 +35,7 @@ public:
 
 	void		Init(void);
 	void		FreeMapAdverts(void);
-	void		PlayerConnect(player_t *player_ptr);
+	void		ClientActive(player_t *player_ptr);
 	void		DumpCoords(player_t *player_ptr);
 
 private:

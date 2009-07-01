@@ -23,30 +23,39 @@
 
 
 
-#ifndef MANI_FILE_H
-#define MANI_FILE_H
+#ifndef MANI_MYSQL_H
+#define MANI_MYSQL_H
 
-#if defined __WIN32__ || defined _WIN32 || defined WIN32
-	#define PATH_SEP_CHAR	'\\'
-	#define ALT_SEP_CHAR	'/'
-#elif defined __linux__
-	#define PATH_SEP_CHAR	'/'
-	#define ALT_SEP_CHAR	'\\'
+#ifndef __linux__
+#include <winsock.h>
 #endif
+#include <mysql.h>
 
-class ManiFile
+class ManiMySQL
 {
+
 public:
-	ManiFile();
-	~ManiFile();
+	ManiMySQL();
+	~ManiMySQL();
 
-	FILE		*Open(char *filename, char *attrib);
-	void		Close(FILE *fh);
-	int			Write(const void *pOutput, int size, FILE *fh);
-	char		*ReadLine(char *pOutput, int maxChars, FILE *fh);
-	void		PathFormat(char *buffer, size_t len, const char *fmt, ...);
+	bool	Init(void);
+	bool	ExecuteQuery(  char	*sql_query, ... );
+	bool	ExecuteQuery(  int	*row_count, char	*sql_query, ... );
+	bool	FetchRow( void);
+	int		GetInt(int column) {return (atoi(row[column]));}
+	float	GetFloat(int column) {return (atof(row[column]));}
+	char	*GetString(int column) {return (row[column]);}
+	bool	GetBool(int column) {return ((atoi(row[column]) == 0) ? false:true);}
+	int		GetRowID(void);
+
+private:
+
+	MYSQL			*my_data;
+	MYSQL_RES		*res_ptr;
+	MYSQL_FIELD		*fd;
+	MYSQL_ROW		row;
+	int			error_code;
+	int			timer_id;
 };
-
-extern	ManiFile *gpManiFile;
 
 #endif

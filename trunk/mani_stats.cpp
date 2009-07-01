@@ -40,13 +40,13 @@
 #include "inetchannelinfo.h"
 #include "bitbuf.h"
 #include "mani_main.h"
-#include "mani_admin_flags.h"
+#include "mani_client_flags.h"
 #include "mani_memory.h"
 #include "mani_convar.h"
 #include "mani_player.h"
 #include "mani_parser.h"
 #include "mani_menu.h"
-#include "mani_admin.h"
+#include "mani_client.h"
 #include "mani_maps.h"
 #include "mani_output.h"
 #include "mani_gametype.h"
@@ -632,7 +632,6 @@ void ProcessDeathStats(IGameEvent *event)
 	victim.user_id = event->GetInt("userid", -1);
 	attacker.user_id = event->GetInt("attacker", -1);
 	headshot = event->GetInt("headshot", -1);
-	const char *weapon = event->GetString("weapon", "NULL");
 
 //	Msg("Victim [%i] Attacker [%i] Headshot [%i]\n", victim.user_id, attacker.user_id, headshot);
 	if (attacker.user_id == 0)
@@ -655,13 +654,6 @@ void ProcessDeathStats(IGameEvent *event)
 	if ((victim.is_bot || attacker.is_bot) && mani_stats_include_bot_kills.GetInt() == 0)
 	{
 		return;
-	}
-
-	bool zombie = false;
-
-	if (FStrEq(weapon, "zombie_claws_of_death"))
-	{
-		zombie = true;
 	}
 
 	bool suicide = false;
@@ -687,9 +679,7 @@ void ProcessDeathStats(IGameEvent *event)
 		player_found = *player_found_address;
 		if (suicide == false)
 		{
-			if (attacker.team != victim.team || 
-				!gpManiGameType->IsTeamPlayAllowed() || 
-				zombie)
+			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed())
 			{
 				// Not a team attack or not in team play mode
 				if (headshot == 1)
@@ -749,7 +739,7 @@ void ProcessDeathStats(IGameEvent *event)
 		}
 		else
 		{
-			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed() || zombie)
+			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed())
 			{
 				player_found->deaths ++;
 				if (player_found->kills == 0)
@@ -787,7 +777,6 @@ void ProcessNameDeathStats(IGameEvent *event)
 	victim.user_id = event->GetInt("userid", -1);
 	attacker.user_id = event->GetInt("attacker", -1);
 	headshot = event->GetInt("headshot", -1);
-	const char *weapon = event->GetString("weapon", "NULL");
 
 //	Msg("Victim [%i] Attacker [%i] Headshot [%i]\n", victim.user_id, attacker.user_id, headshot);
 	if (attacker.user_id == 0)
@@ -813,13 +802,6 @@ void ProcessNameDeathStats(IGameEvent *event)
 		suicide = true;
 	}
 
-	bool zombie = false;
-
-	if (FStrEq(weapon, "zombie_claws_of_death"))
-	{
-		zombie = true;
-	}
-
 	Q_strcpy(rank_key.name, attacker.name);
 	rank_key_address = &rank_key;
 	player_found_address = (rank_t **) bsearch
@@ -836,7 +818,7 @@ void ProcessNameDeathStats(IGameEvent *event)
 		player_found = *player_found_address;
 		if (suicide == false)
 		{
-			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed() || zombie)
+			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed())
 			{
 				// Not a team attack
 				if (headshot == 1)
@@ -892,7 +874,7 @@ void ProcessNameDeathStats(IGameEvent *event)
 		}
 		else
 		{
-			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed() || zombie)
+			if (attacker.team != victim.team || !gpManiGameType->IsTeamPlayAllowed())
 			{
 				player_found->deaths ++;
 				if (player_found->kills == 0)
@@ -1927,7 +1909,7 @@ PLUGIN_RESULT	ProcessMaRanks
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	int players_ranked = 0;
@@ -2063,7 +2045,7 @@ PLUGIN_RESULT	ProcessMaPLRanks
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	time_t	current_time;
@@ -2175,7 +2157,7 @@ PLUGIN_RESULT	ProcessMaResetPlayerRank
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 

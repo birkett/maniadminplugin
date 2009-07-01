@@ -39,10 +39,11 @@
 #include "inetchannelinfo.h"
 #include "bitbuf.h"
 #include "mani_main.h"
+#include "mani_player.h"
 #include "mani_memory.h"
 #include "mani_convar.h"
 #include "mani_player.h"
-#include "mani_admin.h"
+#include "mani_client.h"
 #include "mani_maps.h"
 #include "mani_gametype.h"
 #include "mani_output.h"
@@ -131,7 +132,7 @@ const char	*fmt,
 			continue;
 		}
 
-		if (IsClientAdmin(&recipient_player, &admin_index))
+		if (gpManiClient->IsAdmin(&recipient_player, &admin_index))
 		{
 			// This is an admin player
 			mrf.AddPlayer(i);
@@ -203,7 +204,7 @@ const char	*fmt,
 		}
 		else
 		{
-			if (IsClientAdmin(&recipient_player, &admin_index))
+			if (gpManiClient->IsAdmin(&recipient_player, &admin_index))
 			{
 				// This is an admin player
 				mrf.AddPlayer(i);
@@ -284,7 +285,7 @@ const char	*fmt,
 				continue;
 			}
 
-			is_admin = IsClientAdmin(&server_player, &admin_index);
+			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
 			if (is_admin)
 			{
 				found_admin = true;
@@ -409,7 +410,7 @@ const char	*fmt,
 				continue;
 			}
 
-			is_admin = IsClientAdmin(&server_player, &admin_index);
+			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
 			if (is_admin)
 			{
 				found_admin = true;
@@ -545,7 +546,7 @@ const char	*fmt,
 				continue;
 			}
 
-			is_admin = IsClientAdmin(&server_player, &admin_index);
+			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
 			if (is_admin)
 			{
 				found_admin = true;
@@ -1237,7 +1238,7 @@ void ClientMsg
 
 		if (admin_only)
 		{
-			if (IsClientAdmin(&player, &admin_index))
+			if (gpManiClient->IsAdmin(&player, &admin_index))
 			{
 				KeyValues *kv = new KeyValues("msg");
 				kv->SetString("title", szBuf);
@@ -1277,4 +1278,32 @@ void PrintToClientConsole(edict_t *pEntity, char *fmt, ... )
 
 	// Print to clients console
 	engine->ClientPrintf(pEntity, tempString);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Output help text to clients
+//---------------------------------------------------------------------------------
+void OutputHelpText
+(
+ player_t	*player_ptr,
+ bool		to_server_console,
+ char		*fmt,
+ ...
+ )
+{
+	va_list		argptr;
+	char		tempString[2048];
+
+	va_start ( argptr, fmt );
+	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	va_end   ( argptr );
+
+	if (to_server_console)
+	{
+		OutputToConsole(player_ptr->entity, to_server_console, "%s\n", tempString);
+	}
+	else
+	{
+		SayToPlayer(player_ptr, "%s\n", tempString);
+	}
 }

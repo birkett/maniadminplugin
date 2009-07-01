@@ -276,6 +276,7 @@ void DrawSubMenuEscapeStyle
 	bool	last_item;
 	int		menu_index;
 	bool	back;
+	bool	use_back_key = true;
 	char num[10], msg[128], cmd[128];
 
 

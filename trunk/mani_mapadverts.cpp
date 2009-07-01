@@ -46,7 +46,7 @@
 #include "mani_player.h"
 #include "mani_skins.h"
 #include "mani_maps.h"
-#include "mani_admin.h"
+#include "mani_client.h"
 #include "mani_output.h"
 #include "mani_customeffects.h"
 #include "mani_mapadverts.h"
@@ -292,7 +292,7 @@ void ManiMapAdverts::GetCoordList(KeyValues *kv_ptr, char *decal_name)
 //---------------------------------------------------------------------------------
 // Purpose: Show decal to player
 //---------------------------------------------------------------------------------
-void ManiMapAdverts::PlayerConnect(player_t *player_ptr)
+void ManiMapAdverts::ClientActive(player_t *player_ptr)
 {
 	if (!gpManiGameType->IsAdvertDecalAllowed()) return;
 	if (mani_map_adverts.GetInt() == 0) return;

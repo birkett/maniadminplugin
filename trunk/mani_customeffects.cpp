@@ -48,10 +48,8 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
-#include "mani_immunity.h"
-#include "mani_immunity_flags.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_sounds.h"
 #include "mani_maps.h"
 #include "mani_gametype.h"
@@ -1447,9 +1445,9 @@ bool ManiCustomEffects::PlayerByUserID(player_t *player_ptr)
 					player_ptr->player_info = playerinfo;
 					player_ptr->index = i;
 					player_ptr->team = playerinfo->GetTeamIndex();
-					player_ptr->is_dead = playerinfo->IsDead() | playerinfo->IsObserver();
+					player_ptr->is_dead = playerinfo->IsDead();
 					player_ptr->entity = pEntity;
-					if (strcmp(playerinfo->GetNetworkIDString(), "BOT") == 0)
+					if (playerinfo->IsFakeClient())
 					{
 						player_ptr->is_bot = true;
 					}
@@ -1480,10 +1478,10 @@ bool ManiCustomEffects::PlayerByIndex(player_t *player_ptr)
 		{
 			player_ptr->player_info = playerinfo;
 			player_ptr->team = playerinfo->GetTeamIndex();
-			player_ptr->is_dead = playerinfo->IsDead() | playerinfo->IsObserver();
+			player_ptr->is_dead = playerinfo->IsDead();
 			player_ptr->entity = pEntity;
 
-			if (strcmp(playerinfo->GetNetworkIDString(), "BOT") == 0)
+			if (playerinfo->IsFakeClient())
 			{
 				player_ptr->is_bot = true;
 			}

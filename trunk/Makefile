@@ -15,21 +15,23 @@ NAME=mani_admin_plugin
 
 # source files that should be compiled and linked into the binary
 SRC_FILES = 	mani_adverts.cpp \
-		mani_admin.cpp \
+		mani_client.cpp \
 		mani_convar.cpp \
 		mani_crontab.cpp \
 		mani_customeffects.cpp \
+		mani_database.cpp \
 		mani_downloads.cpp \
 		mani_effects.cpp \
 		mani_gametype.cpp \
 		mani_ghost.cpp \
-		mani_immunity.cpp \
 		mani_language.cpp \
 		mani_main.cpp \
 		mani_mapadverts.cpp \
 		mani_maps.cpp \
 		mani_memory.cpp \
 		mani_menu.cpp \
+		mani_mysql.cpp \
+		mani_netidvalid.cpp \
 		mani_output.cpp \
 		mani_panel.cpp \
 		mani_parser.cpp \
@@ -38,7 +40,6 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_replace.cpp \
 		mani_skins.cpp \
 		mani_sounds.cpp \
-		mani_sprayremove.cpp \
 		mani_stats.cpp \
 		mani_team.cpp \
 		mani_teamkill.cpp \
@@ -60,13 +61,14 @@ HL2BIN_DIR=../../srcds_1/bin
 CPLUS=/usr/bin/g++
 CLINK=/usr/bin/gcc
 CPP_LIB=/usr/lib/gcc/i386-redhat-linux/3.4.3/libstdc++.a \
-	/usr/lib/gcc/i386-redhat-linux/3.4.3/libgcc_eh.a 
+	/usr/lib/gcc/i386-redhat-linux/3.4.3/libgcc_eh.a \
+	./mysql/linux_32/lib/libmysqlclient.a \
 
 # put any compiler flags you want passed here
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl -s tier0_i486.so vstdlib_i486.so
+LDFLAGS=-lz -lm -ldl -s tier0_i486.so vstdlib_i486.so
 #LDFLAGS=-lm -ldl -s tier0_i486.so vstdlib_i486.so
 
 #############################################################################

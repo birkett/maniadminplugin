@@ -48,8 +48,8 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
-#include "mani_admin_flags.h"
-#include "mani_admin.h"
+#include "mani_client_flags.h"
+#include "mani_client.h"
 #include "mani_sounds.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -239,18 +239,18 @@ PLUGIN_RESULT	ProcessMaPlaySound
 	}
 
 	player.entity = NULL;
-	player.index = index;
 
 	if (!svr_command)
 	{
 		// Check if player is admin
 
+		player.index = index;
 		if (!FindPlayerByIndex(&player))
 		{
 			return PLUGIN_STOP;
 		}
 
-		if (!IsClientAdmin(&player, &admin_index))
+		if (!gpManiClient->IsAdmin(&player, &admin_index))
 		{
 			if (mani_sounds_per_round.GetInt() == 0)
 			{
@@ -261,7 +261,7 @@ PLUGIN_RESULT	ProcessMaPlaySound
 		else
 		{
 			// Definately admin but can they play sounds ?
-			if (!admin_list[admin_index].flags[ALLOW_PLAYSOUND] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_PLAYSOUND) || war_mode)
 			{
 				if (mani_sounds_per_round.GetInt() == 0)
 				{

@@ -28,6 +28,11 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#ifndef __linux__
+#include <winsock.h>
+#endif
+#include <mysql.h>
+
 #ifdef __linux__
 #include <dlfcn.h>
 #else
@@ -58,15 +63,13 @@ typedef unsigned long DWORD;
 #include "mani_main.h"
 #include "mani_timers.h"
 #include "mani_player.h"
-#include "mani_admin_flags.h"
-#include "mani_immunity_flags.h"
+#include "mani_client_flags.h"
 #include "mani_language.h"
 #include "mani_gametype.h"
 #include "mani_memory.h"
 #include "mani_parser.h"
 #include "mani_convar.h"
-#include "mani_admin.h"
-#include "mani_immunity.h"
+#include "mani_client.h"
 #include "mani_menu.h"
 #include "mani_output.h"
 #include "mani_panel.h"
@@ -88,10 +91,10 @@ typedef unsigned long DWORD;
 #include "mani_mapadverts.h"
 #include "mani_downloads.h"
 #include "mani_victimstats.h"
-#include "mani_sprayremove.h"
-#include "mani_warmuptimer.h"
-#include "mani_vfuncs.h"
-#include "mani_vars.h"
+#include "mani_database.h"
+#include "mani_netidvalid.h"
+#include "mani_mysql.h"
+
 
 #include "shareddefs.h"
 #include "cbaseentity.h"
@@ -176,21 +179,6 @@ bool VFUNC mysetclientlistening(IVoiceServer* VoiceServer, int iReceiver, int iS
 	}
 }
 
-//	virtual void PlayerDecal( IRecipientFilter& filer, float delay,
-//		const Vector* pos, int player, int entity ) = 0;
-
-DEFVFUNC_(te_PlayerDecal, void, (ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity));
-
-void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)
-{
-//	Msg("Spray detected !!\n");
-	if (gpManiSprayRemove->SprayFired(pos, player))
-	{
-		// We let this one through.
-		te_PlayerDecal(pTESys, filter, delay, pos, player, entity);
-	}
-}
-
 //declare the original func and the gate if in windows. syntax is:
 //DEFVFUNC_
 //        <name of the var you want to hold the original func>,
@@ -204,6 +192,23 @@ bf_write* VFUNC ManiEntityMessageBeginHook(IVEngineServer* EngineServer, MRecipi
 {
 	Msg("Message [%i]\n", msg_type);
 	return OrgEngineEntityMessageBegin(EngineServer, filter, msg_type);
+}
+
+//declare the original func and the gate if in windows. syntax is:
+//DEFVFUNC_
+//        <name of the var you want to hold the original func>,
+//        <return type>,
+//        <args INCLUDING a pointer to the type of class it is in the beginning>
+DEFVFUNC_(grules_FPlayerCanRespawn, bool, (CGameRules* GameRules, CBasePlayer *pPlayer));
+
+//just define the func you want to be called instead of the original
+//making sure to include VFUNC between the return type and name
+bool VFUNC MyFPlayerCanRespawn(CGameRules* GameRules, CBasePlayer *pPlayer)
+{
+
+	ReSpawnPlayer(pPlayer);
+	//Msg("FPlayerCanRespawn [%s]\n", pPlayer->GetClassName());
+	return grules_FPlayerCanRespawn(GameRules, pPlayer);
 }
 
 //declare the original func and the gate if in windows. syntax is:
@@ -347,7 +352,6 @@ public:
 	virtual PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	virtual void FireGameEvent( IGameEvent * event );
 	virtual int GetCommandIndex() { return m_iClientCommandIndex; }
-
 			PLUGIN_RESULT	ProcessClientCommandSection2(edict_t	*pEntity,const char *pcmd,const char *pcmd2,const char *pcmd3,const char *say_string,char *trimmed_say,char *arg_string,int *say_argc);
 			void			LoadCheatList(void);
 			void			UpdateCurrentPlayerList(void);
@@ -398,7 +402,7 @@ public:
 			void			ProcessBanType( player_t *player );
 			void			ProcessKickType( player_t *player );
 			void			ProcessMapManagementType( player_t *player, int admin_index );
-			void			ProcessPlayerManagementType( player_t *player, int admin_index, int next_index );
+			void			ProcessPlayerManagementType( player_t *player, int admin_index );
 			void			ProcessPunishType( player_t *player, int admin_index, int next_index );
 			void			ProcessVoteType( player_t *player, int admin_index, int next_index );
 			void			ProcessConfigOptions( edict_t *pEntity );
@@ -419,6 +423,7 @@ public:
 			void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
 			void			ProcessPlayerTeam(IGameEvent * event);
 			void			ProcessPlayerDeath(IGameEvent * event);
+			void			ShowTampered(void);
 			bool			ProcessAutoKick(player_t *player);
 			bool			ProcessReserveSlotJoin(player_t *player);
 			bool			IsPlayerInReserveList(player_t *player);
@@ -427,6 +432,7 @@ public:
 			void			DisconnectPlayer(player_t *player);
 			void			ProcessCheatCVars(void);
 			void			ProcessHighPingKick(void);
+			bool			IsTampered (void);
 			bool			HookSayCommand(void);
 			bool			HookChangeLevelCommand(void);
 
@@ -494,10 +500,6 @@ public:
 			PLUGIN_RESULT	ProcessMaAutoKickBanShowIP( int index,  bool svr_command);
 			PLUGIN_RESULT	ProcessMaWar( int index,  bool svr_command,  int argc, char *option);
 			PLUGIN_RESULT	ProcessMaSettings( int index);
-			PLUGIN_RESULT	ProcessMaAdmins( int index,  bool svr_command);
-			PLUGIN_RESULT	ProcessMaAdminGroups( int index,  bool svr_command);
-			PLUGIN_RESULT	ProcessMaImmunity( int index,  bool svr_command);
-			PLUGIN_RESULT	ProcessMaImmunityGroups( int index,  bool svr_command);
 			PLUGIN_RESULT	ProcessMaTimeLeft( int index, bool svr_command);
 			PLUGIN_RESULT	ProcessMaAutoKickBanName( int index,  bool svr_command,  int argc,  char *command_string,  char *player_name, char *ban_time_string, bool kick);
 			PLUGIN_RESULT	ProcessMaAutoKickBanPName( int index,  bool svr_command,  int argc,  char *command_string,  char *player_pname, char *ban_time_string, bool kick);
@@ -745,31 +747,6 @@ CAdminPlugin::~CAdminPlugin()
 {
 }
 
-#define GET_INTERFACE(_store, _type, _version, _max_iterations, _interface_type) \
-{ \
-	char	interface_version[128]; \
-	int i, length; \
-	Q_strcpy(interface_version, _version); \
-	length = Q_strlen(_version); \
-	i = atoi(&(interface_version[length - 3])); \
-	interface_version[length - 3] = '\0'; \
-	AddToList((void **) &interface_list, sizeof(interface_data_t), &interface_list_size); \
-	Q_strcpy(interface_list[interface_list_size - 1].interface_name, _version); \
-	Q_strcpy(interface_list[interface_list_size - 1].base_interface, _version); \
-	for (int j = i; j < i + _max_iterations; j ++) \
-	{ \
-		char new_interface[128]; \
-		Q_snprintf(new_interface, sizeof(new_interface), "%s%03i", interface_version, j); \
-		_store = (_type *) _interface_type (new_interface, NULL); \
-		if(_store) \
-		{ \
-			Q_strcpy(interface_list[interface_list_size - 1].interface_name, new_interface); \
-			break; \
-		} \
-	} \
-	interface_list[interface_list_size - 1].ptr = (char *) _store; \
-}
-
 //---------------------------------------------------------------------------------
 // Purpose: called when the plugin is loaded, load the interface we need from the engine
 //---------------------------------------------------------------------------------
@@ -780,73 +757,191 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	Msg("%s\n", mani_version);
 	Msg("\n");
 
-	interface_data_t *interface_list = NULL;
-	int	interface_list_size = 0;
-
-	GET_INTERFACE(playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER, 20, gameServerFactory)
-	GET_INTERFACE(engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER, 20, interfaceFactory)
-	GET_INTERFACE(gameeventmanager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2, 20, interfaceFactory)
-	GET_INTERFACE(filesystem, IFileSystem, FILESYSTEM_INTERFACE_VERSION, 20, interfaceFactory)
-	GET_INTERFACE(helpers, IServerPluginHelpers, INTERFACEVERSION_ISERVERPLUGINHELPERS, 20, interfaceFactory)
-	GET_INTERFACE(networkstringtable, INetworkStringTableContainer, INTERFACENAME_NETWORKSTRINGTABLESERVER, 20, interfaceFactory)
-	GET_INTERFACE(enginetrace, IEngineTrace, INTERFACEVERSION_ENGINETRACE_SERVER, 20, interfaceFactory)
-	GET_INTERFACE(randomStr, IUniformRandomStream, VENGINE_SERVER_RANDOM_INTERFACE_VERSION, 20, interfaceFactory)
-	GET_INTERFACE(serverents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS, 20, gameServerFactory)
-	GET_INTERFACE(effects, IEffects, IEFFECTS_INTERFACE_VERSION, 20, gameServerFactory)
-	GET_INTERFACE(esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION, 20, interfaceFactory)
-	GET_INTERFACE(cvar, ICvar, VENGINE_CVAR_INTERFACE_VERSION, 20, interfaceFactory)
-	GET_INTERFACE(serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, 20, gameServerFactory)
-	GET_INTERFACE(voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER, 20, interfaceFactory)
-
-	gpGlobals = playerinfomanager->GetGlobalVars();
-	InitCVars( interfaceFactory ); // register any cvars we have defined
-
-	// Show interfaces that worked
-	for (int i = 0; i < interface_list_size; i++)
+	if ((playerinfomanager = (IPlayerInfoManager *)gameServerFactory(INTERFACEVERSION_PLAYERINFOMANAGER,NULL)))
 	{
-		if (interface_list[i].ptr)
-		{
-			if (strcmp(interface_list[i].base_interface, interface_list[i].interface_name) == 0)
-			{
-				// Base interface used
-				Msg("%p SDK %s\n", interface_list[i].ptr, interface_list[i].base_interface);
-			}
-			else
-			{
-				Msg("%p SDK %s => Upgraded to %s\n", interface_list[i].ptr, interface_list[i].base_interface, interface_list[i].interface_name);
-			}
-		}
-	}
-
-	// Show ones that didn't
-	bool	found_failure = false;
-	for (int i = 0; i < interface_list_size; i++)
+		Msg("Loaded playerinfomanager interface at %p\n", playerinfomanager);
+	} 
+	else 
 	{
-		if (!interface_list[i].ptr)
-		{
-			if (strcmp(interface_list[i].base_interface, interface_list[i].interface_name) == 0)
-			{
-				// Base interface used
-				Msg("FAILED !! : %s\n", interface_list[i].base_interface);
-				found_failure = true;
-			}
-		}
-	}
-
-	FreeList((void **) &interface_list, &interface_list_size);
-
-	if (found_failure) 
-	{
-		Msg("Failure on loading interface, quitting plugin load\n");
+		Msg( "Failed to load playerinfomanager\n" );
 		return false;
+	}
+
+	// get the interfaces we want to use
+	if((engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL)))
+	{
+		Msg("Loaded engine interface at %p\n", engine);
+	} 
+	else 
+	{
+		Warning( "Failed to load engine interface\n" );
+		return false;
+	}
+
+	if ((gameeventmanager = (IGameEventManager2 *)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)))
+	{
+		Msg("Loaded events manager interface at %p\n", gameeventmanager);
+	} 
+	else 
+	{
+		Msg( "Failed to events manager interface\n" );
+		return false;
+	}
+
+	if ((filesystem = (IFileSystem*)interfaceFactory(FILESYSTEM_INTERFACE_VERSION, NULL)))
+	{
+		Msg("Loaded filesystem interface at %p\n", filesystem);
+	} 
+	else 
+	{
+		Msg( "Failed to load filesystem interface\n" );
+		return false;
+	}
+
+	if ((helpers = (IServerPluginHelpers*)interfaceFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL)))
+	{
+		Msg("Loaded helpers interface at %p\n", helpers);
+	} 
+	else 
+	{
+		Msg( "Failed to load helpers interface\n" );
+		return false;
+	}
+
+	if ((networkstringtable = (INetworkStringTableContainer *)interfaceFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL)))
+	{
+		Msg("Loaded networkstringtable interface at %p\n", networkstringtable);
+	} 
+	else 
+	{
+		Msg( "Failed to load networkstringtable interface\n" );
+		return false;
+	}
+
+	if ((enginetrace = (IEngineTrace *)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL)))
+	{
+		Msg("Loaded enginetrace interface\n");
+	} 
+	else 
+	{
+		Msg( "Failed to load enginetrace interface\n" );
+		return false;
+	}
+
+	if ((randomStr = (IUniformRandomStream *)interfaceFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL)))
+	{
+		Msg("Loaded random stream interface at %p\n", randomStr);
+	} 
+	else 
+	{
+		Msg( "Failed to load random stream interface\n" );
+		return false;
+	}
+
+	serverents = (IServerGameEnts*)gameServerFactory(INTERFACEVERSION_SERVERGAMEENTS, NULL);
+	if(serverents) 
+	{
+		Msg("Loaded IServerGameEnts interface at %p\n", serverents);
+	} 
+	else 
+	{
+		Msg( "Failed to load IServerGameEnts interface\n" );
+	}
+
+	effects = (IEffects*)gameServerFactory(IEFFECTS_INTERFACE_VERSION, NULL);
+	if(effects) 
+	{
+		Msg("Loaded effects interface at %p\n", effects);
+	} 
+	else 
+	{
+		Msg( "Failed to load effects interface\n" );
+	}
+
+	esounds = (IEngineSound*)interfaceFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL);
+	if (esounds)
+	{
+		Msg("Loaded sounds interface at %p\n", esounds);
+	} 
+	else 
+	{
+		Msg( "Failed to load sounds interface\n" );
+	}
+
+
+	cvar = (ICvar*)interfaceFactory(VENGINE_CVAR_INTERFACE_VERSION, NULL);
+	if(cvar)
+ 	{
+		Msg("Loaded cvar interface at %p\n", cvar);
+	} 
+	else 
+	{
+		Msg( "Failed to load cvar interface\n" );
+		return false;
+	}
+
+	serverdll = (IServerGameDLL*) gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
+	if(serverdll)
+ 	{
+		Msg("Loaded servergamedll interface at %p\n", serverdll);
+	} 
+	else 
+	{
+		// Hack for unreleased interface version
+		Msg("Falling back to ServerGameDLL004\n");
+		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
+		if(serverdll)
+ 		{
+			Msg("Loaded servergamedll interface at %p\n", serverdll);
+		}		
+		else
+		{
+			// Hack for interface 004 not working on older mods
+			Msg("Falling back to ServerGameDLL003\n");
+			serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
+			if(serverdll)
+ 			{
+				Msg("Loaded servergamedll interface at %p\n", serverdll);
+			}		
+			else		
+			{
+				Msg( "Failed to load servergamedll interface\n" );
+				return false;
+			}
+		}
+	}
+
+	voiceserver = (IVoiceServer*)interfaceFactory(INTERFACEVERSION_VOICESERVER, NULL);
+	if (voiceserver)
+	{
+		Msg("Loaded voiceserver interface at %p\n", voiceserver);
+	} 
+	else 
+	{
+		Msg( "Failed to voiceserver sounds interface\n" );
 	}
 
 	Msg("********************************************************\n");
 
+	if (IsTampered())
+	{
+		ShowTampered();
+		return false;
+	}
 
 
-	LoadWeapons("Unknown");
+	gpGlobals = playerinfomanager->GetGlobalVars();
+	InitCVars( interfaceFactory ); // register any cvars we have defined
+
 	gpManiGameType->Init();
+
+	// Load up game specific settings */
+	/*
+	gameclient = (IServerGameClients*) gameServerFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL);
+	if (!gameclient)
+	{
+		Msg("Failed to load game client dll\n");
+	}*/
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
 	{
@@ -884,7 +979,6 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		temp_ents = **(ITempEntsSystem***)(VFN2(effects, gpManiGameType->GetAdvancedEffectsVFuncOffset()) + (gpManiGameType->GetAdvancedEffectsCodeOffset()));
 #endif
 	}
-
 
 
 	const char *game_type = serverdll->GetGameDescription();
@@ -1019,6 +1113,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	round_end_found = false;
 
 	SetPluginPausedStatus(false);
+	gpManiDatabase->Init();
 	InitEffects();
 	InitTKPunishments();
 	gpManiDownloads->Init();
@@ -1030,8 +1125,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 			return false;
 		}
 
-		LoadAdmins();
-		LoadImmunity();
+		gpManiClient->Init();
 		InitPanels();	// Fails if plugin loaded on server startup but placed here in case user runs plugin_load
 		ResetActivePlayers();
 		LoadQuakeSounds();
@@ -1045,11 +1139,11 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		LoadSounds();
 		LoadSkins();
 		SkinResetTeamID();
+		LoadWeapons("Unknown");
 		FreeTKPunishments();
 		gpManiGhost->Init();
 		gpManiCustomEffects->Init();
 		gpManiMapAdverts->Init();
-		gpManiSprayRemove->Load();
 	}
 
 
@@ -1072,11 +1166,6 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
 	}
 
-	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
-	{
-		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
-	}
-
 	return true;
 }
 
@@ -1086,8 +1175,6 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 void CAdminPlugin::Unload( void )
 {
 	// Free up any lists being used
-	FreeAdmins ();
-	FreeImmunity ();
 	FreeMenu();
 	FreeCronTabs();
 	FreeAdverts();
@@ -1184,7 +1271,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	int		total_load_index;
 
 	// Reset game type info (mp_teamplay may have changed)
-	LoadWeapons(pMapName);
 	gpManiGameType->Init();
 	total_load_index = ManiGetTimer();
 
@@ -1263,7 +1349,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	gpManiGhost->Init();
 	gpManiCustomEffects->Init();
 	gpManiVictimStats->RoundStart();
-	gpManiWarmupTimer->LevelInit();
 
 	// Init votes and menu system
 	for (i = 0; i < MANI_MAX_PLAYERS; i++)
@@ -1346,8 +1431,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	// Required for vote time restriction
 	map_start_time = gpGlobals->curtime;
 
-	LoadAdmins();
-	LoadImmunity();
+	LoadWeapons(pMapName);
+	gpManiClient->Init();
 	LoadQuakeSounds();
 	LoadCronTabs();
 	LoadAdverts();
@@ -1359,7 +1444,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	LoadSkins();
 	FreeTKPunishments();
 	gpManiMapAdverts->Init();
-	gpManiSprayRemove->LevelInit();
 
 	//Get reserve player list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/reserveslots.txt", mani_path.GetString());
@@ -1700,6 +1784,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		}
 
 		filesystem->Close(file_handle);
+		qsort(autokick_steam_list, autokick_steam_list_size, sizeof(autokick_steam_t), sort_autokick_steam); 
 	}
 
 	//Get autokickban IP list
@@ -1737,7 +1822,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddAutoKickSteamID(autokickban_id);
 		}
 		filesystem->Close(file_handle);
-		qsort(autokick_steam_list, autokick_steam_list_size, sizeof(autokick_steam_t), sort_autokick_steam); 
 	}
 
 	//Get autokickban Name list
@@ -1787,22 +1871,155 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	ProcessPlayerSettings();
 	Msg("Player Lists Loaded in %.4f seconds\n", ManiGetTimerDuration(timer_index));
 
-	gameeventmanager->AddListener( this, "weapon_fire", true );
-	gameeventmanager->AddListener( this, "round_start", true );
-	gameeventmanager->AddListener( this, "round_end", true );
-	gameeventmanager->AddListener( this, "round_freeze_end", true );
-	gameeventmanager->AddListener( this, "player_hurt", true );
-	gameeventmanager->AddListener( this, "player_team", true );
-	gameeventmanager->AddListener( this, "player_death", true );
-	gameeventmanager->AddListener( this, "player_say", true );
+	if (IsTampered())
+	{
+		ShowTampered();
+		return;
+	}
+	else
+	{
+		gameeventmanager->AddListener( this, "weapon_fire", true );
+		gameeventmanager->AddListener( this, "round_start", true );
+		gameeventmanager->AddListener( this, "round_end", true );
+		gameeventmanager->AddListener( this, "round_freeze_end", true );
+		gameeventmanager->AddListener( this, "player_hurt", true );
+		gameeventmanager->AddListener( this, "player_team", true );
+		gameeventmanager->AddListener( this, "player_death", true );
+		gameeventmanager->AddListener( this, "player_say", true );
 //		gameeventmanager->AddListener( this, "player_changename", true );
-	gameeventmanager->AddListener( this, "player_spawn", true );
-	gameeventmanager->AddListener( this, "player_team", true );
+		gameeventmanager->AddListener( this, "player_spawn", true );
+		gameeventmanager->AddListener( this, "player_team", true );
+	}
 
 	Msg("********************************************************\n");
 	Msg(" Mani Admin Plugin Level Init Time = %.3f seconds\n", ManiGetTimerDuration(total_load_index));
 	Msg("********************************************************\n");
 
+//	if (query->ExecuteQuery("SELECT username FROM phpbb_users", &count, res_ptr))
+/*	if (query->ExecuteQuery("SHOW tables", &count, res_ptr))
+	{
+		Msg("Row count = [%i]\n", count);
+/*		for ( x = 0 ; fd = mysql_fetch_field( res_ptr ) ; x++ )
+				strcpy( aszFlds[ x ], fd->name ) ;
+*/
+ 
+/*		l = 1;
+		while (row = query->FetchRow())
+		{
+			if (row[0])
+			Msg("%i : %s\n", l++, row[0]);
+		}
+	}
+*/
+
+//	while(1);
+/*
+#define		DEFALT_SQL_STMT	"SELECT username FROM phpbb_users"
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
+
+	/********************************************************
+	**
+	**		main  :-
+	**
+	********************************************************/
+
+
+/*	char		szSQL[ 200 ], aszFlds[ 25 ][ 25 ], szDB[ 50 ] ;
+	const  char   *pszT;
+	int			j, k, l, x ;
+	MYSQL		* myData ;
+	MYSQL_RES	* res ;
+	MYSQL_FIELD	* fd ;
+	MYSQL_ROW	row ;
+
+	//....just curious....
+	printf( "sizeof( MYSQL ) == %d\n", (int) sizeof( MYSQL ) ) ;
+	strcpy( szDB, "suck" ) ;
+	strcpy( szSQL, "SELECT username FROM phpbb_users" ) ;
+
+	if ( (myData = mysql_init((MYSQL*) 0)) && 
+		mysql_real_connect( myData, "www.cs-suck.com", "Mani", "suckmapass", "suck", MYSQL_PORT,	NULL, 0 ) )
+	{
+		if ( mysql_select_db( myData, szDB ) < 0 ) {
+			printf( "Can't select the %s database !\n", szDB ) ;
+			mysql_close( myData ) ;
+		}
+	}
+	else {
+		printf( "Can't connect to the mysql server on port %d !\n",
+			MYSQL_PORT ) ;
+		mysql_close( myData ) ;
+	}
+	//....
+	if ( ! mysql_query( myData, szSQL ) ) {
+		res = mysql_store_result( myData ) ;
+		i = (int) mysql_num_rows( res ) ; l = 1 ;
+		printf( "Query:  %s\nNumber of records found:  %ld\n", szSQL, i ) ;
+		//....we can get the field-specific characteristics here....
+		for ( x = 0 ; fd = mysql_fetch_field( res ) ; x++ )
+			strcpy( aszFlds[ x ], fd->name ) ;
+		//....
+		while ( row = mysql_fetch_row( res ) ) {
+			j = mysql_num_fields( res ) ;
+			printf( "Record #%ld:-\n", l++ ) ;
+			for ( k = 0 ; k < j ; k++ )
+				printf( "  Fld #%d (%s): %s\n", k + 1, aszFlds[ k ],
+				(((row[k]==NULL)||(!strlen(row[k])))?"NULL":row[k])) ;
+			puts( "==============================\n" ) ;
+		}
+		mysql_free_result( res ) ;
+	}
+	else printf( "Couldn't execute %s on the server !\n", szSQL ) ;
+	//....
+/*	puts( "====  Diagnostic info  ====" ) ;
+	pszT = mysql_get_client_info() ;
+	printf( "Client info: %s\n", pszT ) ;
+	//....
+	pszT = mysql_get_host_info( myData ) ;
+	printf( "Host info: %s\n", pszT ) ;
+	//....
+	pszT = mysql_get_server_info( myData ) ;
+	printf( "Server info: %s\n", pszT ) ;
+	//....
+	res = mysql_list_processes( myData ) ; l = 1 ;
+	if (res)
+	{
+		for ( x = 0 ; fd = mysql_fetch_field( res ) ; x++ )
+			strcpy( aszFlds[ x ], fd->name ) ;
+		while ( row = mysql_fetch_row( res ) ) {
+			j = mysql_num_fields( res ) ;
+			printf( "Process #%ld:-\n", l++ ) ;
+			for ( k = 0 ; k < j ; k++ )
+				printf( "  Fld #%d (%s): %s\n", k + 1, aszFlds[ k ],
+				(((row[k]==NULL)||(!strlen(row[k])))?"NULL":row[k])) ;
+			puts( "==============================\n" ) ;
+		}
+	}
+	else
+	{
+		printf("Got error %s when retreiving processlist\n",mysql_error(myData));
+	}
+	//....
+	res = mysql_list_tables( myData, "%" ) ; l = 1 ;
+	for ( x = 0 ; fd = mysql_fetch_field( res ) ; x++ )
+		strcpy( aszFlds[ x ], fd->name ) ;
+	while ( row = mysql_fetch_row( res ) ) {
+		j = mysql_num_fields( res ) ;
+		printf( "Table #%ld:-\n", l++ ) ;
+		for ( k = 0 ; k < j ; k++ )
+			printf( "  Fld #%d (%s): %s\n", k + 1, aszFlds[ k ],
+			(((row[k]==NULL)||(!strlen(row[k])))?"NULL":row[k])) ;
+		puts( "==============================\n" ) ;
+	}
+	//....
+	pszT = mysql_stat( myData ) ;
+	puts( pszT ) ;
+	//....*/
+//	mysql_close( myData ) ;
+//	while(1);
 }
 
 //---------------------------------------------------------------------------------
@@ -1816,6 +2033,16 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 	{
 		average_ping_list[i].in_use = false;
 	}
+
+	// Get team managers
+	SetupTeamList(edictCount);
+
+//	HOOKVFUNC(gamerules_ptr, 17, grules_DefaultFOV, MyDefaultFOV);
+
+/*	for (int i = 60; i < 65; i ++)
+	{
+		HOOKVFUNC(gamerules_ptr, i, grules_FPlayerCanRespawn, MyFPlayerCanRespawn);
+	}*/
 }
 
 //---------------------------------------------------------------------------------
@@ -1837,8 +2064,8 @@ void CAdminPlugin::GameFrame( bool simulating )
 		return;
 	}
 
-	gpManiSprayRemove->GameFrame();
-	gpManiWarmupTimer->GameFrame();
+	// Simulate NetworkIDValidate
+	gpManiNetIDValid->GameFrame();
 
 	if (mani_protect_against_cheat_cvars.GetInt() == 1)
 	{
@@ -2057,22 +2284,24 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ClientActive( edict_t *pEntity )
 {
-//  Msg("Mani -> Client Active\n");
+  Msg("Mani -> Client Active\n");
 
 	if (ProcessPluginPaused())
 	{
 		return;
 	}
 
+	gpManiNetIDValid->ClientActive(pEntity);
+
 	player_t player;
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return;
 	if (player.player_info->IsHLTV()) return;
-	if (strcmp(player.player_info->GetNetworkIDString(),"BOT") == 0) return;
+	if (player.player_info->IsFakeClient()) return;
 
-	gpManiGhost->PlayerConnect(&player);
-	gpManiVictimStats->PlayerConnect(&player);
-	gpManiMapAdverts->PlayerConnect(&player);
+	gpManiGhost->ClientActive(&player);
+	gpManiVictimStats->ClientActive(&player);
+	gpManiMapAdverts->ClientActive(&player);
 
 	check_ping_list[player.index - 1].in_use = true;
 	average_ping_list[player.index - 1].in_use = false;
@@ -2125,14 +2354,15 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 		return;
 	}
 
-	gpManiSprayRemove->ClientDisconnect(&player);
+	gpManiNetIDValid->ClientDisconnect(&player);
 
 	// Handle player settings
 	PlayerSettingsDisconnect(&player);
 	SkinPlayerDisconnect(&player);
 	ProcessTKDisconnected (&player);
-	gpManiGhost->PlayerDisconnect(&player);
-	gpManiVictimStats->PlayerDisconnect(&player);
+	gpManiGhost->ClientDisconnect(&player);
+	gpManiVictimStats->ClientDisconnect(&player);
+	gpManiClient->ClientDisconnect(&player);
 
 	user_name[player.index - 1].in_use = false;
 	Q_strcpy(user_name[player.index - 1].name,"");
@@ -2386,6 +2616,7 @@ void CAdminPlugin::ClientSettingsChanged( edict_t *pEdict )
 {
 	if ( playerinfomanager )
 	{
+		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEdict );
 		int	player_index = engine->IndexOfEdict(pEdict);
 
 		if (user_name[player_index - 1].in_use)
@@ -2678,13 +2909,14 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 	else if (FStrEq( pcmd, "ma_kick" ))	return (ProcessMaKick(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
-	else if (FStrEq( pcmd, "ma_spray" )) return (gpManiSprayRemove->ProcessMaSpray(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_slay" ))	return (ProcessMaSlay(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_offset" ))	return (ProcessMaOffset(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_teamindex" ))	return (ProcessMaTeamIndex(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0)));
 	else if (FStrEq( pcmd, "ma_offsetscan" ))	return (ProcessMaOffsetScan(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
+	else if (FStrEq( pcmd, "ma_client" ))	return (gpManiClient->ProcessMaClient(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
+	else if (FStrEq( pcmd, "ma_clientgroup" ))	return (gpManiClient->ProcessMaClientGroup(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3)));
 	else if (FStrEq( pcmd, "ma_slap" ))	return (ProcessMaSlap(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
-	else if (FStrEq( pcmd, "ma_setadminflag" ))	return (ProcessMaSetAdminFlag(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
+	else if (FStrEq( pcmd, "ma_setadminflag" ))	return (gpManiClient->ProcessMaSetAdminFlag(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_setskin" ))	return (ProcessMaSetSkin(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_setcash" ))	return (ProcessMaCash(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), MANI_SET_CASH));
 	else if (FStrEq( pcmd, "ma_givecash" ))	return (ProcessMaCash(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), MANI_GIVE_CASH));
@@ -2807,10 +3039,6 @@ int *say_argc
 	else if (FStrEq( pcmd, "adminshowtkviolations" ) || FStrEq( pcmd, "ma_tklist" )) return (ProcessMaTKList(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_war" )) return (ProcessMaWar(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_settings" )) return (ProcessMaSettings(engine->IndexOfEdict(pEntity)));
-	else if (FStrEq( pcmd, "adminshowadmins" ) || FStrEq( pcmd, "ma_admins" )) return (ProcessMaAdmins(engine->IndexOfEdict(pEntity), false));
-	else if (FStrEq( pcmd, "ma_admingroups" )) return (ProcessMaAdminGroups(engine->IndexOfEdict(pEntity), false));
-	else if (FStrEq( pcmd, "ma_immunity" )) return (ProcessMaImmunity(engine->IndexOfEdict(pEntity), false));
-	else if (FStrEq( pcmd, "ma_immunitygroups" )) return (ProcessMaImmunityGroups(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_maplist" )) return (ProcessMaMapList(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_mapcycle" )) return (ProcessMaMapCycle(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_votemaplist" )) return (ProcessMaVoteMapList(engine->IndexOfEdict(pEntity), false));
@@ -2863,7 +3091,7 @@ int *say_argc
 	{
 		int admin_index;
 		if (!FindPlayerByEntity(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_explode", ALLOW_EXPLODE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_explode", ALLOW_EXPLODE, war_mode, &admin_index)) return PLUGIN_STOP;
 
 		ProcessExplodeAtCurrentPosition (&player);
 		return PLUGIN_STOP;
@@ -2897,7 +3125,7 @@ bool	CAdminPlugin::ProcessCheatCVarPing(player_t *player, const char *pcmd)
 {
 	if (!FindPlayerByEntity(player)) return false;
 	if (player->is_bot) return false;
-	if (strcmp(player->steam_id,"BOT") == 0) return false;
+	if (player->player_info->IsFakeClient()) return false;
 	if (player->player_info->IsHLTV()) return false;
 
 	if (cheat_ping_list[player->index - 1].waiting_for_control)
@@ -2962,7 +3190,7 @@ void	CAdminPlugin::UpdateCurrentPlayerList(void)
 		player.index = i;
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.is_bot) continue;
-		if (strcmp(player.steam_id,"BOT") == 0) continue;
+		if (player.player_info->IsFakeClient()) continue;
 		if (player.player_info->IsHLTV()) continue;
 
 		// Must be a player connected
@@ -3079,7 +3307,7 @@ void	CAdminPlugin::ProcessCheatCVarCommands(void)
 					admin.index = j;
 					if (!FindPlayerByIndex(&admin)) continue;
 					if (admin.is_bot) continue;
-					if (!IsClientAdmin(&admin, &admin_index)) continue;
+					if (!gpManiClient->IsAdmin(&admin, &admin_index)) continue;
 
 					SayToPlayer(&admin, "[MANI_ADMIN_PLUGIN] Warning !! Player %s may have a cheat installed", player.name);
 					SayToPlayer(&admin, "%i more detection attempt%s until automatic action is taken", tries_left, (tries_left == 1) ? "":"s");
@@ -3184,7 +3412,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		return PLUGIN_STOP;
 	}
 
-	if (!IsAdminAllowed(&player, "admin", ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, "admin", ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
 
 	if (1 == engine->Cmd_Argc())
 	{
@@ -3210,7 +3438,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 
 		if (FStrEq (menu_command, "changemap"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CHANGEMAP])
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP))
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change map\n");
 				return PLUGIN_STOP;
@@ -3222,7 +3450,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "setnextmap"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CHANGEMAP])
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP))
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to set the next map\n");
 				return PLUGIN_STOP;
@@ -3234,7 +3462,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "kicktype"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_KICK] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to kick players\n");
 				return PLUGIN_STOP;
@@ -3246,7 +3474,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "kick"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_KICK] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to kick players\n");
 				return PLUGIN_STOP;
@@ -3258,19 +3486,19 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "punish"))
 		{
-			if (( !admin_list[admin_index].flags[ALLOW_BLIND] &&
-				!admin_list[admin_index].flags[ALLOW_SLAP] &&
-				!admin_list[admin_index].flags[ALLOW_FREEZE] &&
-				!admin_list[admin_index].flags[ALLOW_TELEPORT] &&
-				!admin_list[admin_index].flags[ALLOW_GIMP] &&
-				!admin_list[admin_index].flags[ALLOW_DRUG] &&
-				!admin_list[admin_index].flags[ALLOW_BURN] &&
-				!admin_list[admin_index].flags[ALLOW_NO_CLIP] &&
-				!admin_list[admin_index].flags[ALLOW_SETSKINS] &&
-				!admin_list[admin_index].flags[ALLOW_TIMEBOMB] &&
-				!admin_list[admin_index].flags[ALLOW_FIREBOMB] &&
-				!admin_list[admin_index].flags[ALLOW_FREEZEBOMB] &&
-				!admin_list[admin_index].flags[ALLOW_BEACON])
+			if (( !gpManiClient->IsAdminAllowed(admin_index, ALLOW_BLIND) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZE) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_TELEPORT) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_GIMP) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_DRUG) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BURN) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_NO_CLIP) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SETSKINS) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_TIMEBOMB) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_FIREBOMB) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZEBOMB) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BEACON))
 				|| war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to punish players\n");
@@ -3283,12 +3511,11 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "playeroptions"))
 		{
-			if ((!admin_list[admin_index].flags[ALLOW_KICK] &&
-				!admin_list[admin_index].flags[ALLOW_SLAY] &&
-				!admin_list[admin_index].flags[ALLOW_BAN] &&
-				!admin_list[admin_index].flags[ALLOW_CEXEC_MENU] &&
-				!admin_list[admin_index].flags[ALLOW_SWAP] &&
-				!admin_list[admin_index].flags[ALLOW_SPRAY_TAG])
+			if ((!gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAY) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) &&
+				!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP))
 				|| war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to manage players\n");
@@ -3296,12 +3523,12 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 			}
 
 			// Punish command selected via menu or console
-			ProcessPlayerManagementType (&player, admin_index, next_index);
+			ProcessPlayerManagementType (&player, admin_index);
 			return PLUGIN_STOP;
 		}
 		if (FStrEq (menu_command, "mapoptions"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CHANGEMAP])
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP))
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change maps\n");
 				return PLUGIN_STOP;
@@ -3313,11 +3540,11 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "voteoptions"))
 		{
-			if ((!admin_list[admin_index].flags[ALLOW_RANDOM_MAP_VOTE]) &&
-				(!admin_list[admin_index].flags[ALLOW_MAP_VOTE]) &&
-				(!admin_list[admin_index].flags[ALLOW_MENU_RCON_VOTE]) &&
-				(!admin_list[admin_index].flags[ALLOW_MENU_QUESTION_VOTE]) &&
-				(!admin_list[admin_index].flags[ALLOW_CANCEL_VOTE]) ||
+			if ((!gpManiClient->IsAdminAllowed(admin_index, ALLOW_RANDOM_MAP_VOTE)) &&
+				(!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE)) &&
+				(!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_RCON_VOTE)) &&
+				(!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_QUESTION_VOTE)) &&
+				(!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CANCEL_VOTE)) ||
 				 war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to manage votes\n");
@@ -3330,7 +3557,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "slay"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SLAY] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAY) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to slay players\n");
 				return PLUGIN_STOP;
@@ -3340,25 +3567,9 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 			ProcessSlayPlayer (&player, next_index, argv_offset);
 			return PLUGIN_STOP;
 		}
-		if (FStrEq (menu_command, "spray") ||
-			FStrEq (menu_command, "spraywarn") ||
-			FStrEq (menu_command, "spraykick") ||
-			FStrEq (menu_command, "sprayban") ||
-			FStrEq (menu_command, "spraypermban"))
-		{
-			if (!admin_list[admin_index].flags[ALLOW_SPRAY_TAG] || war_mode)
-			{
-				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to check spray tags\n");
-				return PLUGIN_STOP;
-			}
-
-			// Slay command selected via menu or console
-			gpManiSprayRemove->ProcessMaSprayMenu (&player, admin_index, next_index, argv_offset, menu_command);
-			return PLUGIN_STOP;
-		}
 		if (FStrEq (menu_command, "votercon"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MENU_RCON_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_RCON_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run a rcon vote\n");
 				return PLUGIN_STOP;
@@ -3370,7 +3581,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "votequestion"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MENU_QUESTION_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_QUESTION_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run a question vote\n");
 				return PLUGIN_STOP;
@@ -3382,7 +3593,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "voteextend"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MAP_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run an extension vote\n");
 				return PLUGIN_STOP;
@@ -3394,7 +3605,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "ban") || FStrEq (menu_command, "banip"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BAN] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to ban players\n");
 				return PLUGIN_STOP;
@@ -3406,7 +3617,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "randommapvote"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_RANDOM_MAP_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_RANDOM_MAP_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run random map votes\n");
 				return PLUGIN_STOP;
@@ -3418,7 +3629,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "buildmapvote"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MAP_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run random map votes\n");
 				return PLUGIN_STOP;
@@ -3430,7 +3641,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "singlemapvote"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MAP_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run map votes\n");
 				return PLUGIN_STOP;
@@ -3442,7 +3653,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "multimapvote"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MAP_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run map votes\n");
 				return PLUGIN_STOP;
@@ -3454,7 +3665,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "autobanname"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BAN] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to ban players\n");
 				return PLUGIN_STOP;
@@ -3466,7 +3677,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "autokicksteam") || FStrEq (menu_command, "autokickip") || FStrEq (menu_command, "autokickname"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_KICK] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to autokick players\n");
 				return PLUGIN_STOP;
@@ -3478,7 +3689,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "slap"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SLAP] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to slap players\n");
 				return PLUGIN_STOP;
@@ -3490,7 +3701,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "blind"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BLIND] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BLIND) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to blind players\n");
 				return PLUGIN_STOP;
@@ -3502,7 +3713,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "freeze"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_FREEZE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to freeze players\n");
 				return PLUGIN_STOP;
@@ -3514,7 +3725,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "burn"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BURN] || war_mode || !gpManiGameType->IsFireAllowed())
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BURN) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to burn players\n");
 				return PLUGIN_STOP;
@@ -3526,7 +3737,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "swapteam"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SWAP] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to swap players to different teams\n");
 				return PLUGIN_STOP;
@@ -3538,7 +3749,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "specplayer"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SWAP] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to move players to be spectator\n");
 				return PLUGIN_STOP;
@@ -3550,7 +3761,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "balanceteam"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SWAP] || war_mode || !gpManiGameType->IsTeamPlayAllowed())
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) || war_mode || !gpManiGameType->IsTeamPlayAllowed())
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to balance teams\n");
 				return PLUGIN_STOP;
@@ -3562,7 +3773,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "cancelvote"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CANCEL_VOTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CANCEL_VOTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to cancel votes\n");
 				return PLUGIN_STOP;
@@ -3574,7 +3785,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "drug"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_DRUG] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_DRUG) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to drug players\n");
 				return PLUGIN_STOP;
@@ -3586,7 +3797,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "noclip"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_NO_CLIP] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_NO_CLIP) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to no clip players\n");
 				return PLUGIN_STOP;
@@ -3598,7 +3809,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "skinoptions"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SETSKINS] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SETSKINS) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change skins of players\n");
 				return PLUGIN_STOP;
@@ -3610,7 +3821,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "setskin"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SETSKINS] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SETSKINS) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change skins of players\n");
 				return PLUGIN_STOP;
@@ -3622,7 +3833,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}		
 		if (FStrEq (menu_command, "timebomb"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_TIMEBOMB] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_TIMEBOMB) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change players into time bombs\n");
 				return PLUGIN_STOP;
@@ -3634,7 +3845,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}		
 		if (FStrEq (menu_command, "firebomb"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_FIREBOMB] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_FIREBOMB) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change players into fire bombs\n");
 				return PLUGIN_STOP;
@@ -3646,7 +3857,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "freezebomb"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_FREEZEBOMB] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZEBOMB) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change players into freeze bombs\n");
 				return PLUGIN_STOP;
@@ -3658,7 +3869,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "beacon"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BEACON] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BEACON) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change players into beacons\n");
 				return PLUGIN_STOP;
@@ -3670,7 +3881,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "gimp"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_GIMP] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_GIMP) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to gimp players\n");
 				return PLUGIN_STOP;
@@ -3682,7 +3893,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "mute"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_MUTE] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_MUTE) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to mute players\n");
 				return PLUGIN_STOP;
@@ -3694,7 +3905,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "teleport"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_TELEPORT] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_TELEPORT) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to teleport players\n");
 				return PLUGIN_STOP;
@@ -3706,7 +3917,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "savelocation"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_TELEPORT] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_TELEPORT) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to teleport players\n");
 				return PLUGIN_STOP;
@@ -3719,7 +3930,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		if (FStrEq (menu_command, "banoptions") || FStrEq (menu_command, "banoptionsip") ||
 			FStrEq (menu_command, "autobanoptionsname"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BAN] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to ban players\n");
 				return PLUGIN_STOP;
@@ -3732,8 +3943,8 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		if (FStrEq (menu_command, "randomvoteoptions") || FStrEq (menu_command, "mapvoteoptions") ||
 			FStrEq (menu_command, "multimapvoteoptions"))
 		{
-			if ((!admin_list[admin_index].flags[ALLOW_RANDOM_MAP_VOTE] &&
-				 !admin_list[admin_index].flags[ALLOW_MAP_VOTE]) || war_mode)
+			if ((!gpManiClient->IsAdminAllowed(admin_index, ALLOW_RANDOM_MAP_VOTE) &&
+				 !gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE)) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to run votes\n");
 				return PLUGIN_STOP;
@@ -3745,7 +3956,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "slapoptions"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_SLAP] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to slap players\n");
 				return PLUGIN_STOP;
@@ -3757,7 +3968,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "blindoptions"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BLIND] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BLIND) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to blind players\n");
 				return PLUGIN_STOP;
@@ -3769,7 +3980,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "bantype"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_BAN] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to ban players\n");
 				return PLUGIN_STOP;
@@ -3781,7 +3992,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "config"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CONFIG])
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CONFIG))
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change the plugin config\n");
 				return PLUGIN_STOP;
@@ -3793,7 +4004,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "toggle"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CONFIG])
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CONFIG))
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to change the plugin config\n");
 				return PLUGIN_STOP;
@@ -3805,7 +4016,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "restrict_weapon"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_RESTRICTWEAPON] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_RESTRICTWEAPON) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to restrict weapons\n");
 				return PLUGIN_STOP;
@@ -3817,7 +4028,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "play_sound"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_PLAYSOUND] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_PLAYSOUND) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to play sounds\n");
 				return PLUGIN_STOP;
@@ -3830,7 +4041,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 			
 		if (FStrEq (menu_command, "rcon"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_RCON_MENU])
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_RCON_MENU))
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to select rcon commands\n");
 				return PLUGIN_STOP;
@@ -3842,7 +4053,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "cexecoptions"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CEXEC_MENU] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to select rcon commands\n");
 				return PLUGIN_STOP;
@@ -3858,7 +4069,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 			FStrEq (menu_command, "cexec_spec") ||
 			FStrEq (menu_command, "cexec_all"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CEXEC_MENU] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to select rcon commands\n");
 				return PLUGIN_STOP;
@@ -3871,7 +4082,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 
 		if (FStrEq (menu_command, "cexec_player"))
 		{
-			if (!admin_list[admin_index].flags[ALLOW_CEXEC_MENU] || war_mode)
+			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) || war_mode)
 			{
 				PrintToClientConsole(pEntity, "Mani Admin Plugin: You are not authorised to select rcon commands\n");
 				return PLUGIN_STOP;
@@ -3890,6 +4101,8 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 {
+	int	 range = 0;
+
 	player_t	player;
 
 	player.entity = pEntity;
@@ -3902,11 +4115,11 @@ void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 
 	if (!war_mode)
 	{
-		if ((admin_list[admin_index].flags[ALLOW_KICK] || 
-			 admin_list[admin_index].flags[ALLOW_BAN] || 
-			 admin_list[admin_index].flags[ALLOW_CEXEC_MENU] ||
-			 admin_list[admin_index].flags[ALLOW_MUTE] ||
-			 admin_list[admin_index].flags[ALLOW_SWAP]) 
+		if ((gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK) || 
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) || 
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) ||
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_MUTE) ||
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP)) 
 			 && !war_mode)
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
@@ -3914,33 +4127,33 @@ void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin playeroptions");
 		}
 
-		if ((admin_list[admin_index].flags[ALLOW_SLAY] || 
-			 (admin_list[admin_index].flags[ALLOW_SLAP] && gpManiGameType->IsSlapAllowed()) || 
-			 admin_list[admin_index].flags[ALLOW_BLIND] ||
-			 admin_list[admin_index].flags[ALLOW_FREEZE] ||
-			 (admin_list[admin_index].flags[ALLOW_TELEPORT] && gpManiGameType->IsTeleportAllowed()) ||
-			 admin_list[admin_index].flags[ALLOW_GIMP] ||
-			 (admin_list[admin_index].flags[ALLOW_DRUG] && gpManiGameType->IsDrugAllowed()) ||
-			 (admin_list[admin_index].flags[ALLOW_BURN] && gpManiGameType->IsFireAllowed()) ||
-			 admin_list[admin_index].flags[ALLOW_NO_CLIP]))
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAY) || 
+			 (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) && gpManiGameType->IsSlapAllowed()) || 
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_BLIND) ||
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZE) ||
+			 (gpManiClient->IsAdminAllowed(admin_index, ALLOW_TELEPORT) && gpManiGameType->IsTeleportAllowed()) ||
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_GIMP) ||
+			 (gpManiClient->IsAdminAllowed(admin_index, ALLOW_DRUG) && gpManiGameType->IsDrugAllowed()) ||
+			 (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BURN) && gpManiGameType->IsFireAllowed()) ||
+			 gpManiClient->IsAdminAllowed(admin_index, ALLOW_NO_CLIP))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_FUN_PLAYER_MANAGEMENT));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin punish");
 		}
 
-		if (admin_list[admin_index].flags[ALLOW_CHANGEMAP])
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_MAP_MANAGEMENT));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin mapoptions");
 		}
 
-		if ((admin_list[admin_index].flags[ALLOW_RANDOM_MAP_VOTE] && !system_vote.vote_in_progress) ||
-			(admin_list[admin_index].flags[ALLOW_MAP_VOTE] && !system_vote.vote_in_progress) ||
-			(admin_list[admin_index].flags[ALLOW_MENU_RCON_VOTE] && !system_vote.vote_in_progress) ||
-			(admin_list[admin_index].flags[ALLOW_MENU_QUESTION_VOTE] && !system_vote.vote_in_progress) ||
-			(admin_list[admin_index].flags[ALLOW_CANCEL_VOTE] && system_vote.vote_in_progress))
+		if ((gpManiClient->IsAdminAllowed(admin_index, ALLOW_RANDOM_MAP_VOTE) && !system_vote.vote_in_progress) ||
+			(gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) && !system_vote.vote_in_progress) ||
+			(gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_RCON_VOTE) && !system_vote.vote_in_progress) ||
+			(gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_QUESTION_VOTE) && !system_vote.vote_in_progress) ||
+			(gpManiClient->IsAdminAllowed(admin_index, ALLOW_CANCEL_VOTE) && system_vote.vote_in_progress))
 			
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
@@ -3948,28 +4161,28 @@ void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin voteoptions");
 		}
 
-		if (admin_list[admin_index].flags[ALLOW_RESTRICTWEAPON] && gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_RESTRICTWEAPON) && gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_RESTRICT_WEAPONS));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin restrict_weapon");
 		}
 
-		if (admin_list[admin_index].flags[ALLOW_PLAYSOUND])
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_PLAYSOUND))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_PLAY_SOUND));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin play_sound");
 		}
 
-		if (admin_list[admin_index].flags[ALLOW_RCON_MENU])
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_RCON_MENU))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_RCON_COMMANDS));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin rcon");
 		}
 
-		if (admin_list[admin_index].flags[ALLOW_CONFIG])
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CONFIG))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_PLUGIN_CONFIG));
@@ -3979,14 +4192,14 @@ void CAdminPlugin::ShowPrimaryMenu( edict_t *pEntity, int admin_index )
 	else
 	{
 		// Draw war options
-		if (admin_list[admin_index].flags[ALLOW_CHANGEMAP])
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_CHANGE_MAP));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin changemap");
 		}
 
-		if (admin_list[admin_index].flags[ALLOW_RCON_MENU])
+		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_RCON_MENU))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PRIMARY_MENU_RCON_COMMANDS));
@@ -4117,9 +4330,9 @@ void CAdminPlugin::ProcessKickPlayer( player_t *admin, int next_index, int argv_
 			if (!player.is_bot)
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_KICK])
+					if (gpManiClient->IsImmunityAllowed(immunity_index,IMMUNITY_ALLOW_KICK))
 					{
 						continue;
 					}
@@ -4206,9 +4419,9 @@ void CAdminPlugin::ProcessMenuSlapPlayer( player_t *admin, int next_index, int a
 			if (!player.is_bot)
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_SLAP])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_SLAP))
 					{
 						continue;
 					}
@@ -4305,9 +4518,9 @@ void CAdminPlugin::ProcessMenuBlindPlayer( player_t *admin, int next_index, int 
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_BLIND])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BLIND))
 				{
 					continue;
 				}
@@ -4376,9 +4589,9 @@ void CAdminPlugin::ProcessMenuSwapPlayer( player_t *admin, int next_index, int a
 			if (!player.is_bot)
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_SWAP])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_SWAP))
 					{
 						continue;
 					}
@@ -4442,9 +4655,9 @@ void CAdminPlugin::ProcessMenuSpecPlayer( player_t *admin, int next_index, int a
 			if (!player.is_bot)
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_SWAP])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_SWAP))
 					{
 						continue;
 					}
@@ -4513,9 +4726,9 @@ void CAdminPlugin::ProcessMenuFreezePlayer( player_t *admin, int next_index, int
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_FREEZE])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_FREEZE))
 				{
 					continue;
 				}
@@ -4586,9 +4799,9 @@ void CAdminPlugin::ProcessMenuBurnPlayer( player_t *admin, int next_index, int a
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_BURN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BURN))
 				{
 					continue;
 				}
@@ -4667,9 +4880,9 @@ void CAdminPlugin::ProcessMenuDrugPlayer( player_t *admin, int next_index, int a
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_DRUG])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_DRUG))
 				{
 					continue;
 				}
@@ -4795,9 +5008,9 @@ void CAdminPlugin::ProcessMenuGimpPlayer( player_t *admin, int next_index, int a
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_GIMP])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_GIMP))
 				{
 					continue;
 				}
@@ -4861,9 +5074,9 @@ void CAdminPlugin::ProcessMenuTimeBombPlayer( player_t *admin, int next_index, i
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_TIMEBOMB])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_TIMEBOMB))
 				{
 					continue;
 				}
@@ -4927,9 +5140,9 @@ void CAdminPlugin::ProcessMenuFireBombPlayer( player_t *admin, int next_index, i
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_FIREBOMB])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_FIREBOMB))
 				{
 					continue;
 				}
@@ -4993,9 +5206,9 @@ void CAdminPlugin::ProcessMenuFreezeBombPlayer( player_t *admin, int next_index,
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_FREEZEBOMB])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_FREEZEBOMB))
 				{
 					continue;
 				}
@@ -5059,9 +5272,9 @@ void CAdminPlugin::ProcessMenuBeaconPlayer( player_t *admin, int next_index, int
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_BEACON])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BEACON))
 				{
 					continue;
 				}
@@ -5130,9 +5343,9 @@ void CAdminPlugin::ProcessMenuMutePlayer( player_t *admin, int next_index, int a
 			}
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_MUTE])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_MUTE))
 				{
 					continue;
 				}
@@ -5228,9 +5441,9 @@ void CAdminPlugin::ProcessMenuTeleportPlayer( player_t *admin, int next_index, i
 			if (!player.is_bot)
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_TELEPORT])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_TELEPORT))
 					{
 						continue;
 					}
@@ -5300,9 +5513,9 @@ void CAdminPlugin::ProcessSlayPlayer( player_t *admin, int next_index, int argv_
 			if (!player.is_bot)
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_SLAY])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_SLAY))
 					{
 						continue;
 					}
@@ -5923,9 +6136,9 @@ void CAdminPlugin::ProcessCExecCommand( player_t *admin, char *command, int next
 				}
 
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_CEXEC])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_CEXEC))
 					{
 						continue;
 					}
@@ -5960,9 +6173,9 @@ void CAdminPlugin::ProcessCExecCommand( player_t *admin, char *command, int next
 				}
 
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_CEXEC])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_CEXEC))
 					{
 						continue;
 					}
@@ -6003,9 +6216,9 @@ void CAdminPlugin::ProcessCExecCommand( player_t *admin, char *command, int next
 				}
 
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_CEXEC])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_CEXEC))
 					{
 						continue;
 					}
@@ -6035,9 +6248,9 @@ void CAdminPlugin::ProcessCExecCommand( player_t *admin, char *command, int next
 				}
 
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_CEXEC])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_CEXEC))
 					{
 						continue;
 					}
@@ -6176,9 +6389,9 @@ void CAdminPlugin::ProcessCExecPlayer( player_t *admin, int next_index, int argv
 		}
 
 		int immunity_index = -1;
-		if (admin->index != player.index && IsImmune(&player, &immunity_index))
+		if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 		{
-			if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_CEXEC])
+			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_CEXEC))
 			{
 				return;
 			}
@@ -6210,9 +6423,9 @@ void CAdminPlugin::ProcessCExecPlayer( player_t *admin, int next_index, int argv
 			if (player.is_bot) continue;
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_CEXEC])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_CEXEC))
 				{
 					continue;
 				}
@@ -6263,14 +6476,14 @@ void CAdminPlugin::ProcessMapManagementType(player_t *player, int admin_index )
 	FreeMenu();
 
 
-	if (admin_list[admin_index].flags[ALLOW_CHANGEMAP])
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP))
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MAP_MANAGE_MENU_CHANGE_MAP));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin changemap");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_CHANGEMAP] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHANGEMAP) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MAP_MANAGE_MENU_SET_NEXT_MAP));
@@ -6291,84 +6504,74 @@ void CAdminPlugin::ProcessMapManagementType(player_t *player, int admin_index )
 //---------------------------------------------------------------------------------
 // Purpose:  Show the player Management screens
 //---------------------------------------------------------------------------------
-void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index, int next_index)
+void CAdminPlugin::ProcessPlayerManagementType(player_t *player, int admin_index )
 {
 
 	FreeMenu();
 
-	if (admin_list[admin_index].flags[ALLOW_SLAY] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAY) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_SLAY_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin slay");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_KICK] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_KICK_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin kicktype");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_BAN] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_BAN_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin bantype");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_SWAP] && !war_mode && gpManiGameType->IsTeamPlayAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_SWAP_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin swapteam");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_SWAP] && !war_mode && gpManiGameType->IsTeamPlayAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_SPEC_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin specplayer");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_SWAP] && !war_mode && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SWAP) && !war_mode && gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_BALANCE_TEAMS));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin balanceteam");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_CEXEC_MENU] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CEXEC_MENU) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_CLIENT_COMMANDS));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin cexecoptions");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_MUTE] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MUTE) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLAYER_MANAGE_MENU_MUTE_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin mute");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_SPRAY_TAG] && !war_mode)
-	{
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Spray Tag Tracking");
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spray");
-	}
-
 	if (menu_list_size == 0) return;
 
-	// List size may have changed
-	if (next_index > menu_list_size)
-	{
-		// Reset index
-		next_index = 0;
-	}
+	AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
+	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MENU_BACK));
+	Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin");
 
-	DrawSubMenu (player, Translate(M_PLAYER_MANAGE_MENU_ESCAPE), Translate(M_PLAYER_MANAGE_MENU_TITLE), next_index, "admin", "playeroptions", true, -1);
+	DrawStandardMenu(player, Translate(M_PLAYER_MANAGE_MENU_ESCAPE), Translate(M_PLAYER_MANAGE_MENU_TITLE), true);
 
 }
 //---------------------------------------------------------------------------------
@@ -6380,42 +6583,42 @@ void CAdminPlugin::ProcessPunishType(player_t *player, int admin_index, int next
 	FreeMenu();
 
 
-	if (admin_list[admin_index].flags[ALLOW_SLAP] && !war_mode && gpManiGameType->IsSlapAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) && !war_mode && gpManiGameType->IsSlapAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_SLAP_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin slapoptions");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_BLIND] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BLIND) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_BLIND_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin blindoptions");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_FREEZE] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZE) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_FREEZE_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin freeze");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_DRUG] && !war_mode && gpManiGameType->IsDrugAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_DRUG) && !war_mode && gpManiGameType->IsDrugAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_DRUG_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin drug");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_GIMP] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_GIMP) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_GIMP_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin gimp");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_TELEPORT] && !war_mode && gpManiGameType->IsTeleportAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_TELEPORT) && !war_mode && gpManiGameType->IsTeleportAllowed())
 	{
 		player_settings_t *player_settings;
 
@@ -6435,56 +6638,56 @@ void CAdminPlugin::ProcessPunishType(player_t *player, int admin_index, int next
 		}
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_TELEPORT] && !war_mode && gpManiGameType->IsTeleportAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_TELEPORT) && !war_mode && gpManiGameType->IsTeleportAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_SAVE_TELEPORT_LOC));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin savelocation");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_BURN] && !war_mode && gpManiGameType->IsFireAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BURN) && !war_mode && gpManiGameType->IsFireAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_BURN_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin burn");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_NO_CLIP] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_NO_CLIP) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_NO_CLIP_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin noclip");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_SETSKINS] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SETSKINS) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_SET_SKIN));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin skinoptions");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_TIMEBOMB] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_TIMEBOMB) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_TIME_BOMB_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin timebomb");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_FIREBOMB] && !war_mode && gpManiGameType->IsFireAllowed())
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_FIREBOMB) && !war_mode && gpManiGameType->IsFireAllowed())
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_FIRE_BOMB_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin firebomb");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_FREEZEBOMB] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_FREEZEBOMB) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_FREEZE_BOMB_PLAYER));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin freezebomb");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_BEACON] && !war_mode)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BEACON) && !war_mode)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FUN_PLAYER_MANAGE_MENU_BEACON_PLAYER));
@@ -6514,52 +6717,52 @@ void CAdminPlugin::ProcessVoteType(player_t *player, int admin_index, int next_i
 
 	FreeMenu();
 
-	if (admin_list[admin_index].flags[ALLOW_MENU_RCON_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_RCON_VOTE) && !system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_RCON_VOTE));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin votercon");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_MENU_QUESTION_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_QUESTION_VOTE) && !system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_QUESTION_VOTE));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin votequestion");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_MAP_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) && !system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_EXTEND_MAP_VOTE));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin voteextend");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_RANDOM_MAP_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_RANDOM_MAP_VOTE) && !system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_RANDOM_MAP_VOTE));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin randomvoteoptions");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_MAP_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) && !system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_SINGLE_MAP_VOTE));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin mapvoteoptions");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_MAP_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) && !system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_BUILD_MULTIMAP_VOTE));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin buildmapvote");
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_MAP_VOTE] && !system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_MAP_VOTE) && !system_vote.vote_in_progress)
 	{
-		int		m_list_size = 0;
-		map_t	*m_list = NULL;
+		int		m_list_size;
+		map_t	*m_list;
 
 		// Set pointer to correct list
 		switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -6588,7 +6791,7 @@ void CAdminPlugin::ProcessVoteType(player_t *player, int admin_index, int next_i
 		}
 	}
 
-	if (admin_list[admin_index].flags[ALLOW_CANCEL_VOTE] && system_vote.vote_in_progress)
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_CANCEL_VOTE) && system_vote.vote_in_progress)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_VOTE_TYPE_MENU_CANCEL_VOTE));
@@ -6605,14 +6808,7 @@ void CAdminPlugin::ProcessVoteType(player_t *player, int admin_index, int next_i
 		next_index = 0;
 	}
 
-	DrawSubMenu (player, 
-						Translate(M_VOTE_TYPE_MENU_ESCAPE), 
-						Translate(M_VOTE_TYPE_MENU_TITLE), 
-						next_index,
-						"admin",
-						"voteoptions",
-						true,
-						-1);
+	DrawSubMenu (player, Translate(M_VOTE_TYPE_MENU_ESCAPE), Translate(M_VOTE_TYPE_MENU_TITLE), next_index, "admin", "voteoptions",	true, -1);
 
 }
 
@@ -7026,9 +7222,9 @@ void CAdminPlugin::ProcessConfigOptions( edict_t *pEntity )
 	if (mani_stats.GetInt() == 1)
 	{
 		int admin_index = -1;
-		if (IsClientAdmin(&player, &admin_index))
+		if (gpManiClient->IsAdmin(&player, &admin_index))
 		{
-			if (admin_list[admin_index].flags[ALLOW_RESET_ALL_RANKS])
+			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_RESET_ALL_RANKS))
 			{
 				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_PLUGIN_CONFIG_MENU_RESET_RANKS));
@@ -7142,8 +7338,8 @@ void CAdminPlugin::ProcessConfigToggle( edict_t *pEntity )
 	else if (FStrEq(engine->Cmd_Argv(2), "resetstats"))
 	{
 		int admin_index = -1;
-		if (!IsClientAdmin(&player, &admin_index)) return;
-		if (!admin_list[admin_index].flags[ALLOW_RESET_ALL_RANKS]) return;
+		if (!gpManiClient->IsAdmin(&player, &admin_index)) return;
+		if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_RESET_ALL_RANKS)) return;
 
 		ResetStats ();
 		SayToAll (true, "ADMIN %s reset the stats", player.name);
@@ -7191,9 +7387,9 @@ void CAdminPlugin::ProcessBanPlayer( player_t *admin, const char *ban_command, i
 			if (player.is_bot) continue;
 
 			int immunity_index = -1;
-			if (admin->index != player.index && IsImmune(&player, &immunity_index))
+			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 			{
-				if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_BAN])
+				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BAN))
 				{
 					continue;
 				}
@@ -7349,8 +7545,8 @@ void CAdminPlugin::ProcessMenuSystemVoteSingleMap( player_t *admin, int next_ind
 	else
 	{
 		char	more_cmd[128];
-		int		m_list_size = 0;
-		map_t	*m_list = NULL;
+		int		m_list_size;
+		map_t	*m_list;
 
 		// Setup player list
 		FreeMenu();
@@ -7399,8 +7595,8 @@ void CAdminPlugin::ProcessMenuSystemVoteSingleMap( player_t *admin, int next_ind
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessMenuSystemVoteBuildMap( player_t *admin, int next_index, int argv_offset )
 {
-	int		m_list_size = 0;
-	map_t	*m_list = NULL;
+	int		m_list_size;
+	map_t	*m_list;
 
 	const int argc = engine->Cmd_Argc();
 
@@ -7499,6 +7695,8 @@ void CAdminPlugin::ProcessMenuSystemVoteBuildMap( player_t *admin, int next_inde
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
 {
+	const int argc = engine->Cmd_Argc();
+
 	if (system_vote.vote_in_progress) return;
 
 	char	delay_type_string[64];
@@ -7517,8 +7715,8 @@ void CAdminPlugin::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_ind
 		Q_strcpy (delay_type_string, "end");
 	}
 
-	int		m_list_size = 0;
-	map_t	*m_list = NULL;
+	int		m_list_size;
+	map_t	*m_list;
 
 	// Setup player list
 	FreeMenu();
@@ -7573,7 +7771,7 @@ void CAdminPlugin::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_ind
 	system_vote.vote_starter = admin->index;
 	system_vote.vote_confirmation = false;
 
-	if (admin_list[admin_index].flags[ALLOW_ACCEPT_VOTE])
+	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -7753,9 +7951,9 @@ void CAdminPlugin::ProcessAutoKickPlayer( player_t *admin, const char *ban_comma
 				FStrEq("autokickip", ban_command))
 			{
 				int immunity_index = -1;
-				if (admin->index != player.index && IsImmune(&player, &immunity_index))
+				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_BAN])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BAN))
 					{
 						continue;
 					}
@@ -7802,30 +8000,35 @@ void CAdminPlugin::ProcessAutoKickPlayer( player_t *admin, const char *ban_comma
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Useless, no edict passed in
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT CAdminPlugin::NetworkIDValidated( const char *pszUserName, const char *pszNetworkID )
 {
-
-	if (ProcessPluginPaused()) return PLUGIN_CONTINUE;
-	if (mani_stats.GetInt() == 1)
-	{
-		player_t player;
-
-		Q_strcpy(player.steam_id,pszNetworkID);
-		Q_strcpy(player.name, pszUserName);
-		if (mani_stats_by_steam_id.GetInt() == 1)
-		{
-			AddPlayerToRankList(&player);
-		}
-		else
-		{
-			AddPlayerNameToRankList(&player);
-		}
-	}
+//Msg("Mani -> Network ID [%s] Validated\n", pszNetworkID);
+//	player_t player;
+//
+//	if (ProcessPluginPaused()) return PLUGIN_CONTINUE;
+//
+//	Q_strcpy(player.steam_id,pszNetworkID);
+//	Q_strcpy(player.name, pszUserName);
+//
+//	if (mani_stats.GetInt() == 1)
+//	{
+//		if (mani_stats_by_steam_id.GetInt() == 1)
+//		{
+//			AddPlayerToRankList(&player);
+//		}
+//		else
+//		{
+//			AddPlayerNameToRankList(&player); 
+//		}
+//	}
 
 	return PLUGIN_CONTINUE;
 }
+
+
+
 //---------------------------------------------------------------------------------
 // Purpose: called when an event is fired
 //---------------------------------------------------------------------------------
@@ -7861,7 +8064,7 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 					int player_user_id = playerinfo->GetUserID();
 					if (player_user_id == user_id)
 					{
-						if (punish_mode_list[i - 1].frozen && strcmp(playerinfo->GetNetworkIDString(),"BOT") != 0)
+						if (punish_mode_list[i - 1].frozen && !playerinfo->IsFakeClient())
 						{
 							engine->ClientCommand(pPlayerEdict,"drop\n");
 						}
@@ -7869,10 +8072,20 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 						{
 							if (!war_mode &&
 								hegrenade && 
-								mani_unlimited_grenades.GetInt() != 0 &&  
+								mani_unlimited_grenades.GetInt() != 0 && 
+								sv_cheats && 
 								gpManiGameType->IsGameType(MANI_GAME_CSS))
 							{
-								CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(pPlayerEdict), "weapon_hegrenade");
+								if (sv_cheats->GetInt() != 0)
+								{
+									helpers->ClientCommand(pPlayerEdict,"give weapon_hegrenade\n");
+								}
+								else
+								{
+									sv_cheats->SetValue(1);
+									helpers->ClientCommand(pPlayerEdict,"give weapon_hegrenade\n");
+									sv_cheats->SetValue(0);
+								}
 							}
 						}
 					}
@@ -8012,8 +8225,8 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 		spawn_player.user_id = event->GetInt("userid", -1);
 		if (spawn_player.user_id == -1) return;
 		if (!FindPlayerByUserID(&spawn_player)) return;
-		//CBaseEntity *pPlayer = spawn_player.entity->GetUnknown()->GetBaseEntity();
-		ProcessSetColour(spawn_player.entity, 255, 255, 255, 255 );
+		CBaseEntity *pPlayer = spawn_player.entity->GetUnknown()->GetBaseEntity();
+		ProcessSetColour(pPlayer, 255, 255, 255, 255 );
 
 		ForceSkinType(&spawn_player);
 
@@ -8036,10 +8249,20 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 
 		// Give grenade to player if unlimited grenades
 		if (!war_mode &&
-			mani_unlimited_grenades.GetInt() != 0 &&  
+			mani_unlimited_grenades.GetInt() != 0 && 
+			sv_cheats && 
 			gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(spawn_player.entity), "weapon_hegrenade");
+			if (sv_cheats->GetInt() != 0)
+			{
+				helpers->ClientCommand(spawn_player.entity,"give weapon_hegrenade\n");
+			}
+			else
+			{
+				sv_cheats->SetValue(1);
+				helpers->ClientCommand(spawn_player.entity,"give weapon_hegrenade\n");
+				sv_cheats->SetValue(0);
+			}
 		}
 	}
 	else if (FStrEq(eventname, "player_death"))
@@ -8086,9 +8309,9 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 
 	bool tag_immunity = false;
 	int immunity_index = -1;
-	if (IsImmune(player, &immunity_index))
+	if (gpManiClient->IsImmune(player, &immunity_index))
 	{
-		if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_TAG])
+		if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_TAG))
 		{
 			tag_immunity = true;
 		}
@@ -8258,7 +8481,7 @@ void CAdminPlugin::ProcessPlayerSay( IGameEvent *event)
 	else if (FStrEq(say_string, "deathbeam") && !war_mode) {ProcessMaDeathBeam(player.index); return;}
 	else if (FStrEq(say_string, "sounds") && !war_mode) {ProcessMaSounds(player.index); return;}
 	else if (FStrEq(say_string, "quake") && !war_mode) {ProcessMaQuake(player.index); return;}
-	else if (FStrEq(say_string, "settings") && !war_mode) {ShowSettingsPrimaryMenu(&player, 0); return;}
+	else if (FStrEq(say_string, "settings") && !war_mode) {ShowSettingsPrimaryMenu(&player); return;}
 	else if (FStrEq(say_string, "timeleft") && !war_mode) {ProcessMaTimeLeft(player.index, false); return;}
 	else if (FStrEq(say_string, "listmaps") && !war_mode) 
 	{
@@ -8995,7 +9218,6 @@ void CAdminPlugin::ProcessPlayerHurt(IGameEvent * event)
 		Q_strcpy(weapon_name, event->GetString("weapon","NULL"));
 		if (FStrEq("smokegrenade", weapon_name)) return;
 		if (FStrEq("flashbang", weapon_name)) return;
-		if (FStrEq("zombie_claws_of_death", weapon_name)) return;
 	}
 
 	// Is option to show opposite team wound on ?
@@ -9219,11 +9441,10 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 	// Hurt the player
 	int sound_index = rand() % 3;
 
-//	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
+	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
 
 	int health = 0;
-//	health = m_pCBaseEntity->GetHealth();
-	health = Prop_GetVal(attacker->entity, MANI_PROP_HEALTH, 0);
+	health = m_pCBaseEntity->GetHealth();
 	if (health <= 0) return;
 		
 	health -= ((damage_to_inflict >= 0) ? damage_to_inflict : damage_to_inflict * -1);
@@ -9232,8 +9453,7 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		health = 0;
 	}
 
-	Prop_SetVal(attacker->entity, MANI_PROP_HEALTH, health);
-//	m_pCBaseEntity->SetHealth(health);
+	m_pCBaseEntity->SetHealth(health);
 
 	if (health <= 0)
 	{
@@ -9268,6 +9488,7 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 {
 	player_t	victim;
 	player_t	attacker;
+	bool	spawn_protection = false;
 	bool	headshot;
 	char	weapon_name[128];
 
@@ -9296,11 +9517,27 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 		ProcessDeathBeam(&attacker, &victim);
 	}
 
-	if (!FStrEq(weapon_name, "zombie_claws_of_death"))
-	{
-		// For zombie mod
-		ProcessTKDeath(&attacker, &victim);
-	}
+	ProcessTKDeath(&attacker, &victim);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Show Tampered message
+//---------------------------------------------------------------------------------
+void CAdminPlugin::ShowTampered(void)
+{
+	Msg("****************************************************************************************\n");
+	Msg("****************************************************************************************\n");
+	Msg("*             Mani Admin Plugin has been altered by an unauthorised person             *\n");
+	Msg("* Please go to www.mani-admin-plugin.com to download the unaltered and correct version *\n");
+	Msg("****************************************************************************************\n");
+	Msg("****************************************************************************************\n");
+
+	engine->LogPrint("************************************************************************************************************\n");
+	engine->LogPrint("************************************************************************************************************\n");
+	engine->LogPrint("* [MANI ADMIN PLUGIN] Mani Admin Plugin has been altered by an unauthorised person                         *\n");
+	engine->LogPrint("* [MANI ADMIN PLUGIN] Please go to www.mani-admin-plugin.com to download the unaltered and correct version *\n");
+	engine->LogPrint("************************************************************************************************************\n");
+	engine->LogPrint("************************************************************************************************************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -9330,9 +9567,9 @@ bool CAdminPlugin::ProcessAutoKick(player_t *player)
 	}
 
 	int immunity_index = -1;
-	if (IsImmune(player, &immunity_index))
+	if (gpManiClient->IsImmune(player, &immunity_index))
 	{
-		if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_TAG])
+		if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_TAG))
 		{
 			return true;
 		}
@@ -9511,7 +9748,7 @@ bool CAdminPlugin::ProcessReserveSlotJoin(player_t *player)
 //DirectLogCommand("[DEBUG] Player is on reserve slot list\n");
 		is_reserve_player = true;
 	}
-	else if (mani_reserve_slots_include_admin.GetInt() == 1 && IsClientAdmin(player, &admin_index))
+	else if (mani_reserve_slots_include_admin.GetInt() == 1 && gpManiClient->IsAdmin(player, &admin_index))
 	{
 //DirectLogCommand("[DEBUG] Player is admin\n");
 		is_reserve_player = true;
@@ -9703,16 +9940,16 @@ void CAdminPlugin::BuildPlayerKickList(player_t *player, int *players_on_server)
 
 				if (mani_reserve_slots_include_admin.GetInt() == 1)
 				{
-					if (IsClientAdmin(&temp_player, &admin_index))
+					if (gpManiClient->IsAdmin(&temp_player, &admin_index))
 					{
 						continue;
 					}
 				}
 
 				int immunity_index = -1;
-				if (IsImmune(&temp_player, &immunity_index))
+				if (gpManiClient->IsImmune(&temp_player, &immunity_index))
 				{
-					if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_RESERVE])
+					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE))
 					{
 						continue;
 					}
@@ -9887,7 +10124,7 @@ void CAdminPlugin::ProcessHighPingKick(void)
 
 							player.is_bot = false;
 
-							if (!(IsClientAdmin(&player, &admin_index) || 
+							if (!(gpManiClient->IsAdmin(&player, &admin_index) || 
 								IsPlayerImmuneFromPingCheck(&player)))
 							{
 								player.index = i;
@@ -10108,7 +10345,7 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_cexec_ct")) {ProcessMaCExecTeam(player.index, false, say_argc, pcmd, &(trimmed_say[say_argv[1].index]), TEAM_B); return false;}
 		else if (FStrEq(ncmd, "@ma_cexec_spec") && gpManiGameType->IsSpectatorAllowed()) {ProcessMaCExecTeam(player.index, false, say_argc, pcmd, &(trimmed_say[say_argv[1].index]), gpManiGameType->GetSpectatorIndex()); return false;}
 		else if (FStrEq(ncmd, "@ma_slap")) {ProcessMaSlap (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
-		else if (FStrEq(ncmd, "@ma_setadminflag")) {ProcessMaSetAdminFlag(player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
+		else if (FStrEq(ncmd, "@ma_setadminflag")) {gpManiClient->ProcessMaSetAdminFlag(player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_setskin")) {ProcessMaSetSkin (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_setcash")) {ProcessMaCash (player.index, false, say_argc, pcmd, pcmd1, pcmd2, MANI_SET_CASH); return false;}
 		else if (FStrEq(ncmd, "@ma_givecash")) {ProcessMaCash (player.index, false, say_argc, pcmd, pcmd1, pcmd2, MANI_GIVE_CASH); return false;}
@@ -10166,11 +10403,12 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_unrestrict")) {ProcessMaRestrictWeapon(player.index, false, say_argc, pcmd, pcmd1, "0", false); return false;}
 		else if (FStrEq(ncmd, "@ma_unrestrictall")) {ProcessMaUnRestrictAll(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_kick" )) {ProcessMaKick(player.index, false, say_argc, pcmd,	pcmd1); return false;}
-		else if (FStrEq(ncmd, "@ma_spray" )) {gpManiSprayRemove->ProcessMaSpray(player.index, false); return false;}
 		else if (FStrEq(ncmd, "@ma_slay" )) {ProcessMaSlay(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_offset" )) {ProcessMaOffset(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_teamindex" )) {ProcessMaTeamIndex(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_offsetscan" )) {ProcessMaOffsetScan(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
+		else if (FStrEq(ncmd, "@ma_client" )) {gpManiClient->ProcessMaClient(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
+		else if (FStrEq(ncmd, "@ma_clientgroup" )) {gpManiClient->ProcessMaClientGroup(player.index, false, say_argc, pcmd,	pcmd1, pcmd2, pcmd3); return false;}
 		else if (FStrEq(ncmd, "@ma_ban" )) {ProcessMaBan(player.index, false, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_banip" )) {ProcessMaBan(player.index, false, true, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_unban" )) {ProcessMaUnBan(player.index, false, say_argc, pcmd, pcmd1); return false;}
@@ -10297,7 +10535,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick
 
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_kick", ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_kick", ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -10390,7 +10628,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan
 
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_unban", ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_unban", ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -10486,7 +10724,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan
 
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_ban", ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_ban", ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 3) 
@@ -10632,7 +10870,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSlay
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_slay", ALLOW_SLAY, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_slay", ALLOW_SLAY, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -10719,7 +10957,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaOffset
 
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	if (!IsAdminAllowed(&player, "ma_offset", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, "ma_offset", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
 
 	if (argc < 2) 
 	{
@@ -10768,7 +11006,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeamIndex
 
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	if (!IsAdminAllowed(&player, "ma_teamindex", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, "ma_teamindex", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
 
 #ifdef __linux__
 	SayToPlayer(&player, "Linux Server");
@@ -10812,7 +11050,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaOffsetScan
 
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	if (!IsAdminAllowed(&player, "ma_offsetscan", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, "ma_offsetscan", ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
 
 	if (argc < 4) 
 	{
@@ -10895,7 +11133,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSlap
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_slap", ALLOW_SLAP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_slap", ALLOW_SLAP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11009,7 +11247,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CASH, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CASH, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11051,7 +11289,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 		return PLUGIN_STOP;
 	}
 
-	//int offset = gpManiGameType->GetCashOffset();
+	int offset = gpManiGameType->GetCashOffset();
 
 	// Convert to float and int
 	float fAmount = Q_atof(amount);
@@ -11079,33 +11317,32 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 			continue;
 		}
 
-		int target_cash = Prop_GetVal(target_player_list[i].entity, MANI_PROP_ACCOUNT,0);
-		//target_cash = ((int *)target_player_list[i].entity->GetUnknown() + offset);
+		int *target_cash;
+		target_cash = ((int *)target_player_list[i].entity->GetUnknown() + offset);
 
 		int new_cash = 0;
 
 		switch (mode)
 		{
 			case (MANI_SET_CASH) :	new_cash = iAmount; break;
-			case (MANI_GIVE_CASH) :	new_cash = iAmount + target_cash; break;
-			case (MANI_GIVE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * (fAmount + 1.0)); break;
-			case (MANI_TAKE_CASH) :	new_cash = target_cash - iAmount; break;
-			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * fAmount); break;
-			default : new_cash = target_cash;
+			case (MANI_GIVE_CASH) :	new_cash = iAmount + *target_cash; break;
+			case (MANI_GIVE_CASH_PERCENT) :	new_cash = (int) (((float) *target_cash) * (fAmount + 1.0)); break;
+			case (MANI_TAKE_CASH) :	new_cash = *target_cash - iAmount; break;
+			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) *target_cash) * fAmount); break;
+			default : new_cash = *target_cash;
 		}
 			
 		if (new_cash < 0) new_cash = 0;
 		else if (new_cash > 16000) new_cash = 16000;
 
-		LogCommand (player.entity, "%s : Player [%s] [%s] had [%i] cash, now has [%i] cash\n", command_string, target_player_list[i].name, target_player_list[i].steam_id, target_cash, new_cash);
+		LogCommand (player.entity, "%s : Player [%s] [%s] had [%i] cash, now has [%i] cash\n", command_string, target_player_list[i].name, target_player_list[i].steam_id, *target_cash, new_cash);
 
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
 			AdminSayToAll(&player, mani_admincash_anonymous.GetInt(), "changed player %s cash reserves", target_player_list[i].name); 
 		}
 
-		Prop_SetVal(target_player_list[i].entity, MANI_PROP_ACCOUNT, new_cash);
-		//*target_cash = new_cash;
+		*target_cash = new_cash;
 	}
 
 	return PLUGIN_STOP;
@@ -11137,7 +11374,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_HEALTH, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_HEALTH, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11206,9 +11443,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 
 		int target_health;
-		target_health = Prop_GetVal(target_player_list[i].entity, MANI_PROP_HEALTH, 0);
-//		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-//		target_health = m_pCBaseEntity->GetHealth();
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		target_health = m_pCBaseEntity->GetHealth();
 
 		int new_health = 0;
 
@@ -11238,8 +11474,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth
 		}
 		else
 		{
-			Prop_SetVal(target_player_list[i].entity, MANI_PROP_HEALTH, new_health);
-//			m_pCBaseEntity->SetHealth(new_health);
+			m_pCBaseEntity->SetHealth(new_health);
 		}
 	}
 
@@ -11273,7 +11508,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBlind
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_blind", ALLOW_BLIND, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_blind", ALLOW_BLIND, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -11393,7 +11628,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFreeze
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_freeze", ALLOW_FREEZE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_freeze", ALLOW_FREEZE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11520,7 +11755,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaNoClip
 
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_noclip", ALLOW_NO_CLIP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_noclip", ALLOW_NO_CLIP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11628,7 +11863,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBurn
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_burn", ALLOW_BURN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_burn", ALLOW_BURN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11717,7 +11952,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDrug
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_DRUG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_DRUG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -11860,7 +12095,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDecal
 	// Check if player is admin
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	if (!IsAdminAllowed(&player, command_string, ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RCON, war_mode, &admin_index)) return PLUGIN_STOP;
 
 	if (argc < 2) 
 	{
@@ -11878,8 +12113,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDecal
 
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
-	Vector eyepos = CBaseEntity_EyePosition(pPlayer);
-	QAngle angles = CBaseEntity_EyeAngles(pPlayer);
+	Vector eyepos = pPlayer->EyePosition();
+	QAngle angles = pPlayer->EyeAngles();
 
 	// If from server break out here
 	if (svr_command) return PLUGIN_STOP;
@@ -11957,7 +12192,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGive
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_GIVE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_GIVE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 3) 
@@ -11990,6 +12225,16 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGive
 		return PLUGIN_STOP;
 	}
 
+	char	give_command[256];
+	char	item_to_give[256];
+
+	Q_snprintf(give_command, sizeof(give_command), "give %s\n", item_name);
+
+	// Make backup as 'give' con command breaks the item_name, target_string and command_string pointers
+	// by re-using the engine->Cmd_ processing
+
+	Q_strncpy( item_to_give, item_name, sizeof( item_to_give ) );
+
 	// Found some players to give items to
 	for (int i = 0; i < target_player_list_size; i++)
 	{
@@ -12007,12 +12252,21 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGive
 			continue;
 		}
 
-		CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(target_player_list[i].entity), item_name);
+		if (sv_cheats->GetInt() == 1)
+		{
+			helpers->ClientCommand(target_player_list[i].entity, give_command);
+		}
+		else
+		{
+			sv_cheats->SetValue(1);
+			helpers->ClientCommand(target_player_list[i].entity, give_command);
+			sv_cheats->SetValue(0);
+		}
 
-		LogCommand (player.entity, "gave user [%s] [%s] item [%s]\n", target_player_list[i].name, target_player_list[i].steam_id, item_name);
+		LogCommand (player.entity, "gave user [%s] [%s] item [%s]\n", target_player_list[i].name, target_player_list[i].steam_id, item_to_give);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(&player, mani_admingive_anonymous.GetInt(), "gave player %s item %s", target_player_list[i].name, item_name); 
+			AdminSayToAll(&player, mani_admingive_anonymous.GetInt(), "gave player %s item %s", target_player_list[i].name, item_to_give); 
 		}
 	}
 
@@ -12051,7 +12305,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_GIVE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_GIVE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 5) 
@@ -12096,6 +12350,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 	}
 
 	int	weapon_slot = Q_atoi(weapon_slot_str);
+	int	primary_fire_index = Q_atoi(primary_fire_str);
 	int	amount = Q_atoi(amount_str);
 	bool primary_fire = false;
 
@@ -12122,22 +12377,22 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo
 		}
 
 		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
-		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, weapon_slot);
+		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
+		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(weapon_slot);
 		if (!pWeapon) continue;
 
 		int	ammo_index;
 
 		if (primary_fire)
 		{
-			ammo_index = CBaseCombatWeapon_GetPrimaryAmmoType(pWeapon);
+			ammo_index = pWeapon->GetPrimaryAmmoType();
 		}
 		else
 		{
-			ammo_index = CBaseCombatWeapon_GetSecondaryAmmoType(pWeapon);
+			ammo_index = pWeapon->GetSecondaryAmmoType();
 		}
 
-		CBaseCombatCharacter_GiveAmmo(pCombat, amount, ammo_index, suppress_noise);
+        pCombat->GiveAmmo(amount, ammo_index, suppress_noise);
 
 		LogCommand (player.entity, "gave user [%s] [%s] ammo\n", target_player_list[i].name, target_player_list[i].steam_id);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -12182,7 +12437,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 6) 
@@ -12242,8 +12497,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour
 			continue;
 		}
 
-		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		ProcessSetColour(target_player_list[i].entity, red, green, blue, alpha);
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		ProcessSetColour(m_pCBaseEntity, red, green, blue, alpha);
 		
 		LogCommand (player.entity, "set user color [%s] [%s] to [%i] [%i] [%i] [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, red, blue, green, alpha);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
@@ -12285,7 +12540,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderMode
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 3) 
@@ -12340,9 +12595,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderMode
 			continue;
 		}
 
-		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		//m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
-		Prop_SetVal(target_player_list[i].entity, MANI_PROP_RENDER_MODE, render_mode);
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
+		
 		LogCommand (player.entity, "set user rendermode [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
@@ -12383,7 +12638,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 3) 
@@ -12438,10 +12693,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX
 			continue;
 		}
 
-		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
-		//m_pCBaseEntity->m_nRenderFX = render_mode;
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		m_pCBaseEntity->m_nRenderFX = render_mode;
 		
-		Prop_SetVal(target_player_list[i].entity, MANI_PROP_RENDER_FX, render_mode);
 		LogCommand (player.entity, "set user renderfx [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
@@ -12479,7 +12733,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGimp
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_GIMP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_GIMP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -12595,7 +12849,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeBomb
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_TIMEBOMB, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_TIMEBOMB, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -12711,7 +12965,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFireBomb
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_FIREBOMB, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_FIREBOMB, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -12827,7 +13081,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFreezeBomb
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_FREEZEBOMB, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_FREEZEBOMB, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -12943,7 +13197,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBeacon
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_BEACON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BEACON, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -13059,7 +13313,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_MUTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_MUTE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -13184,7 +13438,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_TELEPORT, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_TELEPORT, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc != 2 && argc != 5) 
@@ -13317,13 +13571,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaPosition
 
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	if (!IsAdminAllowed(&player, command_string, ALLOW_TELEPORT, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_TELEPORT, war_mode, &admin_index)) return PLUGIN_STOP;
 
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
 	Vector pos = player.player_info->GetAbsOrigin();
-	Vector eyepos = CBaseEntity_EyePosition(pPlayer);
-	QAngle angles = CBaseEntity_EyeAngles(pPlayer);
+	Vector eyepos = pPlayer->EyePosition();
+	QAngle angles = pPlayer->EyeAngles();
 
 	SayToPlayer(&player, "Absolute Position XYZ = %.5f %.5f %.5f", pos.x, pos.y, pos.z);
 	SayToPlayer(&player, "Eye Position XYZ = %.5f %.5f %.5f", eyepos.x, eyepos.y, eyepos.z);
@@ -13389,7 +13643,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSwapTeam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_SWAP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_SWAP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (!gpManiGameType->IsTeamPlayAllowed())
@@ -13493,7 +13747,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSpec
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_SWAP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_SWAP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (!gpManiGameType->IsSpectatorAllowed())
@@ -13596,7 +13850,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBalance
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_balance", ALLOW_SWAP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_balance", ALLOW_SWAP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (!gpManiGameType->IsTeamPlayAllowed())
@@ -13658,7 +13912,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDropC4
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_dropc4", ALLOW_DROPC4, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_dropc4", ALLOW_DROPC4, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
@@ -13684,17 +13938,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDropC4
 		if (bomb_player.player_info->IsHLTV()) continue;
 
 		CBaseEntity *pPlayer = bomb_player.entity->GetUnknown()->GetBaseEntity();
-
-		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 4);
-
+		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
+		CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(4);
 		if (pWeapon)
 		{
-			if (FStrEq("weapon_c4", CBaseCombatWeapon_GetName(pWeapon)))
+			if (FStrEq("weapon_c4", pWeapon->GetName()))
 			{
-				CBasePlayer *pBase = (CBasePlayer *) pPlayer;
-				CBasePlayer_WeaponDrop(pBase, pWeapon);
-
+				pCombat->Weapon_Drop(pWeapon);
 				if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 				{
 					AdminSayToAll(&player, mani_admindropc4_anonymous.GetInt(), "forced player %s to drop the C4", bomb_player.name); 
@@ -13789,9 +14039,9 @@ bool	CAdminPlugin::ProcessMaBalancePlayerType
 		}
 
 		int immunity_index = -1;
-		if (IsImmune(&target_player, &immunity_index))
+		if (gpManiClient->IsImmune(&target_player, &immunity_index))
 		{
-			if (immunity_list[immunity_index].flags[IMMUNITY_ALLOW_BALANCE])
+			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BALANCE))
 			{
 				continue;
 			}
@@ -13884,7 +14134,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaPSay
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_PSAY, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_PSAY, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -13994,7 +14244,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMSay
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_PSAY, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_PSAY, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 3) 
@@ -14033,6 +14283,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMSay
 	if (time_to_display == 0) time_to_display = -1;
 
 	// Build up lines to display
+	int	message_length = Q_strlen (say_string);
+
 	Q_strcpy(temp_line,"");
 	int	j = 0;
 	int	i = 0;
@@ -14152,7 +14404,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSay
 
 	if (!svr_command)
 	{
-		if (!IsClientAdmin(&player, &admin_index))
+		if (!gpManiClient->IsAdmin(&player, &admin_index))
 		{
 			if (!war_mode)
 			{
@@ -14161,7 +14413,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSay
 			return PLUGIN_STOP;
 		}
 
-		if (!admin_list[admin_index].flags[ALLOW_SAY])
+		if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_SAY))
 		{
 			if (!war_mode)
 			{
@@ -14220,7 +14472,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCSay
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_SAY, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_SAY, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -14297,7 +14549,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaChat
 
 	if (!svr_command)
 	{
-		if (!IsClientAdmin(&player, &admin_index))
+		if (!gpManiClient->IsAdmin(&player, &admin_index))
 		{
 			if (!war_mode)
 			{
@@ -14314,7 +14566,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaChat
 		}
 
 		// Player is Admin
-		if (!admin_list[admin_index].flags[ALLOW_CHAT] || war_mode)
+		if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_CHAT) || war_mode)
 		{
 			if (!war_mode)
 			{
@@ -14366,7 +14618,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRCon
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RCON, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RCON, false, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -14457,7 +14709,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExec
 
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CEXEC, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CEXEC, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -14537,7 +14789,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecAll
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CEXEC, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CEXEC, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -14602,7 +14854,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecTeam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CEXEC, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CEXEC, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -14666,7 +14918,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUsers
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	char	target_string[512];
@@ -14713,7 +14965,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUsers
 			continue;
 		}
 
-		if (IsClientAdmin(server_player, &admin_index))
+		if (gpManiClient->IsAdmin(server_player, &admin_index))
 		{
 			is_admin = true;
 		}
@@ -14756,7 +15008,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRates
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_MA_RATES, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_MA_RATES, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	char	target_string[512];
@@ -14842,7 +15094,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaConfig
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_config", ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_config", ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current Plugin server var settings\n\n");
@@ -14900,7 +15152,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHelp
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_help", ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_help", ADMIN_DONT_CARE, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current Plugin server console commands\n\n");
@@ -14975,7 +15227,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSaveLoc
 	// Check if player is admin
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	if (!IsAdminAllowed(&player, "ma_saveloc", ALLOW_TELEPORT, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->IsAdminAllowed(&player, "ma_saveloc", ALLOW_TELEPORT, war_mode, &admin_index)) return PLUGIN_STOP;
 
 	ProcessSaveLocation(&player);
 
@@ -15004,7 +15256,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickBanShowName
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_ashowname", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowname", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current Names on the autokick/ban list\n\n");
@@ -15067,7 +15319,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickBanShowPName
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_ashowpname", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowpname", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current partial names on the autokick/ban list\n\n");
@@ -15130,7 +15382,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickBanShowSteam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_ashowsteam", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowsteam", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current steam ids on the autokick/ban list\n\n");
@@ -15169,7 +15421,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickBanShowIP
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_ashowip", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowip", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	OutputToConsole(player.entity, svr_command, "Current IP addresses on the autokick/ban list\n\n");
@@ -15209,7 +15461,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaWar
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_war", ALLOW_WAR, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, "ma_war", ALLOW_WAR, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc == 1)
@@ -15296,239 +15548,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSettings
 	return PLUGIN_STOP;
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Process the ma_admins command
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT	CAdminPlugin::ProcessMaAdmins
-(
- int index, 
- bool svr_command
-)
-{
-	player_t player;
-	int	admin_index;
-	player.entity = NULL;
-
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_admins", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
-	}
-
-	player_t	client_player;
-	bool		online;
-
-	OutputToConsole(player.entity, svr_command, "Current Admins setup, a '*' means they are online\n\n");
-
-	for (int i = 0; i < admin_list_size; i++)
-	{
-		online = false;
-
-		Q_strcpy(client_player.steam_id, admin_list[i].steam_id);
-		// Is admin playing ?
-		if (FindPlayerBySteamID(&client_player))
-		{
-			online = true;
-		}
-
-		OutputToConsole(player.entity, svr_command, "%s %s ", (online) ? "*":" ", admin_list[i].steam_id);
-		OutputToConsole(player.entity, svr_command, "%s ", admin_list[i].ip_address);
-		OutputToConsole(player.entity, svr_command, "%s ", admin_list[i].name);
-		if (admin_list[i].group_id && !FStrEq(admin_list[i].group_id,""))
-		{
-			OutputToConsole(player.entity, svr_command, "GROUP [%s] ", admin_list[i].group_id);
-		}
-
-		for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-		{
-			if (admin_list[i].flags[j])
-			{
-				OutputToConsole(player.entity, svr_command,  "%s ", admin_flag_list[j].flag_desc);
-			}
-		}
-
-		OutputToConsole(player.entity, svr_command, "\n");
-	}	
-
-	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Process the ma_admingroups command
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT	CAdminPlugin::ProcessMaAdminGroups
-(
- int index, 
- bool svr_command
-)
-{
-	player_t player;
-	int	admin_index;
-	player.entity = NULL;
-
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_admingroups", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
-	}
-
-	if (admin_group_list_size == 0)
-	{
-		OutputToConsole(player.entity, svr_command, "You have no admin groups setup at the moment\n");
-		return PLUGIN_STOP;
-	}
-	
-	OutputToConsole(player.entity, svr_command, "Current Admins Groups\n");
-
-	for (int i = 0; i < admin_group_list_size; i++)
-	{
-		OutputToConsole(player.entity, svr_command, "GROUP [%s] ", admin_group_list[i].group_id);
-		OutputToConsole(player.entity, svr_command, "\n");
-
-		for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-		{
-			if (admin_group_list[i].flags[j])
-			{
-				OutputToConsole(player.entity, svr_command,  "%s ", admin_flag_list[j].flag_desc);
-			}
-		}
-
-		OutputToConsole(player.entity, svr_command, "\n");
-	}	
-
-	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Process the ma_immunity command
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT	CAdminPlugin::ProcessMaImmunity
-(
- int index, 
- bool svr_command
-)
-{
-	player_t player;
-	int	admin_index;
-	player.entity = NULL;
-
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_immunity", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
-	}
-
-	player_t	client_player;
-	bool		online;
-
-	OutputToConsole(player.entity, svr_command, "Current immunity users setup, a '*' means they are online\n\n");
-
-	for (int i = 0; i < immunity_list_size; i++)
-	{
-		online = false;
-
-		Q_strcpy(client_player.steam_id, immunity_list[i].steam_id);
-		// Is admin playing ?
-		if (FindPlayerBySteamID(&client_player))
-		{
-			online = true;
-		}
-
-		OutputToConsole(player.entity, svr_command, "%s %s ", (online) ? "*":" ", immunity_list[i].steam_id);
-		OutputToConsole(player.entity, svr_command, "%s ", immunity_list[i].ip_address);
-		OutputToConsole(player.entity, svr_command, "%s ", immunity_list[i].name);
-		if (immunity_list[i].group_id && !FStrEq(immunity_list[i].group_id,""))
-		{
-			OutputToConsole(player.entity, svr_command, "GROUP [%s] ", immunity_list[i].group_id);
-		}
-
-		for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-		{
-			if (immunity_list[i].flags[j])
-			{
-				OutputToConsole(player.entity, svr_command,  "%s ", immunity_flag_list[j].flag_desc);
-			}
-		}
-
-		OutputToConsole(player.entity, svr_command, "\n");
-	}	
-
-	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Process the ma_immunitygroups command
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT	CAdminPlugin::ProcessMaImmunityGroups
-(
- int index, 
- bool svr_command
-)
-{
-	player_t player;
-	int	admin_index;
-	player.entity = NULL;
-
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_immunitygroups", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
-	}
-
-	if (immunity_group_list_size == 0)
-	{
-		OutputToConsole(player.entity, svr_command, "You have no immunity groups setup at the moment\n");
-		return PLUGIN_STOP;
-	}
-	
-	OutputToConsole(player.entity, svr_command, "Current Immunity Groups\n");
-
-	for (int i = 0; i < immunity_group_list_size; i++)
-	{
-		OutputToConsole(player.entity, svr_command, "GROUP [%s] ", immunity_group_list[i].group_id);
-		OutputToConsole(player.entity, svr_command, "\n");
-
-		for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-		{
-			if (immunity_group_list[i].flags[j])
-			{
-				OutputToConsole(player.entity, svr_command,  "%s ", immunity_flag_list[j].flag_desc);
-			}
-		}
-
-		OutputToConsole(player.entity, svr_command, "\n");
-	}	
-
-	return PLUGIN_STOP;
-}
 
 
 
@@ -15704,11 +15723,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickBanName
 
 		if (kick)
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 	}
 
@@ -15849,11 +15868,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickBanPName
 
 		if (kick)
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 	}
 
@@ -15992,7 +16011,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickSteam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -16081,7 +16100,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAutoKickIP
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -16174,11 +16193,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnAutoKickBanName
 
 		if (kick)
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 	}
 	
@@ -16265,11 +16284,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnAutoKickBanPName
 
 		if (kick)
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
-			if (!IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 	}
 
@@ -16352,7 +16371,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnAutoKickSteam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -16378,12 +16397,12 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnAutoKickSteam
 
 			if (svr_command)
 			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID [%s] updated\n", player_steam_id);
+				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID updated\n", command_string);
 				LogCommand (NULL, "Updated steam id [%s] to autokick_steam.txt\n", player_steam_id);
 			}
 			else
 			{
-				SayToPlayer(&player, "Mani Admin Plugin: Steam ID [%s] updated", player_steam_id);
+				SayToPlayer(&player, "Mani Admin Plugin: Steam ID updated", command_string);
 				LogCommand (player.entity, "Updated steam id [%s] to autokick_steam.txt\n", player_steam_id);
 			}
 
@@ -16432,7 +16451,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnAutoKickIP
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -16710,7 +16729,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteCancel
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_CANCEL_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CANCEL_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (!system_vote.vote_in_progress)
@@ -16757,7 +16776,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRandom
 )
 {
 	player_t player;
-	int	admin_index = -1;
+	int	admin_index;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -16772,7 +16791,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRandom
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_RANDOM_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_RANDOM_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -16856,7 +16875,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRandom
 	}
 
 	system_vote.vote_confirmation = false;
-	if (!svr_command && admin_list[admin_index].flags[ALLOW_ACCEPT_VOTE])
+	if (!svr_command && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -16895,7 +16914,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVote
 )
 {
 	player_t player;
-	int	admin_index = -1;
+	int	admin_index;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -16910,7 +16929,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVote
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (argc < 2) 
@@ -17048,7 +17067,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVote
 	}
 
 	system_vote.vote_confirmation = false;
-	if (!svr_command && admin_list[admin_index].flags[ALLOW_ACCEPT_VOTE])
+	if (!svr_command && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -17083,7 +17102,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteExtend
 )
 {
 	player_t player;
-	int	admin_index = -1;
+	int	admin_index;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17098,7 +17117,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteExtend
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, command_string, ALLOW_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	if (system_vote.vote_in_progress)
@@ -17189,7 +17208,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteExtend
 	}
 
 	system_vote.vote_confirmation = false;
-	if (!svr_command && admin_list[admin_index].flags[ALLOW_ACCEPT_VOTE])
+	if (!svr_command && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -17219,8 +17238,8 @@ bool	CAdminPlugin::AddMapToVote
 )
 {
 	vote_option_t vote_option;
-	map_t	*m_list = NULL;
-	int		m_list_size = 0;
+	map_t	*m_list;
+	int		m_list_size;
 
 	// Set pointer to correct list
 	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -17282,7 +17301,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteQuestion
 )
 {
 	player_t player;
-	int	admin_index = -1;
+	int	admin_index;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17302,14 +17321,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteQuestion
 			return PLUGIN_STOP;
 		}
 
-		if (!IsClientAdmin(&player, &admin_index))
+		if (!gpManiClient->IsAdmin(&player, &admin_index))
 		{
 			SayToPlayer(&player, "Mani Admin Plugin: You are not authorised to use admin commands");
 			return PLUGIN_STOP;
 		}
 
-		if ((!menu_command && !admin_list[admin_index].flags[ALLOW_QUESTION_VOTE]) ||
-		    (menu_command && !admin_list[admin_index].flags[ALLOW_MENU_QUESTION_VOTE])  || war_mode)
+		if ((!menu_command && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_QUESTION_VOTE)) ||
+		    (menu_command && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_QUESTION_VOTE))  || war_mode)
 		{
 			SayToPlayer(&player, "Mani Admin Plugin: You are not authorised to start a question vote");
 			return PLUGIN_STOP;
@@ -17381,7 +17400,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteQuestion
 	}
 
 	system_vote.vote_confirmation = false;
-	if (!svr_command && admin_list[admin_index].flags[ALLOW_ACCEPT_VOTE])
+	if (!svr_command && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -17432,7 +17451,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRCon
 )
 {
 	player_t player;
-	int	admin_index = -1;
+	int	admin_index;
 	player.entity = NULL;
 
 	if (war_mode)
@@ -17452,14 +17471,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRCon
 			return PLUGIN_STOP;
 		}
 
-		if (!IsClientAdmin(&player, &admin_index))
+		if (!gpManiClient->IsAdmin(&player, &admin_index))
 		{
 			SayToPlayer(&player, "Mani Admin Plugin: You are not authorised to use admin commands");
 			return PLUGIN_STOP;
 		}
 
-		if ((!menu_command && !admin_list[admin_index].flags[ALLOW_RCON_VOTE]) || 
-		    (menu_command && !admin_list[admin_index].flags[ALLOW_MENU_RCON_VOTE]) || war_mode)
+		if ((!menu_command && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_RCON_VOTE)) || 
+		    (menu_command && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_RCON_VOTE)) || war_mode)
 		{
 			SayToPlayer(&player, "Mani Admin Plugin: You are not authorised to start a rcon vote");
 			return PLUGIN_STOP;
@@ -17513,7 +17532,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaVoteRCon
 	}
 
 	system_vote.vote_confirmation = false;
-	if (!svr_command && admin_list[admin_index].flags[ALLOW_ACCEPT_VOTE])
+	if (!svr_command && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -17780,7 +17799,7 @@ void	CAdminPlugin::ProcessVotes (void)
 		return;
 	}
 
-	float vote_percentage = 0.0;
+	float vote_percentage;
 
 	switch (system_vote.vote_type)
 	{
@@ -18125,14 +18144,14 @@ void	CAdminPlugin::BuildRandomMapVote (int max_maps)
 	last_map_t *last_maps;
 	int	maps_to_skip;
 	vote_option_t vote_option;
-	map_t	*m_list = NULL;
-	int		m_list_size = 0;
+	map_t	*m_list;
+	int		m_list_size;
 	int		map_index;
 	int		exclude;
 	map_t	select_map;
-	map_t	*select_list = NULL;
-	map_t	*temp_ptr = NULL;
-	int		select_list_size = 0;
+	map_t	*select_list;
+	map_t	*temp_ptr;
+	int		select_list_size;
 	map_t	temp_map;
 
 	select_list = NULL;
@@ -18386,10 +18405,10 @@ void CAdminPlugin::ProcessPlayerVoted( player_t *player, int vote_index)
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessBuildUserVoteMaps(void)
 {
-	last_map_t *last_maps = NULL;
+	last_map_t *last_maps;
 	int	maps_to_skip;
-	map_t	*m_list = NULL;
-	int		m_list_size = 0;
+	map_t	*m_list;
+	int		m_list_size;
 	map_t	select_map;
 
 	FreeList ((void **) &user_vote_map_list, &user_vote_map_list_size);
@@ -19446,8 +19465,8 @@ void CAdminPlugin::ProcessMaUserVoteKick(player_t *player, int argc, const char 
 			if (!FindPlayerByIndex(&admin_player)) continue;
 			if (admin_player.is_bot) continue;
 
-			if (!IsClientAdmin(&admin_player, &admin_index)) continue;
-			if (admin_list[admin_index].flags[ALLOW_KICK])
+			if (!gpManiClient->IsAdmin(&admin_player, &admin_index)) continue;
+			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK))
 			{
 				found_admin = true;
 				break;
@@ -19494,7 +19513,7 @@ void CAdminPlugin::ProcessMaUserVoteKick(player_t *player, int argc, const char 
 	}
 
 	admin_index = -1;
-	IsClientAdmin(target_player, &admin_index);
+	gpManiClient->IsAdmin(target_player, &admin_index);
 
 	if (user_vote_list[player->index - 1].kick_id != -1 && admin_index == -1)
 	{
@@ -19717,8 +19736,8 @@ void CAdminPlugin::ProcessMaUserVoteBan(player_t *player, int argc, const char *
 			if (!FindPlayerByIndex(&admin_player)) continue;
 			if (admin_player.is_bot) continue;
 
-			if (!IsClientAdmin(&admin_player, &admin_index)) continue;
-			if (admin_list[admin_index].flags[ALLOW_BAN])
+			if (!gpManiClient->IsAdmin(&admin_player, &admin_index)) continue;
+			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN))
 			{
 				found_admin = true;
 				break;
@@ -19765,7 +19784,7 @@ void CAdminPlugin::ProcessMaUserVoteBan(player_t *player, int argc, const char *
 	}
 
 	admin_index = -1;
-	IsClientAdmin(target_player, &admin_index);
+	gpManiClient->IsAdmin(target_player, &admin_index);
 
 	if (user_vote_list[player->index - 1].ban_id != -1 && admin_index == -1)
 	{
@@ -21239,38 +21258,6 @@ CON_COMMAND(ma_config, "Prints the current configuration")
 	return;
 }
 
-CON_COMMAND(ma_admins, "Prints the admins and their rights for this server")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAdminPlugin.ProcessMaAdmins(0, true);
-	return;
-}
-
-CON_COMMAND(ma_admingroups, "Prints the admins groups and their settings")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAdminPlugin.ProcessMaAdminGroups(0, true);
-	return;
-}
-
-CON_COMMAND(ma_immunity, "Prints the immunity users and their rights for this server")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAdminPlugin.ProcessMaImmunity(0, true);
-	return;
-}
-
-CON_COMMAND(ma_immunitygroups, "Prints the immunity groups and their settings")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAdminPlugin.ProcessMaImmunityGroups(0, true);
-	return;
-}
-
 CON_COMMAND(maniadminversion, "Prints the version of the plugin")
 {
 	if (!IsCommandIssuedByServerAdmin()) return;
@@ -21534,6 +21521,33 @@ static int sort_nominations_by_votes_cast ( const void *m1,  const void *m2)
 	struct vote_option_t *mi2 = (struct vote_option_t *) m2;
 	return (mi2->votes_cast - mi1->votes_cast);
 }
+//---------------------------------------------------------------------------------
+// Purpose: Checks if version string has been altered
+//---------------------------------------------------------------------------------
+bool	CAdminPlugin::IsTampered(void)
+{
+	int checksum = 0;
+	int plus1 = 10000;
+	int str_length = Q_strlen(mani_version);
+
+	for (int i = 0; i < str_length; i ++)
+	{
+		checksum += (int) mani_version[i];
+	}
+
+	checksum += 0x342F;
+
+// Msg("Checksum string %i\n", checksum);
+//  Msg("Offset required %i\n", checksum - plus1);
+
+	if (checksum != (plus1 + 8394))
+	{
+		return true;
+	}
+
+	plus1 += 453;
+	return false;
+}
 
 //**************************************************************************************************
 // Special hook for say commands
@@ -21775,42 +21789,3 @@ public:
 
 CChangeLevelHook g_ChangeLevelHook;
 
-class CRespawnEntitiesHook : public ConCommand
-{
-   // This will hold the pointer original gamedll say command
-   ConCommand *m_pGameDLLRespawnEntitiesCommand;
-public:
-   CRespawnEntitiesHook() : ConCommand("respawn_entities", NULL, "exploit fixed by mani", FCVAR_GAMEDLL), m_pGameDLLRespawnEntitiesCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll say command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "respawn_entities") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-      if (!pPtr)
-	  {
-         Msg("Didn't find respawn_entities command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLRespawnEntitiesCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-	   return;
-   }
-};
-
-CRespawnEntitiesHook g_RespawnEntitiesHook;
