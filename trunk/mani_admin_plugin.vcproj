@@ -283,6 +283,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_sounds.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_sprayremove.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_stats.cpp">
 				</File>
 				<File
@@ -482,6 +485,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_sounds.h">
+				</File>
+				<File
+					RelativePath=".\mani_sprayremove.h">
 				</File>
 				<File
 					RelativePath=".\mani_stats.h">

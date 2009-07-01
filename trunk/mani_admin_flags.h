@@ -199,5 +199,8 @@
 #define	ALLOW_GIVE_FLAG	('Z')
 #define	ALLOW_GIVE_DESC ("Give")
 
+#define	ALLOW_SPRAY_TAG (49)					//h flag
+#define	ALLOW_SPRAY_TAG_FLAG	('h')
+#define	ALLOW_SPRAY_TAG_DESC ("Spray Tag Tracking")
 
 #endif

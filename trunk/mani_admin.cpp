@@ -930,4 +930,7 @@ void	InitAdminFlags(void)
 	admin_flag_list[ALLOW_GIVE].flag = ALLOW_GIVE_FLAG;
 	Q_strcpy(admin_flag_list[ALLOW_GIVE].flag_desc,ALLOW_GIVE_DESC);
 
+	admin_flag_list[ALLOW_SPRAY_TAG].flag = ALLOW_SPRAY_TAG_FLAG;
+	Q_strcpy(admin_flag_list[ALLOW_SPRAY_TAG].flag_desc,ALLOW_SPRAY_TAG_DESC);
+
 }
