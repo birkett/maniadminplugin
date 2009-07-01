@@ -69,6 +69,7 @@ extern	PLUGIN_RESULT	ProcessMaMapCycle( int index, bool svr_command);
 extern	PLUGIN_RESULT	ProcessMaListMaps( int index, bool svr_command);
 extern	PLUGIN_RESULT	ProcessMaNextMap( int index, bool svr_command);
 extern	PLUGIN_RESULT	ProcessMaMap( int index,  bool svr_command,  int argc,  char *command_string,  char *map_name);
+extern	PLUGIN_RESULT	ProcessMaSkipMap( int index,  bool svr_command,  int argc,  char *command_string);
 extern	PLUGIN_RESULT	ProcessMaSetNextMap( int index,  bool svr_command,  int argc,  char *command_string,  char *map_name);
 extern	PLUGIN_RESULT	ProcessMaVoteMapList( int index,  bool svr_command);
 

@@ -31,6 +31,7 @@ struct player_t
 	char	steam_id[128];
 	char	ip_address[128];
 	char	name[128];
+	char	password[128];
 	int		user_id;
 	int		team;
 	int		health;
@@ -64,6 +65,7 @@ struct player_settings_t
 	char	ct_model[20];
 	char	language[20];
 	int		show_death_beam;
+	unsigned int		bit_array[8]; // 8 * 32 = 256 flags to play with (provided we have 32 bits per integer)
 	int		teleport_coords_list_size;
 	teleport_coords_t *teleport_coords_list;
 };
@@ -86,6 +88,10 @@ extern	void	PlayerJoinedInitSettings(player_t *player);
 
 extern	player_settings_t *FindStoredPlayerSettings (player_t *player);
 extern	player_settings_t *FindPlayerSettings (player_t *player);
+
+extern	bool	FindPlayerFlag (player_settings_t *player_settings_ptr, int flag_index);
+extern	void	SetPlayerFlag (player_settings_t *player_settings_ptr, int flag_index, bool flag_value);
+
 extern	void	UpdatePlayerSettings (player_t *player, player_settings_t *new_player_settings);
 extern	void	PlayerSettingsDisconnect (player_t *player);
 

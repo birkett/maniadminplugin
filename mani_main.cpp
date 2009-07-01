@@ -97,6 +97,8 @@ typedef unsigned long DWORD;
 #include "mani_reservedslot.h"
 #include "mani_spawnpoints.h"
 #include "mani_sprayremove.h"
+#include "mani_chattrigger.h"
+#include "mani_warmuptimer.h"
 #include "mani_mysql.h"
 
 
@@ -227,7 +229,7 @@ DEFVFUNC_(grules_FPlayerCanRespawn, bool, (CGameRules* GameRules, CBasePlayer *p
 bool VFUNC MyFPlayerCanRespawn(CGameRules* GameRules, CBasePlayer *pPlayer)
 {
 
-	ReSpawnPlayer(pPlayer);
+//	ReSpawnPlayer(pPlayer);
 	//Msg("FPlayerCanRespawn [%s]\n", pPlayer->GetClassName());
 	return grules_FPlayerCanRespawn(GameRules, pPlayer);
 }
@@ -465,6 +467,8 @@ public:
 			PLUGIN_RESULT	ProcessMaGive( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *item_name);
 			PLUGIN_RESULT	ProcessMaGiveAmmo( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *weapon_slot_str, char *primary_fire_str, char *amount_str, char *noise_str);
 			PLUGIN_RESULT	ProcessMaColour( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *red_str, char *green_str, char *blue_str, char *alpha_str);
+			PLUGIN_RESULT	ProcessMaColourWeapon( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *red_str, char *green_str, char *blue_str, char *alpha_str);
+			PLUGIN_RESULT	ProcessMaGravity( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *gravity_string);
 			PLUGIN_RESULT	ProcessMaRenderMode( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *render_mode_str);
 			PLUGIN_RESULT	ProcessMaRenderFX( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *render_fx_str);
 			PLUGIN_RESULT	ProcessMaGimp( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
@@ -1084,6 +1088,7 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	gpManiDownloads->Init();
 	gpManiReservedSlot->Load();
 	gpManiAutoKickBan->Load();
+	gpManiChatTriggers->Load();
 
 	if (first_map_loaded)
 	{
@@ -1317,6 +1322,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	gpManiGhost->Init();
 	gpManiCustomEffects->Init();
 	gpManiVictimStats->RoundStart();
+	gpManiChatTriggers->LevelInit();
+	gpManiWarmupTimer->LevelInit();
 
 	// Init votes and menu system
 	for (i = 0; i < MANI_MAX_PLAYERS; i++)
@@ -1905,15 +1912,8 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 		average_ping_list[i].in_use = false;
 	}
 
-	// Get team managers
+	// Get team manager pointers
 	SetupTeamList(edictCount);
-
-//	HOOKVFUNC(gamerules_ptr, 17, grules_DefaultFOV, MyDefaultFOV);
-
-/*	for (int i = 60; i < 65; i ++)
-	{
-		HOOKVFUNC(gamerules_ptr, i, grules_FPlayerCanRespawn, MyFPlayerCanRespawn);
-	}*/
 }
 
 //---------------------------------------------------------------------------------
@@ -1938,6 +1938,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 	gpManiNetIDValid->GameFrame();
 
 	gpManiSprayRemove->GameFrame();
+	gpManiWarmupTimer->GameFrame();
 
 	if (mani_protect_against_cheat_cvars.GetInt() == 1)
 	{
@@ -2771,6 +2772,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 	else if (FStrEq( pcmd, "ma_kick" ))	return (ProcessMaKick(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
+	else if (FStrEq( pcmd, "ma_chattriggers" ))	return (gpManiChatTriggers->ProcessMaChatTriggers(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_spray" ))	return (gpManiSprayRemove->ProcessMaSpray(engine->IndexOfEdict(pEntity), false));
 	else if (FStrEq( pcmd, "ma_slay" ))	return (ProcessMaSlay(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_offset" ))	return (ProcessMaOffset(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
@@ -2793,6 +2795,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 	else if (FStrEq( pcmd, "ma_takehealthp" ))	return (ProcessMaHealth(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), MANI_TAKE_HEALTH_PERCENT));
 	else if (FStrEq( pcmd, "ma_resetrank" )) return (ProcessMaResetPlayerRank(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0),	engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_map" )) return (ProcessMaMap(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
+	else if (FStrEq( pcmd, "ma_skipmap" )) return (ProcessMaSkipMap(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0)));
 	else if (FStrEq( pcmd, "ma_setnextmap" )) return (ProcessMaSetNextMap(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_voterandom" )) return (ProcessMaVoteRandom(engine->IndexOfEdict(pEntity), false, false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_voteextend" )) return (ProcessMaVoteExtend(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0)));
@@ -2816,7 +2819,10 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 	else if (FStrEq( pcmd, "ma_freeze" )) return (ProcessMaFreeze(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_noclip" )) return (ProcessMaNoClip(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0),	engine->Cmd_Argv(1)));
 	else if (FStrEq( pcmd, "ma_burn" )) return (ProcessMaBurn(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1)));
+	else if (FStrEq( pcmd, "ma_gravity" )) return (ProcessMaGravity(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_colour" )) return (ProcessMaColour(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3), engine->Cmd_Argv(4), engine->Cmd_Argv(5)));
+	else if (FStrEq( pcmd, "ma_colourweapon" )) return (ProcessMaColourWeapon(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3), engine->Cmd_Argv(4), engine->Cmd_Argv(5)));
+	else if (FStrEq( pcmd, "ma_colorweapon" )) return (ProcessMaColourWeapon(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3), engine->Cmd_Argv(4), engine->Cmd_Argv(5)));
 	else if (FStrEq( pcmd, "ma_render" )) return (ProcessMaRenderMode(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_renderfx" )) return (ProcessMaRenderFX(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2)));
 	else if (FStrEq( pcmd, "ma_color" )) return (ProcessMaColour(engine->IndexOfEdict(pEntity), false, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2), engine->Cmd_Argv(3), engine->Cmd_Argv(4), engine->Cmd_Argv(5)));
@@ -3434,6 +3440,7 @@ PLUGIN_RESULT CAdminPlugin::ProcessAdminMenu( edict_t *pEntity)
 		}
 		if (FStrEq (menu_command, "spray") ||
 			FStrEq (menu_command, "spraywarn") ||
+			FStrEq (menu_command, "sprayslap") ||
 			FStrEq (menu_command, "spraykick") ||
 			FStrEq (menu_command, "sprayban") ||
 			FStrEq (menu_command, "spraypermban"))
@@ -8093,6 +8100,11 @@ void CAdminPlugin::ProcessPlayerSay( IGameEvent *event)
 	player.user_id = user_id;
 	if (!FindPlayerByUserID(&player)) return;
 
+	if (!gpManiChatTriggers->PlayerSay(&player, say_string, false, true))
+	{
+		return;
+	}
+
 	// Check for web shortcuts that have been said in game
 	if (ProcessWebShortcuts(player.entity, say_string))
 	{
@@ -8900,16 +8912,29 @@ bool CAdminPlugin::HookSayCommand(void)
 	}
 
 	if (player.is_bot) return true;
+
 	if (engine->Cmd_Argc() == 1) return true;
+
 	if (Q_strlen(say_string) > 2047) return true;
+	
+	team_say = true;
+	if (FStrEq(engine->Cmd_Argv(0), "say"))
+	{	
+		team_say = false;
+	}
+
+	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
+
+	if (!gpManiChatTriggers->PlayerSay(&player, trimmed_say, team_say, false))
+	{
+		return false;
+	}
 
 	// Mute player output
 	if (punish_mode_list[player.index - 1].muted && !war_mode)
 	{
 		return false;
 	}
-
-	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
 
 /*	Msg("Trimmed Say [%s]\n", trimmed_say);
 	Msg("No of args [%i]\n", say_argc);
@@ -8984,11 +9009,7 @@ bool CAdminPlugin::HookSayCommand(void)
 	char *pcmd11 = say_argv[11].argv_string;
 	char ncmd[2048];
 
-	team_say = true;
-	if (FStrEq(engine->Cmd_Argv(0), "say"))
-	{	
-		team_say = false;
-	}
+
 
 	if (!CheckForReplacement(&player, pcmd))
 	{
@@ -9047,8 +9068,11 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_freeze")) {ProcessMaFreeze (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_noclip")) {ProcessMaNoClip (player.index, false, say_argc, pcmd, pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_burn")) {ProcessMaBurn (player.index, false, say_argc, pcmd, pcmd1); return false;}
+		else if (FStrEq(ncmd, "@ma_gravity")) {ProcessMaGravity (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_colour")) {ProcessMaColour (player.index, false, say_argc, pcmd, pcmd1, pcmd2, pcmd3, pcmd4, pcmd5); return false;}
 		else if (FStrEq(ncmd, "@ma_color")) {ProcessMaColour (player.index, false, say_argc, pcmd, pcmd1, pcmd2, pcmd3, pcmd4, pcmd5); return false;}
+		else if (FStrEq(ncmd, "@ma_colourweapon")) {ProcessMaColourWeapon (player.index, false, say_argc, pcmd, pcmd1, pcmd2, pcmd3, pcmd4, pcmd5); return false;}
+		else if (FStrEq(ncmd, "@ma_colorweapon")) {ProcessMaColourWeapon (player.index, false, say_argc, pcmd, pcmd1, pcmd2, pcmd3, pcmd4, pcmd5); return false;}
 		else if (FStrEq(ncmd, "@ma_render")) {ProcessMaRenderMode (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_renderfx")) {ProcessMaRenderFX (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
 		else if (FStrEq(ncmd, "@ma_give")) {ProcessMaGive (player.index, false, say_argc, pcmd, pcmd1, pcmd2); return false;}
@@ -9070,6 +9094,7 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_saveloc")) {ProcessMaSaveLoc (player.index, false); return false;}
 		else if (FStrEq(ncmd, "@ma_resetrank")) {ProcessMaResetPlayerRank (player.index, false, say_argc, pcmd, pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_map")) {ProcessMaMap(player.index, false, say_argc, pcmd, pcmd1); return false;}
+		else if (FStrEq(ncmd, "@ma_skipmap")) {ProcessMaSkipMap(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_war")) {ProcessMaWar(player.index, false, say_argc, pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_setnextmap")) {ProcessMaSetNextMap(player.index, false, say_argc, pcmd, pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_voterandom")) {ProcessMaVoteRandom(player.index, false, true, say_argc, pcmd, pcmd1, pcmd2); return false;}
@@ -9089,6 +9114,7 @@ bool CAdminPlugin::HookSayCommand(void)
 		else if (FStrEq(ncmd, "@ma_unrestrict")) {ProcessMaRestrictWeapon(player.index, false, say_argc, pcmd, pcmd1, "0", false); return false;}
 		else if (FStrEq(ncmd, "@ma_unrestrictall")) {ProcessMaUnRestrictAll(player.index, false, say_argc, pcmd); return false;}
 		else if (FStrEq(ncmd, "@ma_kick" )) {ProcessMaKick(player.index, false, say_argc, pcmd,	pcmd1); return false;}
+		else if (FStrEq(ncmd, "@ma_chattriggers" )) {gpManiChatTriggers->ProcessMaChatTriggers(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_spray" )) {gpManiSprayRemove->ProcessMaSpray(player.index, false); return false;}
 		else if (FStrEq(ncmd, "@ma_slay" )) {ProcessMaSlay(player.index, false, say_argc, pcmd,	pcmd1); return false;}
 		else if (FStrEq(ncmd, "@ma_offset" )) {ProcessMaOffset(player.index, false, say_argc, pcmd,	pcmd1); return false;}
@@ -11191,6 +11217,208 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
 			AdminSayToAll(&player, mani_admincolor_anonymous.GetInt(), "set player %s color", target_player_list[i].name); 
+		}
+	}
+
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_colourweapon and ma_colorweapon command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	CAdminPlugin::ProcessMaColourWeapon
+(
+ int index, 
+ bool svr_command, 
+ int argc, 
+ char *command_string, 
+ char *target_string,
+ char *red_str,
+ char *green_str,
+ char *blue_str,
+ char *alpha_str
+)
+{
+	player_t player;
+	int	admin_index;
+	player.entity = NULL;
+	int	red, green, blue, alpha;
+
+	if (war_mode)
+	{
+		return PLUGIN_CONTINUE;
+	}
+
+	if (!sv_cheats) return PLUGIN_CONTINUE;
+
+	if (!svr_command)
+	{
+		// Check if player is admin
+		player.index = index;
+		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_COLOUR, war_mode, &admin_index)) return PLUGIN_STOP;
+	}
+
+	if (argc < 6) 
+	{
+		if (svr_command)
+		{
+			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <part of user name, user id or steam id> <red 0-255> <green 0-255> <blue 0-255> <alpha 0-255>\n", command_string);
+		}
+		else
+		{
+			SayToPlayer(&player, "Mani Admin Plugin: %s <part of user name, user id or steam id> <green 0-255> <blue 0-255> <alpha 0-255>", command_string);
+		}
+
+		return PLUGIN_STOP;
+	}
+	
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!FindTargetPlayers(&player, target_string, IMMUNITY_ALLOW_COLOUR))
+	{
+		if (svr_command)
+		{
+			OutputToConsole(player.entity, svr_command, "Did not find player %s\n", target_string);
+		}
+		else
+		{
+			SayToPlayer(&player, "Did not find player %s", target_string);
+		}
+
+		return PLUGIN_STOP;
+	}
+
+	red = Q_atoi(red_str);
+	green = Q_atoi(green_str);
+	blue = Q_atoi(blue_str);
+	alpha = Q_atoi(alpha_str);
+
+	if (red > 255) red = 255; else if (red < 0) red = 0;
+	if (green > 255) green = 255; else if (green < 0) green = 0;
+	if (blue > 255) blue = 255; else if (blue < 0) blue = 0;
+	if (alpha > 255) alpha = 255; else if (alpha < 0) red = 0;
+
+	// Found some players to give items to
+	for (int i = 0; i < target_player_list_size; i++)
+	{
+		if (target_player_list[i].is_dead)
+		{
+			if (svr_command)
+			{
+				OutputToConsole(player.entity, svr_command, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
+			}
+			else
+			{
+				SayToPlayer(&player, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
+			}
+
+			continue;
+		}
+
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		ProcessSetWeaponColour(m_pCBaseEntity, red, green, blue, alpha);
+		
+		LogCommand (player.entity, "set user weapon color [%s] [%s] to [%i] [%i] [%i] [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, red, blue, green, alpha);
+		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
+		{
+			AdminSayToAll(&player, mani_admincolor_anonymous.GetInt(), "set player %s weapon color", target_player_list[i].name); 
+		}
+	}
+
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_gravity and ma_gravity command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	CAdminPlugin::ProcessMaGravity
+(
+ int index, 
+ bool svr_command, 
+ int argc, 
+ char *command_string, 
+ char *target_string,
+ char *gravity_string
+)
+{
+	player_t player;
+	int	admin_index;
+	player.entity = NULL;
+	float gravity;
+
+	if (war_mode)
+	{
+		return PLUGIN_CONTINUE;
+	}
+
+	if (!sv_cheats) return PLUGIN_CONTINUE;
+
+	if (!svr_command)
+	{
+		// Check if player is admin
+		player.index = index;
+		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_GRAVITY, war_mode, &admin_index)) return PLUGIN_STOP;
+	}
+
+	if (argc < 3) 
+	{
+		if (svr_command)
+		{
+			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <part of user name, user id or steam id> <gravity>\n", command_string);
+		}
+		else
+		{
+			SayToPlayer(&player, "Mani Admin Plugin: %s <part of user name, user id or steam id> <gravity (100 = 100 percent>", command_string);
+		}
+
+		return PLUGIN_STOP;
+	}
+	
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!FindTargetPlayers(&player, target_string, IMMUNITY_ALLOW_GRAVITY))
+	{
+		if (svr_command)
+		{
+			OutputToConsole(player.entity, svr_command, "Did not find player %s\n", target_string);
+		}
+		else
+		{
+			SayToPlayer(&player, "Did not find player %s", target_string);
+		}
+
+		return PLUGIN_STOP;
+	}
+
+	gravity = Q_atof(gravity_string);
+
+	// Found some players to give items to
+	for (int i = 0; i < target_player_list_size; i++)
+	{
+		if (target_player_list[i].is_dead)
+		{
+			if (svr_command)
+			{
+				OutputToConsole(player.entity, svr_command, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
+			}
+			else
+			{
+				SayToPlayer(&player, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
+			}
+
+			continue;
+		}
+
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
+
+		m_pCBaseEntity->SetGravity(gravity * 0.01);
+
+		LogCommand (player.entity, "set user gravity [%s] [%s] to [%f]\n", target_player_list[i].name, target_player_list[i].steam_id, gravity);
+		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
+		{
+			AdminSayToAll(&player, mani_admingravity_anonymous.GetInt(), "set player %s gravity", target_player_list[i].name); 
 		}
 	}
 
@@ -17745,11 +17973,65 @@ CON_COMMAND(ma_giveammo, "Gives a user ammo (ma_giveammo <partial user name, use
 	return;
 }
 
+CON_COMMAND(ma_gravity, "Sets a players gravity (ma_gravity <partial user name, user id or steam id> <gravity (100 = 100 percent)>)")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+	g_ManiAdminPlugin.ProcessMaGravity
+					(
+					0, // Client index
+					true,  // Sever console command type
+					engine->Cmd_Argc(), // Number of arguments
+					engine->Cmd_Argv(0), // Command argument
+					engine->Cmd_Argv(1), // Target Player
+					engine->Cmd_Argv(2) // Gravity
+					);
+	return;
+}
+
 CON_COMMAND(ma_colour, "Sets a players colour (ma_colour <partial user name, user id or steam id> <red 0-255> <green 0-255> <blue 0-255> <alpha 0-255>)")
 {
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 	g_ManiAdminPlugin.ProcessMaColour
+					(
+					0, // Client index
+					true,  // Sever console command type
+					engine->Cmd_Argc(), // Number of arguments
+					engine->Cmd_Argv(0), // Command argument
+					engine->Cmd_Argv(1), // Target Player
+					engine->Cmd_Argv(2), // Command red
+					engine->Cmd_Argv(3), // Command green
+					engine->Cmd_Argv(4), // Command blue
+					engine->Cmd_Argv(5) // Command alpha
+					);
+	return;
+}
+
+CON_COMMAND(ma_colourweapon, "Sets a players weapon colour (ma_colourweapon <partial user name, user id or steam id> <red 0-255> <green 0-255> <blue 0-255> <alpha 0-255>)")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+	g_ManiAdminPlugin.ProcessMaColourWeapon
+					(
+					0, // Client index
+					true,  // Sever console command type
+					engine->Cmd_Argc(), // Number of arguments
+					engine->Cmd_Argv(0), // Command argument
+					engine->Cmd_Argv(1), // Target Player
+					engine->Cmd_Argv(2), // Command red
+					engine->Cmd_Argv(3), // Command green
+					engine->Cmd_Argv(4), // Command blue
+					engine->Cmd_Argv(5) // Command alpha
+					);
+	return;
+}
+
+CON_COMMAND(ma_colorweapon, "Sets a players weapon color (ma_colorweapon <partial user name, user id or steam id> <red 0-255> <green 0-255> <blue 0-255> <alpha 0-255>)")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+	g_ManiAdminPlugin.ProcessMaColourWeapon
 					(
 					0, // Client index
 					true,  // Sever console command type
@@ -18603,7 +18885,7 @@ bool	CAdminPlugin::IsTampered(void)
 //Msg("Offset required %i\n", checksum - plus1);
 //while(1);
 
-	if (checksum != (plus1 + 8398))
+	if (checksum != (plus1 + 8399))
 	{
 		return true;
 	}

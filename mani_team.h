@@ -36,8 +36,7 @@ struct team_t
 extern  CGameRules *gamerules_ptr;
 extern	void FreeTeamList(void);
 extern	void SetupTeamList(int edict_count);
-extern	void SwitchTeam(player_t	*player_ptr);
-extern	void ReSpawnPlayer(CBasePlayer *player_ptr);
+extern	CTeam *FindTeam(int team_index);
 extern	bool IsOnSameTeam (player_t *victim, player_t *attacker);
 
 #endif

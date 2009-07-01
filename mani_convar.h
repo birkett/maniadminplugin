@@ -115,6 +115,7 @@ extern ConVar mani_adminbeacon_anonymous;
 extern ConVar mani_adminhealth_anonymous;
 extern ConVar mani_admingive_anonymous;
 extern ConVar mani_admincolor_anonymous;
+extern ConVar mani_admingravity_anonymous;
 
 extern ConVar mani_adminmap_anonymous;
 extern ConVar mani_adminswap_anonymous;
@@ -349,5 +350,6 @@ extern ConVar mani_spray_tag_warning_message;
 extern ConVar mani_spray_tag_kick_message;
 extern ConVar mani_spray_tag_ban_message;
 extern ConVar mani_spray_tag_perm_ban_message;
+extern ConVar mani_spray_tag_slap_damage;
 
 #endif

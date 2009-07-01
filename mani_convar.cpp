@@ -116,6 +116,7 @@ ConVar mani_adminbeacon_anonymous( "mani_adminbeacon_anonymous", "0", 0, "This d
 ConVar mani_adminhealth_anonymous( "mani_adminhealth_anonymous", "0", 0, "This defines whether sethealth admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_admingive_anonymous( "mani_admingive_anonymous", "0", 0, "This defines whether give item admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_admincolor_anonymous( "mani_admincolor_anonymous", "0", 0, "This defines whether color admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
+ConVar mani_admingravity_anonymous( "mani_admingravity_anonymous", "0", 0, "This defines whether gravity admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 
 ConVar mani_adminmap_anonymous( "mani_adminmap_anonymous", "0", 0, "This defines whether ma_nextmap admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminswap_anonymous( "mani_adminswap_anonymous", "0", 0, "This defines whether ma_swapteam admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
@@ -351,3 +352,5 @@ ConVar mani_spray_tag_warning_message ("mani_spray_tag_warning_message", "Please
 ConVar mani_spray_tag_kick_message ("mani_spray_tag_kick_message", "You have been kicked for using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking kick option"); 
 ConVar mani_spray_tag_ban_message ("mani_spray_tag_ban_message", "You have been banned for 60 minutes through using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking ban option"); 
 ConVar mani_spray_tag_perm_ban_message ("mani_spray_tag_perm_ban_message", "You have been permanently banned for using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking permanent ban option"); 
+ConVar mani_spray_tag_slap_damage ("mani_spray_tag_slap_damage", "0", 0, "Slap damage given to play for spray slap warn (0-100)", true, 0, true, 100);
+

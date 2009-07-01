@@ -227,6 +227,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_autokickban.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_chattrigger.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_client.cpp">
 				</File>
 				<File
@@ -330,6 +333,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_voice.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_warmuptimer.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_weapon.cpp">
@@ -443,6 +449,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_autokickban.h">
 				</File>
 				<File
+					RelativePath=".\mani_chattrigger.h">
+				</File>
+				<File
 					RelativePath=".\mani_client.h">
 				</File>
 				<File
@@ -552,6 +561,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_voice.h">
+				</File>
+				<File
+					RelativePath=".\mani_warmuptimer.h">
 				</File>
 				<File
 					RelativePath=".\mani_weapon.h">

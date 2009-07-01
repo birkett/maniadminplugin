@@ -587,6 +587,73 @@ bool ManiClient::IsImmuneCore(player_t *player_ptr, int *client_index, bool recu
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Checks if player is immune (password already passed through)
+//---------------------------------------------------------------------------------
+bool ManiClient::IsImmuneNoPlayer(player_t *player_ptr, int *client_index)
+{
+	*client_index = -1;
+
+	if (player_ptr->is_bot)
+	{
+		return false;
+	}
+
+	//Search through admin list for match
+	for (int i = 0; i < client_list_size; i ++)
+	{
+		if (!client_list[i].has_immunity_potential)
+		{
+			continue;
+		}
+
+		// Check Steam ID
+		for (int j = 0; j < client_list[i].steam_list_size; j++)
+		{
+			if (client_list[i].steam_list[j].steam_id)
+			{
+				if (FStrEq(client_list[i].steam_list[j].steam_id, player_ptr->steam_id))
+				{
+					*client_index = i;
+					return true;
+				}
+			}
+		}
+
+		// Check IP address
+		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
+		{
+			if (client_list[i].ip_address_list[j].ip_address && player_ptr->ip_address)
+			{
+				if (FStrEq(client_list[i].ip_address_list[j].ip_address, player_ptr->ip_address)) 
+				{
+					*client_index = i;
+					return true;
+				}
+			}
+		}
+
+		// Check name password combo
+		if (client_list[i].nick_list_size != 0 
+			&& client_list[i].password)
+		{
+			for (int j = 0; j < client_list[i].nick_list_size; j++)
+			{
+				if (strcmp(client_list[i].nick_list[j].nick, player_ptr->name) == 0)
+				{
+					if (strcmp(client_list[i].password, player_ptr->password) == 0)
+					{
+						*client_index = i;
+						return true;
+					}
+				}
+			}	
+		}
+	}
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Checks if player is immune
 //---------------------------------------------------------------------------------
 bool ManiClient::IsPotentialImmune(player_t *player_ptr, int *client_index)
@@ -2658,30 +2725,35 @@ void	ManiClient::FreeClient(client_t *client_ptr)
 	{
 		free (client_ptr->steam_list);
 		client_ptr->steam_list_size = 0;
+		client_ptr->steam_list = NULL;
 	}
 
 	if (client_ptr->ip_address_list_size)
 	{
 		free (client_ptr->ip_address_list);
 		client_ptr->ip_address_list_size = 0;
+		client_ptr->ip_address_list = NULL;
 	}
 
 	if (client_ptr->nick_list_size)
 	{
 		free (client_ptr->nick_list);
 		client_ptr->nick_list_size = 0;
+		client_ptr->nick_list = NULL;
 	}
 
 	if (client_ptr->admin_group_list_size)
 	{
 		free (client_ptr->admin_group_list);
 		client_ptr->admin_group_list_size = 0;
+		client_ptr->admin_group_list = NULL;
 	}
 
 	if (client_ptr->immunity_group_list_size)
 	{
 		free (client_ptr->immunity_group_list);
 		client_ptr->immunity_group_list_size = 0;
+		client_ptr->immunity_group_list = NULL;
 	}
 }
 
@@ -7769,6 +7841,8 @@ void	ManiClient::InitImmunityFlags(void)
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_BASIC_IMMUNITY].flag, IMMUNITY_ALLOW_BASIC_IMMUNITY_FLAG);
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_BASIC_IMMUNITY].flag_desc,IMMUNITY_ALLOW_BASIC_IMMUNITY_DESC);
 
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag, IMMUNITY_ALLOW_GRAVITY_FLAG);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag_desc,IMMUNITY_ALLOW_GRAVITY_DESC);
 }
 
 
@@ -7936,6 +8010,9 @@ void	ManiClient::InitAdminFlags(void)
 
 	Q_strcpy(admin_flag_list[ALLOW_SPRAY_TAG].flag, ALLOW_SPRAY_TAG_FLAG);
 	Q_strcpy(admin_flag_list[ALLOW_SPRAY_TAG].flag_desc,ALLOW_SPRAY_TAG_DESC);
+
+	Q_strcpy(admin_flag_list[ALLOW_GRAVITY].flag, ALLOW_GRAVITY_FLAG);
+	Q_strcpy(admin_flag_list[ALLOW_GRAVITY].flag_desc,ALLOW_GRAVITY_DESC);
 
 }
 
