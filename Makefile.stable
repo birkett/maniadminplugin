@@ -46,6 +46,7 @@ SRC_FILES =	mani_adverts.cpp \
 		mani_team.cpp \
 		mani_teamkill.cpp \
 		mani_timers.cpp \
+		mani_vars.cpp \
 		mani_vfuncs.cpp \
 		mani_victimstats.cpp \
 		mani_voice.cpp \
@@ -62,17 +63,23 @@ HL2BIN_DIR=../srcds_1/bin
 
 # compiler options (gcc 3.4.1 or above is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
-CPLUS=/usr/bin/g++
-CLINK=/usr/bin/gcc
-CPP_LIB=/usr/lib/gcc/i386-redhat-linux/3.4.3/libstdc++.a \
-	/usr/lib/gcc/i386-redhat-linux/3.4.3/libgcc_eh.a 
+CPLUS=/usr/bin/g++-3.4
+CLINK=/usr/bin/gcc-3.4
+CPP_LIB=/usr/lib/gcc/x86_64-linux-gnu/3.4.6/32/libstdc++.a \
+	/usr/lib/gcc/x86_64-linux-gnu/3.4.6/32/libgcc_eh.a
+
+#CPLUS=/usr/bin/g++
+#CLINK=/usr/bin/gcc
+#CPP_LIB=/usr/lib/gcc/i386-redhat-linux/3.4.3/libstdc++.a \
+#	/usr/lib/gcc/i386-redhat-linux/3.4.3/libgcc_eh.a 
 
 # put any compiler flags you want passed here
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
 #LDFLAGS=-lm -ldl -lpthread tier0_i486.so vstdlib_i486.so
-LDFLAGS=-lm -ldl $(STRIP_SYM) tier0_i486.so vstdlib_i486.so
+LDFLAGS=-m32 -lm -ldl $(STRIP_SYM) tier0_i486.so vstdlib_i486.so
+#LDFLAGS=-m32 -lm -ldl tier0_i486.so vstdlib_i486.so
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -99,7 +106,7 @@ ARCH=i486
 ARCH_CFLAGS=-march=pentium -mmmx -O3
 
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
-BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
+BASE_CFLAGS=-m32 -march=i486 -fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf \
 	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp $(SOURCE_MM) 
 SHLIBEXT=so

@@ -56,6 +56,7 @@
 #include "mani_gametype.h"
 #include "mani_weapon.h"
 #include "mani_vfuncs.h"
+#include "mani_vars.h"
 #include "cbaseentity.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -96,6 +97,30 @@ static void WeaponAddCash(edict_t *pEntity, int cost);
 void	FreeWeapons(void)
 {
 	FreeList((void **) &weapon_list, &weapon_list_size);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Load weapons information, this must be done before the call to load action models
+//---------------------------------------------------------------------------------
+void	SetWeaponCost(const char *weapon_name, int cost)
+{
+	for (int i = 0; i != 18; i++)
+	{
+		if (strcmp(primary_weapon[i].name, weapon_name) == 0)
+		{
+			primary_weapon[i].cost = cost;
+			return;
+		}
+	}
+
+	for (int i = 0; i != 6; i++)
+	{
+		if (strcmp(secondary_weapon[i].name, weapon_name) == 0)
+		{
+			secondary_weapon[i].cost = cost;
+			return;
+		}
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -1641,10 +1666,10 @@ PLUGIN_RESULT	ProcessMaUnRestrictAll
 static
 void WeaponAddCash(edict_t *pEntity, int cost)
 {
-	int cash = Prop_GetAccount(pEntity);
+	int cash = Prop_GetVal(pEntity, MANI_PROP_ACCOUNT,0);
 	cash += cost;
 	if (cash > 16000) cash = 16000;
-	Prop_SetAccount(pEntity, cash);
+	Prop_SetVal(pEntity, MANI_PROP_ACCOUNT, cash);
 }
 
 

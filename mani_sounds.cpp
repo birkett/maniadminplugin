@@ -239,12 +239,12 @@ PLUGIN_RESULT	ProcessMaPlaySound
 	}
 
 	player.entity = NULL;
+	player.index = index;
 
 	if (!svr_command)
 	{
 		// Check if player is admin
 
-		player.index = index;
 		if (!FindPlayerByIndex(&player))
 		{
 			return PLUGIN_STOP;

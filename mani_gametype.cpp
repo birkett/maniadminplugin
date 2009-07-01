@@ -44,12 +44,14 @@
 #include "mani_convar.h"
 #include "mani_memory.h"
 #include "mani_player.h"
-#include "mani_immunity_flags.h"
-#include "mani_admin.h"
 #include "mani_skins.h"
+#include "mani_admin.h"
+#include "mani_admin_flags.h"
 #include "mani_output.h"
 #include "mani_gametype.h"
 #include "mani_vfuncs.h"
+#include "mani_vars.h"
+#include "mani_weapon.h"
 #include "mani_file.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
@@ -60,20 +62,10 @@ extern	IServerGameDLL	*serverdll;
 
 extern	CGlobalVars *gpGlobals;
 
-static int	UTIL_GetVarValue(CBaseEntity *pCBE, const char *var_id);
-static int	UTIL_GetPropertyInt(char *ClassName, char *Property, edict_t *pEntity);
-static bool UTIL_SetPropertyInt(char *ClassName, char *Property, edict_t *pEntity, int NewValue);
-static int	UTIL_FindPropOffset(const char *CombinedProp);
-static bool	UTIL_SplitCombinedProp(const char *source, char *part1, char *part2);
-
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
 	return(Q_strcmp(sz1, sz2) == 0);
 }
-
-//class ManiGameType
-//class ManiGameType
-//{
 
 ManiGameType::ManiGameType()
 {
@@ -95,6 +87,26 @@ ManiGameType::ManiGameType()
 ManiGameType::~ManiGameType()
 {
 	// Cleanup
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: GameFrame check if invalid gametypes.txt file
+//---------------------------------------------------------------------------------
+void ManiGameType::GameFrame(void)
+{
+	if (!show_out_of_date) return;
+
+	time_t	current_time;
+
+	time(&current_time);
+	if (current_time > this->next_time_check)
+	{
+		SayToAll(true, "MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!"); 
+		SayToAll(true, "Please download http://www.mani-admin-plugin.com/mani_admin_plugin/gametypes/gametypes.txt");
+		Msg("MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!\n"); 
+		Msg("Please download http://www.mani-admin-plugin.com/mani_admin_plugin/gametypes/gametypes.txt\n");
+		next_time_check = current_time + 30;
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -143,6 +155,14 @@ void ManiGameType::Init(void)
 		Msg("Failed to load gametypes.txt\n");
 		kv_ptr->deleteThis();
 		return;
+	}
+
+	this->show_out_of_date = false;
+	int gametypes_version = kv_ptr->GetInt("version", -1);
+	if (gametypes_version < gametypes_min_version)
+	{
+		this->show_out_of_date = true;
+		next_time_check = 0;
 	}
 
 	KeyValues *base_key_ptr;
@@ -226,6 +246,7 @@ void ManiGameType::Init(void)
 	death_beam_allowed = base_key_ptr->GetInt("death_beam_allowed", 1);
 	browse_allowed = base_key_ptr->GetInt("browse_allowed", 1);
 	debug_log = base_key_ptr->GetInt("debug_log", 0);
+	Q_strcpy(team_manager, base_key_ptr->GetString("team_manager", "sdk_team_"));
 
 	KeyValues *temp_ptr;
 
@@ -304,6 +325,16 @@ void ManiGameType::Init(void)
 		this->GetVFuncs(temp_ptr);
 	}
 
+	if (this->IsGameType(MANI_GAME_CSS))
+	{
+		// Handle weapon costs
+		temp_ptr = base_key_ptr->FindKey("weapons", false);
+		if (temp_ptr)
+		{
+			this->GetWeaponDetails(temp_ptr);
+		}
+	}
+
 	// Handle teams
 	temp_ptr = base_key_ptr->FindKey("teams", false);
 	if (temp_ptr)
@@ -371,23 +402,56 @@ void ManiGameType::Init(void)
 //---------------------------------------------------------------------------------
 // Purpose: Get Property offsets
 //---------------------------------------------------------------------------------
+#define GETPROPTYPE(_in_string, _prop_index) \
+	prop_ptr = kv_ptr->GetString(_in_string, NULL); \
+	if (prop_ptr) \
+	{ \
+		Q_strcpy(prop_index[_prop_index].name, prop_ptr); \
+		prop_index[_prop_index].offset = UTIL_FindPropOffset(prop_ptr, type, true); \
+		prop_index[_prop_index].type = type; \
+	} \
+	else \
+	{ \
+		Q_strcpy(prop_index[_prop_index].name, _in_string); \
+		prop_index[_prop_index].type = -1; \
+		prop_index[_prop_index].offset = -1; \
+	}
+
 void	ManiGameType::GetProps(KeyValues *kv_ptr)
 {
 
 	const char	*prop_ptr;
+	int	type = 0;
 
-	if ((prop_ptr = kv_ptr->GetString("health", NULL)) != NULL) prop_index[MANI_PROP_HEALTH] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("armor", NULL)) != NULL) prop_index[MANI_PROP_ARMOR] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("render_mode", NULL)) != NULL) prop_index[MANI_PROP_RENDER_MODE] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("render_fx", NULL)) != NULL) prop_index[MANI_PROP_RENDER_FX] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("colour", NULL)) != NULL) prop_index[MANI_PROP_COLOUR] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("account", NULL)) != NULL) prop_index[MANI_PROP_ACCOUNT] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("move_type", NULL)) != NULL) prop_index[MANI_PROP_MOVE_TYPE] = UTIL_FindPropOffset(prop_ptr);
-//	if ((prop_ptr = kv_ptr->GetString("deaths", NULL)) != NULL) prop_index[MANI_PROP_DEATHS] = UTIL_FindPropOffset(prop_ptr);
-//	if ((prop_ptr = kv_ptr->GetString("score", NULL)) != NULL) prop_index[MANI_PROP_SCORE] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("model_index", NULL)) != NULL) prop_index[MANI_PROP_MODEL_INDEX] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("vec_origin", NULL)) != NULL) prop_index[MANI_PROP_VEC_ORIGIN] = UTIL_FindPropOffset(prop_ptr);
-	if ((prop_ptr = kv_ptr->GetString("ang_rotation", NULL)) != NULL) prop_index[MANI_PROP_ANG_ROTATION] = UTIL_FindPropOffset(prop_ptr);
+	GETPROPTYPE("health", MANI_PROP_HEALTH)
+	GETPROPTYPE("armor", MANI_PROP_ARMOR)
+	GETPROPTYPE("render_mode", MANI_PROP_RENDER_MODE)
+	GETPROPTYPE("render_fx", MANI_PROP_RENDER_FX)
+	GETPROPTYPE("colour", MANI_PROP_COLOUR)
+	prop_index[MANI_PROP_COLOUR].type = PROP_COLOUR;
+	GETPROPTYPE("account", MANI_PROP_ACCOUNT)
+	GETPROPTYPE("move_type", MANI_PROP_MOVE_TYPE)
+	GETPROPTYPE("model_index", MANI_PROP_MODEL_INDEX)
+	GETPROPTYPE("vec_origin", MANI_PROP_VEC_ORIGIN)
+	prop_index[MANI_PROP_VEC_ORIGIN].type = PROP_VECTOR;
+	GETPROPTYPE("ang_rotation", MANI_PROP_ANG_ROTATION)
+	prop_index[MANI_PROP_ANG_ROTATION].type = PROP_QANGLE;
+
+	prop_index[MANI_PROP_TEAM_NUMBER].offset = UTIL_FindPropOffset("CTeam.m_iTeamNum", type, true);
+	prop_index[MANI_PROP_TEAM_NUMBER].type = type;
+	Q_strcpy(prop_index[MANI_PROP_TEAM_NUMBER].name, "CTeam.m_iTeamNum");
+
+	prop_index[MANI_PROP_TEAM_SCORE].offset = UTIL_FindPropOffset("CTeam.m_iScore", type, true);
+	prop_index[MANI_PROP_TEAM_SCORE].type = type;
+	Q_strcpy(prop_index[MANI_PROP_TEAM_SCORE].name, "CTeam.m_iScore");
+	prop_index[MANI_PROP_TEAM_NAME].offset = UTIL_FindPropOffset("CTeam.m_szTeamname", type, true);
+	prop_index[MANI_PROP_TEAM_NAME].type = type;
+	Q_strcpy(prop_index[MANI_PROP_TEAM_NAME].name, "CTeam.m_szTeamname");
+
+/*	for (int i = 0; i < MANI_PROP_SIZE; i++)
+	{
+		Msg("Prop [%s] offset [%i] type [%i]\n", prop_index[i].name, prop_index[i].offset, prop_index[i].type);
+	}*/
 
 	return;
 }
@@ -410,8 +474,6 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 	vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE] = kv_ptr->GetInt("get_primary_ammo_type", 0x10d);
 	vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE] = kv_ptr->GetInt("get_secondary_ammo_type", 0x10e);
 	vfunc_index[MANI_VFUNC_WEAPON_GET_NAME] = kv_ptr->GetInt("weapon_get_name", 0x107);
-//	vfunc_index[MANI_VFUNC_GET_TEAM_NUMBER] = kv_ptr->GetInt("get_team_number", 0x9c);
-//	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = kv_ptr->GetInt("get_team_name", 0x9d);
 	vfunc_index[MANI_VFUNC_GET_VELOCITY] = kv_ptr->GetInt("get_velocity", 0x75);
 	vfunc_index[MANI_VFUNC_WEAPON_SWITCH] = kv_ptr->GetInt("weapon_switch", 0xcd);
 	vfunc_index[MANI_VFUNC_USER_CMDS] = kv_ptr->GetInt("user_cmds", -1); // 0x322 for windows
@@ -422,6 +484,45 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 	return;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Get weapon costs
+//---------------------------------------------------------------------------------
+#define GETWEAPONCOST(_name, _cost) \
+	weapon_cost = kv_ptr->GetInt(#_name, _cost); \
+	SetWeaponCost(#_name, weapon_cost) 
+
+void	ManiGameType::GetWeaponDetails(KeyValues *kv_ptr)
+{
+	int weapon_cost;
+
+	GETWEAPONCOST(awp, 4750);
+	GETWEAPONCOST(g3sg1, 5000);
+	GETWEAPONCOST(sg550, 4200);
+	GETWEAPONCOST(galil, 2000);
+	GETWEAPONCOST(ak47, 2500);
+	GETWEAPONCOST(scout, 2750);
+	GETWEAPONCOST(sg552, 3500);
+	GETWEAPONCOST(famas, 2250);
+	GETWEAPONCOST(m4a1, 3100);
+	GETWEAPONCOST(aug, 3500);
+	GETWEAPONCOST(m3, 1700);
+	GETWEAPONCOST(xm1014, 3000);
+	GETWEAPONCOST(mac10, 1400);
+	GETWEAPONCOST(tmp, 1250);
+	GETWEAPONCOST(mp5navy, 1500);
+	GETWEAPONCOST(ump45, 1700);
+	GETWEAPONCOST(p90, 2350);
+	GETWEAPONCOST(m249, 5750);
+
+	GETWEAPONCOST(glock, 400);
+	GETWEAPONCOST(usp, 500);
+	GETWEAPONCOST(p228, 600);
+	GETWEAPONCOST(deagle, 650);
+	GETWEAPONCOST(elite, 800);
+	GETWEAPONCOST(fiveseven, 750);
+
+	return;
+}
 //---------------------------------------------------------------------------------
 // Purpose: Return the game type string
 //---------------------------------------------------------------------------------
@@ -452,35 +553,11 @@ int		ManiGameType::GetVFuncIndex(int	index)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Returns the index of a variable associated with an entity
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetPtrIndex(CBaseEntity *pCBE, int index)
-{
-	if (var_index[index].index == -1)
-	{
-		// Search for var if first time
-		var_index[index].index = UTIL_GetVarValue(pCBE, var_index[index].name);
-		if (var_index[index].index == -2)
-		{
-			return -1;
-		}
-	}
-	else if (var_index[index].index == -2)
-	{
-		// It was never found on the first go.
-		return -1;
-	}
-
-	// return true ptr
-	return var_index[index].index;
-}
-
-//---------------------------------------------------------------------------------
 // Purpose: Returns true if passed in string = game type string
 //---------------------------------------------------------------------------------
 int		ManiGameType::GetPropIndex(int	index)
 {
-	return (prop_index[index]);
+	return (prop_index[index].offset);
 }
 
 //---------------------------------------------------------------------------------
@@ -488,20 +565,13 @@ int		ManiGameType::GetPropIndex(int	index)
 //---------------------------------------------------------------------------------
 bool	ManiGameType::CanUseProp(int	index)
 {
-	if (prop_index[index] == -1)
+	if (prop_index[index].offset == -1)
 	{
 		return false;
 	}
 
 	return true;
 }
-//---------------------------------------------------------------------------------
-// Purpose: Returns true if passed in integer = game type we know (faster than string compare)
-//---------------------------------------------------------------------------------
-//bool	ManiGameType::IsGameType(int game_index)
-//{
-//	return ((game_index == game_type_index) ? true:false);
-//}
 
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if advanced effects allowed via temp ents
@@ -897,6 +967,7 @@ void	ManiGameType::DefaultValues(void)
 	death_beam_allowed = 1;
 	browse_allowed = 1;
 	debug_log = 0;
+	Q_strcpy(team_manager,"cs_team");
 
 	// Default CSS offsets
 	vfunc_index[MANI_VFUNC_EYE_ANGLES] = 0x6d;
@@ -920,7 +991,8 @@ void	ManiGameType::DefaultValues(void)
 
 	for (int i = 0; i < 200; i++)
 	{
-		prop_index[i] = -1;
+		prop_index[i].type = -1;
+		prop_index[i].offset = -1;
 	}
 
 	return ;
@@ -991,316 +1063,6 @@ CON_COMMAND(ma_forcegametype, "Forces the game type detection to run")
 	gpManiGameType->Init();
 	LoadSkins();
 	return;
-}
-
-//********************************************************
-// Do all the non virtual stuff for setting network vars
-
-CON_COMMAND(ma_getprop, "Debug Tool")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-
-	if (engine->Cmd_Argc() == 1)
-	{
-		ServerClass *sc = serverdll->GetAllServerClasses();
-		while (sc)
-		{
-			Msg("%s\n", sc->GetName());
-			sc = sc->m_pNext;
-		}	
-	}
-	else if (engine->Cmd_Argc() == 2)
-	{
-		ServerClass *sc = serverdll->GetAllServerClasses();
-		while (sc)
-		{
-			if (FStrEq(sc->GetName(), engine->Cmd_Argv(1)))
-			{
-				int NumProps = sc->m_pTable->GetNumProps();
-				for (int i=0; i<NumProps; i++)
-				{
-					Msg("%s\n", sc->m_pTable->GetProp(i)->GetName());
-				}
-
-				return ;
-			}
-			sc = sc->m_pNext;
-		}
-	}
-	else if (engine->Cmd_Argc() == 3)
-	{
-		ServerClass *sc = serverdll->GetAllServerClasses();
-		while (sc)
-		{
-			int NumProps = sc->m_pTable->GetNumProps();
-			for (int i=0; i<NumProps; i++)
-			{
-				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), engine->Cmd_Argv(1)))
-				{
-					Msg("%s.%s\n", sc->GetName(), sc->m_pTable->GetProp(i)->GetName());
-				}
-			}
-
-			sc = sc->m_pNext;
-		}
-	}
-}
-
-static int UTIL_GetPropertyInt(char *ClassName, char *Property, edict_t *pEntity)
-{
-/*	int offset = UTIL_FindOffset(ClassName, Property);
-	if (offset)
-	{
-		int *iptr = (int *)(pEntity->GetUnknown() + offset);
-		return *iptr;
-	}
-	else
-	{
-		return 0;
-	}*/
-}
-
-static bool UTIL_SetPropertyInt(char *ClassName, char *Property, edict_t *pEntity, int NewValue)
-{
-
-/*	int offset = UTIL_FindOffset(ClassName, Property);
-	if (offset)
-	{
-		int *iptr = (int *)(pEntity->GetUnknown() + offset);
-		*iptr = NewValue;
-		pEntity->m_fStateFlags |= FL_EDICT_CHANGED;
-		return true;
-	}   
-	else
-	{
-		return false;
-	}*/
-}
-
-static int UTIL_FindPropOffset(const char *CombinedProp)
-{
-	char	ClassName[256]="";
-	char	Property[256]="";
-
-	if (!UTIL_SplitCombinedProp(CombinedProp, ClassName, Property))
-	{
-		return -1;
-	}
-
-	ServerClass *sc = serverdll->GetAllServerClasses();
-	while (sc)
-	{
-		if (FStrEq(sc->GetName(), ClassName))
-		{
-			int NumProps = sc->m_pTable->GetNumProps();
-			for (int i=0; i<NumProps; i++)
-			{
-				if (stricmp(sc->m_pTable->GetProp(i)->GetName(), Property) == 0)
-				{
-					int offset = sc->m_pTable->GetProp(i)->GetOffset() / 4;
-//					Msg("Found %s with offset of %i\n", CombinedProp, offset); 
-					return offset;
-				}
-			}
-			return -1;
-		}
-		sc = sc->m_pNext;
-	}
-
-	return -1;
-}
-
-static bool	UTIL_SplitCombinedProp(const char *source, char *part1, char *part2)
-{
-	int length = strlen(source);
-
-	bool found_split = false;
-	int j = 0;
-
-	for (int i = 0; i < length; i++)
-	{
-		if (found_split)
-		{
-			part2[j] = source[i];
-			j++;
-		}
-		else
-		{
-			part1[i] = source[i];
-		}
-
-		if (!found_split)
-		{
-			if (source[i] == '.')
-			{
-				part1[i] = '\0';
-				found_split = true;
-			}
-		}
-	}
-
-	if (!found_split) return false;
-
-	return true;
-}
-
-// Search datamap for value
-static
-int	UTIL_GetVarValue(CBaseEntity *pCBE, const char *var_id)
-{
-	datamap_t *dmap = CBaseEntity_GetDataDescMap(pCBE);
-	if (dmap)
-	{
-		while (dmap)
-		{
-			for ( int i = 0; i < dmap->dataNumFields; i++ )
-			{
-				if (dmap->dataDesc[i].fieldName &&
-					strcmp(var_id,dmap->dataDesc[i].fieldName) == 0)
-				{
-					return dmap->dataDesc[i].fieldOffset[0] / 4;
-				}
-			}
-
-			dmap = dmap->baseMap;
-		}
-	}
-
-	return -1;
-}
-
-static	
-void ShowDMap(datamap_t *dmap);
-
-static FILE *fh;
-
-CON_COMMAND(ma_getmap, "Debug Tool")
-{
-	player_t player;
-
-	player.entity = NULL;
-
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-
-	if (engine->Cmd_Argc() < 2)
-	{
-		Msg("Need more args :)\n");
-		return;
-	}
-
-	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, engine->Cmd_Argv(1), IMMUNITY_DONT_CARE))
-	{
-		return;
-	}
-
-	player_t *target_ptr = &(target_player_list[0]);
-
-	CBaseEntity *pPlayer = target_ptr->entity->GetUnknown()->GetBaseEntity();
-
-	Msg("Attempting to get map for player [%s]\n",target_ptr->name);
-
-	datamap_t *dmap = CBaseEntity_GetDataDescMap(pPlayer);
-	if (dmap)
-	{
-		char base_filename[512];
-		Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/clipboard.txt", mani_path.GetString());
-
-		fh = gpManiFile->Open(base_filename, "wb");
-		if (fh == NULL)
-		{
-			Msg("Failed to open file %s\n", base_filename);
-			return;
-		}
-
-		ShowDMap(dmap);
-		gpManiFile->Close(fh);
-	}
-	else
-	{
-		Msg("did not obtain datamap\n");
-	}
-}
-
-static	
-void ShowDMap(datamap_t *dmap)
-{
-	static int indent = 0;
-	char indents[256];
-
-	Q_strcpy(indents,"");
-
-	for (int i = 0; i < indent; i++)
-	{
-		Q_strcat(indents,"\t");
-	}
-
-	while (dmap)
-	{
-		char	classname[128];
-
-		int headerbytes = Q_snprintf(classname, sizeof(classname), "%s%s\n", indents, dmap->dataClassName);
-		gpManiFile->Write(classname, headerbytes, fh);
-		Msg("%s", classname);
-
-		for ( int i = 0; i < dmap->dataNumFields; i++ )
-		{
-			char	field_type[128];
-
-			switch(dmap->dataDesc[i].fieldType)
-			{
-			case FIELD_VOID: Q_snprintf(field_type, sizeof(field_type), "VOID"); break;
-			case FIELD_FLOAT: Q_snprintf(field_type, sizeof(field_type), "FLOAT"); break;
-			case FIELD_STRING: Q_snprintf(field_type, sizeof(field_type), "STRING"); break;
-			case FIELD_VECTOR: Q_snprintf(field_type, sizeof(field_type), "VECTOR"); break;
-			case FIELD_QUATERNION: Q_snprintf(field_type, sizeof(field_type), "QUATERNION"); break;
-			case FIELD_INTEGER: Q_snprintf(field_type, sizeof(field_type), "INTEGER"); break;
-			case FIELD_BOOLEAN: Q_snprintf(field_type, sizeof(field_type), "BOOLEAN"); break;
-			case FIELD_SHORT: Q_snprintf(field_type, sizeof(field_type), "SHORT"); break;
-			case FIELD_CHARACTER: Q_snprintf(field_type, sizeof(field_type), "CHARACTER"); break;
-			case FIELD_COLOR32: Q_snprintf(field_type, sizeof(field_type), "COLOR32"); break;
-			case FIELD_EMBEDDED: Q_snprintf(field_type, sizeof(field_type), "EMBEDDED"); break;
-			case FIELD_CUSTOM: Q_snprintf(field_type, sizeof(field_type), "CUSTOM"); break;
-			case FIELD_CLASSPTR: Q_snprintf(field_type, sizeof(field_type), "CLASSPTR"); break;
-			case FIELD_EHANDLE: Q_snprintf(field_type, sizeof(field_type), "EHANDLE"); break;
-			case FIELD_EDICT: Q_snprintf(field_type, sizeof(field_type), "EDICT"); break;
-			case FIELD_POSITION_VECTOR: Q_snprintf(field_type, sizeof(field_type), "POSITION_VECTOR"); break;
-			case FIELD_TIME: Q_snprintf(field_type, sizeof(field_type), "TIME"); break;
-			case FIELD_TICK: Q_snprintf(field_type, sizeof(field_type), "TICK"); break;
-			case FIELD_MODELNAME: Q_snprintf(field_type, sizeof(field_type), "MODELNAME"); break;
-			case FIELD_SOUNDNAME: Q_snprintf(field_type, sizeof(field_type), "SOUNDNAME"); break;
-			case FIELD_INPUT: Q_snprintf(field_type, sizeof(field_type), "INPUT"); break;
-			case FIELD_FUNCTION: Q_snprintf(field_type, sizeof(field_type), "FUNCTION"); break;
-			case FIELD_VMATRIX: Q_snprintf(field_type, sizeof(field_type), "VMATRIX"); break;
-			case FIELD_VMATRIX_WORLDSPACE: Q_snprintf(field_type, sizeof(field_type), "VMATRIX_WORLDSPACE"); break;
-			case FIELD_MATRIX3X4_WORLDSPACE: Q_snprintf(field_type, sizeof(field_type), "MATRIX3X4_WORLDSPACE"); break;
-			case FIELD_INTERVAL: Q_snprintf(field_type, sizeof(field_type), "INTERVAL"); break;
-			case FIELD_MODELINDEX: Q_snprintf(field_type, sizeof(field_type), "MODELINDEX"); break;
-			case FIELD_MATERIALINDEX: Q_snprintf(field_type, sizeof(field_type), "MATERIALINDEX"); break;
-			default : Q_snprintf(field_type, sizeof(field_type), "UNKNOWN TYPE"); break;
-			}
-			char	address1[32] = "";
-			char	address2[32] = "";
-			char	outstring[1024] = "";
-
-			Q_snprintf(address1,sizeof(address1), " [%p]", dmap->dataDesc[i].inputFunc);
-			Q_snprintf(address2,sizeof(address2), " [%p]", dmap->dataDesc[i].td);
-
-			int bytes = Q_snprintf(outstring, sizeof(outstring), "%s - %s %s (%s)%s (off1: %d  off2: %d)%s\n", indents, dmap->dataDesc[i].fieldName, field_type, dmap->dataDesc[i].externalName, (!dmap->dataDesc[i].inputFunc) ? "":address1, dmap->dataDesc[i].fieldOffset[0], dmap->dataDesc[i].fieldOffset[1], (!dmap->dataDesc[i].td) ? "":address2 );
-			gpManiFile->Write(outstring, bytes, fh);
-			Msg("%s", outstring);
-			if (dmap->dataDesc[i].td)
-			{
-				datamap_t *dmap2 = dmap->dataDesc[i].td;
-				indent ++;
-				ShowDMap(dmap2);
-				indent --;
-			}
-		}
-		dmap = dmap->baseMap; 
-	}
 }
 
 

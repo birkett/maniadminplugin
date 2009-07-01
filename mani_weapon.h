@@ -50,6 +50,7 @@ extern	weapon_type_t	*weapon_list;
 extern	int				weapon_list_size;
 
 extern	void	FreeWeapons(void);
+extern  void	SetWeaponCost(const char *weapon_name, int cost);
 extern	void	LoadWeapons(const char *pMapName);
 extern	PLUGIN_RESULT ProcessClientBuy(const char *pcmd, const char *pcmd2, const int pargc, player_t *player_ptr);
 extern	void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_offset );
