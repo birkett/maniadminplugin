@@ -69,6 +69,9 @@ public:
 	void	HookProcessUsercmds(CBasePlayer *pPlayer);
 	void	ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused);
 	void	UnHookProcessUsercmds(CBasePlayer *pPlayer);
+	void	HookWeapon_CanUse(CBasePlayer *pPlayer);
+	bool	Weapon_CanUse(CBaseCombatWeapon *pWeapon);
+	void	UnHookWeapon_CanUse(CBasePlayer *pPlayer);
 };
 
 extern ManiSMMHooks g_ManiSMMHooks;

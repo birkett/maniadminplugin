@@ -105,7 +105,6 @@ ConVar mani_adminfreeze_anonymous( "mani_adminfreeze_anonymous", "0", 0, "This d
 ConVar mani_admindrug_anonymous( "mani_admindrug_anonymous", "0", 0, "This defines whether drug admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminburn_anonymous( "mani_adminburn_anonymous", "0", 0, "This defines whether burn admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminteleport_anonymous( "mani_adminteleport_anonymous", "0", 0, "This defines whether teleport admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
-ConVar mani_admingimp_anonymous( "mani_admingimp_anonymous", "0", 0, "This defines whether gimp admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminvote_anonymous( "mani_adminvote_anonymous", "0", 0, "This defines whether admins who start votes names are shown to the public",true, 0, true, 1 );
 ConVar mani_adminnoclip_anonymous( "mani_adminnoclip_anonymous", "0", 0, "This defines whether noclip admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminmute_anonymous( "mani_adminmute_anonymous", "0", 0, "This defines whether mute admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
@@ -177,8 +176,6 @@ ConVar mani_use_amx_style_menu ("mani_use_amx_style_menu", "1", 0, "If set to 1 
 ConVar mani_autobalance_teams ("mani_autobalance_teams", "0", 0, "If set to 1 autobalancing is performed at the end of each round", true, 0, true, 1); 
 ConVar mani_autobalance_mode ("mani_autobalance_mode", "1", 0, "0 = Players balanced regardless if dead or alive, 1 = dead players swapped first followed by alive players, 2 = only dead players can be swapped", true, 0, true, 2); 
 ConVar mani_thetime_timezone ("mani_thetime_timezone", " ", 0, "The text set here is appended to the time when displayed"); 
-ConVar mani_gimp_transform_message ("mani_gimp_transform_message", "Everyone point and laugh at the Gimp!", 0, "The text set here is the phrase that will be used when gimping a player"); 
-ConVar mani_gimp_untransform_message ("mani_gimp_untransform_message", "The gods are merciful, The Gimp is back to normal", 0, "The text set here is the phrase that will be used when un-gimping a player"); 
 
 ConVar mani_voting( "mani_voting", "1", 0, "This defines whether the voting system is on or off",true, 0, true, 1 );	
 ConVar mani_vote_allow_end_of_map_vote ("mani_vote_allow_end_of_map_vote", "0", 0, "Defines whether a random map vote will be displayed towards the end of the map", true, 0, true, 1); 
@@ -246,68 +243,8 @@ ConVar mani_player_name_change_ban_time ("mani_player_name_change_ban_time", "0"
 
 ConVar mani_allow_chat_to_admin ("mani_allow_chat_to_admin", "1", 0, "1 = allows users to chat to admin", true, 0, true, 1); 
 
-// Monster kill sounds
-ConVar mani_quake_sounds ("mani_quake_sounds", "0", 0, "Turn on quake sounds like headshot, monster kill etc 1 = on, 0 = off", true, 0, true, 1); 
-ConVar mani_quake_kill_streak_mode ("mani_quake_kill_streak_mode", "0", 0, "Reset kill streaks per round 1 = per round/death, 0 = per death", true, 0, true, 1); 
 
-ConVar mani_quake_humiliation_mode ("mani_quake_humiliation_mode", "1", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_humiliation_visual_mode ("mani_quake_humiliation_visual_mode", "1", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_humiliation_weapon ("mani_quake_humiliation_weapon", "knife", 0, "Weapon that triggers the humiliation sound");
-
-ConVar mani_quake_firstblood_mode ("mani_quake_firstblood_mode", "1", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_firstblood_visual_mode ("mani_quake_firstblood_visual_mode", "1", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_firstblood_reset_per_round ("mani_quake_firstblood_reset_per_round", "1", 0, "CSS Only, 1 = reset per round, 0 = per map", true, 0, true, 1); 
-
-ConVar mani_quake_headshot_mode ("mani_quake_headshot_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_headshot_visual_mode ("mani_quake_headshot_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-
-ConVar mani_quake_prepare_to_fight_mode ("mani_quake_prepare_to_fight_mode", "0", 0, "0 = off, 1 = on", true, 0, true, 1); 
-ConVar mani_quake_prepare_to_fight_visual_mode ("mani_quake_prepare_to_fight_visual_mode", "0", 0, "0 = off, 1 = on", true, 0, true, 1); 
-
-ConVar mani_quake_multi_kill_mode ("mani_quake_multi_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_multi_kill_visual_mode ("mani_quake_multi_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-
-ConVar mani_quake_monster_kill_mode ("mani_quake_monster_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_monster_kill_visual_mode ("mani_quake_monster_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_monster_kill_trigger_count ("mani_quake_monster_kill_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_ultra_kill_mode ("mani_quake_ultra_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_ultra_kill_visual_mode ("mani_quake_ultra_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_ultra_kill_trigger_count ("mani_quake_ultra_kill_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_god_like_mode ("mani_quake_god_like_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_god_like_visual_mode ("mani_quake_god_like_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_god_like_trigger_count ("mani_quake_god_like_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_unstoppable_mode ("mani_quake_unstoppable_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_unstoppable_visual_mode ("mani_quake_unstoppable_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_unstoppable_trigger_count ("mani_quake_unstoppable_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_rampage_mode ("mani_quake_rampage_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_rampage_visual_mode ("mani_quake_rampage_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_rampage_trigger_count ("mani_quake_rampage_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_ludicrous_kill_mode ("mani_quake_ludicrous_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_ludicrous_kill_visual_mode ("mani_quake_ludicrous_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_ludicrous_kill_trigger_count ("mani_quake_ludicrous_kill_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_killing_spree_mode ("mani_quake_killing_spree_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_killing_spree_visual_mode ("mani_quake_killing_spree_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_killing_spree_trigger_count ("mani_quake_killing_spree_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_holy_shit_mode ("mani_quake_holy_shit_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_holy_shit_visual_mode ("mani_quake_holy_shit_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_holy_shit_trigger_count ("mani_quake_holy_shit_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_dominating_mode ("mani_quake_dominating_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_dominating_visual_mode ("mani_quake_dominating_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_dominating_trigger_count ("mani_quake_dominating_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_quake_wicked_sick_mode ("mani_quake_wicked_sick_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
-ConVar mani_quake_wicked_sick_visual_mode ("mani_quake_wicked_sick_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
-ConVar mani_quake_wicked_sick_trigger_count ("mani_quake_wicked_sick_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
-
-ConVar mani_filter_words_mode ("mani_filter_words_mode", "2", 0, "0 = off, 1 = show warning to player, 2 = show filtered text", true, 0, true, 2); 
+ConVar mani_filter_words_mode ("mani_filter_words_mode", "0", 0, "0 = off, 1 = show warning to player and block chat", true, 0, true, 1); 
 ConVar mani_filter_words_warning ("mani_filter_words_warning", "SWEARING IS NOT ALLOWED ON THIS SERVER !!!", 0, "Phrase to say to player if warning mode is enabled"); 
 
 ConVar mani_adjust_time ("mani_adjust_time", "0", 0, "Adjust time shown in minutes", true, -1440, true, 1440); 

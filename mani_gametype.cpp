@@ -481,6 +481,8 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 	vfunc_index[MANI_VFUNC_GIVE_ITEM] = kv_ptr->GetInt("give_item", -1); // 0x133
 	vfunc_index[MANI_VFUNC_MAP] = kv_ptr->GetInt("map_desc", -1); // 0x0d
 	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = kv_ptr->GetInt("commit_suicide", -1); // 0x0d
+	vfunc_index[MANI_VFUNC_SET_OBSERVER_TARGET] = kv_ptr->GetInt("set_observer_target", -1); // 0x0d
+	vfunc_index[MANI_VFUNC_WEAPON_CANUSE] = kv_ptr->GetInt("weapon_canuse", -1); // 0x0d
 
 	return;
 }

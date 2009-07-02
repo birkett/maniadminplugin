@@ -111,7 +111,6 @@ public:
 	PLUGIN_RESULT	ProcessMaGravity(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaRenderMode(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaRenderFX(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaGimp(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaTimeBomb(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaFireBomb(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaFreezeBomb(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
@@ -215,7 +214,6 @@ MENUALL_DEC(FreezePlayer);
 MENUALL_DEC(BurnPlayer);
 MENUALL_DEC(DrugPlayer);
 MENUALL_DEC(NoClipPlayer);
-MENUALL_DEC(GimpPlayer);
 MENUALL_DEC(TimeBombPlayer);
 MENUALL_DEC(FireBombPlayer);
 MENUALL_DEC(FreezeBombPlayer);

@@ -965,7 +965,7 @@ bool MenuManager::ChatHooked(player_t *player_ptr)
 		{
 			char temp_string[2048];
 
-			snprintf(temp_string, sizeof(temp_string), "ma_escinput %s\n", gpCmd->Cmd_Args(0));
+			snprintf(temp_string, sizeof(temp_string), "ma_escinput %s", gpCmd->Cmd_Args(0));
 			helpers->ClientCommand(player_ptr->entity, temp_string);
 			m_ptr->hook_chat = false;
 			return true;

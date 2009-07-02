@@ -49,15 +49,15 @@ const int	gametypes_min_version = 1;
 #endif
 
 #ifdef SOURCEMM
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaP SMM, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaP SMM"
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaQ SMM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaQ SMM"
 #else
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaP VSP, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaP VSP"
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaQ VSP, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaQ VSP"
 #endif
 
-#define PLUGIN_VERSION_ID "V1.2BetaP\n"
-#define PLUGIN_VERSION_ID2 "V1.2BetaP"
+#define PLUGIN_VERSION_ID "V1.2BetaQ\n"
+#define PLUGIN_VERSION_ID2 "V1.2BetaQ"
 
 // Define vote types
 enum
@@ -164,11 +164,6 @@ struct	cheat_pinger_t
 struct kill_progress_t
 {
 	long	kills;
-};
-
-struct gimp_t
-{
-	char	phrase[256];
 };
 
 struct name_change_t

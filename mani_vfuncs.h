@@ -55,6 +55,7 @@ extern void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int iC
 
 extern datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr);
 extern void CBasePlayer_CommitSuicide(CBasePlayer *pThisPtr);
+extern void CBasePlayer_SetObserverTarget(CBasePlayer *pThisPtr, CBaseEntity *pTarget);
 
 // Debug functions
 extern void	VFunc_CallCBaseEntity(player_t *player_ptr);

@@ -57,6 +57,7 @@
 #include "mani_netidvalid.h"
 #include "mani_util.h"
 #include "mani_trackuser.h"
+#include "mani_observer_track.h"
 #include "mani_vote.h"
 #include "mani_afk.h"
 #include "mani_ping.h"
@@ -323,6 +324,7 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 
 	gpManiSaveScores->NetworkIDValidated(player_ptr);
 	gpManiAFK->NetworkIDValidated(player_ptr);
+	gpManiObserverTrack->NetworkIDValidated(player_ptr);
 	return ;
 }
 

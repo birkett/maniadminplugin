@@ -86,7 +86,8 @@ quake_sound_t	quake_sound_list[MANI_MAX_QUAKE_SOUNDS]=
 					{"", "prepare", false},
 					{"", "rampage", false},
 					{"", "unstoppable", false},
-					{"", "wickedsick", false}
+					{"", "wickedsick", false},
+					{"", "teamkiller", false}
 				};
 
 
@@ -100,6 +101,71 @@ static	void ShowQuakeSound (player_t *attacker, player_t *victim, int mode, char
 static	void QuakeAutoDownload ( ConVar *var, char const *pOldString );
 
 ConVar mani_quake_auto_download ("mani_quake_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, QuakeAutoDownload); 
+
+// Monster kill sounds
+ConVar mani_quake_sounds ("mani_quake_sounds", "0", 0, "Turn on quake sounds like headshot, monster kill etc 1 = on, 0 = off", true, 0, true, 1); 
+ConVar mani_quake_kill_streak_mode ("mani_quake_kill_streak_mode", "0", 0, "Reset kill streaks per round 1 = per round/death, 0 = per death", true, 0, true, 1); 
+
+ConVar mani_quake_humiliation_mode ("mani_quake_humiliation_mode", "1", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_humiliation_visual_mode ("mani_quake_humiliation_visual_mode", "1", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_humiliation_weapon ("mani_quake_humiliation_weapon", "knife", 0, "Weapon that triggers the humiliation sound");
+ConVar mani_quake_humiliation_weapon2 ("mani_quake_humiliation_weapon2", "", 0, "Second weapon that triggers the humiliation sound");
+
+ConVar mani_quake_firstblood_mode ("mani_quake_firstblood_mode", "1", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_firstblood_visual_mode ("mani_quake_firstblood_visual_mode", "1", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_firstblood_reset_per_round ("mani_quake_firstblood_reset_per_round", "1", 0, "CSS Only, 1 = reset per round, 0 = per map", true, 0, true, 1); 
+
+ConVar mani_quake_headshot_mode ("mani_quake_headshot_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_headshot_visual_mode ("mani_quake_headshot_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+
+ConVar mani_quake_prepare_to_fight_mode ("mani_quake_prepare_to_fight_mode", "0", 0, "0 = off, 1 = on", true, 0, true, 1); 
+ConVar mani_quake_prepare_to_fight_visual_mode ("mani_quake_prepare_to_fight_visual_mode", "0", 0, "0 = off, 1 = on", true, 0, true, 1); 
+
+ConVar mani_quake_multi_kill_mode ("mani_quake_multi_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_multi_kill_visual_mode ("mani_quake_multi_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+
+ConVar mani_quake_monster_kill_mode ("mani_quake_monster_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_monster_kill_visual_mode ("mani_quake_monster_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_monster_kill_trigger_count ("mani_quake_monster_kill_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_ultra_kill_mode ("mani_quake_ultra_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_ultra_kill_visual_mode ("mani_quake_ultra_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_ultra_kill_trigger_count ("mani_quake_ultra_kill_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_god_like_mode ("mani_quake_god_like_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_god_like_visual_mode ("mani_quake_god_like_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_god_like_trigger_count ("mani_quake_god_like_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_unstoppable_mode ("mani_quake_unstoppable_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_unstoppable_visual_mode ("mani_quake_unstoppable_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_unstoppable_trigger_count ("mani_quake_unstoppable_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_rampage_mode ("mani_quake_rampage_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_rampage_visual_mode ("mani_quake_rampage_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_rampage_trigger_count ("mani_quake_rampage_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_ludicrous_kill_mode ("mani_quake_ludicrous_kill_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_ludicrous_kill_visual_mode ("mani_quake_ludicrous_kill_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_ludicrous_kill_trigger_count ("mani_quake_ludicrous_kill_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_killing_spree_mode ("mani_quake_killing_spree_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_killing_spree_visual_mode ("mani_quake_killing_spree_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_killing_spree_trigger_count ("mani_quake_killing_spree_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_holy_shit_mode ("mani_quake_holy_shit_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_holy_shit_visual_mode ("mani_quake_holy_shit_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_holy_shit_trigger_count ("mani_quake_holy_shit_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_dominating_mode ("mani_quake_dominating_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_dominating_visual_mode ("mani_quake_dominating_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_dominating_trigger_count ("mani_quake_dominating_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_wicked_sick_mode ("mani_quake_wicked_sick_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_wicked_sick_visual_mode ("mani_quake_wicked_sick_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
+ConVar mani_quake_wicked_sick_trigger_count ("mani_quake_wicked_sick_trigger_count", "0", 0, "Kills streak required to trigger sound", true, 1, true, 99999); 
+
+ConVar mani_quake_team_killer_mode ("mani_quake_team_killer_mode", "0", 0, "0 = off, 1 = all players hear it, 2 = players involved hear it, 3 = attacker hears it, 4 = victim hears it", true, 0, true, 4); 
+ConVar mani_quake_team_killer_visual_mode ("mani_quake_team_killer_visual_mode", "0", 0, "0 = off, 1 = all players see it, 2 = players involved see it, 3 = attacker sees it, 4 = victim sees it", true, 0, true, 4); 
 
 //---------------------------------------------------------------------------------
 // Purpose: Load and pre-cache the quake style sounds
@@ -297,11 +363,13 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	// Get attacker information
 	if (!FindPlayerByUserID(&attacker)) return;
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (gpManiGameType->IsTeamPlayAllowed())
 	{
-		// CS Source Mode
+		// Team based game
 		if (attacker.team == victim.team)
 		{
+			PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_TEAMKILLER, mani_quake_team_killer_mode.GetInt());
+			ShowQuakeSound(&attacker, &victim, mani_quake_team_killer_mode.GetInt(), "%s", Translate(NULL, 815, "%s%s", attacker.name, victim.name));
 			// On same team so reset their score
 			ResetQuakePlayer (attacker.index - 1);
 			return;
@@ -310,7 +378,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 
 	ResetQuakePlayer(victim.index - 1);
 
-	// Need to prioritise sounds
+	// Need to prioritize sounds
 	// 1 - First Blood (first kill)
 	// 2 - Humiliation (knife kill)
 	// 3 - Dominating
@@ -339,7 +407,8 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	}
 
 	// Humiliation
-	if (FStrEq(mani_quake_humiliation_weapon.GetString(), weapon_name) && mani_quake_humiliation_mode.GetInt() != 0)
+	if ((FStrEq(mani_quake_humiliation_weapon.GetString(), weapon_name) || FStrEq(mani_quake_humiliation_weapon2.GetString(), weapon_name))
+		&& mani_quake_humiliation_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_HUMILIATION, mani_quake_humiliation_mode.GetInt());
 		ShowQuakeSound(&attacker, &victim, mani_quake_humiliation_visual_mode.GetInt(), "%s", Translate(NULL, 802, "%s%s", victim.name, attacker.name));

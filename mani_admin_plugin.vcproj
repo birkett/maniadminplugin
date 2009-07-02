@@ -621,6 +621,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_observer_track.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mani_output.cpp"
 					>
 				</File>
@@ -926,6 +930,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_netidvalid.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_observer_track.h"
 					>
 				</File>
 				<File

@@ -82,6 +82,11 @@ ManiTeam::ManiTeam()
 	change_team = false;
 	swap_team = false;
 	change_team_time = 0.0;
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		pending_swap[i] = false;
+	}
+	delayed_swap = false;
 }
 
 ManiTeam::~ManiTeam()
@@ -146,6 +151,11 @@ void	ManiTeam::UnLoad(void)
 	change_team = false;
 	swap_team = false;
 	change_team_time = 0.0;
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		pending_swap[i] = false;
+	}
+	delayed_swap = false;
 }
 
 //---------------------------------------------------------------------------------
@@ -160,6 +170,13 @@ void ManiTeam::CleanUp(void)
 		team_list[i].team_index = -1;
 		Q_strcpy(team_list[i].team_name, "");
 	}
+
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		pending_swap[i] = false;
+	}
+
+	delayed_swap = false;
 }
 
 //---------------------------------------------------------------------------------
@@ -206,7 +223,7 @@ void	ManiTeam::GameFrame(void)
 {
 	if (war_mode) return;
 
-	if ((change_team || swap_team) && 
+	if ((change_team || swap_team || delayed_swap) && 
 		change_team_time < gpGlobals->curtime && 
 		gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
@@ -223,6 +240,16 @@ void	ManiTeam::GameFrame(void)
 		{
 			swap_team = false;
 			this->SwapWholeTeam();
+			delayed_swap = false;
+			for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+			{
+				pending_swap[i] = false;
+			}
+		}
+
+		if (delayed_swap)
+		{
+			this->ProcessDelayedSwap();
 		}
 	}
 }
@@ -324,6 +351,119 @@ PLUGIN_RESULT	ManiTeam::ProcessMaSwapTeam(player_t *player_ptr, const char *comm
 	}
 
 	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_swapteamd command (Delayed swap)
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ManiTeam::ProcessMaSwapTeamD(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
+{
+	const char *target_string = gpCmd->Cmd_Argv(1);
+
+	if (player_ptr)
+	{
+		// Check if player is admin
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP, war_mode)) return PLUGIN_BAD_ADMIN;
+	}
+
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: %s This only works on CSS", command_name);
+		return PLUGIN_STOP;
+	}
+
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_SWAP))
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
+		return PLUGIN_STOP;
+	}
+
+	// Found some players to swap to other team
+	for (int i = 0; i < target_player_list_size; i++)
+	{
+		if (!gpManiGameType->IsValidActiveTeam(target_player_list[i].team))
+		{
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Player %s is not on a team yet", target_player_list[i].name);
+			continue;
+		}
+
+		if (pending_swap[target_player_list[i].index - 1])
+		{
+			pending_swap[target_player_list[i].index - 1] = false;
+			delayed_swap = false;
+			for (int j = 0; j < max_players; j++)
+			{
+				if (pending_swap[j])
+				{
+					delayed_swap = false;
+				}
+			}
+
+			LogCommand (player_ptr, "cancelled delayed team swap user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
+			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
+			{
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminswap_anonymous.GetInt(), "Player %s will no longer be moved to team %s at end of round", 
+					target_player_list[i].name, 
+					Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(gpManiGameType->GetOpposingTeam(target_player_list[i].team)))); 
+			}
+		}
+		else
+		{
+			pending_swap[target_player_list[i].index - 1] = true;
+			delayed_swap = true;
+			LogCommand (player_ptr, "delayed team swap user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
+			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
+			{
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminswap_anonymous.GetInt(), "Player %s will be moved to team %s at end of round", 
+					target_player_list[i].name, 
+					Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(gpManiGameType->GetOpposingTeam(target_player_list[i].team)))); 
+			}
+
+			change_team_time = 99999999.0;
+		}
+	}
+
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process delayed swap
+//---------------------------------------------------------------------------------
+void	ManiTeam::ProcessDelayedSwap(void)
+{
+	for (int i = 0; i < max_players; i++)
+	{
+		if (pending_swap[i])
+		{
+			// Swap player
+			pending_swap[i] = false;
+			player_t player;
+
+			player.index = i + 1;
+			if (!FindPlayerByIndex(&player)) continue;
+			if (!gpManiGameType->IsValidActiveTeam(player.team)) continue;
+
+			if (!CCSPlayer_SwitchTeam(EdictToCBE(player.entity),gpManiGameType->GetOpposingTeam(player.team)))
+			{
+				player.player_info->ChangeTeam(gpManiGameType->GetOpposingTeam(player.team));
+			}
+			else
+			{
+				UTIL_DropC4(player.entity);
+				// If not dead then force model change
+				if (!player.player_info->IsDead())
+				{
+					CCSPlayer_SetModelFromClass(EdictToCBE(player.entity));
+				}
+			}
+		}
+	}
+
+	delayed_swap = false;
+	return;
 }
 
 //---------------------------------------------------------------------------------
@@ -494,6 +634,8 @@ bool	ManiTeam::ProcessMaBalancePlayerType
 			continue;
 		}
 
+		if (pending_swap[i - 1]) continue;
+
 		// Player is a candidate
 		AddToList((void **) &temp_player_list, sizeof(player_t), &temp_player_list_size);
 		temp_player_list[temp_player_list_size - 1] = target_player;
@@ -618,6 +760,71 @@ bool SpecPlayerPage::PopulateMenuPage(player_t *player_ptr)
 	return true;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Handle Swap Player draw and request
+//---------------------------------------------------------------------------------
+int SwapPlayerDItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *user_id;
+
+	this->params.GetParam("user_id", &user_id);
+	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_swapteam_d");
+	gpCmd->AddParam("%s", user_id);
+	gpManiTeam->ProcessMaSwapTeamD(player_ptr, "ma_swapteam_d", 0, M_MENU);
+
+	return RePopOption(REPOP_MENU);
+}
+
+bool SwapPlayerDPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 180));
+	this->SetTitle("%s", Translate(player_ptr, 182));
+
+	MenuItem *ptr = NULL;
+
+	for( int i = 1; i <= max_players; i++ )
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+
+		if (!gpManiGameType->IsValidActiveTeam(player.team)) continue;
+
+		if (!player.is_bot)
+		{
+			if (player_ptr->index != player.index && 
+				gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_SWAP))
+			{
+				continue;
+			}
+		}
+
+		ptr = new SwapPlayerDItem;
+		if (!gpManiTeam->pending_swap[i - 1])
+		{
+			ptr->SetDisplayText("[%s] [%s] %i", 
+				Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(player.team)),
+				player.name, 
+				player.user_id);
+		}
+		else
+		{
+			ptr->SetDisplayText("[%s] %s [%s] %i", 
+				Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(player.team)),
+				Translate(player_ptr, 183),
+				player.name, 
+				player.user_id);
+		}
+
+		ptr->SetHiddenText("%s", player.name);
+		ptr->params.AddParamVar("user_id", "%i", player.user_id);
+		this->AddItem(ptr);
+	}
+
+	this->SortHidden();
+	return true;
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Handle Swap Player draw and request
@@ -734,6 +941,7 @@ void ManiTeam::SwapWholeTeam()
 
 SCON_COMMAND(ma_balance, 2099, MaBalance, false);
 SCON_COMMAND(ma_swapteam, 2095, MaSwapTeam, true);
+SCON_COMMAND(ma_swapteam_d, 2237, MaSwapTeamD, true);
 SCON_COMMAND(ma_spec, 2097, MaSpec, false);
 
 

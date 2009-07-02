@@ -91,6 +91,7 @@
 #include "mani_ping.h"
 #include "mani_mysql.h"
 #include "mani_vote.h"
+#include "mani_observer_track.h"
 #include "mani_team.h"
 #include "mani_file.h"
 #include "mani_vfuncs.h"
@@ -213,7 +214,6 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_giveammo", 2073, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGiveAmmo);
 	this->RegisterCommand("ma_drug", 2075, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaDrug);
 	this->RegisterCommand("ma_decal", 2077, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaDecal);
-	this->RegisterCommand("ma_gimp", 2079, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGimp);
 	this->RegisterCommand("ma_timebomb", 2081, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaTimeBomb);
 	this->RegisterCommand("ma_freezebomb", 2083, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaFreezeBomb);
 	this->RegisterCommand("ma_firebomb", 2085, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaFireBomb);
@@ -222,6 +222,7 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_teleport", 2091, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaTeleport);
 	this->RegisterCommand("ma_position", 2093, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaPosition);
 	this->RegisterCommand("ma_swapteam", 2095, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSwapTeam);
+	this->RegisterCommand("ma_swapteam_d", 2237, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSwapTeamD);
 	this->RegisterCommand("ma_spec", 2097, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSpec);
 	this->RegisterCommand("ma_balance", 2099, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaBalance);
 	this->RegisterCommand("ma_dropc4", 2101, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaDropC4);
@@ -294,6 +295,8 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_effect", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ false, /*tsay ?*/ false, /*say ?*/ false, &ManiCommands::MaEffect);
 	this->RegisterCommand("ma_restrictratio", 2229, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaRestrictRatio);
 	this->RegisterCommand("ma_admins", 2231, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaAdmins);
+	this->RegisterCommand("ma_observe", 2239, /*admin?*/ true, /*war ?*/ false, /*server ?*/ false, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaObserve);
+	this->RegisterCommand("ma_endobserve", 2241, /*admin?*/ true, /*war ?*/ false, /*server ?*/ false, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaEndObserve);
 	
 	// Register Menu commands triggered via client console
 	//this->RegisterCommand("mam_plranks", /*war ?*/ false, &ManiCommands::MaPLRanks);
@@ -1491,7 +1494,6 @@ void	ManiCommands::WriteHelpHTML(void)
 	fprintf(filehandle, "\t</TR>\n");
 
 	for (int i = 0; i < cmd_list_size; i ++)
-//	for (int i = 0; i < 1; i ++)
 	{
 		fprintf(filehandle, "\t<TR VALIGN=TOP>\n");
 		fprintf(filehandle, "\t\t<TD WIDTH=17%% BGCOLOR=\"%s\">\n", cmd_col_bg_colour);
@@ -1542,6 +1544,98 @@ void	ManiCommands::WriteHelpHTML(void)
 		fprintf(filehandle, "\t\t</TD>\n");
 		fprintf(filehandle, "\t</TR>\n");
 	}
+
+	fprintf(filehandle, "</TABLE>\n<P><BR><BR>\n</P>\n</BODY>\n</HTML>");
+	mf->Close(filehandle);
+	delete mf;
+
+	// Write HTML version of convar help
+
+	filehandle = NULL;
+	mf = new ManiFile();
+
+	snprintf(filename, sizeof(filename), "./cfg/%s/data/cvar_help.html", mani_path.GetString());
+	filehandle = mf->Open(filename, "wt");
+	if (filehandle == NULL)
+	{
+		delete mf;
+		return;
+	}
+
+
+/*	const char *header_row_bg_colour = "#000080";
+	const char *header_row_font_colour = "#ffffff";
+	const char *cmd_col_bg_colour = "#4d4d4d";
+	const char *cmd_col_font_colour = "#ffffff";
+	const char *rest_bg_colour = "#cccccc";
+	const char *rest_font_colour = "#000000";
+	const char *border_colour = "#000000";*/
+
+	fprintf(filehandle, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
+	fprintf(filehandle, "<HTML>\n");
+	fprintf(filehandle, "<HEAD>\n");
+	fprintf(filehandle, "\t<META HTTP-EQUIV=\"CONTENT-TYPE\" CONTENT=\"text/html; charset=utf-8\">\n");
+	fprintf(filehandle, "\t<TITLE></TITLE>\n");
+	fprintf(filehandle, "\t<META NAME=\"GENERATOR\" CONTENT=\"%s\">\n", PLUGIN_VERSION);
+	fprintf(filehandle, "\t<META NAME=\"AUTHOR\" CONTENT=\"Mani\">\n");
+	fprintf(filehandle, "</HEAD>\n");
+	fprintf(filehandle, "<BODY LANG=\"en-GB\" DIR=\"LTR\">\n");
+	fprintf(filehandle, "<P ALIGN=CENTER STYLE=\"page-break-before: always\"><FONT SIZE=4 STYLE=\"font-size: 16pt\"><B>Mani Admin Plugin Flags List %s</B></FONT></P>\n", PLUGIN_VERSION_ID2);
+	fprintf(filehandle, "<TABLE WIDTH=100%% BORDER=1 BORDERCOLOR=\"%s\" CELLPADDING=4 CELLSPACING=0>\n", border_colour);
+	fprintf(filehandle, "\t<COL WIDTH=43*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=61*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=60*>\n");
+
+	fprintf(filehandle, "\t<TR VALIGN=TOP>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=17%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML("ConVar name"));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=24%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML("Description"));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t\t<TH WIDTH=23%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML("Default Value"));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t</TR>\n");
+
+	ConCommandBase *pPtr = cvar->GetCommands();
+	while (pPtr)
+	{
+		if (!pPtr->IsCommand())
+		{
+			const char *name = pPtr->GetName();
+
+			if (NULL != Q_stristr(name, "mani_"))
+			{
+				// Found mani cvar
+				ConVar *mani_var = cvar->FindVar(name);
+				fprintf(filehandle, "\t<TR VALIGN=TOP>\n");
+				fprintf(filehandle, "\t\t<TD WIDTH=17%% BGCOLOR=\"%s\">\n", cmd_col_bg_colour);
+				fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+				fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", cmd_col_font_colour, name);
+				fprintf(filehandle, "\t\t</TD>\n");
+
+				fprintf(filehandle, "\t\t<TD WIDTH=24%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+				fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+				fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+					rest_font_colour, AsciiToHTML((char *) mani_var->m_pszHelpString));
+				fprintf(filehandle, "\t\t</TD>\n");
+
+				fprintf(filehandle, "\t\t<TD WIDTH=23%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+				fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+				fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n",
+					rest_font_colour, mani_var->GetDefault());
+				fprintf(filehandle, "\t\t</TD>\n");
+				fprintf(filehandle, "\t</TR>\n");
+			}
+		}
+
+		pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
+	}
+
 
 	fprintf(filehandle, "</TABLE>\n<P><BR><BR>\n</P>\n</BODY>\n</HTML>");
 	mf->Close(filehandle);
@@ -1608,7 +1702,6 @@ void	ManiCommands::WriteHelpHTML(void)
 	CON_CBODY(gpManiAdminPlugin, MaGiveAmmo)
 	CON_CBODY(gpManiAdminPlugin, MaDrug)
 	CON_CBODY(gpManiAdminPlugin, MaDecal)
-	CON_CBODY(gpManiAdminPlugin, MaGimp)
 	CON_CBODY(gpManiAdminPlugin, MaTimeBomb)
 	CON_CBODY(gpManiAdminPlugin, MaBeacon)
 	CON_CBODY(gpManiAdminPlugin, MaFireBomb)
@@ -1617,6 +1710,7 @@ void	ManiCommands::WriteHelpHTML(void)
 	CON_CBODY(gpManiAdminPlugin, MaTeleport)
 	CON_CBODY(gpManiAdminPlugin, MaPosition)
 	CON_CBODY(gpManiTeam, MaSwapTeam)
+	CON_CBODY(gpManiTeam, MaSwapTeamD)
 	CON_CBODY(gpManiTeam, MaSpec)
 	CON_CBODY(gpManiTeam, MaBalance)
 	CON_CBODY(gpManiAdminPlugin, MaDropC4)
@@ -1694,4 +1788,7 @@ void	ManiCommands::WriteHelpHTML(void)
 	CON_CBODY(gpManiAutoKickBan, MaUnAutoIP)
 	CON_CBODY(gpManiHelp, MaHelp)
 	CON_CBODY(gpManiCustomEffects, MaEffect)
+
+	CON_CBODY(gpManiObserverTrack, MaObserve)
+	CON_CBODY(gpManiObserverTrack, MaEndObserve)
 

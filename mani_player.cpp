@@ -44,6 +44,7 @@
 #include "mani_parser.h"
 #include "mani_player.h"
 #include "mani_menu.h"
+#include "mani_quake.h"
 #include "mani_output.h"
 #include "mani_client.h"
 #include "mani_client_flags.h"

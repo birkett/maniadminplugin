@@ -115,6 +115,7 @@ typedef unsigned long DWORD;
 #include "mani_team_join.h"
 #include "mani_mp_restartgame.h"
 #include "mani_automap.h"
+#include "mani_observer_track.h"
 #include "mani_afk.h"
 #include "mani_vote.h"
 #include "mani_ping.h"
@@ -236,8 +237,6 @@ cexec_t		*cexec_ct_list;
 cexec_t		*cexec_spec_list;
 cexec_t		*cexec_all_list;
 
-gimp_t				*gimp_phrase_list;
-
 int	rcon_list_size;
 int	swear_list_size;
 
@@ -246,8 +245,6 @@ int	cexec_t_list_size;
 int	cexec_ct_list_size;
 int	cexec_spec_list_size;
 int	cexec_all_list_size;
-
-int gimp_phrase_list_size;
 
 float	last_cheat_check_time;
 
@@ -310,9 +307,6 @@ CAdminPlugin::CAdminPlugin()
 	cexec_ct_list_size = 0;
 	cexec_spec_list_size = 0;
 	cexec_all_list_size = 0;
-
-	gimp_phrase_list = NULL;
-	gimp_phrase_list_size = 0;
 
 	war_mode = false;
 
@@ -507,7 +501,6 @@ int CAdminPlugin::GetEventIndex(const char *event_string, const int loop_length)
 //---------------------------------------------------------------------------------
 bool CAdminPlugin::Load(void)
 {
-	ResetProfiles();
 	gpManiTrackUser->Load();
 	if (!LoadLanguage())
 	{
@@ -710,6 +703,7 @@ bool CAdminPlugin::Load(void)
 	gpManiVote->Load();
 	gpManiCSSBounty->Load();
 	gpManiCSSBetting->Load();
+	gpManiObserverTrack->Load();
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
@@ -862,8 +856,6 @@ void CAdminPlugin::Unload( void )
 	FreeList((void **) &cexec_all_list, &cexec_all_list_size);
 	FreeList((void **) &target_player_list, &target_player_list_size);
 
-	FreeList ((void **) &gimp_phrase_list, &gimp_phrase_list_size);
-
 	trigger_changemap = false;
 	FreeLanguage();
 	g_PluginLoaded = false;
@@ -876,6 +868,8 @@ void CAdminPlugin::Unload( void )
 	gpManiAutoMap->Unload();
 	gpManiAntiRejoin->Unload();
 	gpManiMPRestartGame->Unload();
+	gpManiObserverTrack->Unload();
+
 }
 
 //---------------------------------------------------------------------------------
@@ -918,10 +912,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	char	map_config_filename[256];
 	char	base_filename[256];
 	char	alias_command[512];
-	char	gimp_phrase[256];
 	int		total_load_index;
-
-	ResetProfiles();
 
 	MMsg("********************************************************\n");
 	MMsg("************* Mani Admin Plugin Level Init *************\n");
@@ -951,8 +942,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	FreeList((void **) &cexec_spec_list, &cexec_spec_list_size);
 	FreeList((void **) &cexec_all_list, &cexec_all_list_size);
 	FreeList((void **) &target_player_list, &target_player_list_size);
-
-	FreeList ((void **) &gimp_phrase_list, &gimp_phrase_list_size);
 
 	mp_friendlyfire = cvar->FindVar( "mp_friendlyfire");
 	mp_freezetime = cvar->FindVar( "mp_freezetime");
@@ -1014,6 +1003,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	gpManiPing->LevelInit();
 	gpManiCSSBounty->LevelInit();
 	gpManiCSSBetting->LevelInit();
+	gpManiObserverTrack->LevelInit();
+
 	InitTKPunishments();
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
@@ -1096,33 +1087,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	gpManiSpawnPoints->LevelInit(current_map);
 	gpManiSprayRemove->LevelInit();
 	gpManiAntiRejoin->LevelInit();
-
-	//Get gimp phrase list
-	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/gimpphrase.txt", mani_path.GetString());
-	file_handle = filesystem->Open (base_filename,"rt",NULL);
-	if (file_handle == NULL)
-	{
-//		MMsg("Failed to load gimpphrase.txt\n");
-	}
-	else
-	{
-//		MMsg("Gimp phrase list\n");
-		while (filesystem->ReadLine (gimp_phrase, sizeof(gimp_phrase), file_handle) != NULL)
-		{
-			if (!ParseLine(gimp_phrase, true, false))
-			{
-				// String is empty after parsing
-				continue;
-			}
-
-			AddToList((void **) &gimp_phrase_list, sizeof(gimp_t), &gimp_phrase_list_size);
-			Q_strcpy(gimp_phrase_list[gimp_phrase_list_size - 1].phrase, gimp_phrase);
-//			MMsg("[%s]\n", gimp_phrase);
-		}
-
-		filesystem->Close(file_handle);
-	}
-
 
 	//Get swear word list
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/wordfilter.txt", mani_path.GetString());
@@ -1432,35 +1396,35 @@ void CAdminPlugin::GameFrame( bool simulating )
 	time(&g_RealTime);
 
 	g_menu_mgr.GameFrame();
-	PROFILE(GAMETYPE, gpManiGameType->GameFrame())
-	PROFILE(LANGUAGE, LanguageGameFrame())
+	gpManiGameType->GameFrame();
+	LanguageGameFrame();
 
 	// Simulate NetworkIDValidate
-	PROFILE(NET_ID_VALID, gpManiNetIDValid->GameFrame())
+	gpManiNetIDValid->GameFrame();
 
 	if (client_sql_manager)
 	{
-		PROFILE(CLIENT_SQL_MANAGER, client_sql_manager->GameFrame())
+		client_sql_manager->GameFrame();
 	}
 
-	PROFILE(SPRAY_REMOVE,gpManiSprayRemove->GameFrame())
-	PROFILE(WARMUP_TIMER,gpManiWarmupTimer->GameFrame())
-	PROFILE(AFK,gpManiAFK->GameFrame())
-	PROFILE(PING,gpManiPing->GameFrame())
+	gpManiSprayRemove->GameFrame();
+	gpManiWarmupTimer->GameFrame();
+	gpManiAFK->GameFrame();
+	gpManiPing->GameFrame();
 
 	if (war_mode && mani_war_mode_force_overview_zero.GetInt() == 1)
 	{
-		PROFILE(OVERVIEW_MAP,TurnOffOverviewMap())
+		TurnOffOverviewMap();
 	}
 
-	PROFILE(STATS,gpManiStats->GameFrame())
+	gpManiStats->GameFrame();
 
 	if (war_mode) return;
 
-	PROFILE(TEAM,gpManiTeam->GameFrame())
+	gpManiTeam->GameFrame();
 
-	PROFILE(ADVERTS,ProcessAdverts())
-	PROFILE(PUNISHMENTS,ProcessInGamePunishments())
+	ProcessAdverts();
+	ProcessInGamePunishments();
 
 	if (trigger_changemap && gpGlobals->curtime >= trigger_changemap_time)
 	{
@@ -1472,8 +1436,8 @@ void CAdminPlugin::GameFrame( bool simulating )
 		engine->ServerCommand(server_cmd);
 	}
 
-	PROFILE(VOTE,gpManiVote->GameFrame())
-	PROFILE(AUTOMAP, gpManiAutoMap->GameFrame())
+	gpManiVote->GameFrame();
+	gpManiAutoMap->GameFrame();
 
 }
 
@@ -1485,9 +1449,9 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 	gpManiStats->LevelShutdown();
 	gpManiSpawnPoints->LevelShutdown();
 	gpManiAFK->LevelShutdown();
+	gpManiWeaponMgr->LevelShutdown();
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
 	gpManiMPRestartGame->LevelShutdown();
-	WriteProfiles();
 }
 
 //---------------------------------------------------------------------------------
@@ -1526,6 +1490,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	gpManiVictimStats->ClientActive(&player);
 	gpManiMapAdverts->ClientActive(&player);
 	gpManiCSSBounty->ClientActive(&player);
+	gpManiWeaponMgr->ClientActive(&player);
 
 	if (!player.is_bot)
 	{
@@ -1568,6 +1533,8 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 	gpManiCSSBounty->ClientDisconnect(&player);
 	gpManiCSSBetting->ClientDisconnect(&player);
 	gpManiAntiRejoin->ClientDisconnect(&player);
+	gpManiObserverTrack->ClientDisconnect(&player);
+
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
@@ -1585,6 +1552,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 	gpManiVictimStats->ClientDisconnect(&player);
 	gpManiClient->ClientDisconnect(&player);
 	gpManiStats->ClientDisconnect(&player);
+	gpManiWeaponMgr->ClientDisconnect(&player);
 
 	user_name[player.index - 1].in_use = false;
 	Q_strcpy(user_name[player.index - 1].name,"");
@@ -1996,6 +1964,7 @@ bool PrimaryMenuPage::PopulateMenuPage(player_t *player_ptr)
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC_MENU) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MUTE) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) || 
+			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN) || 
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SPRAY_TAG)) 
 			 && !war_mode)
 		{
@@ -2008,7 +1977,6 @@ bool PrimaryMenuPage::PopulateMenuPage(player_t *player_ptr)
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BLIND) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_FREEZE) ||
 			 (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_TELEPORT) && gpManiGameType->IsTeleportAllowed()) ||
-			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_GIMP) ||
 			 (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_DRUG) && gpManiGameType->IsDrugAllowed()) ||
 			 (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BURN) && gpManiGameType->IsFireAllowed()) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_NO_CLIP))
@@ -2549,50 +2517,7 @@ bool NoClipPlayerPage::PopulateMenuPage(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Handle Gimp Player draw and request
-//---------------------------------------------------------------------------------
-int GimpPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
-{
-	int user_id;
-	if (this->params.GetParam("user_id", &user_id))
-	{
-		gpCmd->NewCmd();
-		gpCmd->AddParam("ma_gimp");
-		gpCmd->AddParam("%i", user_id);
-		g_ManiAdminPlugin.ProcessMaGimp(player_ptr, "ma_gimp", 0, M_MENU);
-	}
-
-	return RePopOption(REPOP_MENU);
-}
-
-bool GimpPlayerPage::PopulateMenuPage(player_t *player_ptr)
-{
-	this->SetEscLink("%s", Translate(player_ptr, 210));
-	this->SetTitle("%s", Translate(player_ptr, 211));
-
-	for (int i = 1; i <= max_players; i++)
-	{
-		player_t player;
-		player.index = i;
-		if (!FindPlayerByIndex(&player)) continue;
-		if (player.is_bot) continue;
-
-		if (player_ptr->index != player.index &&
-			gpManiClient->HasAccess(player.index,IMMUNITY, IMMUNITY_GIMP)) continue;
-
-		MenuItem *ptr = new GimpPlayerItem();
-		ptr->SetDisplayText("%s[%s] %i", (punish_mode_list[player.index - 1].gimped) ? Translate(player_ptr, 212):"", player.name, player.user_id);
-		ptr->params.AddParam("user_id", player.user_id);
-		ptr->SetHiddenText("%s", player.name);
-		this->AddItem(ptr);
-	}
-
-	this->SortHidden();
-	return true;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Handle Gimp Player draw and request
+// Purpose: Handle TimeBomb Player draw and request
 //---------------------------------------------------------------------------------
 int TimeBombPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
@@ -3068,6 +2993,11 @@ int PlayerManagementItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_p
 		MENUPAGE_CREATE(SwapPlayerPage, player_ptr, 0 , -1);
 		return NEW_MENU;
 	}
+	else if (strcmp("swapteamd", sub_option) ==0)
+	{
+		MENUPAGE_CREATE(SwapPlayerDPage, player_ptr, 0 , -1);
+		return NEW_MENU;
+	}
 	else if (strcmp("specplay", sub_option) ==0)
 	{
 		MENUPAGE_CREATE(SpecPlayerPage, player_ptr, 0 , -1);
@@ -3093,6 +3023,11 @@ int PlayerManagementItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_p
 	else if (strcmp("spray", sub_option) ==0)
 	{
 		MENUPAGE_CREATE(SprayPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("observe", sub_option) ==0)
+	{
+		MENUPAGE_CREATE(ObservePlayerPage, player_ptr, 0, -1);
 		return NEW_MENU;
 	}
 
@@ -3125,6 +3060,11 @@ bool PlayerManagementPage::PopulateMenuPage(player_t *player_ptr)
 		MENUOPTION_CREATE(PlayerManagementItem, 615, swapteam);
 	}
 
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed() && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		MENUOPTION_CREATE(PlayerManagementItem, 184, swapteamd);
+	}
+
 	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed())
 	{
 		MENUOPTION_CREATE(PlayerManagementItem, 619, specplay);
@@ -3149,6 +3089,13 @@ bool PlayerManagementPage::PopulateMenuPage(player_t *player_ptr)
 	{
 		MENUOPTION_CREATE(PlayerManagementItem, 620, spray);
 	}
+
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN) && !war_mode &&
+		gpManiGameType->IsSpectatorAllowed())
+	{
+		MENUOPTION_CREATE(PlayerManagementItem, 3113, observe);
+	}
+
 	return true;
 }
 
@@ -3393,11 +3340,6 @@ int PunishTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 		MENUPAGE_CREATE(DrugPlayerPage, player_ptr, 0, -1);
 		return NEW_MENU;
 	}
-	else if (strcmp("gimp", sub_option) == 0)
-	{
-		MENUPAGE_CREATE(GimpPlayerPage, player_ptr, 0, -1);
-		return NEW_MENU;
-	}
 	else if (strcmp("teleport", sub_option) == 0)
 	{
 		MENUPAGE_CREATE(TeleportPlayerPage, player_ptr, 0, -1);
@@ -3470,11 +3412,6 @@ bool PunishTypePage::PopulateMenuPage(player_t *player_ptr)
 	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_DRUG) && !war_mode && gpManiGameType->IsDrugAllowed())
 	{
 		MENUOPTION_CREATE(PunishTypeItem, 295, drug);
-	}
-
-	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_GIMP) && !war_mode)
-	{
-		MENUOPTION_CREATE(PunishTypeItem, 296, gimp);
 	}
 
 	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_TELEPORT) && !war_mode && gpManiGameType->IsTeleportAllowed())
@@ -4830,6 +4767,7 @@ void CAdminPlugin::EvPlayerSpawn(IGameEvent *event)
 	gpManiSpawnPoints->Spawn(&spawn_player);
 
 	gpManiSaveScores->PlayerSpawn(&spawn_player);
+	gpManiObserverTrack->PlayerSpawn(&spawn_player);
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
@@ -5596,6 +5534,7 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 	gpManiGhost->PlayerDeath(&victim);
 	gpManiStats->PlayerDeath(&victim, &attacker, weapon_name, attacker_exists, headshot);
 	gpManiCSSBounty->PlayerDeath(&victim, &attacker, attacker_exists);
+	gpManiObserverTrack->PlayerDeath(&victim);
 
 	if (mani_show_death_beams.GetInt() != 0)
 	{
@@ -5727,11 +5666,11 @@ bool CAdminPlugin::HookSayCommand(bool team_say)
 
 	char	*trimmed_string = (char *) gpCmd->Cmd_Args(0);
 
-	if (!war_mode && !punish_mode_list[player.index - 1].gimped)
+	if (!war_mode)
 	{
 		if (mani_filter_words_mode.GetInt() != 0)
 		{
-			// Process string for swear words if player not gimped
+			// Process string for swear words
 			char	upper_say[2048];
 
 			// Copy in uppercase
@@ -5804,42 +5743,7 @@ bool CAdminPlugin::HookSayCommand(bool team_say)
 	// Is swear word in there ?
 	if (found_swear_word)
 	{
-		if (mani_filter_words_mode.GetInt() == 1)
-		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", mani_filter_words_warning.GetString());
-			return false;
-		}
-
-		// Mode 2 show filtered string
-		char	client_cmd[2048];
-
-		if (!team_say)
-		{
-			snprintf(client_cmd, sizeof (client_cmd), "say %s\n", gpCmd->Cmd_Args(0));
-		}
-		else
-		{
-			snprintf(client_cmd, sizeof (client_cmd), "say_team %s\n", gpCmd->Cmd_Args(0));
-		}
-
-		engine->ClientCommand(player.entity, client_cmd);
-		return false;
-	}
-
-	if (!war_mode && punish_mode_list[player.index - 1].gimped)
-	{
-		if (gimp_phrase_list_size == 0) return true;
-
-		// player is in gimped mode
-		// Check if say string is in gimp word list
-		for (int i = 0; i < gimp_phrase_list_size; i++)
-		{
-			if (FStrEq(gimp_phrase_list[i].phrase, gpCmd->Cmd_Args(0))) return true;
-		}
-
-		// If here then player say hasn't been altered yet
-		int gimp_phrase = rand() % gimp_phrase_list_size;
-		engine->ClientCommand(player.entity, "say %s\n", gimp_phrase_list[gimp_phrase].phrase);
+		SayToPlayer(ORANGE_CHAT, &player, "%s", mani_filter_words_warning.GetString());
 		return false;
 	}
 
@@ -7464,77 +7368,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX(player_t *player_ptr, const char *
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_gimp command
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT	CAdminPlugin::ProcessMaGimp(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
-{
-	const char *target_string = gpCmd->Cmd_Argv(1);
-	const char *toggle = gpCmd->Cmd_Argv(2);
-
-	if (player_ptr)
-	{
-		// Check if player is admin
-		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_GIMP, war_mode)) return PLUGIN_BAD_ADMIN;
-	}
-
-	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
-
-	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_GIMP))
-	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
-		return PLUGIN_STOP;
-	}
-
-	// Found some players to gimp
-	for (int i = 0; i < target_player_list_size; i++)
-	{
-		if (target_player_list[i].is_bot)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr,"%s", Translate(player_ptr, M_TARGET_BOT,"%s", target_player_list[i].name));
-			continue;
-		}
-
-		int	do_action = 0;
-
-		if (gpCmd->Cmd_Argc() == 3)
-		{
-			do_action = atoi(toggle);
-		}
-		else
-		{
-			if (!punish_mode_list[target_player_list[i].index - 1].gimped)
-			{
-				do_action = 1;
-			}
-		}
-
-		if (do_action)
-		{	
-			ProcessGimpPlayer(&(target_player_list[i]));
-			LogCommand (player_ptr, "gimped user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
-			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
-			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingimp_anonymous.GetInt(), "gimped player %s", target_player_list[i].name); 
-				SayToAll(ORANGE_CHAT, false, "%s", mani_gimp_transform_message.GetString());
-			}
-		}
-		else
-		{
-			ProcessUnGimpPlayer(&(target_player_list[i]));
-			LogCommand (player_ptr, "un-gimped user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
-			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
-			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingimp_anonymous.GetInt(), "un-gimped player %s", target_player_list[i].name); 
-				SayToAll(ORANGE_CHAT, false, "%s", mani_gimp_untransform_message.GetString());
-			}
-		}
-	}
-
-	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
 // Purpose: Process the ma_timebomb command
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeBomb(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
@@ -7557,7 +7390,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeBomb(player_t *player_ptr, const char *
 		return PLUGIN_STOP;
 	}
 
-	// Found some players to gimp
+	// Found some players
 	for (int i = 0; i < target_player_list_size; i++)
 	{
 		if (target_player_list[i].is_dead) continue;
@@ -7841,7 +7674,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 		return PLUGIN_STOP;
 	}
 
-	// Found some players to gimp
+	// Found some players
 	for (int i = 0; i < target_player_list_size; i++)
 	{
 		if (target_player_list[i].is_bot)
@@ -8652,6 +8485,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 	bool	follow_string = false;
 	bool	last_round = false;
 
+// DEBUG to trace timeleft error
+	LogCommand(player_ptr, "timeleft triggered\n");
+
 	if (mp_timelimit)
 	{
 		if (mp_timelimit->GetInt() != 0)
@@ -8850,7 +8686,6 @@ SCON_COMMAND(ma_colorweapon, 2063, MaColourWeapon, false);
 SCON_COMMAND(ma_colourweapon, 2065, MaColourWeapon, false);
 SCON_COMMAND(ma_render_mode, 2067, MaRenderMode, false);
 SCON_COMMAND(ma_render_fx, 2069, MaRenderFX, false);
-SCON_COMMAND(ma_gimp, 2079, MaGimp, false);
 SCON_COMMAND(ma_timebomb, 2081, MaTimeBomb, false);
 SCON_COMMAND(ma_firebomb, 2083, MaFireBomb, false);
 SCON_COMMAND(ma_freezebomb, 2083, MaFreezeBomb, false);

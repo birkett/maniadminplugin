@@ -186,7 +186,6 @@ void	EffectsClientDisconnect(int	index, bool spawn_flag)
 
 	if (!spawn_flag)
 	{
-		punish_mode_list[index].gimped = 0;
 		punish_mode_list[index].muted = 0;
 	}
 
@@ -1853,22 +1852,6 @@ void	ProcessSaveLocation(player_t *player)
 		Q_strcpy(player_settings->teleport_coords_list[player_settings->teleport_coords_list_size - 1].map_name, current_map);
 		player_settings->teleport_coords_list[player_settings->teleport_coords_list_size - 1].coords = current_position;
 	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Gimp a player
-//---------------------------------------------------------------------------------
-void	ProcessGimpPlayer(player_t *player)
-{
-	punish_mode_list[player->index - 1].gimped = MANI_ADMIN_ENFORCED;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Un-Gimp a player
-//---------------------------------------------------------------------------------
-void	ProcessUnGimpPlayer(player_t *player)
-{
-	punish_mode_list[player->index - 1].gimped = 0;
 }
 
 //---------------------------------------------------------------------------------
