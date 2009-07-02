@@ -124,7 +124,7 @@ void ManiMapAdverts::Init(void)
 	FreeMapAdverts();
 	KeyValues *kv_ptr = new KeyValues("mapadverts.txt");
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/mapadverts.txt", mani_path.GetString());
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/mapadverts.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
 //		MMsg("Failed to load mapadverts.txt\n");

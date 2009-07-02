@@ -93,7 +93,7 @@ ManiMySQL::~ManiMySQL()
 //---------------------------------------------------------------------------------
 // Purpose: Create a connection to a database
 //---------------------------------------------------------------------------------
-bool ManiMySQL::Init(void)
+bool ManiMySQL::Init(player_t *player_ptr)
 {
 	static	unsigned int timeout;
 	bool	connection_failed = false;
@@ -115,14 +115,14 @@ bool ManiMySQL::Init(void)
 
 	if ((my_data = mysql_init((MYSQL*) 0)) == NULL) 
 	{
-		MMsg("Failed to init database\n");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Failed to init database!");
 		return false;
 	}
 
 	if (mysql_options(my_data, MYSQL_OPT_CONNECT_TIMEOUT, (char *) &timeout))
 	{
-		MMsg("mysql_options failed !!\n");
-		Msg( "%s\n", mysql_error(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "mysql_options failed!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", mysql_error(my_data));
 	}
 
 	// Linux only !!
@@ -173,8 +173,8 @@ bool ManiMySQL::Init(void)
 	if (connection_failed)
 	{
 		error_code = mysql_errno(my_data);
-		Msg( "mysql_real_connect failed !\n") ;
-		Msg( "%s\n", mysql_error(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "mysql_real_connect failed!") ;
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
 		return false;
@@ -184,8 +184,8 @@ bool ManiMySQL::Init(void)
 	if ( mysql_select_db( my_data, gpManiDatabase->GetDBName()) != 0 ) 
 	{
 		error_code = mysql_errno(my_data);
-		Msg( "Can't select the %s database !\n", gpManiDatabase->GetDBName() ) ;
-		Msg( "%s\n", mysql_error(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Can't select the %s database!", gpManiDatabase->GetDBName() ) ;
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
 		return false;
@@ -199,6 +199,7 @@ bool ManiMySQL::Init(void)
 //---------------------------------------------------------------------------------
 bool ManiMySQL::ExecuteQuery
 (
+ player_t *player_ptr,
  int	*row_count,
  char	*sql_query,
  ...
@@ -216,15 +217,15 @@ bool ManiMySQL::ExecuteQuery
 	char		temp_string[4096];
 
 	va_start ( argptr, sql_query );
-	Q_vsnprintf( temp_string, sizeof(temp_string), sql_query, argptr );
+	vsnprintf( temp_string, sizeof(temp_string), sql_query, argptr );
 	va_end   ( argptr );
 
 	if (mysql_query( my_data, temp_string ) != 0)
 	{
 		error_code = mysql_errno(my_data);
-		Msg( "sql [%s] failed\n", temp_string ) ;
-		Msg( "error %i\n", mysql_errno(my_data));
-		Msg( "%s\n", mysql_error(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "sql [%s] failed", temp_string ) ;
+		OutputHelpText(ORANGE_CHAT, player_ptr, "error %i", mysql_errno(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
 		return false;
@@ -248,6 +249,7 @@ bool ManiMySQL::ExecuteQuery
 //---------------------------------------------------------------------------------
 bool ManiMySQL::ExecuteQuery
 (
+ player_t *player_ptr,
  char	*sql_query,
  ...
  )
@@ -262,15 +264,15 @@ bool ManiMySQL::ExecuteQuery
 	char		temp_string[4096];
 
 	va_start ( argptr, sql_query );
-	Q_vsnprintf( temp_string, sizeof(temp_string), sql_query, argptr );
+	vsnprintf( temp_string, sizeof(temp_string), sql_query, argptr );
 	va_end   ( argptr );
 
 	if (mysql_query( my_data, temp_string ) != 0)
 	{
 		error_code = mysql_errno(my_data);
-		Msg( "sql [%s] failed\n", temp_string ) ;
-		Msg( "error %i\n", mysql_errno(my_data));
-		Msg( "%s\n", mysql_error(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "sql [%s] failed", temp_string ) ;
+		OutputHelpText(ORANGE_CHAT, player_ptr, "error %i", mysql_errno(my_data));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", mysql_error(my_data));
 		mysql_close( my_data ) ;
 		my_data = NULL;
 		return false;
@@ -310,7 +312,7 @@ char *ManiMySQL::GetServerVersion(void)
 		{
 			int i = 0;
 			int j = 0;
-			char buffer[16];
+			char buffer[32];
 
 			while (sql_server_version[i] != '.')
 			{
@@ -319,7 +321,7 @@ char *ManiMySQL::GetServerVersion(void)
 
 			buffer[j] = '\0';
 			i++;
-			major = Q_atoi(buffer);
+			major = atoi(buffer);
 
 			j = 0;
 			while (sql_server_version[i] != '.')
@@ -329,16 +331,18 @@ char *ManiMySQL::GetServerVersion(void)
 				
 			buffer[j] = '\0';
 			i++;
-			minor = Q_atoi(buffer);
+			minor = atoi(buffer);
 
 			j = 0;
-			while (sql_server_version[i] != '\0')
+			// We add isdigit here because sometimes they like to do things like
+			// '5.0.24-standard'
+			while (sql_server_version[i] != '\0' && isdigit(sql_server_version[i]) != 0)
 			{
 				buffer[j++] = sql_server_version[i++];
 			}
 
 			buffer[j] = '\0';
-			issue = Q_atoi(buffer);
+			issue = atoi(buffer);
 		}
 	}
 

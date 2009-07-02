@@ -51,6 +51,8 @@
 #include "mani_output.h"
 #include "mani_gametype.h"
 #include "mani_vfuncs.h"
+#include "mani_util.h"
+#include "mani_vars.h"
 #include "mani_save_scores.h" 
 #include "shareddefs.h"
 
@@ -60,7 +62,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 ConVar mani_save_scores ("mani_save_scores", "0", 0, "0 = disabled, 1 = scores are saved when players disconnect and reconnect", true, 0, true, 1);
 ConVar mani_save_scores_tracking_time ("mani_save_scores_tracking_time", "5", 0, "Time in minutes before player is removed from tracking list, set to 0 for no limit", true, 0, true, 60);
@@ -74,8 +75,7 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 ManiSaveScores::ManiSaveScores()
 {
 	// Init
-	save_scores_list = NULL;
-	save_scores_list_size = 0;
+	save_scores_list.clear();
 	gpManiSaveScores = this;
 }
 
@@ -116,61 +116,53 @@ void	ManiSaveScores::NetworkIDValidated(player_t *player_ptr)
 {
 	if (war_mode) return;
 	if (mani_save_scores.GetInt() == 0) return;
-	if (sv_lan && sv_lan->GetInt() == 1) return;
+	if (IsLAN()) return;
 	if (player_ptr->is_bot) return;
 
 	// Linear search (we need the index for removal
-	for (int i = 0; i < save_scores_list_size; i++)
+	std::vector<save_scores_t>::iterator i;
+	for (i = save_scores_list.begin(); i != save_scores_list.end(); ++i)
 	{
-		if (FStrEq(save_scores_list[i].steam_id, player_ptr->steam_id))
+		if (strcmp(i->steam_id, player_ptr->steam_id) == 0)
 		{
 			time_t current_time;
 			time(&current_time);
 
 			// Set kills/deaths
 			if (mani_save_scores_tracking_time.GetInt() == 0 ||
-				save_scores_list[i].disconnection_time > current_time)
+				i->disconnection_time > current_time)
 			{
 				// Still within time limit for re-connection so set kills/deaths
 				CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
 
-				int index;
-
-				index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
-				if (index != -2)
+				if (Map_CanUseMap(pCBE, MANI_VAR_FRAGS))
 				{
-					int *frags;
-					frags = ((int *)pCBE + index);
-					*frags = *frags + save_scores_list[i].kills;
+					int frags = Map_GetVal(pCBE, MANI_VAR_FRAGS, 0);
+					frags += i->kills;
+					Map_SetVal(pCBE, MANI_VAR_FRAGS, frags);
 				}
 
-				index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_DEATHS);
-				if (index != -2)
+				if (Map_CanUseMap(pCBE, MANI_VAR_DEATHS))
 				{
-					int *deaths;
-					deaths = ((int *)pCBE + index);
-					*deaths = *deaths + save_scores_list[i].deaths;
+					int deaths = Map_GetVal(pCBE, MANI_VAR_DEATHS, 0);
+					deaths += i->deaths;
+					Map_SetVal(pCBE, MANI_VAR_DEATHS, deaths);
 				}
 
 				if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
 					mani_save_scores_css_cash.GetInt() == 1)
 				{
-					save_cash_list[player_ptr->index - 1].cash = save_scores_list[i].cash;
+					save_cash_list[player_ptr->index - 1].cash = i->cash;
 					save_cash_list[player_ptr->index - 1].trigger = true;
 				}
 
 				SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "Saved score reloaded");
-
-//MMsg("Restored player [%s] score to Kills [%i], Deaths [%i]\n", 
-//	player_ptr->name, save_scores_list[i].kills, save_scores_list[i].deaths);
 			}
 
-			// Remove player from list
-			RemoveIndexFromList((void **) &save_scores_list, sizeof(save_scores_t), &save_scores_list_size, i, 
-								(void *) &(save_scores_list[i]), (void *) &(save_scores_list[save_scores_list_size - 1]));
+			save_scores_list.erase(i);
+			break;
 		}
 	}
-	
 }
 
 //---------------------------------------------------------------------------------
@@ -184,7 +176,7 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 
 	if (war_mode) return;
 	if (mani_save_scores.GetInt() == 0) return;
-	if (sv_lan && sv_lan->GetInt() == 1) return;
+	if (IsLAN()) return;
 	if (player_ptr->is_bot) return;
 
 	int frag_count = 0;
@@ -192,30 +184,22 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 	int	cash = 0;
 
 	CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
-	int index;
 
 	// Need to save the players score
-	index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
-	if (index != -2)
+	if (Map_CanUseMap(pCBE, MANI_VAR_FRAGS))
 	{
-		int *frags;
-		frags = ((int *)pCBE + index);
-		frag_count = *frags;
+		frag_count = Map_GetVal(pCBE, MANI_VAR_FRAGS, 0);
 	}
 
-	// Need to save the players score
-	index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_DEATHS);
-	if (index != -2)
+	if (Map_CanUseMap(pCBE, MANI_VAR_DEATHS))
 	{
-		int *deaths;
-		deaths = ((int *)pCBE + index);
-		death_count = *deaths;
+		death_count = Map_GetVal(pCBE, MANI_VAR_DEATHS, 0);
 	}
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
 		mani_save_scores_css_cash.GetInt() == 1)
 	{
-		cash = Prop_GetAccount(player_ptr->entity);
+		cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT, 0);
 	}
 
 	save_scores_t save_scores;
@@ -228,13 +212,7 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 	save_scores.cash = cash;
 	save_scores.disconnection_time = current_time + (mani_save_scores_tracking_time.GetInt() * 60);
 
-
-//MMsg("Storing Player [%s], Kills [%i], Deaths [%i], Cash [%i], Current Time [%ld], Track Time [%ld]\n", 
-//	player_ptr->name, save_scores.kills, save_scores.deaths, save_scores.cash, current_time, save_scores.disconnection_time);
-
-	AddToList((void **) &save_scores_list, sizeof(save_scores_t), &save_scores_list_size);
-	save_scores_list[save_scores_list_size - 1] = save_scores;
-
+	save_scores_list.push_back(save_scores);
 }
 
 //---------------------------------------------------------------------------------
@@ -246,7 +224,7 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 
 	if (war_mode) return; 
 	if (mani_save_scores.GetInt() == 0 || mani_save_scores_css_cash.GetInt() == 0) return;
-	if (sv_lan && sv_lan->GetInt() == 1) return;
+	if (IsLAN()) return;
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
 	if (player_ptr->is_bot) return;
 
@@ -257,7 +235,7 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 
 	save_cash_list[player_ptr->index - 1].trigger = false;
 	SayToPlayer(ORANGE_CHAT, player_ptr, "Cash restored to last known amount");
-	Prop_SetAccount(player_ptr->entity, save_cash_list[player_ptr->index - 1].cash); 
+	Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, save_cash_list[player_ptr->index - 1].cash); 
 }
 
 //---------------------------------------------------------------------------------
@@ -265,7 +243,7 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 void ManiSaveScores::ResetScores(void)
 {
-	FreeList((void **) &save_scores_list, &save_scores_list_size);
+	save_scores_list.clear();
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
 		save_cash_list[i].cash = 0;

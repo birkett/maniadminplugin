@@ -1,3 +1,4 @@
+
 #define GAME_DLL 1
 #include "cbase.h"
 #include "globalstate.h"

@@ -27,16 +27,56 @@
 #define MANI_TEAM_H
 
 #include "cbaseentity.h"
+#include "mani_player.h"
+#include "mani_menu.h"
 
-struct team_t
+class ManiTeam
 {
-	CTeam	*team_ptr;
+public:
+
+
+	ManiTeam();
+	~ManiTeam();
+
+	void		UnLoad(void);
+	bool		IsOnSameTeam (player_t *victim, player_t *attacker);
+	edict_t		*FindTeam(int team_index) {return team_list[team_index].edict_ptr;};
+	const char *FindTeamName (int team_index) {return team_list[team_index].team_name;};
+	int			GetTeamScore(int team_index);
+	void		SetTeamScore(int team_index, int new_score);
+	void		Init(int edict_count);
+	void		GameFrame(void);
+	PLUGIN_RESULT	ProcessMaSwapTeam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaSpec(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaBalance (player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	bool			ProcessMaBalancePlayerType ( player_t	*player_ptr, bool mute_action, bool dead_only, bool dont_care);
+
+	void			RoundEnd(void);
+	void			TriggerSwapTeam(void);
+	void			SwapWholeTeam();
+
+private:
+
+	void		CleanUp(void);
+
+	struct team_t
+	{
+		edict_t	*edict_ptr;
+		CTeam	*cteam_ptr;
+		int		team_index;
+		char	team_name[32];
+	};
+
+	team_t	team_list[20];
+	bool		change_team;
+	float		change_team_time;
+	bool		swap_team;
+
 };
 
-extern  CGameRules *gamerules_ptr;
-extern	void FreeTeamList(void);
-extern	void SetupTeamList(int edict_count);
-extern	CTeam *FindTeam(int team_index);
-extern	bool IsOnSameTeam (player_t *victim, player_t *attacker);
+extern	ManiTeam *gpManiTeam;
+
+MENUALL_DEC(SwapPlayer);
+MENUALL_DEC(SpecPlayer);
 
 #endif

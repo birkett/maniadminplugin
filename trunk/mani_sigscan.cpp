@@ -34,12 +34,12 @@
 extern	void *gamedll;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
-extern	ConVar	*sv_lan;
 extern	bool war_mode;
 extern	int	con_command_index;
 extern	bf_write *msg_buffer;
 
 typedef void (*UTIL_Remove_)(CBaseEntity *);
+typedef CCSWeaponInfo* (*CCSGetFileWeaponInfoHandle_)(unsigned short);
 
 void *respawn_addr = NULL;
 void *util_remove_addr = NULL;
@@ -47,10 +47,16 @@ void *ent_list_find_ent_by_classname = NULL;
 void *console_echo_addr = NULL;
 void *switch_team_addr = NULL;
 void *set_model_from_class = NULL;
+void *get_file_weapon_info_addr = NULL;
+void *get_weapon_price_addr = NULL;
+void *get_weapon_addr = NULL;
+void *get_black_market_price_addr = NULL;
+void *update_client_addr = NULL;
 
 CBaseEntityList *g_pEList = NULL;
 CGameRules *g_pGRules = NULL;
 UTIL_Remove_ UTILRemoveFunc;
+CCSGetFileWeaponInfoHandle_ CCSGetFileWeaponInfoHandleFunc;
 
 static void ShowSigInfo(void *ptr, char *sig_name);
 
@@ -80,7 +86,7 @@ void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned ch
 		//iff i reached the end, we know we have a match!
 		if (i == sigLength)
 			return (void *)pBasePtr;
-		pBasePtr += sizeof(unsigned char *);  //search memory in an aligned manner
+		pBasePtr += sizeof(unsigned char);  //search memory in an aligned manner
 	}
 
 	return NULL;
@@ -174,6 +180,12 @@ bool	CCSUTILRemove(CBaseEntity *pCBE)
 	return false;
 }
 
+CCSWeaponInfo	*CCSGetFileWeaponInfoFromHandle(unsigned short handle_id)
+{
+	if (!get_file_weapon_info_addr) return false;
+	return CCSGetFileWeaponInfoHandleFunc(handle_id);
+}
+
 CBaseEntity * CGlobalEntityList_FindEntityByClassname(CBaseEntity *pCBE, const char *ent_class)
 {
 //	pWeapon = pThisPtr->Weapon_GetSlot(slot);
@@ -236,6 +248,58 @@ bool CCSPlayer_SetModelFromClass(CBaseEntity *pCBE)
 	return true;
 }
 
+int CCSWeaponInfo_GetWeaponPriceFunc(CCSWeaponInfo *weapon_info)
+{
+	if (!get_weapon_price_addr) return -1;
+
+	void **this_ptr = *(void ***)&weapon_info;
+	void *func = get_weapon_price_addr;
+
+	union {int (ManiEmptyClass::*mfpnew)(CCSWeaponInfo *weapon_info);
+#ifndef __linux__
+        void *addr;	} u; 	u.addr = func;
+#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_info);
+}
+
+int CCSGameRules_GetBlackMarketPriceForWeaponFunc(int weapon_id)
+{
+	if (!get_black_market_price_addr) return -1;
+	if (!g_pGRules) return -1;
+
+	void **this_ptr = *(void ***)g_pGRules;
+	void *func = get_black_market_price_addr;
+
+	union {int (ManiEmptyClass::*mfpnew)(int weapon_id);
+#ifndef __linux__
+        void *addr;	} u; 	u.addr = func;
+#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_id);
+}
+
+CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, int weapon_number)
+{
+	if (!get_weapon_addr) return NULL;
+
+	void **this_ptr = *(void ***)&pCBCC;
+	void *func = get_weapon_addr;
+
+	union {CBaseCombatWeapon *(ManiEmptyClass::*mfpnew)(int weapon_number);
+#ifndef __linux__
+        void *addr;	} u; 	u.addr = func;
+#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_number);
+}
+
 void LoadSigScans(void)
 {
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
@@ -248,7 +312,7 @@ void LoadSigScans(void)
 	bool success = GetDllMemInfo(gamedll, &base, &len);
 	if (success)
 	{
-		MMsg("Found base %p and length %i\n", base, len);
+		MMsg("Found base %p and length %i [%p]\n", base, len, base + len);
 		respawn_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_RoundRespawn));
 		util_remove_addr = FindSignature(base, len, (unsigned char *) MKSIG(UTIL_Remove));
 		void *is_there_a_bomb_addr = FindSignature(base, len, (unsigned char *) MKSIG(CEntList));
@@ -257,7 +321,7 @@ void LoadSigScans(void)
 			g_pEList = *(CBaseEntityList **) ((unsigned long) is_there_a_bomb_addr + (unsigned long) CEntList_gEntList);
 		}
 
-		void *update_client_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBasePlayer_UpdateClientData));
+		update_client_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBasePlayer_UpdateClientData));
 		if (update_client_addr)
 		{
 			g_pGRules = *(CGameRules **) ((unsigned long) update_client_addr + (unsigned long) CGameRules_gGameRules);
@@ -266,6 +330,15 @@ void LoadSigScans(void)
 		ent_list_find_ent_by_classname = FindSignature(base, len, (unsigned char *) MKSIG(CGlobalEntityList_FindEntityByClassname));
 		switch_team_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_SwitchTeam));
 		set_model_from_class = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_SetModelFromClass));
+		get_file_weapon_info_addr = FindSignature(base, len, (unsigned char *) MKSIG(GetFileWeaponInfoFromHandle));
+		get_weapon_price_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSWeaponInfo_GetWeaponPrice));
+		if (get_weapon_price_addr)
+		{
+			unsigned long offset = *(unsigned long *) ((unsigned long) get_weapon_price_addr + (unsigned long) (CCSWeaponInfo_GetWeaponPrice_Offset));
+			get_weapon_price_addr = (void *) ((unsigned long) get_weapon_price_addr + (unsigned long) (offset));
+		}
+		get_weapon_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBaseCombatCharacter_GetWeapon));
+		get_black_market_price_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSGameRules_GetBlackMarketPriceForWeapon));
 	}
 	else
 	{
@@ -289,9 +362,15 @@ void LoadSigScans(void)
 		g_pGRules = *(CGameRules **) ((unsigned long) ptr + (unsigned long) 6);
 	}
 
+	get_file_weapon_info_addr = FindAddress(GetFileWeaponInfoFromHandle_Linux);
+	get_weapon_price_addr = FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
+	get_weapon_addr = FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
+	get_black_market_price_addr = FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
+
+
 #endif
 
-	MMsg("Sigscan info\n");
+	MMsg("Sigscan info\n"); 
 	ShowSigInfo(respawn_addr, "A");
 	ShowSigInfo(util_remove_addr, "B");
 	if (util_remove_addr != NULL)
@@ -300,10 +379,22 @@ void LoadSigScans(void)
 	}	
 
 	ShowSigInfo(g_pEList, "C");
-	ShowSigInfo(g_pGRules, "D");
+#ifdef WIN32
+	ShowSigInfo(update_client_addr, "D");
+#endif
+	ShowSigInfo(g_pGRules, "D1");
 	ShowSigInfo(ent_list_find_ent_by_classname, "E");
 	ShowSigInfo(switch_team_addr, "F");
 	ShowSigInfo(set_model_from_class, "G");
+	ShowSigInfo(get_file_weapon_info_addr, "H");
+	if (get_file_weapon_info_addr != NULL)
+	{
+		CCSGetFileWeaponInfoHandleFunc = (CCSGetFileWeaponInfoHandle_) get_file_weapon_info_addr;
+	}
+
+	ShowSigInfo(get_weapon_price_addr, "I");
+	ShowSigInfo(get_weapon_addr, "J");
+	ShowSigInfo(get_black_market_price_addr, "K");
 }
 
 static

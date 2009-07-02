@@ -47,6 +47,7 @@
 #include "mani_player.h"
 #include "mani_stats.h"
 #include "mani_client.h"
+#include "mani_client_flags.h"
 #include "mani_output.h"
 #include "mani_reservedslot.h"
 #include "mani_autokickban.h"
@@ -54,6 +55,7 @@
 #include "mani_save_scores.h"
 #include "mani_gametype.h"
 #include "mani_netidvalid.h"
+#include "mani_util.h"
 #include "mani_trackuser.h"
 #include "mani_vote.h"
 #include "mani_afk.h"
@@ -67,7 +69,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 
 extern	CGlobalVars *gpGlobals;
 extern	int	max_players;
-extern	ConVar	*sv_lan;
 
 ConVar mani_steam_id_pending_timeout ("mani_steam_id_pending_timeout", "0", 0, "0 = disabled, > 0 = number of seconds before player is kicked for having STEAM_ID_PENDING steam id", true, 0, true, 90);
 ConVar mani_steam_id_pending_show_admin ("mani_steam_id_pending_show_admin", "0", 0, "0 = disabled, 1 = show admins when a player was kicked", true, 0, true, 1);
@@ -84,8 +85,6 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 ManiNetIDValid::ManiNetIDValid()
 {
 	// Init
-	net_id_list = NULL;
-	net_id_list_size = 0;
 	timeout = -999.0;
 
 	gpManiNetIDValid = this;
@@ -103,14 +102,8 @@ ManiNetIDValid::~ManiNetIDValid()
 void ManiNetIDValid::CleanUp(void)
 {
 	// Cleanup
-	if (net_id_list_size != 0)
-	{
-		free(net_id_list);
-		net_id_list_size = 0;
-	}
-
+	net_id_list.clear();
 	timeout = -999.0;
-
 	return;
 }
 
@@ -123,47 +116,25 @@ void ManiNetIDValid::Load(void)
 
 	for (int i = 1; i <= max_players; i++)
 	{
-		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree() )
+		player_t player;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.player_info->IsHLTV()) continue;
+		// Ignore bots
+		if (FStrEq(player.steam_id, "BOT")) continue;
+		if (FStrEq(player.steam_id, MANI_STEAM_PENDING))
 		{
-			player_t	player;
+			net_id_t temp;
+			// Add to list for pending search during game frame
 
-			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-			if (playerinfo && playerinfo->IsConnected())
-			{
-				// Ignore source TV
-				if (playerinfo->IsHLTV()) continue;
-
-				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
-
-				// Ignore bots
-				if (FStrEq(player.steam_id, "BOT")) continue;
-				if (FStrEq(player.steam_id, MANI_STEAM_PENDING))
-				{
-					// Add to list for pending search during game frame
-					AddToList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size);
-					net_id_list[net_id_list_size - 1].player_index = i;
-					time(&net_id_list[net_id_list_size - 1].timer);
-					net_id_list[net_id_list_size - 1].timer += mani_steam_id_pending_timeout.GetInt();
-					continue;
-				}
-
-				// Steam id is okay, just call NetworkIDValidated here
-				player.index = i;
-				player.player_info = playerinfo;
-				player.team = playerinfo->GetTeamIndex();
-				player.user_id = playerinfo->GetUserID();
-				Q_strcpy(player.name, playerinfo->GetName());
-				player.health = playerinfo->GetHealth();
-				player.is_dead = playerinfo->IsDead();
-				player.entity = pEntity;
-				player.is_bot = false;
-				GetIPAddressFromPlayer(&player);
-
-				// Call our own callback function instead of Valve's
-				this->NetworkIDValidated(&player);
-			}
+			temp.player_index = i;
+			time(&temp.timer);
+			temp.timer += mani_steam_id_pending_timeout.GetInt();
+			net_id_list.push_back(temp);
+			continue;
 		}
+
+		// Call our own callback function instead of Valve's
+		this->NetworkIDValidated(&player);
 	}
 
 	return;
@@ -181,48 +152,23 @@ void ManiNetIDValid::LevelInit(void)
 //---------------------------------------------------------------------------------
 // Purpose: Add client to list of players to check for
 //---------------------------------------------------------------------------------
-void ManiNetIDValid::ClientActive(edict_t *pEntity)
+void ManiNetIDValid::ClientActive(player_t *player_ptr)
 {
-	player_t	player;
-
-	player.entity = pEntity;
-
-	if(player.entity && !player.entity->IsFree() )
+	// Ignore bots
+	if (FStrEq(player_ptr->steam_id, "BOT")) return;
+	if (FStrEq(player_ptr->steam_id, MANI_STEAM_PENDING))
 	{
-		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( player.entity );
-		if (playerinfo && playerinfo->IsConnected())
-		{
-			// Ignore source TV
-			if (playerinfo->IsHLTV()) return;
+		net_id_t temp;
+		// Add to list for pending search during game frame
 
-			Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
-
-			// Ignore bots
-			if (FStrEq(player.steam_id, "BOT")) return;
-
-			player.index = engine->IndexOfEdict(player.entity);
-
-			if (FStrEq(player.steam_id, MANI_STEAM_PENDING))
-			{
-				// Add to list for pending search during game frame
-				AddToList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size);
-				net_id_list[net_id_list_size - 1].player_index = player.index;
-				time(&net_id_list[net_id_list_size - 1].timer);
-				net_id_list[net_id_list_size - 1].timer += mani_steam_id_pending_timeout.GetInt();
-				return;
-			}
-
-			player.user_id = playerinfo->GetUserID();
-			player.team = playerinfo->GetTeamIndex();
-			player.health = playerinfo->GetHealth();
-			player.is_dead = playerinfo->IsDead();
-			Q_strcpy(player.name, playerinfo->GetName());
-			player.player_info = playerinfo;
-			player.is_bot = false;
-			GetIPAddressFromPlayer(&player);
-			this->NetworkIDValidated(&player);
-		}
+		temp.player_index = player_ptr->index;
+		time(&temp.timer);
+		temp.timer += mani_steam_id_pending_timeout.GetInt();
+		net_id_list.push_back(temp);
+		return;
 	}
+
+	this->NetworkIDValidated(player_ptr);
 
 	return;
 }
@@ -237,95 +183,46 @@ void ManiNetIDValid::GameFrame(void)
 	{
 		timeout = gpGlobals->curtime + 1.0;
 
-		if (net_id_list)
+		if (!net_id_list.empty())
 		{
 			// Got some players to parse
-			for (int i = 0; i < net_id_list_size; i++)
+			for (vector<net_id_t>::iterator i = net_id_list.begin(); i != net_id_list.end(); ++i)
 			{
-				edict_t *pEntity = engine->PEntityOfEntIndex(net_id_list[i].player_index);
-				if(pEntity && !pEntity->IsFree() )
+				player_t player;
+				player.index = i->player_index;
+				if (!FindPlayerByIndex(&player))
 				{
-					player_t	player;
+					net_id_list.erase(i);
+					break;
+				}
 
-					IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-					if (playerinfo && playerinfo->IsConnected())
+				if (player.is_bot)
+				{
+					net_id_list.erase(i);
+					break;
+				}
+
+
+				if (FStrEq(player.steam_id, MANI_STEAM_PENDING))
+				{
+					if (this->TimeoutKick(&player, i->timer))
 					{
-						// Ignore source TV
-						if (playerinfo->IsHLTV()) continue;
-
-						Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
-
-						// Ignore bots
-						if (FStrEq(player.steam_id, "BOT")) continue;
-						if (FStrEq(player.steam_id, MANI_STEAM_PENDING))
-						{
-							// Do we need to kick anyone ?
-							if (sv_lan->GetInt() == 0 && 
-								mani_steam_id_pending_timeout.GetInt() > 0)
-							{
-								time_t current_time;
-								time(&current_time);
-								if (net_id_list[i].timer <= current_time)
-								{
-									// Kick player
-
-									if (mani_steam_id_pending_show_admin.GetInt() != 0)
-									{
-										// Show to admins
-										for (int j = 1; j <= max_players; j++)
-										{
-											player_t	admin;
-											int			admin_index;
-
-											admin.index = j;
-											if (!FindPlayerByIndex(&admin)) continue;
-											if (admin.is_bot) continue;
-											if (!gpManiClient->IsAdmin(&admin, &admin_index)) continue;
-
-											SayToPlayer(ORANGE_CHAT, &admin, "[MANI_ADMIN_PLUGIN] Warning !! Player %s kicked for invalid Steam ID", player.name);
-										}
-									}
-
-									char kick_cmd[512];
-									Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Steam ID is invalid ! Try again\n", player.user_id);
-									LogCommand (NULL, "Kick (STEAM_ID_PENDING) [%s] [%s] %s", player.name, player.steam_id, kick_cmd);
-									engine->ServerCommand(kick_cmd);
-									RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
-									i--;
-								}
-							}
-
-							continue;
-						}
-
-						// Steam id is okay, just call NetworkIDValidated here
-						player.index = net_id_list[i].player_index;
-						player.player_info = playerinfo;
-						player.team = playerinfo->GetTeamIndex();
-						player.user_id = playerinfo->GetUserID();
-						Q_strcpy(player.name, playerinfo->GetName());
-						player.health = playerinfo->GetHealth();
-						player.is_dead = playerinfo->IsDead();
-						player.entity = pEntity;
-						player.is_bot = false;
-						GetIPAddressFromPlayer(&player);
-
-						// Call our own callback function instead of Valve's
-						this->NetworkIDValidated(&player);
-						RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
-						i--;
+						// Player was kicked
+						net_id_list.erase(i);
+						break;
 					}
 					else
 					{
-						RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
-						i--;
+						// player still has time to connect
+						continue;
 					}
 				}
-				else
-				{
-					RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
-					i--;
-				}
+
+				// Steam id is okay, just call NetworkIDValidated here
+				// Call our own callback function instead of Valve's
+				this->NetworkIDValidated(&player);
+				net_id_list.erase(i);
+				break;
 			}
 		}
 	}
@@ -334,15 +231,57 @@ void ManiNetIDValid::GameFrame(void)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Map Loaded
+// Purpose: Kick player if exceeded timeout and timeout enabled
+//---------------------------------------------------------------------------------
+bool ManiNetIDValid::TimeoutKick(player_t *player_ptr, time_t timeout)
+{
+	time_t current_time;
+	time(&current_time);
+					// Do we need to kick anyone ?
+	if (!IsLAN() && 
+		mani_steam_id_pending_timeout.GetInt() > 0)
+	{
+		if (timeout <= current_time)
+		{
+			// Kick player
+
+			if (mani_steam_id_pending_show_admin.GetInt() != 0)
+			{
+				// Show to admins
+				for (int j = 1; j <= max_players; j++)
+				{
+					player_t	admin;
+					admin.index = j;
+					if (!FindPlayerByIndex(&admin)) continue;
+					if (admin.is_bot) continue;
+					if (!gpManiClient->HasAccess(admin.index, ADMIN, ADMIN_BASIC_ADMIN)) continue;
+
+					SayToPlayer(ORANGE_CHAT, &admin, "[MANI_ADMIN_PLUGIN] Warning !! Player %s kicked for invalid Steam ID", player_ptr->name);
+				}
+			}
+
+			char kick_cmd[512];
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Steam ID is invalid ! Try again\n", player_ptr->user_id);
+			LogCommand (NULL, "Kick (STEAM_ID_PENDING) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, kick_cmd);
+			engine->ServerCommand(kick_cmd);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Client Disconnected so remove from net id list
 //---------------------------------------------------------------------------------
 void ManiNetIDValid::ClientDisconnect(player_t *player_ptr)
 {
-	for (int i = 0; i < net_id_list_size; i++)
+	for (vector<net_id_t>::iterator i = net_id_list.begin(); i != net_id_list.end();++i)
 	{
-		if (net_id_list[i].player_index == player_ptr->index)
+		if (i->player_index == player_ptr->index)
 		{
-			RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
+			net_id_list.erase(i);
+			break;
 		}
 	}
 
@@ -358,6 +297,7 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 
 	if (ProcessPluginPaused()) return ;
 
+	gpManiClient->NetworkIDValidated(player_ptr);
 
 	if (gpManiAutoKickBan->NetworkIDValidated(player_ptr))
 	{
@@ -372,7 +312,7 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 		}
 	}
 
-	gpManiClient->NetworkIDValidated(player_ptr);
+	gpManiVote->NetworkIDValidated(player_ptr);
 	gpManiStats->NetworkIDValidated(player_ptr);
 	gpManiPing->NetworkIDValidated(player_ptr);
 

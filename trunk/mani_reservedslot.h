@@ -63,9 +63,11 @@ public:
 	void		LevelInit(void); // Run at level init
 	bool		NetworkIDValidated(player_t *player_ptr);
 	void		ClientDisconnect(player_t *player_ptr);
+	void		GameFrame(void);
 
 private:
 
+	bool		ProcessPlayer(player_t *player_ptr);
 	void		BuildPlayerKickList(player_t *player_ptr, int *players_on_server);
 	void		DisconnectPlayer(player_t *player_ptr);
 	bool		IsPlayerInReserveList(player_t *player_ptr);
@@ -75,6 +77,18 @@ private:
 	active_player_t	*active_player_list;
 	reserve_slot_t	*reserve_slot_list;
 	int	reserve_slot_list_size;
+
+	struct waiting_player_t
+	{
+		int		user_id;
+		float	timeout;
+	};
+
+	// Create our circular buffer
+	waiting_player_t	waiting_list[MANI_MAX_PLAYERS];
+	int					in_index;
+	int					out_index;
+	int					wait_size;
 };
 
 extern	ManiReservedSlot *gpManiReservedSlot;

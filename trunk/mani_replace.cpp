@@ -100,7 +100,7 @@ void	LoadCommandList(void)
 	FreeList((void **) &command_list, &command_list_size);
 
 	//Get command list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/commandlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/commandlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -135,11 +135,10 @@ void	LoadCommandList(void)
 bool	CheckForReplacement 
 (
  player_t *player,
- char	*command_string
+ const char	*command_string,
+ char	*replaced_command
 )
 {
-	int		admin_index;
-
 	for (int i = 0; i < command_list_size; i++)
 	{
 		if (FStrEq(command_string, command_list[i].command_alias))
@@ -148,13 +147,13 @@ bool	CheckForReplacement
 			// found a match
 			if (FStrEq(command_list[i].command_type, "R"))
 			{
-				if (!gpManiClient->IsAdminAllowed(player, "ma_kick", ALLOW_RCONSAY, war_mode, &admin_index))
+				if (!gpManiClient->HasAccess(player->index, ADMIN, ADMIN_RCONSAY, war_mode))
 				{
 					return true;
 				}
 
 				char	rcon_cmd[512];
-				Q_snprintf(rcon_cmd, sizeof(rcon_cmd), "%s\n", command_list[i].command_string);
+				snprintf(rcon_cmd, sizeof(rcon_cmd), "%s\n", command_list[i].command_string);
 
 				if (Q_strstr(rcon_cmd, "ma_setcash") ||
 					Q_strstr(rcon_cmd, "ma_givecash") ||
@@ -178,13 +177,13 @@ bool	CheckForReplacement
 			else if (FStrEq(command_list[i].command_type, "C"))
 			{
 				char	client_cmd[512];
-				Q_snprintf(client_cmd, sizeof(client_cmd), "%s\n", command_list[i].command_string);
+				snprintf(client_cmd, sizeof(client_cmd), "%s\n", command_list[i].command_string);
 				engine->ClientCommand(player->entity, client_cmd);
 				return false;
 			}
 			else
 			{
-				Q_strcpy(command_string, command_list[i].command_string);
+				Q_strcpy(replaced_command, command_list[i].command_string);
 				return true;
 			}
 		}

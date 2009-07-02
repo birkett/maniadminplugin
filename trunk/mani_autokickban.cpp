@@ -52,6 +52,7 @@
 #include "mani_client_flags.h"
 #include "mani_client.h"
 #include "mani_gametype.h"
+#include "mani_util.h"
 #include "mani_commands.h"
 #include "mani_help.h"
 #include "mani_autokickban.h"
@@ -64,7 +65,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 static int sort_autokick_steam ( const void *m1,  const void *m2);
 static int sort_autokick_ip ( const void *m1,  const void *m2);
@@ -136,7 +136,7 @@ void ManiAutoKickBan::LevelInit(void)
 	this->CleanUp();
 
 	//Get autokickban IP list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_ip.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_ip.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -155,7 +155,7 @@ void ManiAutoKickBan::LevelInit(void)
 	}
 
 	//Get autokickban Steam list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_steam.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_steam.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -174,7 +174,7 @@ void ManiAutoKickBan::LevelInit(void)
 	}
 
 	//Get autokickban Name list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_name.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_name.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -192,7 +192,7 @@ void ManiAutoKickBan::LevelInit(void)
 	}
 
 	//Get autokickban PName list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_pname.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/autokick_pname.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -242,13 +242,9 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 		return true;
 	}
 
-	int immunity_index = -1;
-	if (gpManiClient->IsImmune(player_ptr, &immunity_index))
+	if (gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_TAG, false, true))
 	{
-		if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_TAG))
-		{
-			return true;
-		}
+		return true;
 	}
 
 	Q_strcpy (autokick_steam_key.steam_id, player_ptr->steam_id);
@@ -272,7 +268,7 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 			{
 				player_ptr->user_id = engine->GetPlayerUserId(player_ptr->entity);
 				PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
-				Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
+				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 				LogCommand (NULL, "Kick (Bad Steam ID) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, kick_cmd);
 				engine->ServerCommand(kick_cmd);				
 				return false;
@@ -299,7 +295,7 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 			{
 				player_ptr->user_id = engine->GetPlayerUserId(player_ptr->entity);
 				PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
-				Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
+				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 				LogCommand (NULL, "Kick (Bad IP Address) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, kick_cmd);
 				engine->ServerCommand(kick_cmd);				
 				return false;
@@ -317,16 +313,16 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 				if (autokick_name_list[i].kick)
 				{
 					PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
-					Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
+					snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 					LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, kick_cmd);
 					engine->ServerCommand(kick_cmd);				
 					return false;
 				}
-				else if (autokick_name_list[i].ban && sv_lan->GetInt() != 1)
+				else if (autokick_name_list[i].ban && !IsLAN())
 				{
 					// Ban by user id
 					PrintToClientConsole(player_ptr->entity, "You have been auto banned\n");
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_name_list[i].ban_time, player_ptr->user_id);
+					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_name_list[i].ban_time, player_ptr->user_id);
 					LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, ban_cmd);
 					engine->ServerCommand(ban_cmd);
 					engine->ServerCommand("writeid\n");
@@ -343,16 +339,16 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 				if (autokick_pname_list[i].kick)
 				{
 					PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
-					Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
+					snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 					LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, kick_cmd);
 					engine->ServerCommand(kick_cmd);				
 					return false;
 				}
-				else if (autokick_pname_list[i].ban && sv_lan->GetInt() != 1)
+				else if (autokick_pname_list[i].ban && !IsLAN())
 				{
 					// Ban by user id
 					PrintToClientConsole(player_ptr->entity, "You have been auto banned\n");
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_pname_list[i].ban_time, player_ptr->user_id);
+					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_pname_list[i].ban_time, player_ptr->user_id);
 					LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, ban_cmd);
 					engine->ServerCommand(ban_cmd);
 					engine->ServerCommand("writeid\n");
@@ -371,13 +367,17 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	admin_index;
 	autokick_name_t	autokick_name;
+	bool perm_ban = true;
+	bool temp_ban = true;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		perm_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode);
+		temp_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN, war_mode);
+
+		if (!(temp_ban || perm_ban)) return PLUGIN_BAD_ADMIN;
 	}
 
 	int argc = gpCmd->Cmd_Argc();
@@ -388,10 +388,20 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanName(player_t *player_ptr, const 
 
 	if (argc == 3)
 	{
-		ban_time = Q_atoi(gpCmd->Cmd_Argv(2));
+		ban_time = atoi(gpCmd->Cmd_Argv(2));
 		if (ban_time < 0)
 		{
 			ban_time = 0;
+		}
+	}
+
+	// If if only temp ban if it's within limits
+	if (!perm_ban)
+	{
+		if (ban_time == 0 || ban_time > mani_admin_temp_ban_time_limit.GetInt())
+		{
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2581, "%i", mani_admin_temp_ban_time_limit.GetInt()));
+			return PLUGIN_STOP;
 		}
 	}
 
@@ -431,13 +441,12 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanName(player_t *player_ptr, const 
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	admin_index;
 	autokick_name_t	autokick_name;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	int argc = gpCmd->Cmd_Argc();
@@ -482,13 +491,18 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickName(player_t *player_ptr, const
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	admin_index;
 	autokick_pname_t	autokick_pname;
+
+	bool perm_ban = true;
+	bool temp_ban = true;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		perm_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode);
+		temp_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN, war_mode);
+
+		if (!(temp_ban || perm_ban)) return PLUGIN_BAD_ADMIN;
 	}
 
 	int argc = gpCmd->Cmd_Argc();
@@ -498,10 +512,20 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanPName(player_t *player_ptr, const
 
 	if (argc == 3)
 	{
-		ban_time = Q_atoi(gpCmd->Cmd_Argv(2));
+		ban_time = atoi(gpCmd->Cmd_Argv(2));
 		if (ban_time < 0)
 		{
 			ban_time = 0;
+		}
+	}
+
+	// If if only temp ban if it's within limits
+	if (!perm_ban)
+	{
+		if (ban_time == 0 || ban_time > mani_admin_temp_ban_time_limit.GetInt())
+		{
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2581, "%i", mani_admin_temp_ban_time_limit.GetInt()));
+			return PLUGIN_STOP;
 		}
 	}
 
@@ -542,13 +566,12 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanPName(player_t *player_ptr, const
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	admin_index;
 	autokick_pname_t	autokick_pname;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	int argc = gpCmd->Cmd_Argc();
@@ -591,13 +614,12 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickPName(player_t *player_ptr, cons
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickSteam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
 	autokick_steam_t	autokick_steam;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	int argc = gpCmd->Cmd_Argc();
@@ -635,13 +657,12 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickSteam(player_t *player_ptr, cons
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickIP(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
 	autokick_ip_t	autokick_ip;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	int argc = gpCmd->Cmd_Argc();
@@ -682,12 +703,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickIP(player_t *player_ptr, const c
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	int argc = gpCmd->Cmd_Argc();
@@ -721,12 +740,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoName(player_t *player_ptr, const c
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoPName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	int argc = gpCmd->Cmd_Argc();
@@ -760,12 +777,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoPName(player_t *player_ptr, const 
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoSteam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	int argc = gpCmd->Cmd_Argc();
@@ -797,12 +812,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoSteam(player_t *player_ptr, const 
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoIP(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	int argc = gpCmd->Cmd_Argc();
@@ -839,7 +852,7 @@ void	ManiAutoKickBan::WriteNameList(char *filename_string)
 	FileHandle_t file_handle;
 
 	// Check if file exists, create a new one if it doesn't
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
 	if (filesystem->FileExists( base_filename))
 	{
@@ -863,10 +876,10 @@ void	ManiAutoKickBan::WriteNameList(char *filename_string)
 			char ban_string[128];
 
 			if (!autokick_name_list[i].ban && !autokick_name_list[i].kick) continue;
-			Q_snprintf(ban_string , sizeof(ban_string), "b %i\n", autokick_name_list[i].ban_time);
+			snprintf(ban_string , sizeof(ban_string), "b %i\n", autokick_name_list[i].ban_time);
 
 			char	temp_string[512];
-			int		temp_length = Q_snprintf(temp_string, sizeof(temp_string), "\"%s\" %s", autokick_name_list[i].name, (autokick_name_list[i].kick)? "k\n":ban_string);											
+			int		temp_length = snprintf(temp_string, sizeof(temp_string), "\"%s\" %s", autokick_name_list[i].name, (autokick_name_list[i].kick)? "k\n":ban_string);											
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 			{
@@ -889,7 +902,7 @@ void	ManiAutoKickBan::WritePNameList(char *filename_string)
 	FileHandle_t file_handle;
 
 	// Check if file exists, create a new one if it doesn't
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
 	if (filesystem->FileExists( base_filename))
 	{
@@ -913,10 +926,10 @@ void	ManiAutoKickBan::WritePNameList(char *filename_string)
 			char ban_string[128];
 			if (!autokick_pname_list[i].ban && !autokick_pname_list[i].kick) continue;
 
-			Q_snprintf(ban_string , sizeof(ban_string), "b %i\n", autokick_pname_list[i].ban_time);
+			snprintf(ban_string , sizeof(ban_string), "b %i\n", autokick_pname_list[i].ban_time);
 
 			char	temp_string[512];
-			int		temp_length = Q_snprintf(temp_string, sizeof(temp_string), "\"%s\" %s", autokick_pname_list[i].pname, (autokick_pname_list[i].kick)? "k\n": ban_string);											
+			int		temp_length = snprintf(temp_string, sizeof(temp_string), "\"%s\" %s", autokick_pname_list[i].pname, (autokick_pname_list[i].kick)? "k\n": ban_string);											
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 			{
@@ -939,7 +952,7 @@ void	ManiAutoKickBan::WriteIPList(char *filename_string)
 	FileHandle_t file_handle;
 
 	// Check if file exists, create a new one if it doesn't
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
 	if (filesystem->FileExists( base_filename))
 	{
@@ -963,7 +976,7 @@ void	ManiAutoKickBan::WriteIPList(char *filename_string)
 			if (!autokick_ip_list[i].kick) continue;
 
 			char	temp_string[512];
-			int		temp_length = Q_snprintf(temp_string, sizeof(temp_string), "%s k\n", autokick_ip_list[i].ip_address);
+			int		temp_length = snprintf(temp_string, sizeof(temp_string), "%s k\n", autokick_ip_list[i].ip_address);
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)											
 			{
@@ -986,7 +999,7 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 	FileHandle_t file_handle;
 
 	// Check if file exists, create a new one if it doesn't
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
 	if (filesystem->FileExists( base_filename))
 	{
@@ -1010,7 +1023,7 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 			if (!autokick_steam_list[i].kick) continue;
 
 			char	temp_string[512];
-			int		temp_length = Q_snprintf(temp_string, sizeof(temp_string), "%s k\n", autokick_steam_list[i].steam_id);
+			int		temp_length = snprintf(temp_string, sizeof(temp_string), "%s k\n", autokick_steam_list[i].steam_id);
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)											
 			{
@@ -1288,7 +1301,7 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 			}
 
 			time_string[j] = '\0';
-			autokick_name.ban_time = Q_atoi(time_string);
+			autokick_name.ban_time = atoi(time_string);
 			break;
 		}
 	}
@@ -1423,7 +1436,7 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 			}
 
 			time_string[j] = '\0';
-			autokick_pname.ban_time = Q_atoi(time_string);
+			autokick_pname.ban_time = atoi(time_string);
 			break;
 		}
 	}
@@ -1459,12 +1472,10 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	OutputToConsole(player_ptr, "Current Names on the autokick/ban list\n\n");
@@ -1489,13 +1500,13 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowName(player_t *player_ptr, const
 			}
 			else
 			{
-				Q_snprintf(ban_time, sizeof(ban_time), "%i minute%s", 
+				snprintf(ban_time, sizeof(ban_time), "%i minute%s", 
 											autokick_name_list[i].ban_time, 
 											(autokick_name_list[i].ban_time == 1) ? "":"s");
 			}
 		}
 
-		Q_snprintf(name, sizeof(name), "\"%s\"", autokick_name_list[i].name);
+		snprintf(name, sizeof(name), "\"%s\"", autokick_name_list[i].name);
 		OutputToConsole(player_ptr, "%-30s %-6s %-6s %s\n", 
 					name,
 					(autokick_name_list[i].kick) ? "YES":"NO",
@@ -1512,12 +1523,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowName(player_t *player_ptr, const
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowPName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	OutputToConsole(player_ptr, "Current partial names on the autokick/ban list\n\n");
@@ -1542,13 +1551,13 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowPName(player_t *player_ptr, cons
 			}
 			else
 			{
-				Q_snprintf(ban_time, sizeof(ban_time), "%i minute%s", 
+				snprintf(ban_time, sizeof(ban_time), "%i minute%s", 
 											autokick_pname_list[i].ban_time, 
 											(autokick_pname_list[i].ban_time == 1) ? "":"s");
 			}
 		}
 
-		Q_snprintf(name, sizeof(name), "\"%s\"", autokick_pname_list[i].pname);
+		snprintf(name, sizeof(name), "\"%s\"", autokick_pname_list[i].pname);
 		OutputToConsole(player_ptr, "%-30s %-6s %-6s %s\n", 
 					name,
 					(autokick_pname_list[i].kick) ? "YES":"NO",
@@ -1565,12 +1574,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowPName(player_t *player_ptr, cons
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowSteam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	OutputToConsole(player_ptr, "Current steam ids on the autokick/ban list\n\n");
@@ -1594,12 +1601,10 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowSteam(player_t *player_ptr, cons
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowIP(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	OutputToConsole(player_ptr, "Current IP addresses on the autokick/ban list\n\n");
@@ -1621,207 +1626,152 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowIP(player_t *player_ptr, const c
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset )
+int AutoBanItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	player_t	player;
+	char *name;
+	int	time;
+	if (!m_page_ptr->params.GetParam("time", &time)) return CLOSE_MENU;
+	if (!this->params.GetParam("name", &name)) return CLOSE_MENU;
 
-	if (argc - argv_offset == 4)
+	gpCmd->NewCmd();
+	gpCmd->AddParam("%s", name);
+	gpCmd->AddParam(time); 
+	gpManiAutoKickBan->ProcessMaAutoBanName
+			(
+			player_ptr,
+			"ma_aban_name",
+			0,
+			M_MENU
+			);
+
+	return RePopOption(REPOP_MENU_WAIT2);
+}
+
+bool AutoBanPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 510));
+	this->SetTitle("%s", Translate(player_ptr, 511));
+
+	for( int i = 1; i <= max_players; i++ )
 	{
-		player.user_id = Q_atoi(gpCmd->Cmd_Argv(3 + argv_offset));
-		if (!FindPlayerByUserID(&player))
-		{
-			return;
-		}
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue; 
+		if (player.is_bot) continue;
 
-		if (player.is_bot)
-		{
-			return;
-		}
-
-		int ban_time = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-		gpCmd->NewCmd();
-		gpCmd->AddParam("%s", player.name);
-		gpCmd->AddParam(ban_time); 
-		this->ProcessMaAutoBanName
-				(
-				admin,
-				"ma_aban_name",
-				0,
-				M_CCONSOLE
-				);
-
-		return;
+		MenuItem *ptr = new AutoBanItem();
+		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
+		ptr->params.AddParam("name", player.user_id);
+		ptr->SetHiddenText("%s", player.name);
+		this->AddItem(ptr);
 	}
-	else
-	{
-		char	more_ban_cmd[128];
 
-		// Setup player list
-		FreeMenu();
-
-		for( int i = 1; i <= max_players; i++ )
-		{
-			player.index = i;
-			if (!FindPlayerByIndex(&player))
-			{
-				continue;
-			}
-			
-			if (player.is_bot)
-			{
-				continue;
-			}
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%s] %i",  player.name, player.user_id);							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin %s %s %i", ban_command, gpCmd->Cmd_Argv(2 + argv_offset), player.user_id);
-			Q_strcpy (menu_list[menu_list_size - 1].sort_name, player.name);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;                         
-		}
-
-		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, gpCmd->Cmd_Argv(2 + argv_offset));
-		DrawSubMenu (admin, Translate(510), Translate(511), next_index, "admin", more_ban_cmd,	true, -1);
-	}
-	
-	return;
+	this->SortHidden();
+	return true;
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ManiAutoKickBan::ProcessAutoKickPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset )
+int AutoKickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	player_t	player;
+	char *ban_type;
+	if (!m_page_ptr->params.GetParam("ban_type", &ban_type)) return CLOSE_MENU;
 
-	if (argc - argv_offset == 3)
+	int user_id;
+	if (!this->params.GetParam("user_id", &user_id)) return CLOSE_MENU;
+
+	player_t player;
+	player.user_id = user_id;
+	if (!FindPlayerByUserID(&player)) return CLOSE_MENU;
+	if (player.is_bot) return CLOSE_MENU;
+
+	gpCmd->NewCmd();
+
+	if (strcmp("autokicksteam", ban_type) == 0)
 	{
-		player.user_id = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-		if (!FindPlayerByUserID(&player))
-		{
-			return;
-		}
-
-		if (player.is_bot)
-		{
-			return;
-		}
-
-		gpCmd->NewCmd();
-
-		if (FStrEq("autokicksteam", ban_command))
-		{
-			gpCmd->AddParam("%s", player.steam_id);
-			this->ProcessMaAutoKickSteam
-					(
-					admin,
-					"ma_akick_steam",
-					0,
-					M_CCONSOLE
-					);
-		}
-		else if (FStrEq("autokickip", ban_command))
-		{
-			gpCmd->AddParam("%s", player.ip_address);
-			this->ProcessMaAutoKickIP
-					(
-					admin,
-					"ma_akick_ip",
-					0,
-					M_CCONSOLE
-					);
-		}
-		else
-		{
-			gpCmd->AddParam("%s", player.name);
-			this->ProcessMaAutoKickName
-					(
-					admin,
-					"ma_akick_name",
-					0,
-					M_CCONSOLE
-					);
-		}
-
-		return;
+		gpCmd->AddParam("%s", player.steam_id);
+		gpManiAutoKickBan->ProcessMaAutoKickSteam
+				(
+				player_ptr,
+				"ma_akick_steam",
+				0,
+				M_MENU
+				);
+	}
+	else if (strcmp("autokickip", ban_type) == 0)
+	{
+		gpCmd->AddParam("%s", player.ip_address);
+		gpManiAutoKickBan->ProcessMaAutoKickIP
+				(
+				player_ptr,
+				"ma_akick_ip",
+				0,
+				M_MENU
+				);
 	}
 	else
 	{
-		char	more_ban_cmd[128];
-
-		// Setup player list
-		FreeMenu();
-
-		for( int i = 1; i <= max_players; i++ )
-		{
-			player.index = i;
-			if (!FindPlayerByIndex(&player)) continue; 
-			if (player.is_bot) continue;
-
-			if (FStrEq("autokicksteam", ban_command) ||
-				FStrEq("autokickip", ban_command))
-			{
-				int immunity_index = -1;
-				if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
-				{
-					if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_BAN))
-					{
-						continue;
-					}
-				}
-			}
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%s] %i",  player.name, player.user_id);							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin %s %i", ban_command, player.user_id);
-			Q_strcpy (menu_list[menu_list_size - 1].sort_name, player.name);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;                         
-		}
-
-		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, gpCmd->Cmd_Argv(2 + argv_offset));
-
-		if (FStrEq("autokicksteam", ban_command))
-		{
-			DrawSubMenu (admin, Translate(520), Translate(523), next_index, "admin", more_ban_cmd,	true, -1);
-		}
-		else if (FStrEq("autokickip", ban_command))
-		{
-			DrawSubMenu (admin, Translate(521), Translate(524), next_index, "admin", more_ban_cmd, true, -1);
-		}
-		else
-		{
-			DrawSubMenu (admin, Translate(522), Translate(525), next_index, "admin", more_ban_cmd,	true, -1);
-		}
+		gpCmd->AddParam("%s", player.name);
+		gpManiAutoKickBan->ProcessMaAutoKickName
+				(
+				player_ptr,
+				"ma_akick_name",
+				0,
+				M_MENU
+				);
 	}
-	
-	return;
+
+	return RePopOption(REPOP_MENU_WAIT2);
+}
+
+bool AutoKickPage::PopulateMenuPage(player_t *player_ptr)
+{
+
+	char *ban_type;
+	this->params.GetParam("ban_type", &ban_type);
+
+	if (strcmp(ban_type, "autokicksteam") == 0)
+	{
+		this->SetEscLink("%s", Translate(player_ptr, 520));
+		this->SetTitle("%s", Translate(player_ptr, 523));
+	}
+	else if (strcmp(ban_type, "autokickip") == 0)
+	{
+		this->SetEscLink("%s", Translate(player_ptr, 521));
+		this->SetTitle("%s", Translate(player_ptr, 524));
+	}
+	else
+	{
+		this->SetEscLink("%s", Translate(player_ptr, 522));
+		this->SetTitle("%s", Translate(player_ptr, 525));
+	}
+
+	for( int i = 1; i <= max_players; i++ )
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue; 
+		if (player.is_bot) continue;
+
+		if (strcmp("autokicksteam", ban_type) == 0 ||
+			strcmp("autokickip", ban_type) == 0)
+		{
+			if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
+			{
+				continue;
+			}
+		}
+
+		MenuItem *ptr = new AutoKickItem();
+		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
+		ptr->params.AddParam("user_id", player.user_id);
+		ptr->SetHiddenText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortHidden();
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -1833,13 +1783,9 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 	char	kick_cmd[512];
 	char	ban_cmd[512];
 
-	int immunity_index = -1;
-	if (gpManiClient->IsImmune(player, &immunity_index))
+	if (gpManiClient->HasAccess(player->index, IMMUNITY, IMMUNITY_TAG, false, true))
 	{
-		if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_TAG))
-		{
-			return;
-		}
+		return;
 	}
 
 	for (int i = 0; i < autokick_name_list_size; i++)
@@ -1850,16 +1796,16 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 			if (autokick_name_list[i].kick)
 			{
 				PrintToClientConsole(player->entity, "You have been autokicked\n");
-				Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
+				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
 				LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s", player->name, player->steam_id, kick_cmd);
 				engine->ServerCommand(kick_cmd);				
 				return;
 			}
-			else if (autokick_name_list[i].ban && sv_lan->GetInt() != 1)
+			else if (autokick_name_list[i].ban && !IsLAN())
 			{
 				// Ban by user id
 				PrintToClientConsole(player->entity, "You have been auto banned\n");
-				Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_name_list[i].ban_time, player->user_id);
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_name_list[i].ban_time, player->user_id);
 				LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
 				engine->ServerCommand(ban_cmd);
 				engine->ServerCommand("writeid\n");
@@ -1877,16 +1823,16 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 			if (autokick_pname_list[i].kick)
 			{
 				PrintToClientConsole(player->entity, "You have been autokicked\n");
-				Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
+				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
 				LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s", player->name, player->steam_id, kick_cmd);
 				engine->ServerCommand(kick_cmd);				
 				return;
 			}
-			else if (autokick_pname_list[i].ban && sv_lan->GetInt() != 1)
+			else if (autokick_pname_list[i].ban && !IsLAN())
 			{
 				// Ban by user id
 				PrintToClientConsole(player->entity, "You have been auto banned\n");
-				Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_pname_list[i].ban_time, player->user_id);
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_pname_list[i].ban_time, player->user_id);
 				LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
 				engine->ServerCommand(ban_cmd);
 				engine->ServerCommand("writeid\n");

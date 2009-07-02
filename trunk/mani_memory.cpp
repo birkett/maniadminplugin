@@ -66,57 +66,6 @@ bool AddToList(void **list_ptr, size_t size_of_structure, int *list_size_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Generic way of adding 1 item to a list
-//---------------------------------------------------------------------------------
-bool RemoveIndexFromList
-(
- void **list_ptr, 
- size_t size_of_structure, 
- int *list_size_ptr,
- int index,
- void *index_ptr,
- void *end_ptr
-)
-{
-	void *temp_ptr;
-
-	if (*list_ptr == NULL) return true;
-	if (index < 0) return false;
-	if (index >= *list_size_ptr) return false;
-
-	// Just delete memory if list size only 1
-	if (*list_size_ptr == 1)
-	{
-		free(*list_ptr);
-		*list_ptr = NULL;
-		*list_size_ptr = 0;
-		return true;
-	}
-
-
-	// Check if index not last in the list
-	if (index != *list_size_ptr - 1)
-	{
-		// Copy end of list to index 
-		Q_memcpy(index_ptr, end_ptr, size_of_structure);
-		//list_ptr[index] = list_ptr[*list_size_ptr-1];
-	}
-
-	// List already created, use realloc to remove one
-	temp_ptr = (void *) realloc(*list_ptr, (*list_size_ptr - 1) * size_of_structure);
-	if (temp_ptr == NULL)
-	{
-		// Realloc failed !!
-		Msg("Run out of memory running realloc !\n");
-		return false;
-	}
-
-	*list_size_ptr = *list_size_ptr - 1;
-	*list_ptr = temp_ptr;
-
-	return true;
-}
-//---------------------------------------------------------------------------------
 // Purpose: Generic way of creating a list of items
 //---------------------------------------------------------------------------------
 bool CreateList(void **list_ptr, size_t size_of_structure, int size_required, int *list_size_ptr)

@@ -33,6 +33,13 @@ ConVar mani_path( "mani_path", "mani_admin_plugin", 0, "This is the path after /
 
 ConVar mani_adverts( "mani_adverts", "1", 0, "This defines whether the adverts are on or off", true, 0, true, 1 );	
 ConVar mani_time_between_adverts( "mani_time_between_adverts", "120", 0, "This defines the time between adverts", true,20, true, 1000 );	
+ConVar mani_advert_dead_only( "mani_advert_dead_only", "0", 0, "Setup if you only want to show to only dead players or all players (0 = all, 1 = dead)",true, 0, true, 1);
+ConVar mani_advert_col_blue( "mani_advert_col_blue", "255", 0, "This defines the blue component of the adverts (0 - 255)",true, 0, true, 255 );
+ConVar mani_advert_col_red( "mani_advert_col_red", "0", 0, "This defines the red component of the adverts (0 - 255)",true, 0, true, 255 );
+ConVar mani_advert_col_green( "mani_advert_col_green", "0", 0, "This defines the green component of the adverts (0 - 255)",true, 0, true, 255 );
+ConVar mani_adverts_top_left ("mani_adverts_top_left", "1", 0, "This defines whether advert are shown in the top left corner of the screen (1 = on)",true, 0, true, 1 ); 
+ConVar mani_adverts_chat_area ("mani_adverts_chat_area", "1", 0, "This defines whether advert are shown in the chat area of the screen (1 = on)",true, 0, true, 1 ); 
+ConVar mani_adverts_bottom_area ("mani_adverts_bottom_area", "1", 0, "This defines whether advert are shown in the bottom area of the screen where hints are shown (1 = on)",true, 0, true, 1 ); 
 
 ConVar mani_tk_protection( "mani_tk_protection", "1", 0, "This defines whether the tk protection is enabled",true, 0, true, 1 );	
 ConVar mani_tk_forgive( "mani_tk_forgive", "1", 0, "This defines whether the tk forgive menu is on or off",true, 0, true, 1 );	
@@ -88,10 +95,6 @@ ConVar mani_tk_team_wound_reflect_threshold ( "mani_tk_team_wound_reflect_thresh
 ConVar mani_tk_team_wound_reflect_ratio ( "mani_tk_team_wound_reflect_ratio", "1.0", 0, "This defines the start reflective damage ratio to be applied to the attacker", true, 0.1, true, 100);
 ConVar mani_tk_team_wound_reflect_ratio_increase ( "mani_tk_team_wound_reflect_ratio_increase", "0.2", 0, "This defines the amount to add on to each players current reflection ratio per each team wound", true, 0, true, 999);
 
-ConVar mani_advert_col_blue( "mani_advert_col_blue", "255", 0, "This defines the blue component of the adverts (0 - 255)",true, 0, true, 255 );
-ConVar mani_advert_col_red( "mani_advert_col_red", "0", 0, "This defines the red component of the adverts (0 - 255)",true, 0, true, 255 );
-ConVar mani_advert_col_green( "mani_advert_col_green", "0", 0, "This defines the green component of the adverts (0 - 255)",true, 0, true, 255 );
-
 ConVar mani_adminsay_anonymous( "mani_adminsay_anonymous", "0", 0, "This defines whether admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminkick_anonymous( "mani_adminkick_anonymous", "0", 0, "This defines whether kick admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
 ConVar mani_adminslay_anonymous( "mani_adminslay_anonymous", "0", 0, "This defines whether slay admin messages are anonymous to non admins (1 = anonymous)",true, 0, true, 1 );
@@ -140,9 +143,6 @@ ConVar mani_stats_write_frequency_to_disk ("mani_stats_write_frequency_to_disk",
 ConVar mani_stats_include_bot_kills ("mani_stats_include_bot_kills", "0", 0, "0 = Bot kills are not counted, 1 = Bot kills are counted", true, 0, true, 1 ); 
 ConVar mani_stats_most_destructive ("mani_stats_most_destructive", "0", 0, "0 = Disable most destructive display, 1 = Enable most destructive display", true, 0, true, 1); 
 
-ConVar mani_adverts_top_left ("mani_adverts_top_left", "1", 0, "This defines whether advert are shown in the top left corner of the screen (1 = on)",true, 0, true, 1 ); 
-ConVar mani_adverts_chat_area ("mani_adverts_chat_area", "1", 0, "This defines whether advert are shown in the chat area of the screen (1 = on)",true, 0, true, 1 ); 
-
 ConVar mani_ff_player_only ("mani_ff_player_only", "0", 0, "This defines whether the whole server sees the message or not (0 = whole server)",true, 0, true, 1 ); 
 ConVar mani_nextmap_player_only ("mani_nextmap_player_only", "0", 0, "This defines whether the whole server sees the message or not (0 = whole server)",true, 0, true, 1 ); 
 ConVar mani_timeleft_player_only ("mani_timeleft_player_only", "0", 0, "This defines whether the whole server sees the message or not (0 = whole server)",true, 0, true, 1 ); 
@@ -161,11 +161,6 @@ ConVar mani_reserve_slots_include_admin ("mani_reserve_slots_include_admin", "1"
 
 ConVar mani_reverse_admin_flags ("mani_reverse_admin_flags", "0", 0, "Set to 1 if you want admin flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
 ConVar mani_reverse_immunity_flags ("mani_reverse_immunity_flags", "0", 0, "Set to 1 if you want immunity flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
-
-ConVar mani_protect_against_cheat_cvars ("mani_protect_against_cheat_cvars", "0", 0, "Set to 1 if you want the plugin to force suspect game cvars to default values", true, 0, true, 1); 
-ConVar mani_protect_against_cheat_cvars_threshold ("mani_protect_against_cheat_cvars_threshold", "0", 0, "Set number of cheat detections required before action is taken", true, 0, true, 100); 
-ConVar mani_protect_against_cheat_cvars_mode ("mani_protect_against_cheat_cvars_mode", "0", 0, "0 = Ban by Steam ID, 1 = Ban by IP, 2 = Ban by Steam and IP", true, 0, true, 2); 
-ConVar mani_protect_against_cheat_cvars_ban_time ("mani_protect_against_cheat_cvars_ban_time", "0", 0, "0 = permanent ban otherwise specifies the number of minutes", true, 0, true, 9999999); 
 
 ConVar mani_military_time ("mani_military_time", "1", 0, "Set to 1 if you want the plugin to show military time, 0 for normal 12 hour clock", true, 0, true, 1); 
 
@@ -213,6 +208,8 @@ ConVar mani_vote_rcon_percent_required ("mani_vote_rcon_percent_required", "60",
 ConVar mani_vote_rounds_before_end_of_map_vote ("mani_vote_rounds_before_end_of_map_vote", "3", 0, "Defines how rounds before mp_winlimit is hit that a random map vote is started", true, 3, true, 99999); 
 ConVar mani_vote_show_vote_mode ("mani_vote_show_vote_mode", "3", 0, "0 = quiet mode, 1 = show players as they vote but not their choice, 2 = Show voted choice but not player, 3 = show player name and their choice", true, 0, true, 3); 
 ConVar mani_vote_time_before_end_of_map_vote ("mani_vote_time_before_end_of_map_vote", "3", 0, "Defines how many minutes before the end of the map that a random map vote is started", true, 2, true, 99999); 
+
+ConVar mani_vote_end_of_map_swap_team ("mani_vote_end_of_map_swap_team", "0", 0, "Defines if teams are swapped on an extend vote win for end of map vote", true, 0, true, 1); 
 
 ConVar mani_vote_user_vote_ban_minimum_votes( "mani_vote_user_vote_ban_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to ban a player",true, 0, true, 64 );	
 ConVar mani_vote_user_vote_ban_mode ("mani_vote_user_vote_ban_mode", "0", 0, "0 = only when no admin on server, 1 = all the time", true, 0, true, 1); 
@@ -361,3 +358,6 @@ ConVar mani_external_stats_log_allow_war_logs ("mani_external_stats_log_allow_wa
 
 ConVar mani_hostage_follow_warning ("mani_hostage_follow_warning", "0", 0, "1 = player will be warned in console if a hostage stops following on CSS, 0 = disable warning", true, 0, true, 1);
 
+ConVar mani_all_see_ma_rates ("mani_all_see_ma_rates", "0", 0, "0 = Only admins can access ma_rates, 1 = Anyone can use ma_rates", true, 0, true, 1);
+
+ConVar mani_admin_temp_ban_time_limit ("mani_admin_temp_ban_time_limit", "360", 0, "Time in minutes that an admin with only Ban access can ban for, admins with Permanent Ban access can ban for as long as they wish (default is 6 hours maz)", true, 0, true, 99999999);

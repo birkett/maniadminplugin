@@ -42,28 +42,42 @@ const int MANI_MAX_PLAYERS = 64;
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaN, www.mani-admin-plugin.com"
-#ifdef SOURCEMM
-#define PLUGIN_CORE_VERSION "1.2BetaN SMM"
-#else
-#define PLUGIN_CORE_VERSION "1.2BetaN"
+const int	gametypes_min_version = 1;
+
+#ifdef WIN32
+#define snprintf _snprintf
 #endif
-#define PLUGIN_VERSION_ID "V1.2BetaN\n"
-#define PLUGIN_VERSION_ID2 "V1.2BetaN"
+
+#ifdef SOURCEMM
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaO SMM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaO SMM"
+#else
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaO VSP, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaO VSP"
+#endif
+
+#define PLUGIN_VERSION_ID "V1.2BetaO\n"
+#define PLUGIN_VERSION_ID2 "V1.2BetaO"
 
 // Define vote types
-#define VOTE_RANDOM_END_OF_MAP (0)
-#define VOTE_RANDOM_MAP (1)
-#define VOTE_EXTEND_MAP (2)
-#define VOTE_MAP (3)
-#define VOTE_QUESTION (4)
-#define VOTE_RCON (5)
-#define VOTE_ROCK_THE_VOTE (6)
+enum
+{
+	VOTE_RANDOM_END_OF_MAP = 0,
+	VOTE_RANDOM_MAP,
+	VOTE_EXTEND_MAP,
+	VOTE_MAP,
+	VOTE_QUESTION,
+	VOTE_RCON,
+	VOTE_ROCK_THE_VOTE,
+};
 
 // Define delay types for voting
-#define VOTE_NO_DELAY (0)
-#define VOTE_END_OF_ROUND_DELAY (1)
-#define VOTE_END_OF_MAP_DELAY (2)
+enum
+{
+	VOTE_NO_DELAY = 0,
+	VOTE_END_OF_ROUND_DELAY,
+	VOTE_END_OF_MAP_DELAY,
+};
 
 extern ConVar mani_stats_by_steam_id;
 
@@ -155,11 +169,6 @@ struct kill_progress_t
 struct gimp_t
 {
 	char	phrase[256];
-};
-
-struct lang_trans_t
-{
-	char	*translation;
 };
 
 struct name_change_t

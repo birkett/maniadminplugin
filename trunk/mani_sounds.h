@@ -34,8 +34,8 @@
 #define MANI_ACTION_SOUND_ROUNDSTART	(3)
 #define MANI_ACTION_SOUND_ROUNDEND		(4)
 #define MANI_ACTION_SOUND_RESTRICTWEAPON (5)
-//#define MANI_ACTION_SOUND_MENUSELECT	(6)
-//#define MANI_ACTION_SOUND_MENUEXIT		(7)
+
+#include "mani_menu.h"
 
 struct	sound_t
 {
@@ -55,7 +55,9 @@ extern	void	LoadSounds(void);
 extern	void	FreeSounds(void);
 extern	PLUGIN_RESULT	ProcessMaShowSounds(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 extern	PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	void			ProcessPlaySound( player_t *player, int next_index, int argv_offset );
 extern	void			ProcessPlayActionSound (player_t *target_player, int sound_id);
+extern	void	ProcessPlayMenuSound( player_t *target_player_ptr, char *sound_name);
+
+MENUALL_DEC(PlaySound);
 
 #endif

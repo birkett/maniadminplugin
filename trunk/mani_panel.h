@@ -26,6 +26,8 @@
 #ifndef MANI_PANEL_H
 #define MANI_PANEL_H
 
+#include "mani_menu.h"
+
 #define MANI_TOP_PANEL ("mani_top")
 #define MANI_STATSME_PANEL ("mani_statsme")
 #define MANI_RULES_PANEL ("mani_rules")
@@ -41,10 +43,11 @@ extern void	LoadWebShortcuts(void);
 extern void FreeWebShortcuts(void);
 extern bool ProcessWebShortcuts(edict_t *pEntity, const char *say_string);
 extern PLUGIN_RESULT ProcessMaFavourites(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern void ProcessMenuMaFavourites( player_t *player, int next_index, int argv_offset );
 extern void	InitPanels(void);
 extern void	DrawPanel(MRecipientFilter *mrf, char *panel_title, char *network_string, char *message, int message_length);
 extern void	DrawMOTD(MRecipientFilter *mrf);
 extern void	DrawURL(MRecipientFilter *mrf, char *title, const char *url);
+
+MENUALL_DEC(Favourites);
 
 #endif

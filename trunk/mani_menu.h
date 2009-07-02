@@ -29,35 +29,291 @@
 #define MAX_AMX_MENU (8)
 #define MAX_ESCAPE_MENU (7)
 
-struct menu_t
-{
-	char	sort_name[256];
-	char	menu_text[128];
-	char	menu_command[512];
-};
+#include <vector>
+#include <algorithm>
+#include "mani_util.h"
 
-struct menu_select_t
-{
-	char	command[512];
-	bool	in_use;
-};
+using namespace std;
 
-struct menu_confirm_t
-{
-	bool	in_use;
-	float	timeout;
-	menu_select_t menu_select[10];
-};
-
-extern	menu_t		*menu_list;
-extern	int			menu_list_size;
-extern	menu_confirm_t	menu_confirm[MANI_MAX_PLAYERS];
-
-extern	void	FreeMenu (void);
-extern	void	DrawSubMenu (player_t *player, char *title, char *message, int next_index, char *root_command, char *more_command, bool sub_menu_back, int time_to_show );
-extern	void	DrawStandardMenu( player_t	*player, char *title, char *message, bool show_exit);
 extern	void	DrawMenu(int player_index, int time, int range, bool back, bool more, bool cancel, char *menu_string, bool final);
-extern	void	SortMenu(void);
-extern	void	ProcessPlayMenuSound( player_t *target_player_ptr, char *sound_name);
+extern	int		RePopOption(int return_option);
 
+enum
+{
+	REDRAW_MENU = 0,
+	CLOSE_MENU,
+	REPOP_MENU,
+	REPOP_MENU_WAIT1,
+	REPOP_MENU_WAIT2,
+	REPOP_MENU_WAIT3,
+	NEW_MENU,
+	NOTHING,
+	PREVIOUS_MENU
+};
+
+class MenuTemporal;
+class MenuPage;
+
+class MenuItem
+{
+public:
+	MenuItem ();
+	~MenuItem();
+
+	void SetDisplayText(const char *text, ...);
+	void SetHiddenText(const char *text, ...);
+	void AddPreText(const char *text, ...);
+	void AddPostText(const char *text, ...);
+	bool operator<(const MenuItem &right) const;
+	virtual	int		MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr) = 0;
+
+	ParamManager	params;
+	BasicStr		display_text;
+	BasicStr		hidden_text;
+	vector<BasicStr> pre_text; // Free text that can be placed before the menu item (AMX only)
+	vector<BasicStr> post_text; // Free text that can be placed after the menu item (AMX only)
+};
+
+class MenuPage
+{
+	friend class MenuTemporal;
+	friend class MenuManager;
+public:
+	// Acsending Display Text sort
+
+
+	MenuPage();
+	~MenuPage();
+	void SetTitle(const char *menu_title, ...);
+	void SetEscLink(const char *esc_link_text, ...);
+	void SetInputObject(bool enabled);
+	bool IsChatHooked(void);
+	virtual bool PopulateMenuPage(player_t *player_ptr) = 0;
+	void Kill();
+	int	 Size();
+	void SetTimeout(int time);
+	void AddItem(MenuItem *ptr);
+	void SortDisplay();
+	void SortHidden();
+	void RenderPage(player_t *player_ptr, int history_level);
+	void RenderInputObject(player_t *player_ptr);
+	ParamManager	params;
+
+private:
+	int			timeout;
+	bool		need_more;
+	bool		need_back;
+	int			current_index;
+	BasicStr	title;
+	BasicStr	esc_link;
+	bool		input_object;
+	bool		hook_chat;
+	vector<MenuItem *> menu_items;
+};
+
+class FreePage
+{
+	friend class MenuTemporal;
+public:
+	FreePage() {}
+	~FreePage() {}
+	virtual bool	OptionSelected(player_t *player_ptr, const int option) = 0;
+	void	SetTimeout(int time) {timeout = time;}
+	int		timeout;
+};
+
+class MenuTemporal
+{
+	friend class MenuManager;
+public:
+	MenuTemporal();
+	~MenuTemporal();
+	void Kill();
+	void AddMenu(MenuPage *ptr);
+	void OptionSelected(player_t *player_ptr, const int option);
+	
+private:
+	bool		allow_repop;
+	int			priority;
+	time_t		timeout_timestamp;
+	BasicStr	title;
+	vector<MenuPage *> menu_pages; // Most commonly used for menus
+	FreePage *free_page; // More of a raw interface (used in mani_stats.cpp)
+};
+
+class MenuManager
+{
+	friend class MenuTemporal;
+public:
+	MenuManager(){};
+	~MenuManager(){};
+	void Kill();
+	void Kill(player_t *player_ptr);
+	void OptionSelected(player_t *player_ptr, const int option);
+	void RepopulatePage(player_t *player_ptr);
+	void AddMenu(player_t *player_ptr, MenuPage *ptr, int priority, int timeout);
+	bool ChatHooked(player_t *player_ptr);
+	void KillLast(player_t *player_ptr);
+	void AddFreePage(player_t *player_ptr, FreePage *ptr, int priority, int timeout);
+	bool CanAddMenu(player_t *player_ptr, int priority);
+	const int GetHistorySize(player_t *player_ptr);
+	void ClientActive(player_t *player_ptr);
+	void ClientDisconnect(player_t *player_ptr);
+	void Load();
+	void Unload();
+	void LevelInit();
+	void GameFrame();
+
+private:
+	MenuTemporal player_list[64];
+	int			 game_frame_repop[64];
+};
+
+
+// Short macro to define lots of derived classes from MenuPage
+#define MENUPAGE_DEC(_name) \
+class _name : public MenuPage {void PopulateMenuPage(player_t *player_ptr);}
+
+// Short macro to define lots of derived classes from MenuItem
+#define MENUITEM_DEC(_name) \
+class _name : public MenuItem {int MenuItemFired(player_t *player_ptr, MenuPage *m_page);}
+
+#define MENUALL_DEC(_name) \
+class _name##Page : public MenuPage {bool PopulateMenuPage(player_t *player_ptr);}; \
+class _name##Item : public MenuItem {int MenuItemFired(player_t *player_ptr, MenuPage *m_page);} \
+
+#define MENUFRIEND_DEC(_name) \
+friend class _name##Page; \
+friend class _name##Item
+
+#define MENUPAGE_CREATE_FIRST(_name, _pl_ptr, _priority, _timeout) \
+{ \
+	g_menu_mgr.Kill(_pl_ptr); \
+	MenuPage *ptr = new _name(); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.Kill(_pl_ptr); \
+	} \
+	else \
+	{ \
+		ptr->RenderPage(_pl_ptr, g_menu_mgr.GetHistorySize(_pl_ptr)); \
+	} \
+}
+
+#define MENUPAGE_CREATE(_name, _pl_ptr, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderPage(_pl_ptr, g_menu_mgr.GetHistorySize(_pl_ptr)); \
+}
+
+#define MENUPAGE_CREATE_PARAM(_name, _pl_ptr, _param1, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	ptr->params._param1; \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderPage(_pl_ptr, g_menu_mgr.GetHistorySize(_pl_ptr)); \
+}
+
+#define MENUPAGE_CREATE_PARAM2(_name, _pl_ptr, _param1, _param2, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	ptr->params._param1; \
+	ptr->params._param2; \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderPage(_pl_ptr, g_menu_mgr.GetHistorySize(_pl_ptr)); \
+}
+
+#define MENUPAGE_CREATE_PARAM3(_name, _pl_ptr, _param1, _param2, _param3, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	ptr->params._param1; \
+	ptr->params._param2; \
+	ptr->params._param3; \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderPage(_pl_ptr, g_menu_mgr.GetHistorySize(_pl_ptr)); \
+}
+
+#define MENUPAGE_CREATE_PARAM4(_name, _pl_ptr, _param1, _param2, _param3, _param4, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	ptr->params._param1; \
+	ptr->params._param2; \
+	ptr->params._param3; \
+	ptr->params._param4; \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderPage(_pl_ptr, g_menu_mgr.GetHistorySize(_pl_ptr)); \
+}
+
+#define MENUOPTION_CREATE(_class_type, _translate_id, _param) \
+{ \
+	MenuItem *_param = new _class_type; \
+	_param->SetDisplayText("%s", Translate(player_ptr, _translate_id)); \
+	_param->params.AddParam("sub_option", #_param); \
+	this->AddItem(_param); \
+}
+
+#define MENUOPTION_CREATE_PARAM(_class_type, _translate_id, _param1) \
+{ \
+	MenuItem *_param = new _class_type; \
+	_param->SetDisplayText("%s", Translate(player_ptr, _translate_id)); \
+	_param->params._param1; \
+	this->AddItem(_param); \
+}
+
+#define INPUTPAGE_CREATE(_name, _pl_ptr, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	ptr->SetInputObject(true); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderInputObject(_pl_ptr); \
+}
+
+#define INPUTPAGE_CREATE_PARAM(_name, _pl_ptr, _param1, _priority, _timeout) \
+{ \
+	MenuPage *ptr = new _name(); \
+	ptr->SetInputObject(true); \
+	g_menu_mgr.AddMenu(_pl_ptr, ptr, _priority, _timeout); \
+	ptr->params._param1; \
+	if (!ptr->PopulateMenuPage(_pl_ptr) || ptr->Size() == 0) \
+	{ \
+		g_menu_mgr.KillLast(_pl_ptr); \
+		return REPOP_MENU; \
+	} \
+	ptr->RenderInputObject(_pl_ptr); \
+}
+
+extern MenuManager g_menu_mgr;
+extern MenuPage *g_page_ptr;
 #endif

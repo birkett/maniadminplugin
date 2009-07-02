@@ -26,6 +26,8 @@
 #ifndef MANI_AUTOKICKBAN_H
 #define MANI_AUTOKICKBAN_H
 
+#include "mani_menu.h"
+
 class ManiAutoKickBan
 {
 
@@ -53,8 +55,6 @@ public:
 	PLUGIN_RESULT	ProcessMaAutoShowPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 	PLUGIN_RESULT	ProcessMaAutoShowSteam(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 	PLUGIN_RESULT	ProcessMaAutoShowIP(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
-	void			ProcessAutoBanPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset );
-	void			ProcessAutoKickPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset );
 
 private:
 
@@ -80,5 +80,8 @@ private:
 };
 
 extern	ManiAutoKickBan *gpManiAutoKickBan;
+
+MENUALL_DEC(AutoKick);
+MENUALL_DEC(AutoBan);
 
 #endif

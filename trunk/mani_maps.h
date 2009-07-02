@@ -44,6 +44,8 @@ struct last_map_t
 {
 	char	map_name[128];
 	bool	selected;
+	time_t	start_time;
+	char	end_reason[128];
 };
 
 extern map_t	*map_list;
@@ -64,7 +66,9 @@ extern	void InitMaps(void);
 extern	void LoadMaps(const char *map_being_loaded);
 extern	void FreeMaps(void);
 extern	last_map_t	*GetLastMapsPlayed (int *number_of_maps_found, int max_number_of_maps);
+extern	void SetChangeLevelReason(const char *fmt, ...);
 extern	PLUGIN_RESULT	ProcessMaMapList(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaMapHistory(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 extern	PLUGIN_RESULT	ProcessMaMapCycle(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 extern	PLUGIN_RESULT	ProcessMaListMaps(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 extern	PLUGIN_RESULT	ProcessMaNextMap(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);

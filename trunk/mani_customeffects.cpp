@@ -118,7 +118,7 @@ void ManiCustomEffects::Init(void)
 
 	for (;;)
 	{
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/decallist.txt", mani_path.GetString());
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/decallist.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
 //			MMsg("Failed to load decallist.txt\n");
@@ -179,7 +179,7 @@ void ManiCustomEffects::Init(void)
 
 	for (;;)
 	{
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/texturelist.txt", mani_path.GetString());
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/texturelist.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
 //			MMsg("Failed to load texturelist.txt\n");
@@ -237,7 +237,7 @@ void ManiCustomEffects::Init(void)
 //---------------------------------------------------------------------------------
 // Purpose: Process incomming command
 //---------------------------------------------------------------------------------
-void ManiCustomEffects::ProcessMaEffect(void)
+PLUGIN_RESULT	ManiCustomEffects::ProcessMaEffect(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 	// Come from server console
 	argc = gpCmd->Cmd_Argc();
@@ -246,16 +246,16 @@ void ManiCustomEffects::ProcessMaEffect(void)
 	if (!effects)
 	{
 		OutputToConsole(NULL, "Mani Admin Plugin: %s, unable to use effects system\n", command_string);
-		return;
+		return PLUGIN_STOP;
 	}
 
 	if (argc < 3)
 	{
 		OutputToConsole(NULL, "Mani Admin Plugin: %s, not enough arguments\n", command_string);
-		return;
+		return PLUGIN_STOP;
 	}
 
-	arg_type = Q_atoi(gpCmd->Cmd_Argv(1));
+	arg_type = atoi(gpCmd->Cmd_Argv(1));
 	argv_index = 2;
 
 	switch (arg_type)
@@ -287,6 +287,8 @@ void ManiCustomEffects::ProcessMaEffect(void)
 		default : OutputToConsole(NULL, "Mani Admin Plugin: %s, unknown effect type [%i]\n", command_string, arg_type);
 					break;
 	}
+
+	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
@@ -1046,20 +1048,27 @@ void	ManiCustomEffects::TEPhysicsProp (void)
 	QAngle angles; 
 	Vector vel; 
 	int flags;
+	int skin;
+	int effects;
 
 	if (!EffectAllowed()) return;
-	// We are looking at 15 parameters for this !
-	if (!EnoughParams(15)) return;
+	// We are looking at 17 parameters for this !
+	if (!EnoughParams(17)) return;
 
 	SetupFilter(&filter);
 	delay = GetFloat();
 	modelindex = GetModel();
+	skin = GetInt();
 	GetXYZ(&pos);
 	GetAngles(&angles); // Rotation
 	GetXYZ(&vel); 
 	flags = GetInt(); 
+	effects = GetInt();
 
-	temp_ents->PhysicsProp((IRecipientFilter &) filter, delay, modelindex, pos, angles, vel, flags);
+/*	virtual void PhysicsProp( IRecipientFilter& filter, float delay, int modelindex, int skin, 
+		const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects ) = 0; */
+
+	temp_ents->PhysicsProp((IRecipientFilter &) filter, delay, modelindex, skin, pos, angles, vel, flags, effects);
 }
 
 //---------------------------------------------------------------------------------
@@ -1156,9 +1165,9 @@ bool	ManiCustomEffects::EffectAllowed (void)
 //---------------------------------------------------------------------------------
 void	ManiCustomEffects::GetXYZ (Vector *vec)
 {
-	vec->x = Q_atof(gpCmd->Cmd_Argv(argv_index++));
-	vec->y = Q_atof(gpCmd->Cmd_Argv(argv_index++));
-	vec->z = Q_atof(gpCmd->Cmd_Argv(argv_index++));
+	vec->x = atof(gpCmd->Cmd_Argv(argv_index++));
+	vec->y = atof(gpCmd->Cmd_Argv(argv_index++));
+	vec->z = atof(gpCmd->Cmd_Argv(argv_index++));
 }
 
 //---------------------------------------------------------------------------------
@@ -1166,9 +1175,9 @@ void	ManiCustomEffects::GetXYZ (Vector *vec)
 //---------------------------------------------------------------------------------
 void	ManiCustomEffects::GetAngles (QAngle *angle)
 {
-	angle->x = Q_atof(gpCmd->Cmd_Argv(argv_index++));
-	angle->y = Q_atof(gpCmd->Cmd_Argv(argv_index++));
-	angle->z = Q_atof(gpCmd->Cmd_Argv(argv_index++));
+	angle->x = atof(gpCmd->Cmd_Argv(argv_index++));
+	angle->y = atof(gpCmd->Cmd_Argv(argv_index++));
+	angle->z = atof(gpCmd->Cmd_Argv(argv_index++));
 }
 
 //---------------------------------------------------------------------------------
@@ -1176,7 +1185,7 @@ void	ManiCustomEffects::GetAngles (QAngle *angle)
 //---------------------------------------------------------------------------------
 float	ManiCustomEffects::GetFloat(void)
 {
-	return (Q_atof(gpCmd->Cmd_Argv(argv_index++)));
+	return (atof(gpCmd->Cmd_Argv(argv_index++)));
 }
 
 //---------------------------------------------------------------------------------
@@ -1184,7 +1193,7 @@ float	ManiCustomEffects::GetFloat(void)
 //---------------------------------------------------------------------------------
 int	ManiCustomEffects::GetInt(void)
 {
-	return (Q_atoi(gpCmd->Cmd_Argv(argv_index++)));
+	return (atoi(gpCmd->Cmd_Argv(argv_index++)));
 }
 
 //---------------------------------------------------------------------------------
@@ -1192,7 +1201,7 @@ int	ManiCustomEffects::GetInt(void)
 //---------------------------------------------------------------------------------
 unsigned char	ManiCustomEffects::GetChar(void)
 {
-	return ((unsigned char) Q_atoi(gpCmd->Cmd_Argv(argv_index++)));
+	return ((unsigned char) atoi(gpCmd->Cmd_Argv(argv_index++)));
 }
 
 //---------------------------------------------------------------------------------
@@ -1344,7 +1353,7 @@ void	ManiCustomEffects::SetupFilter (MRecipientFilter *filter)
 		else if (filter_string[i] >= '0' &&  filter_string[i] <= '9')
 		{
 			// Handle number section
-			players_to_add = Q_atoi(&(filter_string[i]));
+			players_to_add = atoi(&(filter_string[i]));
 			break;
 		}
 		else
@@ -1406,7 +1415,7 @@ void	ManiCustomEffects::SetupFilter (MRecipientFilter *filter)
 	if (players_to_add)
 	{
 		// Some players to add to the list
-		for (i = 0; i < players_to_add; i++)
+		for (int i = 0; i < players_to_add; i++)
 		{
 			player_t	player;
 
@@ -1511,12 +1520,5 @@ int sort_texture_list_by_name ( const void *m1,  const void *m2)
 ManiCustomEffects	g_ManiCustomEffects;
 ManiCustomEffects	*gpManiCustomEffects;
 
-CON_COMMAND(ma_effect, "Runs a visual effect, see documentation")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	if (war_mode) return;
+SCON_COMMAND(ma_effect, 2221, MaEffect, false);
 
-	g_ManiCustomEffects.ProcessMaEffect();
-	return;
-}

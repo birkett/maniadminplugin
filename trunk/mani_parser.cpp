@@ -197,7 +197,7 @@ bool ParseAliasLine(char *in, char *alias, bool strip_comments, bool strip_start
 	int length;
 	int	copy_start;
 	int copy_end;
-	int	end_alias_index;
+	int	end_alias_index = 0;
 	bool found_alias = false;
 
 	// Cut carriage return out
@@ -389,7 +389,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments,
 	int length;
 	int	copy_start;
 	int copy_end;
-	int	end_alias_index;
+	int	end_alias_index = 0;
 	bool found_alias = false;
 
 	// Cut carriage return out
@@ -622,7 +622,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments,
 	int length;
 	int	copy_start;
 	int copy_end;
-	int	end_alias_index;
+	int	end_alias_index = 0;
 	bool found_alias = false;
 
 	// Cut carriage return out
@@ -829,7 +829,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 	int length;
 	int	copy_start;
 	int copy_end;
-	int	end_alias_index;
+	int	end_alias_index = 0;
 	bool found_alias = false;
 
 	// Cut carriage return out
@@ -1155,7 +1155,7 @@ char	*TranslateToken
 		}
 	}
 	else if (FStrEq(token_string, "{CURRENTMAP}")) Q_strcpy(translated_string, current_map);
-	else if (FStrEq(token_string, "{TICKRATE}")) Q_snprintf(translated_string, sizeof(translated_string), "%i", server_tickrate);
+	else if (FStrEq(token_string, "{TICKRATE}")) snprintf(translated_string, sizeof(translated_string), "%i", server_tickrate);
 	else if (FStrEq(token_string, "{FF}"))
 	{
 		if (mp_friendlyfire)
@@ -1191,7 +1191,7 @@ char	*TranslateToken
 			strftime(tmp_buf, sizeof(tmp_buf), "%I:%M:%S %p",time_now);
 		}
 
-		Q_snprintf( translated_string, sizeof(translated_string), "%s %s", tmp_buf, mani_thetime_timezone.GetString());
+		snprintf( translated_string, sizeof(translated_string), "%s %s", tmp_buf, mani_thetime_timezone.GetString());
 	}
 
 	return (char *) translated_string;

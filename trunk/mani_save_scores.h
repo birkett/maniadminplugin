@@ -26,6 +26,8 @@
 #ifndef MANI_SAVE_SCORES_H
 #define MANI_SAVE_SCORES_H
 
+#include <vector.h>
+
 class ManiSaveScores
 {
 
@@ -58,8 +60,7 @@ private:
 		bool	trigger;
 	};
 
-	save_scores_t	*save_scores_list;
-	int				save_scores_list_size;
+	std::vector<save_scores_t> save_scores_list;
 
 	save_cash_t	 save_cash_list[MANI_MAX_PLAYERS];
 	int			 spawn_count[MANI_MAX_PLAYERS];

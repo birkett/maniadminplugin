@@ -64,7 +64,6 @@ extern	IServerGameEnts *serverents;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 static int sort_ping_immunity_by_steam_id ( const void *m1,  const void *m2);
 
@@ -73,7 +72,7 @@ static void HighPingKickSamples ( ConVar *var, char const *pOldString );
 
 ConVar mani_high_ping_kick ("mani_high_ping_kick", "0", 0, "This defines whether the high ping kicker is enabled or not", true, 0, true, 1, HighPingKick); 
 ConVar mani_high_ping_kick_samples_required ("mani_high_ping_kick_samples_required", "60", 0, "This defines the amount of samples required before the player is kicked", true, 0, true, 10000, HighPingKickSamples); 
-ConVar mani_high_ping_kick_ping_limit ("mani_high_ping_kick_ping_limit", "400", 0, "This defines the ping limit before a player is kicked", true, 0, true, 99999999); 
+ConVar mani_high_ping_kick_ping_limit ("mani_high_ping_kick_ping_limit", "400", 0, "This defines the ping limit before a player is kicked", true, 10, true, 99999999); 
 ConVar mani_high_ping_kick_message ("mani_high_ping_kick_message", "Your ping is too high", 0, "This defines the message given to the player in their console on disconnect"); 
 
 inline bool FStruEq(const char *sz1, const char *sz2)
@@ -114,8 +113,9 @@ void	ManiPing::Load(void)
 		
 		if (player.is_bot) continue;
 
-		int dummy;
-		if (!this->IsPlayerImmune(&player) && !gpManiClient->IsPotentialAdmin(&player, &dummy))
+		if (!this->IsPlayerImmune(&player) && 
+			!gpManiClient->HasAccess(player.index, ADMIN, ADMIN_BASIC_ADMIN, false, true) &&
+			!gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_PING, false, true))
 		{
 			ping_list[player.index - 1].check_ping = true;
 		}
@@ -163,12 +163,11 @@ void	ManiPing::NetworkIDValidated(player_t *player_ptr)
 	if (mani_high_ping_kick.GetInt() == 0) return;
 	if (player_ptr->is_bot) return;
 
-	int index = player_ptr->index - 1;
-
 	this->ResetPlayer(player_ptr->index - 1);
 
-	int dummy;
-	if (!this->IsPlayerImmune(player_ptr) && !gpManiClient->IsPotentialAdmin(player_ptr, &dummy))
+	if (!this->IsPlayerImmune(player_ptr) && 
+		!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, false, true) &&
+		!gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_PING, false, true))
 	{
 		ping_list[player_ptr->index - 1].check_ping = true;
 	}
@@ -227,79 +226,101 @@ void ManiPing::GameFrame(void)
 	}
 
 	next_check = gpGlobals->curtime + 1.5;
+	bool all_pings_high = true;
+
+	// Use 80% of limit as global ping spikes may not bring all players over the 
+	// spike ping limit although all players will have their pings increase
+	int global_ping_limit = (int) (mani_high_ping_kick_ping_limit.GetFloat() * 0.8);
+	for (int i = 0; i < max_players; i++)
+	{
+		ping_player_t *ptr = &(ping_player_list[i]);
+		ptr->in_use = true;
+		ptr->player.index = i + 1;
+		if (!FindPlayerByIndex(&ptr->player))
+		{
+			ptr->in_use = false;
+			continue;
+		}
+
+		if (ptr->player.is_bot)
+		{
+			ptr->in_use = false;
+			continue;
+		}
+
+		// Valid player
+		INetChannelInfo *nci = engine->GetPlayerNetInfo(i + 1);
+
+		float ping = nci->GetAvgLatency(0);
+		const char * szCmdRate = engine->GetClientConVarValue( i + 1, "cl_cmdrate" );
+
+		int nCmdRate = max( 20, atoi( szCmdRate ) );
+		ping -= (0.5f/nCmdRate) + TICKS_TO_TIME( 1.0f ); // correct latency
+
+		// in GoldSrc we had a different, not fixed tickrate. so we have to adjust
+		// Source pings by half a tick to match the old GoldSrc pings.
+		ping -= TICKS_TO_TIME( 0.5f );
+		ping = ping * 1000.0f; // as msecs
+		ptr->current_ping = clamp( ping, 5, 1000 ); // set bounds, dont show pings under 5 msecs
+
+		// Crude attempt to protect against all pings from being high and kicking everyone
+		if (ptr->current_ping < global_ping_limit)
+		{
+			all_pings_high = false;
+		}
+	}
 
 	for (int i = 0; i < max_players; i++)
 	{
-		if (!ping_list[i].check_ping)
+		if (!ping_list[i].check_ping ||
+			!ping_player_list[i].in_use)
 		{
 			continue;
 		}
 
-		edict_t *pEntity = engine->PEntityOfEntIndex(i + 1);
-		if(pEntity && !pEntity->IsFree() )
+		if (all_pings_high)
 		{
-			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-			if (playerinfo && playerinfo->IsConnected())
+			ping_player_list[i].current_ping = mani_high_ping_kick_ping_limit.GetInt() / 2;
+		}
+
+		if (ping_list[i].count == 0)
+		{
+			// Init ping
+			ping_list[i].average_ping = ping_player_list[i].current_ping;
+		}
+		else
+		{
+			ping_list[i].average_ping += ping_player_list[i].current_ping;
+		}
+
+		// Bump up average ping
+		ping_list[i].count += 1;
+
+		if (ping_list[i].count > mani_high_ping_kick_samples_required.GetInt())
+		{
+			if ((ping_list[i].average_ping / ping_list[i].count) > mani_high_ping_kick_ping_limit.GetInt())
 			{
-				const char	*steam_id = playerinfo->GetNetworkIDString();
-				INetChannelInfo *nci = engine->GetPlayerNetInfo(i + 1);
-				const char *ip_address = nci->GetAddress();
+				player_t *ptr = &(ping_player_list[i].player);
+				SayToAll (ORANGE_CHAT, false, "Player %s was autokicked for breaking the %ims ping limit on this server\n", 
+								ptr->name,
+								mani_high_ping_kick_ping_limit.GetInt()
+								);
 
-				float ping = nci->GetAvgLatency(0);
-				const char * szCmdRate = engine->GetClientConVarValue( i + 1, "cl_cmdrate" );
+				char	log_reason[256];
+				snprintf(log_reason, sizeof(log_reason), 
+					"[MANI_ADMIN_PLUGIN] Kicked player [%s] steam id [%s] for exceeding ping limit\n", 
+					ptr->name, ptr->steam_id);
 
-				int nCmdRate = max( 20, Q_atoi( szCmdRate ) );
-				ping -= (0.5f/nCmdRate) + TICKS_TO_TIME( 1.0f ); // correct latency
+				UTIL_KickPlayer(ptr, 
+					(char *) mani_high_ping_kick_message.GetString(),
+					(char *) mani_high_ping_kick_message.GetString(),
+					log_reason);
 
-				// in GoldSrc we had a different, not fixed tickrate. so we have to adjust
-				// Source pings by half a tick to match the old GoldSrc pings.
-				ping -= TICKS_TO_TIME( 0.5f );
-				ping = ping * 1000.0f; // as msecs
-				ping = clamp( ping, 5, 1000 ); // set bounds, dont show pings under 5 msecs
-
-				if (ping_list[i].count == 0)
-				{
-					// Init ping
-					ping_list[i].average_ping = ping;
-				}
-				else
-				{
-					ping_list[i].average_ping += ping;
-				}
-
-				// Bump up average ping
-				ping_list[i].count += 1;
-
-				if (ping_list[i].count > mani_high_ping_kick_samples_required.GetInt())
-				{
-					if ((ping_list[i].average_ping / ping_list[i].count) > mani_high_ping_kick_ping_limit.GetInt())
-					{
-						player_t player;
-
-						player.index = i + 1;
-						if (FindPlayerByIndex(&player))
-						{
-							SayToAll (ORANGE_CHAT, false, "Player %s was autokicked for breaking the %ims ping limit on this server\n", 
-											player.name,
-											mani_high_ping_kick_ping_limit.GetInt()
-											);
-
-							char	log_reason[256];
-							Q_snprintf(log_reason, sizeof(log_reason), "[MANI_ADMIN_PLUGIN] Kicked player [%s] steam id [%s] for exceeding ping limit\n", player.name, player.steam_id);
-
-							UTIL_KickPlayer(&player, 
-								(char *) mani_high_ping_kick_message.GetString(),
-								(char *) mani_high_ping_kick_message.GetString(),
-								log_reason);
-						}
-
-						ping_list[i].check_ping = false;
-					}
-					else
-					{
-						ping_list[i].count = 0;
-					}
-				}
+				ping_list[i].check_ping = false;
+			}
+			else
+			{
+				ping_list[i].count = 0;
 			}
 		}
 	}
@@ -327,7 +348,7 @@ void ManiPing::LoadImmunityList(void)
 	FreeList((void **) &ping_immunity_list, &ping_immunity_list_size);
 
 	//Get ping immunity player list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/pingimmunity.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/pingimmunity.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL) return;
 

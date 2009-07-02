@@ -26,12 +26,65 @@
 #ifndef MANI_LANGUAGE_H
 #define MANI_LANGUAGE_H
 
-#define MANI_LANG_VER_REQUIRED ("0003")
+#include <vector>
+#include "mani_player.h"
+
+class CTranslate
+{
+	struct str_result
+	{
+		str_result() {result[0]='\0';}
+		char	result[2048];
+	};
+public:
+	CTranslate(const int translation_id)
+	: translate_id  (translation_id)
+	{}
+
+	template <class X> CTranslate& p(const char *fmt, const X value)
+	{
+		array.push_back(new char[2048]);
+		Q_snprintf(array[array.size() - 1], 2048, fmt, value);
+		return *this;
+	};
+
+	CTranslate& p(const int value)
+	{
+		array.push_back(new char[2048]);
+		Q_snprintf(array[array.size() - 1], 2048, "%i", value);
+		return *this;
+	};
+
+	CTranslate& p(const char value)
+	{
+		array.push_back(new char[2048]);
+		Q_snprintf(array[array.size() - 1], 2048, "%c", value);
+		return *this;
+	};
+
+	CTranslate& p(const char *value)
+	{
+		array.push_back(new char[2048]);
+		Q_snprintf(array[array.size() - 1], 2048, "%s", value);
+		return *this;
+	};
+
+	const int	GetSize() {return (int) array.size();}
+	const char *GetString(int index) {return array[index];}
+	const int	GetID() {return translate_id;}
+private:
+	std::vector<char *> array;
+	int	translate_id;
+};
+
+
 
 extern	bool LoadLanguage(void);
 extern  void FreeLanguage(void);
-extern  char *Translate(int translate_id);
-extern	char *Translate( int translate_id,  const char *fmt1, ...);
+extern  char *Translate(player_t *player_ptr, int translate_id);
+extern	char *Translate(player_t *player_ptr, int translate_id,  const char *fmt1, ...);
+extern	char *Translate(player_t *player_ptr, CTranslate& trans_obj);
+
 extern  void LanguageGameFrame(void);
 
 // I did have loads of #defines in here for each translation index but it is

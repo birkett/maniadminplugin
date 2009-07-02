@@ -300,7 +300,7 @@ void ManiChatTriggers::LoadData(void)
 
 	KeyValues *kv_ptr = new KeyValues("chattriggers.txt");
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/chattriggers.txt", mani_path.GetString());
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/chattriggers.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
 //		MMsg("Failed to load chattriggers.txt\n");
@@ -401,7 +401,7 @@ void ManiChatTriggers::ProcessLoadIgnoreX(KeyValues *kv_parent_ptr)
 		chat_trigger.trigger_type = MANI_CT_IGNORE_X;
 
 		Q_strcpy(chat_trigger.say_command, kv_ignore_ptr->GetName());
-		chat_trigger.ignore_count = Q_atoi(kv_ignore_ptr->GetString(NULL, ""));
+		chat_trigger.ignore_count = atoi(kv_ignore_ptr->GetString(NULL, ""));
 
 		if (chat_trigger.say_command && !FStrEq(chat_trigger.say_command, ""))
 		{
@@ -422,12 +422,10 @@ void ManiChatTriggers::ProcessLoadIgnoreX(KeyValues *kv_parent_ptr)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiChatTriggers::ProcessMaChatTriggers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BASIC_ADMIN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 	
 	if (chat_trigger_list_size == 0)
@@ -450,7 +448,7 @@ PLUGIN_RESULT	ManiChatTriggers::ProcessMaChatTriggers(player_t *player_ptr, cons
 
 		if (!this->FindString(gpCmd->Cmd_Argv(1), &chat_trigger_ptr))
 		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1)));
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1)));
 			return PLUGIN_STOP;
 		}
 
@@ -473,9 +471,9 @@ void	ManiChatTriggers::DumpTriggerData
 
 	switch (chat_trigger_ptr->trigger_type)
 	{
-		case MANI_CT_IGNORE: Q_snprintf(temp_string, sizeof(temp_string), "%s", MANI_CT_IGNORE_STRING); break;
-		case MANI_CT_IGNORE_X: Q_snprintf(temp_string, sizeof(temp_string), "%s Limit = %i Current = %i", MANI_CT_IGNORE_X_STRING, chat_trigger_ptr->ignore_count, chat_trigger_ptr->current_count); break;
-		default:Q_snprintf(temp_string, sizeof(temp_string), "UNKNOWN"); break;
+		case MANI_CT_IGNORE: snprintf(temp_string, sizeof(temp_string), "%s", MANI_CT_IGNORE_STRING); break;
+		case MANI_CT_IGNORE_X: snprintf(temp_string, sizeof(temp_string), "%s Limit = %i Current = %i", MANI_CT_IGNORE_X_STRING, chat_trigger_ptr->ignore_count, chat_trigger_ptr->current_count); break;
+		default:snprintf(temp_string, sizeof(temp_string), "UNKNOWN"); break;
 	}
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "%s\t%s", chat_trigger_ptr->say_command, temp_string);

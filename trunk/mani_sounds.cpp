@@ -116,7 +116,7 @@ void	LoadSounds(void)
 
 	FreeList((void **) &sound_list, &sound_list_size);
 
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/soundlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/soundlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
@@ -136,12 +136,16 @@ void	LoadSounds(void)
 			char	exists_string[512];
 
 			// Check file exists on server
-			Q_snprintf(exists_string, sizeof(exists_string), "./sound/%s", sound_id);
+			snprintf(exists_string, sizeof(exists_string), "./sound/%s", sound_id);
 			if (!filesystem->FileExists(exists_string)) continue;
 
 			AddToList((void **) &sound_list, sizeof(sound_t), &sound_list_size);
 			Q_strcpy(sound_list[sound_list_size-1].sound_name, sound_id);
 			Q_strcpy(sound_list[sound_list_size-1].alias, alias_command);
+			if (esounds)
+			{
+				esounds->PrecacheSound(sound_id, true);
+			}
 
 //			MMsg("Alias [%s] Sound File [%s]\n", alias_command, sound_id); 
 		}
@@ -159,7 +163,7 @@ void	LoadSounds(void)
 	}
 
 	//Get action sound list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/actionsoundlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/actionsoundlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open(base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
@@ -185,12 +189,16 @@ void	LoadSounds(void)
 					char	exists_string[512];
 
 					// Check file exists on server
-					Q_snprintf(exists_string, sizeof(exists_string), "./sound/%s", sound_id);
+					snprintf(exists_string, sizeof(exists_string), "./sound/%s", sound_id);
 					if (filesystem->FileExists(exists_string))
 					{
 						Q_strcpy(action_sound_list[i].sound_file, sound_id);
 						action_sound_list[i].in_use = true;
 						found_id = true;
+						if (esounds)
+						{
+							esounds->PrecacheSound(sound_id, true);
+						}
 						break;
 					}
 				}
@@ -221,14 +229,13 @@ void	LoadSounds(void)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
 	bool unlimited_play = false;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
 
-		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 		{
 			if (mani_sounds_per_round.GetInt() == 0)
 			{
@@ -239,7 +246,7 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 		else
 		{
 			// Definately admin but can they play sounds ?
-			if (!gpManiClient->IsAdminAllowed(admin_index, ALLOW_PLAYSOUND) || war_mode)
+			if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PLAYSOUND) || war_mode)
 			{
 				if (mani_sounds_per_round.GetInt() == 0)
 				{
@@ -276,10 +283,10 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 	}
 
 	int sound_index;
-	char play_sound[512];
+	//char play_sound[512];
 
 	// See if we can find a match by index or partial match on name
-	sound_index = Q_atoi(gpCmd->Cmd_Argv(1));
+	sound_index = atoi(gpCmd->Cmd_Argv(1));
 	if (sound_index < 1 || sound_index > sound_list_size)
 	{
 		bool found_match = false;
@@ -333,8 +340,9 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 			}
 		}
 
-		Q_snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[sound_index].sound_name);
-		engine->ClientCommand(target_player.entity, play_sound);
+		//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[sound_index].sound_name);
+		//engine->ClientCommand(target_player.entity, play_sound);
+		UTIL_EmitSoundSingle(&target_player, sound_list[sound_index].sound_name);
 	}	
 
 	if(!unlimited_play)
@@ -387,68 +395,52 @@ PLUGIN_RESULT	ProcessMaShowSounds(player_t *player_ptr, const char *command_name
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ProcessPlaySound( player_t *admin, int next_index, int argv_offset )
+int PlaySoundItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-
-	if (argc - argv_offset == 3)
+	int index;
+	if (this->params.GetParam("index", &index))
 	{
-		int sound_index;
-		char play_sound[512];
-
-		sound_index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-		if (sound_index < 0 || sound_index >= sound_list_size)
-		{
-			return;
-		}
+		//char play_sound[512];
 
 		for (int i = 1; i <= max_players; i++ )
 		{
 			player_t player;
 
 			player.index = i;
-
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_bot) continue;
 
-			player_settings_t	*player_settings;
-					
+			player_settings_t	*player_settings;			
 			player_settings = FindPlayerSettings(&player);
 			if (!player_settings) continue;
-		
+	
 			// This player doesn't want to hear sounds
 			if (!player_settings->server_sounds) continue;
 
-			Q_snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[sound_index].sound_name);
-			engine->ClientCommand(player.entity, play_sound);
+			//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[index].sound_name);
+			//engine->ClientCommand(player.entity, play_sound);
+			UTIL_EmitSoundSingle(&player, sound_list[index].sound_name);
 		}
 	}
-	else
+
+	return REPOP_MENU;
+}
+
+bool PlaySoundPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 540));
+	this->SetTitle("%s", Translate(player_ptr, 541));
+
+	// Setup sound list
+	for( int i = 0; i < sound_list_size; i++ )
 	{
-		if (sound_list_size == 0)
-		{
-			return;
-		}
-
-		// Setup sound menu list
-		FreeMenu();
-		CreateList ((void **) &menu_list, sizeof(menu_t), sound_list_size, &menu_list_size);
-
-		for( int i = 0; i < sound_list_size; i++ )
-		{
-			Q_snprintf( menu_list[i].menu_text, sizeof(menu_list[i].menu_text), "%s", sound_list[i].alias);							
-			Q_snprintf( menu_list[i].menu_command, sizeof(menu_list[i].menu_command), "admin play_sound %i", i);
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		DrawSubMenu (admin, Translate(540), Translate(541), next_index, "admin", "play_sound", true, -1);
+		MenuItem *ptr = new PlaySoundItem();
+		ptr->SetDisplayText("%s", sound_list[i].alias);
+		ptr->params.AddParam("index", i);
+		this->AddItem(ptr);
 	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -456,7 +448,7 @@ void ProcessPlaySound( player_t *admin, int next_index, int argv_offset )
 //---------------------------------------------------------------------------------
 void ProcessPlayActionSound( player_t *target_player, int sound_id)
 {
-	char	play_sound[512];
+	//char	play_sound[512];
 	player_settings_t	*player_settings;
 
 	if (!action_sound_list[sound_id].in_use) return;
@@ -478,8 +470,9 @@ void ProcessPlayActionSound( player_t *target_player, int sound_id)
 			// This player doesn't want to hear sounds
 			if (!player_settings->server_sounds) continue;
 
-			Q_snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
-			engine->ClientCommand(player.entity, play_sound);
+			//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
+			//engine->ClientCommand(player.entity, play_sound);
+			UTIL_EmitSoundSingle(&player, action_sound_list[sound_id].sound_file);
 		}
 	}
 	else
@@ -490,8 +483,10 @@ void ProcessPlayActionSound( player_t *target_player, int sound_id)
 		// This player doesn't want to hear sounds
 		if (!player_settings->server_sounds) return;
 
-		Q_snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
-		engine->ClientCommand(target_player->entity, play_sound);
+		//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
+		//engine->ClientCommand(target_player->entity, play_sound);
+		UTIL_EmitSoundSingle(target_player, action_sound_list[sound_id].sound_file);
+
 	}
 }
 //---------------------------------------------------------------------------------
@@ -512,7 +507,7 @@ void	SetupSoundAutoDownloads(void)
 		if (pDownloadablesTable) 
 		{
 			char	res_string[512];
-			Q_snprintf(res_string, sizeof(res_string), "sound/%s", sound_list[i].sound_name);
+			snprintf(res_string, sizeof(res_string), "sound/%s", sound_list[i].sound_name);
 			pDownloadablesTable->AddString(res_string, sizeof(res_string));
 		} 
 	}
@@ -539,7 +534,7 @@ void	SetupActionAutoDownloads(void)
  			// Set up .res downloadables
 			if (pDownloadablesTable)
 			{
-				Q_snprintf(res_string, sizeof(res_string), "sound/%s", action_sound_list[i].sound_file);
+				snprintf(res_string, sizeof(res_string), "sound/%s", action_sound_list[i].sound_file);
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
 			}
 		}
@@ -561,4 +556,22 @@ static void SoundsAutoDownload ( ConVar *var, char const *pOldString )
 			SetupActionAutoDownloads();
 		}
 	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: 
+//---------------------------------------------------------------------------------
+void ProcessPlayMenuSound( player_t *target_player_ptr, char *sound_name)
+{
+	if (!esounds) return;
+
+	// Just do extended beep
+	Vector pos = target_player_ptr->entity->GetCollideable()->GetCollisionOrigin();
+
+	// Play the sound sound
+	MRecipientFilter mrf; 
+	mrf.MakeReliable();
+	mrf.AddPlayer(target_player_ptr->index);
+	esounds->EmitSound((IRecipientFilter &)mrf, target_player_ptr->index, CHAN_AUTO, sound_name, 0.7,  0.0, 0, 100, &pos);
+
 }

@@ -72,7 +72,7 @@ void	LoadAdverts(void)
 	FreeAdverts();
 
 	//Get ad list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/adverts.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/adverts.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -118,7 +118,8 @@ void ShowAdvert(const char* advert_text)
 	Color	col;
 
 	if (mani_adverts_top_left.GetInt() == 0 &&
-		mani_adverts_chat_area.GetInt() == 0)
+		mani_adverts_chat_area.GetInt() == 0 &&
+		mani_adverts_bottom_area.GetInt() == 0)
 	{
 		return;
 	}
@@ -136,6 +137,7 @@ void ShowAdvert(const char* advert_text)
 			player.index = i;
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_bot) continue;
+			if (mani_advert_dead_only.GetInt() == 1 && !player.is_dead) continue;
 
 			KeyValues *kv = new KeyValues("Msg");
 			kv->SetString("title", substitute_text2);
@@ -150,7 +152,40 @@ void ShowAdvert(const char* advert_text)
 
 	if (mani_adverts_chat_area.GetInt() == 1)
 	{
-		SayToAll(GREEN_CHAT, true, "%s", substitute_text2);
+		if (mani_advert_dead_only.GetInt() == 1)
+		{
+			SayToDead(GREEN_CHAT, "%s", substitute_text2);
+		}
+		else
+		{
+			SayToAll(GREEN_CHAT, true, "%s", substitute_text2);
+		}
+	}
+
+	if (mani_adverts_bottom_area.GetInt() == 1)
+	{
+		SplitHintString(substitute_text2, 35);
+		MRecipientFilter mrf;
+		mrf.MakeReliable();
+
+		bool player_found = false;
+
+		for (int i = 1; i <= max_players; i ++)
+		{
+			player_t player;
+
+			player.index = i;
+			if (!FindPlayerByIndex(&player)) continue;
+			if (player.is_bot) continue;
+			if (mani_advert_dead_only.GetInt() == 1 && !player.is_dead) continue;
+			mrf.AddPlayer(i);
+			player_found = true;
+		}
+
+		if (player_found)
+		{
+			UTIL_SayHint(&mrf, substitute_text2);
+		}
 	}
 }
 

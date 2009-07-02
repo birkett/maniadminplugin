@@ -26,19 +26,28 @@
 #ifndef MANI_VICTIMSTATS_H
 #define MANI_VICTIMSTATS_H
 
+#include "mani_menu.h"
+
 #define MANI_MAX_HITGROUPS (11)
+
+class ShowMenuStatsFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *victim_ptr, player_t *attacker_ptr, int timeout);
+};
 
 class ManiVictimStats
 {
-
+	friend class ShowMenuStatsFreePage;
 public:
 	ManiVictimStats();
 	~ManiVictimStats();
 
 	void		ClientActive(player_t *player_ptr);
 	void		ClientDisconnect(player_t *player_ptr);
-	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, bool headshot,  char *weapon_name, bool menu_displayed );
-	void		DODSPlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, int  weapon, bool menu_displayed );
+	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, bool headshot,  char *weapon_name);
+	void		DODSPlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, int  weapon);
 	void		PlayerHurt( player_t *victim_ptr,  player_t *attacker_ptr,  IGameEvent * event);
 	void		PlayerSpawn(player_t *player_ptr);
 	void		RoundStart(void);
@@ -68,9 +77,8 @@ private:
 	damage_t		damage_list[MANI_MAX_PLAYERS][MANI_MAX_PLAYERS];
 
 	void	AddHitGroup(int hits, char *final_string, char *bodypart);
-	void	ShowStats(player_t *victim_ptr, player_t *attacker_ptr, bool menu_displayed);
+	void	ShowStats(player_t *victim_ptr, player_t *attacker_ptr);
 	void	ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr, int mode);
-	void	ShowMenuStats(player_t *victim_ptr, player_t *attacker_ptr, int timeout);
 };
 
 extern	ManiVictimStats *gpManiVictimStats;

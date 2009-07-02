@@ -60,7 +60,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 struct	current_ip_t
 {
@@ -182,8 +181,7 @@ void ManiVictimStats::PlayerDeath
  player_t *attacker_ptr, 
  bool attacker_exists,
  bool headshot, 
- char *weapon_name,
- bool menu_displayed
+ char *weapon_name
  )
 {
 	int victim_index;
@@ -215,7 +213,7 @@ void ManiVictimStats::PlayerDeath
 	}
 
 	// Show dead players stats
-	ShowStats(victim_ptr, attacker_ptr, menu_displayed);
+	ShowStats(victim_ptr, attacker_ptr);
 
 }
 
@@ -227,8 +225,7 @@ void ManiVictimStats::DODSPlayerDeath
  player_t *victim_ptr, 
  player_t *attacker_ptr, 
  bool attacker_exists,
- int  weapon,
- bool menu_displayed
+ int  weapon
  )
 {
 	int victim_index;
@@ -263,7 +260,7 @@ void ManiVictimStats::DODSPlayerDeath
 	}
 
 	// Show dead players stats
-	ShowStats(victim_ptr, attacker_ptr, menu_displayed);
+	ShowStats(victim_ptr, attacker_ptr);
 
 }
 
@@ -340,7 +337,7 @@ void ManiVictimStats::PlayerHurt
 //---------------------------------------------------------------------------------
 // Purpose: Update victim/attacker stats matrix
 //---------------------------------------------------------------------------------
-void ManiVictimStats::ShowStats(player_t *victim_ptr, player_t *attacker_ptr, bool menu_displayed)
+void ManiVictimStats::ShowStats(player_t *victim_ptr, player_t *attacker_ptr)
 {
 	int victim_index;
 	player_settings_t	*player_settings;
@@ -363,23 +360,26 @@ void ManiVictimStats::ShowStats(player_t *victim_ptr, player_t *attacker_ptr, bo
 	if (!player_settings) return;
 	if (player_settings->damage_stats == 0) return;
 
-	if (player_settings->damage_stats > 2 && gpManiGameType->IsAMXMenuAllowed())
-	{
-		if ((menu_confirm[victim_index].in_use && 
-			(menu_confirm[victim_index].timeout < 0 || menu_confirm[victim_index].timeout > gpGlobals->curtime))
-			|| menu_displayed)
-		{
-			// Force chat version if menu already on screen
-			this->ShowChatStats(victim_ptr, attacker_ptr, 1);
-			return;
-		}
-	}
-
 	if (player_settings->damage_stats > 2)
 	{
 		if (gpManiGameType->IsAMXMenuAllowed())
+
 		{
-			this->ShowMenuStats(victim_ptr, attacker_ptr, player_settings->damage_stats_timeout);
+			if (g_menu_mgr.CanAddMenu(victim_ptr, 3))
+			{
+				g_menu_mgr.Kill(victim_ptr);
+				ShowMenuStatsFreePage *ptr = new ShowMenuStatsFreePage;
+				g_menu_mgr.AddFreePage(victim_ptr, ptr, 3, player_settings->damage_stats_timeout);
+				if (!ptr->Render(victim_ptr, attacker_ptr, player_settings->damage_stats_timeout))
+				{
+					g_menu_mgr.Kill();
+					this->ShowChatStats(victim_ptr, attacker_ptr, player_settings->damage_stats - 2);
+				}
+			}
+			else
+			{
+				this->ShowChatStats(victim_ptr, attacker_ptr, player_settings->damage_stats - 2);
+			}
 		}
 		else
 		{
@@ -417,28 +417,28 @@ void ManiVictimStats::ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr
 
 			if (mode == 2)
 			{
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_GENERIC], hit_groups, Translate(M_VSTATS_BODY));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_HEAD], hit_groups, Translate(M_VSTATS_HEAD));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_CHEST], hit_groups, Translate(M_VSTATS_CHEST));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_STOMACH], hit_groups, Translate(M_VSTATS_STOMACH));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_LEFTARM], hit_groups, Translate(M_VSTATS_LEFT_ARM));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_RIGHTARM], hit_groups, Translate(M_VSTATS_RIGHT_ARM));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_LEFTLEG], hit_groups, Translate(M_VSTATS_LEFT_LEG));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_RIGHTLEG], hit_groups, Translate(M_VSTATS_RIGHT_LEG));
-				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_GEAR], hit_groups, Translate(M_VSTATS_GEAR));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_GENERIC], hit_groups, Translate(victim_ptr, M_VSTATS_BODY));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_HEAD], hit_groups, Translate(victim_ptr, M_VSTATS_HEAD));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_CHEST], hit_groups, Translate(victim_ptr, M_VSTATS_CHEST));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_STOMACH], hit_groups, Translate(victim_ptr, M_VSTATS_STOMACH));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_LEFTARM], hit_groups, Translate(victim_ptr, M_VSTATS_LEFT_ARM));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_RIGHTARM], hit_groups, Translate(victim_ptr, M_VSTATS_RIGHT_ARM));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_LEFTLEG], hit_groups, Translate(victim_ptr, M_VSTATS_LEFT_LEG));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_RIGHTLEG], hit_groups, Translate(victim_ptr, M_VSTATS_RIGHT_LEG));
+				AddHitGroup(damage_list[victim_index][i].hit_groups_taken[HITGROUP_GEAR], hit_groups, Translate(victim_ptr, M_VSTATS_GEAR));
 			}
 
 			char attacker_string[256];
-			Q_snprintf(attacker_string, sizeof(attacker_string), "%s", Translate(1109, "%s%c%c%i%i%s%s",
+			snprintf(attacker_string, sizeof(attacker_string), "%s", Translate(victim_ptr, 1109, "%s%c%c%i%i%s%s",
 				damage_list[victim_index][i].name,
 				0xC2, 0xBB,
 				damage_list[victim_index][i].health_taken/* + damage_list[victim_index][i].armor_taken*/,
 				damage_list[victim_index][i].shots_taken,
-				(damage_list[victim_index][i].shots_taken == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL),
+				(damage_list[victim_index][i].shots_taken == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL),
 				hit_groups
 				));
 
-			SayToPlayer(GREEN_CHAT, victim_ptr, "%s", attacker_string);
+			SayToPlayer(ORANGE_CHAT, victim_ptr, "%s", attacker_string);
 		}
 	}
 
@@ -461,28 +461,28 @@ void ManiVictimStats::ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr
 
 		if (mode == 2)
 		{
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GENERIC], hit_groups, Translate(M_VSTATS_BODY));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_HEAD], hit_groups, Translate(M_VSTATS_HEAD));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_CHEST], hit_groups, Translate(M_VSTATS_CHEST));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_STOMACH], hit_groups, Translate(M_VSTATS_STOMACH));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTARM], hit_groups, Translate(M_VSTATS_LEFT_ARM));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTARM], hit_groups, Translate(M_VSTATS_RIGHT_ARM));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTLEG], hit_groups, Translate(M_VSTATS_LEFT_LEG));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTLEG], hit_groups, Translate(M_VSTATS_RIGHT_LEG));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GEAR], hit_groups, Translate(M_VSTATS_GEAR));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GENERIC], hit_groups, Translate(victim_ptr, M_VSTATS_BODY));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_HEAD], hit_groups, Translate(victim_ptr, M_VSTATS_HEAD));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_CHEST], hit_groups, Translate(victim_ptr, M_VSTATS_CHEST));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_STOMACH], hit_groups, Translate(victim_ptr, M_VSTATS_STOMACH));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTARM], hit_groups, Translate(victim_ptr, M_VSTATS_LEFT_ARM));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTARM], hit_groups, Translate(victim_ptr, M_VSTATS_RIGHT_ARM));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTLEG], hit_groups, Translate(victim_ptr, M_VSTATS_LEFT_LEG));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTLEG], hit_groups, Translate(victim_ptr, M_VSTATS_RIGHT_LEG));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GEAR], hit_groups, Translate(victim_ptr, M_VSTATS_GEAR));
 		}
 
 		char victim_string[256];
 
-		Q_snprintf(victim_string, sizeof(victim_string), "%s", Translate(1110, "%s%c%c%i%i%s%s",
+		snprintf(victim_string, sizeof(victim_string), "%s", Translate(victim_ptr, 1110, "%s%c%c%i%i%s%s",
 			damage_list[victim_index][i].name,
 			0xC2, 0xBB,
 			damage_list[victim_index][i].health_inflicted/* + damage_list[victim_index][i].armor_inflicted*/,
 			damage_list[victim_index][i].shots_inflicted,
-			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL),
+			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL),
 			hit_groups));
 
-		SayToPlayer(GREEN_CHAT, victim_ptr, "%s", victim_string);
+		SayToPlayer(ORANGE_CHAT, victim_ptr, "%s", victim_string);
 	}
 
 	for (int i = 0; i < max_players; i++)
@@ -504,51 +504,51 @@ void ManiVictimStats::ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr
 
 		if (mode == 2)
 		{
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GENERIC], hit_groups, Translate(M_VSTATS_BODY));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_HEAD], hit_groups, Translate(M_VSTATS_HEAD));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_CHEST], hit_groups, Translate(M_VSTATS_CHEST));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_STOMACH], hit_groups, Translate(M_VSTATS_STOMACH));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTARM], hit_groups, Translate(M_VSTATS_LEFT_ARM));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTARM], hit_groups, Translate(M_VSTATS_RIGHT_ARM));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTLEG], hit_groups, Translate(M_VSTATS_LEFT_LEG));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTLEG], hit_groups, Translate(M_VSTATS_RIGHT_LEG));
-			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GEAR], hit_groups, Translate(M_VSTATS_GEAR));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GENERIC], hit_groups, Translate(victim_ptr, M_VSTATS_BODY));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_HEAD], hit_groups, Translate(victim_ptr, M_VSTATS_HEAD));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_CHEST], hit_groups, Translate(victim_ptr, M_VSTATS_CHEST));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_STOMACH], hit_groups, Translate(victim_ptr, M_VSTATS_STOMACH));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTARM], hit_groups, Translate(victim_ptr, M_VSTATS_LEFT_ARM));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTARM], hit_groups, Translate(victim_ptr, M_VSTATS_RIGHT_ARM));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_LEFTLEG], hit_groups, Translate(victim_ptr, M_VSTATS_LEFT_LEG));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_RIGHTLEG], hit_groups, Translate(victim_ptr, M_VSTATS_RIGHT_LEG));
+			AddHitGroup(damage_list[victim_index][i].hit_groups_inflicted[HITGROUP_GEAR], hit_groups, Translate(victim_ptr, M_VSTATS_GEAR));
 		}
 
 		char victim_string[256];
 
-		Q_snprintf(victim_string, sizeof(victim_string), "%s", Translate(1111, "%s%s%c%c%i%i%s%s%.2f%.1f%s",
-			(damage_list[victim_index][i].headshot) ? Translate(M_VSTATS_HS):"",
+		snprintf(victim_string, sizeof(victim_string), "%s", Translate(victim_ptr, 1111, "%s%s%c%c%i%i%s%s%.2f%.1f%s",
+			(damage_list[victim_index][i].headshot) ? Translate(victim_ptr, M_VSTATS_HS):"",
 			damage_list[victim_index][i].name,
 			0xC2, 0xBB,
 			damage_list[victim_index][i].health_inflicted/* + damage_list[victim_index][i].armor_inflicted*/,
 			damage_list[victim_index][i].shots_inflicted,
-			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL),
+			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL),
 			damage_list[victim_index][i].weapon_name,
 			damage_list[victim_index][i].distance,
 			(damage_list[victim_index][i].distance * 3.28),
 			hit_groups
 			));
 
-		SayToPlayer(GREEN_CHAT, victim_ptr, "%s", victim_string);
+		SayToPlayer(ORANGE_CHAT, victim_ptr, "%s", victim_string);
 	}
 
 	if (attacker_ptr == NULL) return;
 	if (attacker_ptr->user_id <= 0) return;
 	if (attacker_ptr->user_id == victim_ptr->user_id) return;
 	// Show attacker health left
-	SayToPlayer(GREEN_CHAT, victim_ptr, "%s", Translate(1112, "%s%i", attacker_ptr->name, attacker_ptr->health));
+	SayToPlayer(ORANGE_CHAT, victim_ptr, "%s", Translate(victim_ptr, 1112, "%s%i", attacker_ptr->name, attacker_ptr->health));
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Update victim/attacker stats matrix
 //---------------------------------------------------------------------------------
-void ManiVictimStats::ShowMenuStats
-(
- player_t *victim_ptr, 
- player_t *attacker_ptr, 
- int timeout
- )
+bool ShowMenuStatsFreePage::OptionSelected(player_t *player_ptr, const int option)
+{
+	return false;
+}
+
+bool ShowMenuStatsFreePage::Render(player_t *victim_ptr, player_t *attacker_ptr, int timeout)
 {
 	// Horrible 'goto' hack in here to control output to the amx menu
 	// Normal player, dump stats out to them
@@ -566,7 +566,7 @@ void ManiVictimStats::ShowMenuStats
 
 		for (int i = 0; i < max_players; i++)
 		{
-			if (damage_list[victim_index][i].shots_taken == 0)
+			if (gpManiVictimStats->damage_list[victim_index][i].shots_taken == 0)
 			{
 				continue;
 			}
@@ -579,11 +579,11 @@ void ManiVictimStats::ShowMenuStats
 
 			char attacker_string[256];
 
-			string_size += Q_snprintf(attacker_string, sizeof(attacker_string), "%s", Translate(1114, "%s%i%i%s",
-				damage_list[victim_index][i].name,
-				damage_list[victim_index][i].health_taken,
-				damage_list[victim_index][i].shots_taken,
-				(damage_list[victim_index][i].shots_taken == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL)
+			string_size += snprintf(attacker_string, sizeof(attacker_string), "%s", Translate(victim_ptr, 1114, "%s%i%i%s",
+				gpManiVictimStats->damage_list[victim_index][i].name,
+				gpManiVictimStats->damage_list[victim_index][i].health_taken,
+				gpManiVictimStats->damage_list[victim_index][i].shots_taken,
+				(gpManiVictimStats->damage_list[victim_index][i].shots_taken == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL)
 				));
 
 			if (string_size >= 512) goto nasty;
@@ -591,7 +591,7 @@ void ManiVictimStats::ShowMenuStats
 			{
 				char	menu_index_str[128];
 
-				string_size += Q_snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(1113 ,"%i", menu_index++));
+				string_size += snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(victim_ptr, 1113 ,"%i", menu_index++));
 				if (string_size >= 512) goto nasty;
 				DrawMenu (victim_ptr->index, timeout, 7, true, true, true, menu_index_str, false);
 			}
@@ -603,24 +603,24 @@ void ManiVictimStats::ShowMenuStats
 
 	for (int i = 0; i < max_players; i++)
 	{
-		if (damage_list[victim_index][i].shots_inflicted == 0)
+		if (gpManiVictimStats->damage_list[victim_index][i].shots_inflicted == 0)
 		{
 			continue;
 		}
 
 
-		if (damage_list[victim_index][i].killed)
+		if (gpManiVictimStats->damage_list[victim_index][i].killed)
 		{
 			continue;
 		}
 
 		char victim_string[256];
 
-		string_size += Q_snprintf(victim_string, sizeof(victim_string), "%s", Translate(1116, "%s%i%i%s",
-			damage_list[victim_index][i].name,
-			damage_list[victim_index][i].health_inflicted/* + damage_list[victim_index][i].armor_inflicted*/,
-			damage_list[victim_index][i].shots_inflicted,
-			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL)
+		string_size += snprintf(victim_string, sizeof(victim_string), "%s", Translate(victim_ptr, 1116, "%s%i%i%s",
+			gpManiVictimStats->damage_list[victim_index][i].name,
+			gpManiVictimStats->damage_list[victim_index][i].health_inflicted/* + damage_list[victim_index][i].armor_inflicted*/,
+			gpManiVictimStats->damage_list[victim_index][i].shots_inflicted,
+			(gpManiVictimStats->damage_list[victim_index][i].shots_inflicted == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL)
 			));
 		if (string_size >= 512) goto nasty;
 		
@@ -628,7 +628,7 @@ void ManiVictimStats::ShowMenuStats
 		{
 				char	menu_index_str[128];
 
-				string_size += Q_snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(1115, "%i", menu_index++));
+				string_size += snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(victim_ptr, 1115, "%i", menu_index++));
 				if (string_size >= 512) goto nasty;
 				DrawMenu (victim_ptr->index, timeout, 7, true, true, true, menu_index_str, false);
 		}
@@ -641,28 +641,28 @@ void ManiVictimStats::ShowMenuStats
 
 	for (int i = 0; i < max_players; i++)
 	{
-		if (damage_list[victim_index][i].shots_inflicted == 0)
+		if (gpManiVictimStats->damage_list[victim_index][i].shots_inflicted == 0)
 		{
 			continue;
 		}
 
 
-		if (!damage_list[victim_index][i].killed)
+		if (!gpManiVictimStats->damage_list[victim_index][i].killed)
 		{
 			continue;
 		}
 
 		char victim_string[256];
 
-		string_size += Q_snprintf(victim_string, sizeof(victim_string), "%s", Translate(1118, "%s%s%i%i%s%s%.2f%.1f",
-			damage_list[victim_index][i].name,
-			(damage_list[victim_index][i].headshot) ? Translate(M_VSTATS_HS):" ",
-			damage_list[victim_index][i].health_inflicted/* + damage_list[victim_index][i].armor_inflicted*/,
-			damage_list[victim_index][i].shots_inflicted,
-			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL),
-			damage_list[victim_index][i].weapon_name,
-			damage_list[victim_index][i].distance,
-			(damage_list[victim_index][i].distance * 3.28)
+		string_size += snprintf(victim_string, sizeof(victim_string), "%s", Translate(victim_ptr, 1118, "%s%s%i%i%s%s%.2f%.1f",
+			gpManiVictimStats->damage_list[victim_index][i].name,
+			(gpManiVictimStats->damage_list[victim_index][i].headshot) ? Translate(victim_ptr, M_VSTATS_HS):" ",
+			gpManiVictimStats->damage_list[victim_index][i].health_inflicted/* + damage_list[victim_index][i].armor_inflicted*/,
+			gpManiVictimStats->damage_list[victim_index][i].shots_inflicted,
+			(gpManiVictimStats->damage_list[victim_index][i].shots_inflicted == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL),
+			gpManiVictimStats->damage_list[victim_index][i].weapon_name,
+			gpManiVictimStats->damage_list[victim_index][i].distance,
+			(gpManiVictimStats->damage_list[victim_index][i].distance * 3.28)
 			));
 
 		if (string_size >= 512) goto nasty;
@@ -671,7 +671,7 @@ void ManiVictimStats::ShowMenuStats
 		{
 				char	menu_index_str[128];
 
-				string_size += Q_snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(1117, "%i", menu_index++));
+				string_size += snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(victim_ptr, 1117, "%i", menu_index++));
 				if (string_size >= 512) goto nasty;
 				DrawMenu (victim_ptr->index, timeout, 7, true, true, true, menu_index_str, false);
 		}
@@ -684,18 +684,18 @@ void ManiVictimStats::ShowMenuStats
 	{
 		char	menu_index_str[128];
 
-		string_size += Q_snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(1119, "%i", menu_index++));
+		string_size += snprintf(menu_index_str, sizeof(menu_index_str), "%s", Translate(victim_ptr, 1119, "%i", menu_index++));
 		if (string_size >= 512) goto nasty;
 		DrawMenu (victim_ptr->index, timeout, 7, true, true, true, menu_index_str, false);
 
 		char killer_string[256];
 
-		string_size += Q_snprintf(killer_string, sizeof(killer_string), "%s", Translate(1120, "%s%i%i%i%s",
+		string_size += snprintf(killer_string, sizeof(killer_string), "%s", Translate(victim_ptr, 1120, "%s%i%i%i%s",
 					attacker_ptr->name, 
 					attacker_ptr->health,
-					damage_list[victim_index][attacker_ptr->index - 1].health_taken,
-					damage_list[victim_index][attacker_ptr->index - 1].shots_taken,
-					(damage_list[victim_index][attacker_ptr->index - 1].shots_taken == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL)
+					gpManiVictimStats->damage_list[victim_index][attacker_ptr->index - 1].health_taken,
+					gpManiVictimStats->damage_list[victim_index][attacker_ptr->index - 1].shots_taken,
+					(gpManiVictimStats->damage_list[victim_index][attacker_ptr->index - 1].shots_taken == 1) ? Translate(victim_ptr, M_VSTATS_HIT_SINGLE):Translate(victim_ptr, M_VSTATS_HIT_PLURAL)
 					));
 
 		if (string_size >= 512) goto nasty;
@@ -706,9 +706,12 @@ nasty:
 	if (string_size > 0)
 	{
 		DrawMenu (victim_ptr->index, timeout, 7, true, true, true, "", true);
+		return true;
 	}
 
+	return false;
 }
+
 //---------------------------------------------------------------------------------
 // Purpose: Add hit group text to string
 //---------------------------------------------------------------------------------
@@ -718,8 +721,8 @@ void	ManiVictimStats::AddHitGroup(int hits, char *final_string, char *bodypart)
 	{
 		char	hit_text[32];
 
-		Q_snprintf(hit_text, sizeof(hit_text), "%s: %i ", bodypart, hits);
-		Q_strcat(final_string, hit_text);
+		snprintf(hit_text, sizeof(hit_text), "%s: %i ", bodypart, hits);
+		strcat(final_string, hit_text);
 	}
 }
 
@@ -776,7 +779,7 @@ void ManiVictimStats::RoundEnd(void)
 				continue;
 			}
 
-			ShowStats(&victim, NULL, false);
+			ShowStats(&victim, NULL);
 		}
 	}
 }

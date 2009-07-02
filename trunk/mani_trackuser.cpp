@@ -59,7 +59,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -73,6 +72,7 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 
 ManiTrackUser::ManiTrackUser()
 {
+	//hash_table = (unsigned char *) malloc(sizeof(unsigned char) * 65536);
 	// Setup hash table for weapon search speed improvment
 	for (int i = 0; i < 65536; i ++)
 	{
@@ -85,6 +85,7 @@ ManiTrackUser::ManiTrackUser()
 ManiTrackUser::~ManiTrackUser()
 {
 	// Cleanup
+//	free(hash_table);
 }
 
 //---------------------------------------------------------------------------------

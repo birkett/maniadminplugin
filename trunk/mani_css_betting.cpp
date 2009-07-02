@@ -53,6 +53,7 @@
 #include "mani_effects.h"
 #include "mani_commands.h"
 #include "mani_vfuncs.h"
+#include "mani_vars.h"
 #include "mani_css_betting.h" 
 #include "mani_warmuptimer.h"
 #include "shareddefs.h"
@@ -63,8 +64,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
- 
 
 ConVar mani_css_betting ("mani_css_betting", "0", 0, "0 = disable css betting, 1 = enable css betting", true, 0, true, 1);
 ConVar mani_css_betting_dead_only ("mani_css_betting_dead_only", "0", 0, "0 = players can bet when alive or dead, 1 = players can only bet when dead", true, 0, true, 1);
@@ -153,7 +152,7 @@ void ManiCSSBetting::PlayerNotAlive(void)
 			}
 			else
 			{
-				SayToAll(LIGHT_GREEN_CHAT, false, "%s", Translate(1300));
+				SayToAll(LIGHT_GREEN_CHAT, false, "%s", Translate(NULL, 1300));
 			}
 		}
 	}
@@ -211,7 +210,12 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 
 	if (gpCmd->Cmd_Argc() == 1)
 	{
-		ShowBetRules(player_ptr);
+		BetRulesFreePage *ptr = new BetRulesFreePage;
+		g_menu_mgr.AddFreePage(player_ptr, ptr, 5, 30);
+		if (!ptr->Render(player_ptr))
+		{
+			g_menu_mgr.Kill();
+		}
 		return;
 	}
 
@@ -223,19 +227,19 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 	int index = player_ptr->index - 1;
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team))
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1301));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1301));
 		return;
 	}
 
 	if (!player_ptr->is_dead && mani_css_betting_dead_only.GetInt() == 1)
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1302));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1302));
 		return;
 	}
 
 	if (bet_list[index].amount_bet != 0)
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1303));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1303));
 		return;
 	}
 
@@ -253,7 +257,7 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 	}
 	else
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1304, "%s", gpCmd->Cmd_Argv(1)));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1304, "%s", gpCmd->Cmd_Argv(1)));
 		return;
 	}
 
@@ -265,15 +269,14 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 
 	if (team_ct_count == 0 || team_t_count == 0)
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1305));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1305));
 		return;
 	}
 
-	int account_value;
-	account_value = Prop_GetAccount(player_ptr->entity);
+	int account_value = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT, 0);
 	if (account_value == 0)
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1306));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1306));
 		return;
 	}
 
@@ -298,19 +301,19 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 	else
 	{
 		// Get value
-		bet_amount = Q_atoi(gpCmd->Cmd_Argv(2));
+		bet_amount = atoi(gpCmd->Cmd_Argv(2));
 	}
 
 	if (bet_amount > account_value)
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1307));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1307));
 		return;
 	}
 
-	// Bet value too low or Q_atoi chopped it to zero
+	// Bet value too low or atoi chopped it to zero
 	if (bet_amount <= 0)
 	{
-		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1308, "%s", gpCmd->Cmd_Argv(2)));
+		SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1308, "%s", gpCmd->Cmd_Argv(2)));
 		return;
 	}
 
@@ -321,18 +324,18 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 	{
 		// Terrorist bet
 		multiplier = (float) team_ct_count / (float) team_t_count;
-		Q_snprintf (odds_string, sizeof(odds_string), "%i-%i", team_t_count, team_ct_count);
+		snprintf (odds_string, sizeof(odds_string), "%i-%i", team_ct_count, team_t_count);
 	}
 	else
 	{
 		// CT bet
 		multiplier = (float) team_t_count / (float) team_ct_count;
-		Q_snprintf (odds_string, sizeof(odds_string), "%i-%i", team_ct_count, team_t_count);
+		snprintf (odds_string, sizeof(odds_string), "%i-%i", team_t_count, team_ct_count);
 	}
 
 	if (team_ct_count == team_t_count)
 	{
-		Q_snprintf (odds_string, sizeof(odds_string), "%s", Translate(1309));
+		snprintf (odds_string, sizeof(odds_string), "%s", Translate(player_ptr, 1309));
 	}
 
 	// Show odds to player plus the amount they stand to win
@@ -340,8 +343,8 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 	bet_list[index].win_payout = (int) ((float) bet_amount * (float) multiplier);
 	bet_list[index].winning_team = team;
 
-	Prop_SetAccount(player_ptr->entity, account_value - bet_amount);
-	SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(1310, "%s%i%i", odds_string, bet_list[index].win_payout, bet_amount));
+	Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, (account_value - bet_amount));
+	SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 1310, "%s%i%i", odds_string, bet_list[index].win_payout, bet_amount));
 	return;
 }
 
@@ -373,9 +376,7 @@ void ManiCSSBetting::CSSRoundEnd(int winning_team)
 		if (bet_list[i].winning_team == winning_team)
 		{
 			// Payout to player
-			int new_value;
-
-			new_value = Prop_GetAccount(player.entity);
+			int new_value = Prop_GetVal(player.entity, MANI_PROP_ACCOUNT, 0);
 			new_value += (bet_list[i].win_payout + bet_list[i].amount_bet);
 			if (new_value > 16000)
 			{
@@ -383,13 +384,13 @@ void ManiCSSBetting::CSSRoundEnd(int winning_team)
 			}
 
 			// Attacker must receive the bounty
-			Prop_SetAccount(player.entity, new_value);
-			SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(1311, "%i%i", bet_list[i].win_payout, bet_list[i].amount_bet));
+			Prop_SetVal(player.entity, MANI_PROP_ACCOUNT, new_value);
+			SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(&player, 1311, "%i%i", bet_list[i].win_payout, bet_list[i].amount_bet));
 			this->ResetPlayer(i);
 		}
 		else
 		{
-			SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(1312, "%i", bet_list[i].amount_bet));
+			SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(&player, 1312, "%i", bet_list[i].amount_bet));
 			lost_total += bet_list[i].amount_bet;
 			this->ResetPlayer(i);
 		}
@@ -415,17 +416,15 @@ void ManiCSSBetting::CSSRoundEnd(int winning_team)
 			if (FindPlayerByIndex(&player))
 			{
 				// Give player the money
-				int new_value;
-
-				new_value = Prop_GetAccount(player.entity);
+				int new_value = Prop_GetVal(player.entity, MANI_PROP_ACCOUNT, 0);
 				new_value += lost_total;
 				if (new_value > 16000)
 				{
 					new_value = 16000;
 				}
 
-				Prop_SetAccount(player.entity, new_value);
-				SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(1313, "%i%i", lost_total));
+				Prop_SetVal(player.entity, MANI_PROP_ACCOUNT, new_value);
+				SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(&player, 1313, "%i%i", lost_total));
 			}
 		}
 	}
@@ -438,35 +437,37 @@ void ManiCSSBetting::CSSRoundEnd(int winning_team)
 //---------------------------------------------------------------------------------
 // Purpose: Show top 5 bounties
 //---------------------------------------------------------------------------------
-void ManiCSSBetting::ShowBetRules(player_t *player_ptr)
+bool BetRulesFreePage::OptionSelected(player_t *player_ptr, const int option)
+{
+	return false;
+}
+
+bool BetRulesFreePage::Render(player_t *player_ptr)
 {
 	char	menu_string[512];
 
-	FreeMenu();
-
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1314));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1314));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1315));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1315));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1316));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1316));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1317));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1317));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1318));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1318));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1319));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1319));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1320));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1320));
 	DrawMenu (player_ptr->index, 30, 0, false, false, true, menu_string, false);
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(M_MENU_EXIT_AMX));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, M_MENU_EXIT_AMX));
 	DrawMenu (player_ptr->index, 30, 7, true, true, true, menu_string, true);
-	menu_confirm[player_ptr->index - 1].in_use = false;
-
+	return true;
 }
 
 

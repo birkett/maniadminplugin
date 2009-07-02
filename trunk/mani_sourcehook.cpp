@@ -158,7 +158,7 @@ void	ManiSMMHooks::HookVFuncs(void)
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
 	{
 		//MMsg("Hooking decals\n");
-		SH_ADD_HOOK_MEMFUNC(ITempEntsSystem, PlayerDecal, temp_ents, &g_ManiSMMHooks, &ManiSMMHooks::PlayerDecal, true);
+		SH_ADD_HOOK_MEMFUNC(ITempEntsSystem, PlayerDecal, temp_ents, &g_ManiSMMHooks, &ManiSMMHooks::PlayerDecal, false);
 	}
 
 	int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS);
@@ -225,7 +225,7 @@ void	ManiSMMHooks::HookProcessUsercmds(CBasePlayer *pPlayer)
 
 void	ManiSMMHooks::ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
 {
-	gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds);
+	PROFILE(PROCESS_USER_CMDS, gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds));
 	RETURN_META(MRES_IGNORED);
 }
 

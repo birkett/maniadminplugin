@@ -55,1208 +55,695 @@
 #include "mani_weapon.h"
 #include "mani_vfuncs.h"
 #include "mani_commands.h"
+#include "mani_team.h"
+#include "mani_vars.h"
 #include "mani_help.h"
 #include "mani_warmuptimer.h"
+#include "mani_maps.h"
+#include "mani_sigscan.h"
 #include "cbaseentity.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IFileSystem	*filesystem;
-extern	INetworkStringTableContainer *networkstringtable;
-
-extern  weapon_type_t	*weapon_list;
-extern	int				weapon_list_size;
 
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	int	con_command_index;
 
+ConVar mani_weapon_restrict_refund_on_spawn ("mani_weapon_restrict_refund_on_spawn", "0", 0, "0 = Money not refunded if weapon removed at spawn, 1 = money refunded if weapon removed at spawn", true, 0, true, 1); 
+
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
-static void WeaponAddCash(edict_t *pEntity, int cost);
-
-main_weapon_t	primary_weapon[18];
-main_weapon_t	secondary_weapon[6];
-weapon_type_t	*weapon_list = NULL;
-int				weapon_list_size = 0;
-bool			weapons_restricted = false;
-
-static	void	AddWeapon(char *weapon_line);
-static	bool	IsWeaponRestricted(char *weapon_name, int team_index);
-static	bool	AreWeaponsRestricted(void);
-static	int		GetDefaultWeaponIndex(char *weapon_name);
-static	bool	GetNextWeapon(char *weapon_name, const char *string, int *index);
-static	int		FindWeaponIndex(char *weapon_name);
-
 //---------------------------------------------------------------------------------
-// Purpose: Free the weapons used
+// Purpose: Setup Weapon class
 //---------------------------------------------------------------------------------
-void	FreeWeapons(void)
+MWeapon::MWeapon(const char *weapon_name, int translation_id, int weapon_index)
 {
-	FreeList((void **) &weapon_list, &weapon_list_size);
+	strcpy(this->weapon_name, weapon_name);
+	this->index = weapon_index;
+	this->translation_id = translation_id;
+	this->team_limit = 0;
+	this->restricted = false;
+	this->round_ratio = 0;
+//	Msg("Weapon Name [%s] Display Name [%s]\n", weapon_name, display_name);
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Load weapons information, this must be done before the call to load action models
+// Purpose: Checks if player can buy this weapon or not
 //---------------------------------------------------------------------------------
-void	LoadWeapons(const char *pMapName)
+bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
 {
-	FileHandle_t file_handle;
-	char	weapon_line[512];
-	char	weapon_name[128];
-	char	restrict_filename[256];
-	char	base_filename[256];
-	int		index = 0;
+//	Msg("[%s] [%s] [%i] [%i] [%s]\n", weapon_name, display_name, team_limit, round_ratio, (restricted == true) ? "YES":"NO");
+	if (!restricted || war_mode) return true;
+	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return true;
+	if (translation_id == 0) return true;
 
-//	MMsg("**** LOADING WEAPON INFO ****\n");
-
-	FreeWeapons();
-
-	weapons_restricted = false;
-
-	/* Setup primary and secondary weapons */
-	Q_strcpy(primary_weapon[index].name, "awp");
-	primary_weapon[index++].cost = 4750;
-	Q_strcpy(primary_weapon[index].name, "g3sg1");
-	primary_weapon[index++].cost = 5000;
-	Q_strcpy(primary_weapon[index].name, "sg550");
-	primary_weapon[index++].cost = 4200;
-	Q_strcpy(primary_weapon[index].name, "galil");
-	primary_weapon[index++].cost = 2000;
-	Q_strcpy(primary_weapon[index].name, "ak47");
-	primary_weapon[index++].cost = 2500;
-	Q_strcpy(primary_weapon[index].name, "scout");
-	primary_weapon[index++].cost = 2750;
-	Q_strcpy(primary_weapon[index].name, "sg552");
-	primary_weapon[index++].cost = 3500;
-	Q_strcpy(primary_weapon[index].name, "famas");
-	primary_weapon[index++].cost = 2250;
-	Q_strcpy(primary_weapon[index].name, "m4a1");
-	primary_weapon[index++].cost = 3100;
-	Q_strcpy(primary_weapon[index].name, "aug");
-	primary_weapon[index++].cost = 3500;
-	Q_strcpy(primary_weapon[index].name, "m3");
-	primary_weapon[index++].cost = 1700;
-	Q_strcpy(primary_weapon[index].name, "xm1014");
-	primary_weapon[index++].cost = 3000;
-	Q_strcpy(primary_weapon[index].name, "mac10");
-	primary_weapon[index++].cost = 1400;
-	Q_strcpy(primary_weapon[index].name, "tmp");
-	primary_weapon[index++].cost = 1250;
-	Q_strcpy(primary_weapon[index].name, "mp5navy");
-	primary_weapon[index++].cost = 1500;
-	Q_strcpy(primary_weapon[index].name, "ump45");
-	primary_weapon[index++].cost = 1700;
-	Q_strcpy(primary_weapon[index].name, "p90");
-	primary_weapon[index++].cost = 2350;
-	Q_strcpy(primary_weapon[index].name, "m249");
-	primary_weapon[index++].cost = 5750;
-
-	index = 0;
-	Q_strcpy(secondary_weapon[index].name, "glock");
-	secondary_weapon[index++].cost = 400;
-	Q_strcpy(secondary_weapon[index].name, "usp");
-	secondary_weapon[index++].cost = 500;
-	Q_strcpy(secondary_weapon[index].name, "p228");
-	secondary_weapon[index++].cost = 600;
-	Q_strcpy(secondary_weapon[index].name, "deagle");
-	secondary_weapon[index++].cost = 650;
-	Q_strcpy(secondary_weapon[index].name, "elite");
-	secondary_weapon[index++].cost = 800;
-	Q_strcpy(secondary_weapon[index].name, "fiveseven");
-	secondary_weapon[index++].cost = 750;
-
-	for (int i = 0; i < 18; i ++)
+	// Weapons are restricted, check if limit is 0
+	if (round_ratio != 0)
 	{
-		primary_weapon[i].restrict_index = -1;
-		Q_snprintf(primary_weapon[i].core_name, sizeof (primary_weapon[i].core_name), "weapon_%s", primary_weapon[i].name);
-	}
-
-	for (int i = 0; i < 6; i ++)
-	{
-		secondary_weapon[i].restrict_index = -1;
-		Q_snprintf(secondary_weapon[i].core_name, sizeof (secondary_weapon[i].core_name), "weapon_%s", secondary_weapon[i].name);
-	}
-
-	//Get weapons available for restriction
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/restricted_weapons.txt", mani_path.GetString());
-	file_handle = filesystem->Open (base_filename,"rt",NULL);
-	if (file_handle == NULL)
-	{
-//		MMsg("No default weapons restrictions found, weapon restrict menu will be empty\n");
-	}
-	else
-	{
-//		MMsg("Weapon Restrictions\n");
-		while (filesystem->ReadLine (weapon_line, sizeof(weapon_line), file_handle) != NULL)
+		if (player_ptr->team == 2)
 		{
-			if (!ParseLine(weapon_line, true, false))
-			{
-				// String is empty after parsing
-				continue;
-			}
-
-			AddWeapon(weapon_line);
-		}
-
-		filesystem->Close(file_handle);
-
-		// Bind indexes so that we can handle rebuy restrictions
-		for (int i = 0; i < 18; i ++)
-		{
-			int index = GetDefaultWeaponIndex(primary_weapon[i].name);
-
-			if (index == -1)
-			{
-//				MMsg("Failed to bind primary weapon [%s]\n", primary_weapon[i].name);
-				continue;
-			}
-
-			primary_weapon[i].restrict_index = index;
-		}
-
-		// Bind indexes so that we can handle rebuy restrictions
-		for (int i = 0; i < 6; i ++)
-		{
-			int index = GetDefaultWeaponIndex(secondary_weapon[i].name);
-
-			if (index == -1)
-			{
-//				MMsg("Failed to bind secondary weapon [%s]\n", secondary_weapon[i].name);
-				continue;
-			}
-
-			secondary_weapon[i].restrict_index = index;
-		}
-	}
-
-	//Get weapons restriction list for this map
-	Q_snprintf( restrict_filename, sizeof(restrict_filename), "./cfg/%s/restrict/%s_restrict.txt", mani_path.GetString(), pMapName);
-	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
-	if (file_handle == NULL)
-	{
-//		MMsg("No default weapons restrictions found for this map\n");
-	}
-	else
-	{
-//		MMsg("Weapon Restriction List for map\n");
-		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
-		{
-			if (!ParseLine(weapon_name, true, false))
-			{
-				// String is empty after parsing
-				continue;
-			}
-
-			for (int i = 0; i < weapon_list_size; i ++)
-			{
-				if (FStrEq(weapon_list[i].weapon_name, weapon_name))
-				{
-					weapons_restricted = true;
-					weapon_list[i].restricted = true;
-					weapon_list[i].limit_per_team = 0;
-					weapon_list[i].ct_count = 0;
-					weapon_list[i].t_count = 0;
-					break;
-				}
-			}
-//			MMsg("[%s] is restricted\n", weapon_name);
-		}
-
-		filesystem->Close(file_handle);
-	}
-
-	//Get weapons restriction list for this map
-	Q_snprintf( restrict_filename, sizeof(restrict_filename), "./cfg/%s/default_weapon_restrict.txt", mani_path.GetString());
-	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
-	if (file_handle == NULL)
-	{
-//		MMsg("No default weapons restrictions found.\n");
-	}
-	else
-	{
-//		MMsg("Weapon Restriction List for all maps\n");
-		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
-		{
-			if (!ParseLine(weapon_name, true, false))
-			{
-				// String is empty after parsing
-				continue;
-			}
-
-			for (int i = 0; i < weapon_list_size; i ++)
-			{
-				if (FStrEq(weapon_list[i].weapon_name, weapon_name))
-				{
-					weapons_restricted = true;
-					weapon_list[i].restricted = true;
-					weapon_list[i].limit_per_team = 0;
-					weapon_list[i].ct_count = 0;
-					weapon_list[i].t_count = 0;
-					break;
-				}
-			}
-//			MMsg("[%s] is restricted\n", weapon_name);
-		}
-
-		filesystem->Close(file_handle);
-	}
-
-
-//	MMsg("**** WEAPON INFO LOADED ****\n");
-
-}
-
-
-//---------------------------------------------------------------------------------
-// Purpose: Parses the weapon config line and extracts aliases and weapon name
-//---------------------------------------------------------------------------------
-
-static
-void AddWeapon(char *weapon_line)
-{
-	int		i,j;
-	weapon_type_t	weapon;
-	char	weapon_string[128];
-
-	if (!AddToList((void **) &weapon_list, sizeof(weapon_type_t), &weapon_list_size))
-	{
-		return;
-	}
-
-	// default weapons details
-	weapon.restricted = false; 
-	weapon.number_of_weapons = 0; 
-	weapon.ct_count = 0;
-	weapon.t_count = 0;
-	weapon.limit_per_team = 0;
-
-
-	i = 0;
-	j = 0;
-	bool found_break = false;
-
-	for (;;)
-	{
-		if (weapon_line[i] == '\0')
-		{
-			// No more data
-			weapon_string[j] = '\0';
-			Q_strcpy(weapon.weapon_name, weapon_string);
-			if (weapon.number_of_weapons == 0)
-			{
-				Q_strcpy(weapon.weapon_alias[0], weapon_string);
-				weapon.number_of_weapons = 1;
-			}
-
-			weapon_list[weapon_list_size - 1] = weapon;
-//			MMsg("Weapon Name [%s] Weapon Aliases ", weapon.weapon_name);
-			for (i = 0; i < weapon.number_of_weapons; i++)
-			{
-//				MMsg("[%s] ", weapon.weapon_alias[i]);
-			}
-//			MMsg("\n");
-			return;
-		}
-
-
-		// If reached space or tab break out of loop
-		if (weapon_line[i] == ' ' ||
-			weapon_line[i] == '\t')
-		{
-			if (found_break)
-			{
-				i++;
-				continue;
-			}
-			else
-			{
-				weapon_string[j] = '\0';
-				Q_strcpy(weapon.weapon_alias[weapon.number_of_weapons], weapon_string);
-				weapon.number_of_weapons ++;
-				found_break = true;
-				j = 0;
-				i++;
-			}
-		}
-		else
-		{
-			weapon_string[j++] = weapon_line[i++];
-			found_break = false;
-		}
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check if weapon restricted for this weapon name
-//---------------------------------------------------------------------------------
-static
-bool IsWeaponRestricted(char *weapon_name, int team_index)
-{
-	if (war_mode) return false;
-
-	if (gpManiWarmupTimer->KnivesOnly()) return true;
-
-	// Search for weapon restriction
-	for (int count = 0; count < weapon_list_size; count ++)
-	{
-		for (int j = 0; j < weapon_list[count].number_of_weapons; j++)
-		{
-			if (FStrEq( weapon_name, weapon_list[count].weapon_alias[j]))
-			{
-				if (weapon_list[count].restricted == true)
-				{
-					if (weapon_list[count].limit_per_team == 0)
-					{
-						return true;
-					}
-
-					if (team_index == TEAM_B)
-					{
-						if (weapon_list[count].ct_count >= weapon_list[count].limit_per_team)
-						{
-							return true;
-						}
-						else
-						{
-							weapon_list[count].ct_count ++;
-							return false;
-						}
-					}
-					else if (team_index == TEAM_A)
-					{
-						if (weapon_list[count].t_count >= weapon_list[count].limit_per_team)
-						{
-							return true;
-						}
-						else
-						{
-							weapon_list[count].t_count ++;
-							return false;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return false;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check if any weapon restrictions are in place
-//---------------------------------------------------------------------------------
-static
-bool	AreWeaponsRestricted(void)
-{
-	for( int i = 0; i < weapon_list_size; i++ )
-	{
-		if (weapon_list[i].restricted)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check index in weapon_list for weapon name
-//---------------------------------------------------------------------------------
-static
-int GetDefaultWeaponIndex(char *weapon_name)
-{
-	// Search for weapon restriction
-	for (int count = 0; count < weapon_list_size; count ++)
-	{
-		for (int j = 0; j < weapon_list[count].number_of_weapons; j++)
-		{
-			if (FStrEq( weapon_name, weapon_list[count].weapon_alias[j]))
-			{
-				return count;
-			}
-		}
-	}
-
-	return -1;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check client command for buyammo shortcut
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT ProcessClientBuy
-(
- const char *pcmd, 
- const char *pcmd2, 
- const int pargc,
- player_t *player_ptr
-)
-{
-	if (!FindPlayerByEntity(player_ptr)) return PLUGIN_CONTINUE;
-
-	if (war_mode) return PLUGIN_CONTINUE;
-	if (!weapons_restricted && !gpManiWarmupTimer->KnivesOnly()) return PLUGIN_CONTINUE;
-
-	if ( FStrEq( pcmd, "buy"))
-	{
-		if (pargc > 1)
-		{
-			if (IsWeaponRestricted((char *) pcmd2, player_ptr->team))
-			{
-				ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
-				return PLUGIN_STOP;
-			}
-		}
-	}
-	else if (FStrEq(pcmd, "buyammo1"))
-	{
-		if (IsWeaponRestricted("primammo", player_ptr->team))
-		{
-			ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
-			return PLUGIN_STOP;
-		}
-	}
-	else if ( FStrEq(pcmd, "buyammo2"))
-	{
-		if (IsWeaponRestricted("secammo", player_ptr->team))
-		{
-			ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
-			return PLUGIN_STOP;
-		}
-	}
-
-	return PLUGIN_CONTINUE;
-
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Handle the restrict weapon menu
-//---------------------------------------------------------------------------------
-void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_offset )
-{
-	const int argc = gpCmd->Cmd_Argc();
-
-	if (argc - argv_offset == 3)
-	{
-		char	weapon_name[128];
-		int		weapon_index;
-
-		// check if valid weapon name 
-		Q_strcpy(weapon_name, gpCmd->Cmd_Argv(2 + argv_offset));
-		weapon_index = -1;
-		for (int i = 0; i < weapon_list_size; i++)
-		{
-			if (FStrEq(weapon_name, weapon_list[i].weapon_name))
-			{
-				weapon_index = i;
-				break;
-			}
-		}
-
-		if (weapon_index == -1)	return;
-
-		if (weapon_list[weapon_index].restricted == true)
-		{
-			char	log_text[256];
-
-			weapon_list[weapon_index].restricted = false;
-
-			Q_snprintf( log_text, sizeof(log_text),	"un-restrict [%s]\n", weapon_list[weapon_index].weapon_name);
-			LogCommand (admin, "%s", log_text);
-			SayToAll(GREEN_CHAT, true, "%s", Translate(532,"%s", weapon_list[weapon_index].weapon_name));
-		}
-		else
-		{
-			char	log_text[256];
-
-			weapon_list[weapon_index].restricted = true;
-			Q_snprintf( log_text, sizeof(log_text),	"restrict [%s]\n", weapon_list[weapon_index].weapon_name);
-			LogCommand (admin, "%s", log_text);
-			SayToAll(GREEN_CHAT, true, "%s", Translate(533, "%s", weapon_list[weapon_index].weapon_name));
-		}
-
-		weapons_restricted = AreWeaponsRestricted();
-	}
-	else
-	{
-		if (weapon_list_size == 0)
-		{
-			return;
-		}
-
-		// Setup weapon list
-		FreeMenu();
-		
-		CreateList ((void **) &menu_list, sizeof(menu_t), weapon_list_size, &menu_list_size);
-
-		for( int i = 0; i < weapon_list_size; i++ )
-		{
-			Q_snprintf( menu_list[i].menu_text, sizeof(menu_list[i].menu_text), "%s%s", (weapon_list[i].restricted) ? "* ":"", weapon_list[i].weapon_name);							
-			Q_snprintf( menu_list[i].menu_command, sizeof(menu_list[i].menu_command), "admin restrict_weapon %s", weapon_list[i].weapon_name);
-			Q_strcpy(menu_list[i].sort_name, weapon_list[i].weapon_name);
-		}
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		DrawSubMenu (admin, Translate(530), Translate(531), next_index, "admin", "restrict_weapon", true, -1);
-	}
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Hook the autobuy command
-//---------------------------------------------------------------------------------
-bool HookAutobuyCommand(void)
-{
-	player_t player;
-	char	*autobuy_string;
-
-	if (war_mode || !weapons_restricted)
-	{
-		return true;
-	}
-
-//	if (IsCommandIssuedByServerAdmin()) return true;
-
-	player.index = con_command_index + 1;
-	if (!FindPlayerByIndex(&player))
-	{
-//		MMsg("Did not find player\n");
-		return true;
-	}
-
-	if (player.is_bot)
-	{
-		return true;
-	}
-
-	// Get what client is using.
-	autobuy_string = (char *)engine->GetClientConVarValue(con_command_index + 1, "cl_autobuy");
-	
-	char	autobuy_command[512];
-	char	weapon_name[512];
-	bool	weapon_restricted = false;
-	int		index = 0;
-	
-	// cl_setautobuy or cl_setrebuy has weapons in it
-	// Go through weapons list to see if they are restricted
-
-	Q_strcpy(autobuy_command, "cl_autobuy ");
-	while (true == GetNextWeapon(weapon_name, autobuy_string, &index))
-	{
-		if (!IsWeaponRestricted(weapon_name, player.team))
-		{
-			// Useable weapon
-			Q_strcat(autobuy_command, weapon_name);
-			Q_strcat(autobuy_command, " ");
-		}
-		else
-		{
-			weapon_restricted = true;
-		}
-	}
-
-	if (weapon_restricted)
-	{
-		// Re-issue autobuy command command
-		autobuy_command[Q_strlen(autobuy_command) - 1] = '\n';
-		engine->ClientCommand(player.entity, autobuy_command);
-		engine->ClientCommand(player.entity, "autobuy\n");
-		Q_snprintf(autobuy_command, sizeof(autobuy_command), "cl_autobuy %s\n", autobuy_string);
-		engine->ClientCommand(player.entity, autobuy_command);
-		return false;
-	}
-
-	return true;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Hook the rebuy command
-//---------------------------------------------------------------------------------
-bool HookRebuyCommand(void)
-{
-	player_t player;
-	char	*rebuy_string;
-
-	if (war_mode || !weapons_restricted)
-	{
-		return true;
-	}
-
-//	if (IsCommandIssuedByServerAdmin()) return true;
-
-	player.index = con_command_index + 1;
-	if (!FindPlayerByIndex(&player))
-	{
-//		MMsg("Did not find player\n");
-		return true;
-	}
-
-	if (player.is_bot)
-	{
-		return true;
-	}
-
-	// Get what client weapon classes client is using.
-	rebuy_string = (char *)engine->GetClientConVarValue(con_command_index + 1, "cl_rebuy");
-	
-	char	rebuy_command[512];
-	char	weapon_name[512];
-	bool	weapon_restricted = false;
-	int		index = 0;
-	
-	// Go through weapons list to see if they are restricted
-
-	Q_strcpy(rebuy_command, "cl_rebuy ");
-	while (true == GetNextWeapon(weapon_name, rebuy_string, &index))
-	{
-		if (FStrEq("NightVision", weapon_name))
-		{
-			if (!IsWeaponRestricted("nvgs", player.team))
-			{
-				// Useable weapon
-				Q_strcat(rebuy_command, weapon_name);
-				Q_strcat(rebuy_command, " ");
-			}
-			else
-			{
-				weapon_restricted = true;
-			}
-		}
-		else if (FStrEq("Armor", weapon_name))
-		{
-			if (IsWeaponRestricted("vest", player.team) || IsWeaponRestricted("vesthelm", player.team))
-			{
-				weapon_restricted = true;
-			}
-			else
-			{
-				// Useable weapon
-				Q_strcat(rebuy_command, weapon_name);
-				Q_strcat(rebuy_command, " ");
-			}
-		}
-		else if (FStrEq("PrimaryAmmo", weapon_name))
-		{
-			if (IsWeaponRestricted("primammo", player.team))
-			{
-				weapon_restricted = true;
-			}
-			else
-			{
-				// Useable weapon
-				Q_strcat(rebuy_command, weapon_name);
-				Q_strcat(rebuy_command, " ");
-			}
-		}
-		else if (FStrEq("SecondaryAmmo", weapon_name))
-		{
-			if (IsWeaponRestricted("secammo", player.team))
-			{
-				weapon_restricted = true;
-			}
-			else
-			{
-				// Useable weapon
-				Q_strcat(rebuy_command, weapon_name);
-				Q_strcat(rebuy_command, " ");
-			}
-		}
-		else if (FStrEq("PrimaryWeapon", weapon_name) ||
-				FStrEq("PrimaryAmmo", weapon_name) ||
-				FStrEq("SecondaryWeapon", weapon_name) ||
-				FStrEq("SecondaryAmmo", weapon_name))
-		{
-				// Useable weapon
-				Q_strcat(rebuy_command, weapon_name);
-				Q_strcat(rebuy_command, " ");
-		}
-		else
-		{
-			// Handle flash, he, smoke
-			if (!IsWeaponRestricted(weapon_name, player.team))
-			{
-				// Useable weapon
-				Q_strcat(rebuy_command, weapon_name);
-				Q_strcat(rebuy_command, " ");
-			}
-			else
-			{
-				weapon_restricted = true;
-			}
-		}
-	}
-
-	if (weapon_restricted)
-	{
-		// Re-issue rebuy command command
-		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-		rebuy_command[Q_strlen(rebuy_command) - 1] = '\n';
-		engine->ClientCommand(player.entity, rebuy_command);
-		engine->ClientCommand(player.entity, "rebuy\n");
-		Q_snprintf(rebuy_command, sizeof(rebuy_command), "cl_rebuy %s\n", rebuy_string);
-		engine->ClientCommand(player.entity, rebuy_command);
-		return false;
-	}
-
-	return true;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Strip primary and secondary weapons if necessary
-//---------------------------------------------------------------------------------
-void PostProcessRebuyCommand(void)
-{
-	player_t player;
-	char	*rebuy_string;
-
-	if (war_mode) return;
-	if (!weapons_restricted && !gpManiWarmupTimer->KnivesOnly())
-	{
-		return;
-	}
-
-	if (IsCommandIssuedByServerAdmin()) return;
-
-	player.index = con_command_index + 1;
-	if (!FindPlayerByIndex(&player))
-	{
-//		MMsg("Did not find player\n");
-		return;
-	}
-
-	if (player.is_bot)
-	{
-		return;
-	}
-
-	rebuy_string = (char *)engine->GetClientConVarValue(con_command_index + 1, "cl_rebuy");
-	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
-	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-	if (!pCombat) return;
-
-	if (gpManiWarmupTimer->KnivesOnly())
-	{
-			CBaseCombatWeapon *pWeapon1 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
-			CBaseCombatWeapon *pWeapon2 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-			if (pWeapon1)
-			{
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon1);
-			}
-
-			if (pWeapon2)
-			{
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon2);
-			}
-
-			return;
-	}
-
-	if (NULL != Q_strstr(rebuy_string, "PrimaryWeapon"))
-	{
-		// Primary Weapon requested so delete it :)
-
-		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
-		if (pWeapon)
-		{
-			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
-
-			for (int i = 0; i < 18; i ++)
-			{
-				if (FStrEq(core_weapon_name, primary_weapon[i].core_name))
-				{
-					if (weapon_list[primary_weapon[i].restrict_index].restricted == true)
-					{
-						int	limit_per_team = weapon_list[primary_weapon[i].restrict_index].limit_per_team;
-						// Found player with weapon
-						if (limit_per_team == 0)
-						{
-							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							WeaponAddCash(player.entity, primary_weapon[i].cost);
-
-							pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-							if (pWeapon)
-							{
-								CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-							}
-							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-							SayToPlayer(ORANGE_CHAT, &player,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
-						}
-						else
-						{
-							if (player.team == TEAM_B)
-							{
-								if (weapon_list[primary_weapon[i].restrict_index].ct_count >= limit_per_team)
-								{
-									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, primary_weapon[i].cost);
-									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-									if (pWeapon)
-									{
-										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-									}
-									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-									SayToPlayer(ORANGE_CHAT, &player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
-								}
-								else
-								{
-									weapon_list[primary_weapon[i].restrict_index].ct_count ++;
-								}
-							}
-							else if (player.team == TEAM_A)
-							{
-								if (weapon_list[primary_weapon[i].restrict_index].t_count >= limit_per_team)
-								{
-									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, primary_weapon[i].cost);
-									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-									if (pWeapon)
-									{
-										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-									}
-									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-									SayToPlayer(ORANGE_CHAT, &player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
-								}
-								else
-								{
-									weapon_list[primary_weapon[i].restrict_index].t_count ++;
-								}
-							}
-						}
-					}
-				}
-			}
-		}		
-	}
-
-	if (NULL != Q_strstr(rebuy_string, "SecondaryWeapon"))
-	{
-		// Primary Weapon requested so delete it :)
-
-		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-
-		if (pWeapon)
-		{
-			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
-
-			for (int i = 0; i < 6; i ++)
-			{
-				if (FStrEq(core_weapon_name, secondary_weapon[i].core_name))
-				{
-					if (weapon_list[secondary_weapon[i].restrict_index].restricted == true)
-					{
-						int	limit_per_team = weapon_list[secondary_weapon[i].restrict_index].limit_per_team;
-						// Found player with weapon
-						if (limit_per_team == 0)
-						{
-							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							WeaponAddCash(player.entity, secondary_weapon[i].cost);
-							pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-							if (pWeapon)
-							{
-								CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-							}
-							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-							SayToPlayer(ORANGE_CHAT, &player,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
-						}
-						else
-						{
-							if (player.team == TEAM_B)
-							{
-								if (weapon_list[secondary_weapon[i].restrict_index].ct_count >= limit_per_team)
-								{
-									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, secondary_weapon[i].cost);
-									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-									if (pWeapon)
-									{
-										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-									}
-									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-									SayToPlayer(ORANGE_CHAT, &player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
-								}
-								else
-								{
-									weapon_list[secondary_weapon[i].restrict_index].ct_count ++;
-								}
-							}
-							else if (player.team == TEAM_A)
-							{
-								if (weapon_list[secondary_weapon[i].restrict_index].t_count >= limit_per_team)
-								{
-									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-									WeaponAddCash(player.entity, secondary_weapon[i].cost);
-									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-									if (pWeapon)
-									{
-										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-									}
-									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-									SayToPlayer(ORANGE_CHAT, &player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
-								}
-								else
-								{
-									weapon_list[secondary_weapon[i].restrict_index].t_count ++;
-								}
-							}
-						}
-					}
-				}
-			}
-		}		
-	}
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Reset the weapon count on round start
-//---------------------------------------------------------------------------------
-void ResetWeaponCount(void)
-{
-// MMsg("Resetting weapon count\n");
-	// Reset all weapons count
-	for (int i = 0; i < weapon_list_size; i ++)
-	{
-		weapon_list[i].ct_count = 0;
-		weapon_list[i].t_count = 0;
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Strip primary and secondary weapons if necessary
-//---------------------------------------------------------------------------------
-void RemoveRestrictedWeapons(player_t *player_ptr)
-{
-	if (war_mode) return;
-	if (!weapons_restricted && !gpManiWarmupTimer->KnivesOnly())
-	{
-		return;
-	}
-
-	// Bots buy their weapons after this call so no point stripping them
-	if (player_ptr->is_bot) return;
-
-//	MMsg("Checking weapon count for player %s\n", player_ptr->name);
-
-	CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
-	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-	if (!pCombat) return;
-
-	if (gpManiWarmupTimer->KnivesOnly())
-	{
-			CBaseCombatWeapon *pWeapon;
-			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
-
-			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-			if (pWeapon)
-			{
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-			}
-
-			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-			if (pWeapon)
-			{
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-			}
-
-			// Change to knife (stops weird animation problems for models holding no weapon)
-			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-			if (pWeapon)
-			{
-				CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-			}
-
-			return;
-	}
-
-	for (int i = 0; i < 18; i ++)
-	{
-		if (weapon_list[primary_weapon[i].restrict_index].restricted == true)
-		{
-			int	limit_per_team = weapon_list[primary_weapon[i].restrict_index].limit_per_team;
-
-			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
-			if (!pWeapon) break;
-
-			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
-
-			if (FStrEq(core_weapon_name, primary_weapon[i].core_name))
-			{
-				// Found player with weapon
-				if (limit_per_team == 0)
-				{
-					CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-					CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-					SayToPlayer(ORANGE_CHAT, player_ptr,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
-				}
-				else
-				{
-					if (player_ptr->team == TEAM_B)
-					{
-						if (weapon_list[primary_weapon[i].restrict_index].ct_count >= limit_per_team)
-						{
-							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							SayToPlayer(ORANGE_CHAT, player_ptr,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
-						}
-						else
-						{
-							weapon_list[primary_weapon[i].restrict_index].ct_count ++;
-						}
-					}
-					else if (player_ptr->team == TEAM_A)
-					{
-						if (weapon_list[primary_weapon[i].restrict_index].t_count >= limit_per_team)
-						{
-							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							SayToPlayer(ORANGE_CHAT, player_ptr, "Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
-						}
-						else
-						{
-							weapon_list[primary_weapon[i].restrict_index].t_count ++;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	for (int i = 0; i < 6; i ++)
-	{
-		if (weapon_list[secondary_weapon[i].restrict_index].restricted == true)
-		{
-			int	limit_per_team = weapon_list[secondary_weapon[i].restrict_index].limit_per_team;
-
-			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-			if (!pWeapon) break;
-
-			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
-
-			if (FStrEq(core_weapon_name, secondary_weapon[i].core_name))
-			{
-				// Found player with weapon
-				if (limit_per_team == 0)
-				{
-					CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-					CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-					SayToPlayer(ORANGE_CHAT, player_ptr,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
-				}
-				else
-				{
-					if (player_ptr->team == TEAM_B)
-					{
-						if (weapon_list[secondary_weapon[i].restrict_index].ct_count >= limit_per_team)
-						{
-							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							SayToPlayer(ORANGE_CHAT, player_ptr,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
-						}
-						else
-						{
-							weapon_list[secondary_weapon[i].restrict_index].ct_count ++;
-						}
-					}
-					else if (player_ptr->team == TEAM_A)
-					{
-						if (weapon_list[secondary_weapon[i].restrict_index].t_count >= limit_per_team)
-						{
-							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-							SayToPlayer(ORANGE_CHAT, player_ptr,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
-						}
-						else
-						{
-							weapon_list[secondary_weapon[i].restrict_index].t_count ++;
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Extract weapon names from string
-//---------------------------------------------------------------------------------
-static
-bool GetNextWeapon(char *weapon_name, const char *string, int *index)
-{
-	int	name_index = 0;
-	bool	string_found = false;
-
-	for (;;)
-	{
-		if (string[*index] != ' ' && string[*index] != '\0')
-		{
-			weapon_name[name_index] = string[*index];
-			string_found = true;
-			name_index ++;
-			*index = *index + 1;
-			continue;
-		}
-
-		if (string[*index] == ' ')
-		{
-			weapon_name[name_index] = '\0';
-			*index = *index + 1;
-
-			// traverse remaining spaces
-			while (string[*index] == ' ')
-			{
-				*index = *index + 1;
-			}
-
-			return true;
-		}
-
-		if (string[*index] == '\0')
-		{
-			if (string_found)
-			{
-				weapon_name[name_index] = '\0';
-				return true;
-			}
-			else
+			if (gpManiTeam->GetTeamScore(2) - gpManiTeam->GetTeamScore(3) >= round_ratio)
 			{
 				return false;
 			}
 		}
+		else
+		{
+			if (gpManiTeam->GetTeamScore(3) - gpManiTeam->GetTeamScore(2) >= round_ratio)
+			{
+				return false;
+			}
+		}
+
+		if (team_limit == 0)
+		{
+			return true;
+		}
 	}
+
+	if (team_limit == 0 && round_ratio == 0) return false;
+
+	count[2] = 0;
+	count[3] = 0;
+
+	int compare = team_limit + offset;
+	// Count up number of weapons that players have
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.player_info->IsHLTV()) continue;
+
+		CBaseEntity *pPlayer = EdictToCBE(player.entity);
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		if (!pCombat) continue;
+		for (int j = 0; j < 20; j ++)
+		{
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
+			if (!pWeapon) continue;
+
+			if (strcmp(weapon_name, CBaseCombatWeapon_GetName(pWeapon)) == 0)
+			{
+				count[player.team] ++;
+			}
+		}
+	}
+
+	if (count[player_ptr->team] >= compare)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Free the weapons used
+//---------------------------------------------------------------------------------
+#define SETUP_WEAPON_0(_index, _display_name) \
+	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
+	if (weapon_info != NULL) \
+{ \
+	this->weapons[_index ++] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
+}
+
+#define SETUP_WEAPON_1(_index, _display_name, _alias1) \
+	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
+	if (weapon_info != NULL) \
+{ \
+	this->weapons[_index] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
+	this->alias_list[_alias1] = this->weapons[_index ++]; \
+}
+
+#define SETUP_WEAPON_2(_index, _display_name, _alias1, _alias2) \
+	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
+	if (weapon_info != NULL) \
+{ \
+	this->weapons[_index] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
+	this->alias_list[_alias1] = this->weapons[_index]; \
+	this->alias_list[_alias2] = this->weapons[_index ++]; \
+}
+
+#define SETUP_WEAPON_3(_index, _display_name, _alias1, _alias2, _alias3) \
+	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
+	if (weapon_info != NULL) \
+{ \
+	this->weapons[_index] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
+	this->alias_list[_alias1] = this->weapons[_index]; \
+	this->alias_list[_alias2] = this->weapons[_index]; \
+	this->alias_list[_alias3] = this->weapons[_index ++]; \
+}
+
+ManiWeaponMgr::ManiWeaponMgr()
+{
+	for (int i = 0; i < 29; i ++)
+	{
+		weapons[i] = NULL;
+	}
+
+	this->alias_list.clear();
+	gpManiWeaponMgr = this;
+}
+
+ManiWeaponMgr::~ManiWeaponMgr()
+{
+	this->CleanUp();
+}
+
+void ManiWeaponMgr::Load()
+{
+	this->CleanUp();
+	this->SetupWeapons();
+	this->LoadRestrictions();
+}
+
+void ManiWeaponMgr::LevelInit()
+{
+	this->CleanUp();
+	this->SetupWeapons();
+	this->LoadRestrictions();
+}
+
+void ManiWeaponMgr::CleanUp()
+{
+	for (int i = 0; i < 29; i ++)
+	{
+		if (weapons[i])
+		{
+			delete weapons[i];
+		}
+
+		weapons[i] = NULL;
+	}
+
+	this->alias_list.clear();
+}
+
+
+
+void ManiWeaponMgr::SetupWeapons()
+{
+	CCSWeaponInfo *weapon_info;
+	int index = 0;
+	
+	this->CleanUp();
+
+	SETUP_WEAPON_2(index, 3000, "xm1014", "autoshotgun")
+	SETUP_WEAPON_2(index, 3001, "usp", "km45")
+	SETUP_WEAPON_1(index, 3002, "ump45")
+	SETUP_WEAPON_2(index, 3003, "tmp", "mp")
+	SETUP_WEAPON_2(index, 3004, "smokegrenade", "sgren")
+	SETUP_WEAPON_2(index, 3005, "sg552", "krieg552")
+	SETUP_WEAPON_2(index, 3006, "sg550", "krieg550")
+	SETUP_WEAPON_1(index, 3007, "scout")
+	SETUP_WEAPON_2(index, 3008, "p90", "c90")
+	SETUP_WEAPON_2(index, 3009, "p228", "228compact")
+	SETUP_WEAPON_3(index, 3010, "mp5navy", "mp5", "smg")
+	SETUP_WEAPON_1(index, 3011, "mac10")
+	SETUP_WEAPON_1(index, 3012, "m4a1")
+	SETUP_WEAPON_2(index, 3013, "m3", "12gauge")
+	SETUP_WEAPON_1(index, 3014, "m249")
+
+	// Knife
+	SETUP_WEAPON_0(index, 0)
+	SETUP_WEAPON_2(index, 3015, "hegrenade", "hegren")
+	SETUP_WEAPON_2(index, 3016, "glock", "9x19mm")
+	SETUP_WEAPON_2(index, 3017, "galil", "defender")
+	SETUP_WEAPON_2(index, 3018, "g3sg1", "d3au1")
+	SETUP_WEAPON_2(index, 3019, "flashbang", "flash")
+	SETUP_WEAPON_2(index, 3020, "fiveseven", "fn57")
+	SETUP_WEAPON_2(index, 3021, "famas", "clarion")
+	SETUP_WEAPON_1(index, 3022, "elite")
+	SETUP_WEAPON_2(index, 3023, "deagle", "nighthawk")
+
+	// C4
+	SETUP_WEAPON_0(index, 0)
+	SETUP_WEAPON_2(index, 3024, "awp", "magnum")
+	SETUP_WEAPON_2(index, 3025, "aug", "bullpup")
+	SETUP_WEAPON_2(index, 3026, "ak47", "cv47")
+}
+
+void	ManiWeaponMgr::PlayerSpawn(player_t *player_ptr) 
+{
+	this->RemoveWeapons(player_ptr, ((mani_weapon_restrict_refund_on_spawn.GetInt() == 0) ? false:true), true);
+}
+
+void	ManiWeaponMgr::AutoBuyReBuy()
+{
+	player_t player;
+	player.index = con_command_index + 1;
+	if (!FindPlayerByIndex(&player)) return;
+	if (player.is_bot) return;
+	this->RemoveWeapons(&player, true, false);
+}
+
+void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_refund)
+{
+	if (war_mode) return;
+	CBaseEntity *pPlayer = EdictToCBE(player_ptr->entity);
+	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+	if (!pCombat) return;
+
+	bool knife_mode = gpManiWarmupTimer->KnivesOnly();
+	// Check all weapons
+	for (int i = 0; i < 29; i++)
+	{
+		if (weapons[i]->GetDisplayID() == 0) continue;
+
+		if (!weapons[i]->CanBuy(player_ptr, 1) || 
+			knife_mode)
+		{
+			for (int j = 0; j < 40; j++)
+			{
+				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
+				if (!pWeapon) continue;
+
+				if (strcmp(CBaseCombatWeapon_GetName(pWeapon), weapons[i]->GetWeaponName()) != 0)
+				{
+					continue;
+				}
+
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+				if (weapons[i]->GetTeamLimit() > 0)
+				{
+					OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3040, "%s%i",
+						Translate(player_ptr, weapons[i]->GetDisplayID()), 
+						weapons[i]->GetTeamLimit()));
+				}
+				else
+				{
+					OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3041, "%s",  
+						Translate(player_ptr, weapons[i]->GetDisplayID())));
+				}
+
+				if (!knife_mode)
+				{
+					ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
+				}
+
+				if (refund && !knife_mode)
+				{
+					CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
+					if (weapon_info)
+					{
+						int cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT,0);
+						cash += weapon_info->dynamic_price;
+						if (cash > 16000) cash = 16000;
+						Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, cash);
+						if (show_refund)
+						{
+							OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3042, "%i", weapon_info->dynamic_price));
+						}
+					}
+				}
+
+				// Switch to knife
+				pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+				if (pWeapon)
+				{
+					CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+				}
+
+				break;
+			}
+		}
+	}
+}
+
+void ManiWeaponMgr::RoundStart()
+{
+	if (war_mode) return;
+	for (int i = 0; i < 29; i++)
+	{
+		if (weapons[i]->GetDisplayID() == 0) continue;
+		if (!weapons[i]->IsRestricted()) continue;
+
+		int round_ratio = weapons[i]->GetRoundRatio();
+
+		// Round ratio not in use
+		if (round_ratio == 0) continue;
+
+		// If ratio still too close then continue
+		int score_diff = gpManiTeam->GetTeamScore(2) - gpManiTeam->GetTeamScore(3);
+
+		if (abs(score_diff) < round_ratio)
+		{
+			continue;
+		}
+
+		SayToAll(GREEN_CHAT, false, "%s", 
+			Translate(NULL, 3043, "%s%s%i", 
+			(score_diff < 0) ? "CT":"T", Translate(NULL, weapons[i]->GetDisplayID()), 
+			round_ratio));
+	}
+}
+
+PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+	if (war_mode) return PLUGIN_CONTINUE;
+	if (gpManiWarmupTimer->KnivesOnly()) return PLUGIN_STOP;
+
+	char lower_alias[32];
+
+	int length = strlen(alias_name);
+	if (length > 30) return PLUGIN_CONTINUE;
+
+	for (int i = 0; i <= length; i++)
+	{
+		lower_alias[i] = tolower(alias_name[i]);
+	}
+
+	MWeapon *weapon = alias_list[lower_alias];
+	if (weapon == NULL)
+	{
+		return PLUGIN_CONTINUE;
+	}
+
+	// Check if player has enough cash anyway
+	CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(weapon->GetWeaponIndex());
+	if (weapon_info)
+	{
+		int cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT,0);
+		if (cash < weapon_info->dynamic_price)
+		{
+			// Not enough money so continue anyway
+			return PLUGIN_CONTINUE;
+		}
+	}
+
+	if (weapon->CanBuy(player_ptr, 0))
+	{
+		return PLUGIN_CONTINUE;
+	}
+
+	ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
+	if (weapon->GetTeamLimit() > 0)
+	{
+		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
+			Translate(player_ptr, 3040, "%s%i", Translate(player_ptr, weapon->GetDisplayID()), weapon->GetTeamLimit()));
+	}
+	else
+	{
+		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
+			Translate(player_ptr, 3041, "%s", Translate(player_ptr, weapon->GetDisplayID())));
+	}
+
+	return PLUGIN_STOP;
+} 
+
+
+void	ManiWeaponMgr::LoadRestrictions()
+{
+	FileHandle_t file_handle;
+	char	weapon_name[128];
+	char	restrict_filename[256];
+
+	snprintf(restrict_filename, sizeof(restrict_filename), "./cfg/%s/restrict/%s_restrict.txt", mani_path.GetString(), current_map);
+	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
+	if (file_handle)
+	{
+		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
+		{
+			if (!ParseLine(weapon_name, true, false))
+			{
+				// String is empty after parsing
+				continue;
+			}
+
+			int length = strlen(weapon_name);
+			for (int i = 0; i <= length; i++)
+			{
+				weapon_name[i] = tolower(weapon_name[i]);
+			}
+
+			MWeapon *weapon = alias_list[weapon_name];
+			if (weapon == NULL)
+			{
+				MMsg("In file [%s], weapon [%s] is not valid\n", restrict_filename, weapon_name);
+				continue;
+			}
+
+			weapon->SetRestricted(true);
+			weapon->SetTeamLimit(0);
+			weapon->SetRoundRatio(0);
+		}
+
+		filesystem->Close(file_handle);
+	}
+
+	//Get weapons restriction list for this map
+	snprintf( restrict_filename, sizeof(restrict_filename), "./cfg/%s/default_weapon_restrict.txt", mani_path.GetString());
+	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
+	if (file_handle == NULL)
+	{
+	}
+	else
+	{
+		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
+		{
+			if (!ParseLine(weapon_name, true, false))
+			{
+				// String is empty after parsing
+				continue;
+			}
+
+			int length = strlen(weapon_name);
+			for (int i = 0; i <= length; i++)
+			{
+				weapon_name[i] = tolower(weapon_name[i]);
+			}
+
+			MWeapon *weapon = alias_list[weapon_name];
+			if (weapon == NULL)
+			{
+				MMsg("In file [%s], weapon [%s] is not valid\n", restrict_filename, weapon_name);
+				continue;
+			}
+
+			weapon->SetRestricted(true);
+			weapon->SetTeamLimit(0);
+			weapon->SetRoundRatio(0);
+		}
+
+		filesystem->Close(file_handle);
+	}
+}
+
+void	ManiWeaponMgr::RestrictAll()
+{
+	for (int i = 0; i < 29; i++)
+	{
+		if (weapons[i]->GetDisplayID() == 0) continue;
+		weapons[i]->SetRestricted(true);
+		weapons[i]->SetTeamLimit(0);
+		weapons[i]->SetRoundRatio(0);
+	}
+}
+
+void	ManiWeaponMgr::UnRestrictAll()
+{
+	for (int i = 0; i < 29; i++)
+	{
+		if (weapons[i]->GetDisplayID() == 0) continue;
+		weapons[i]->SetRestricted(false);
+		weapons[i]->SetTeamLimit(0);
+		weapons[i]->SetRoundRatio(0);
+	}
+}
+
+bool	ManiWeaponMgr::SetWeaponRestriction
+(
+ const char *weapon_name, 
+ bool restricted, 
+ int team_limit
+ )
+{
+
+	char lower_alias[32];
+
+	int length = strlen(weapon_name);
+	if (length > 30) return true;
+
+	for (int i = 0; i <= length; i++)
+	{
+		lower_alias[i] = tolower(weapon_name[i]);
+	}
+
+	MWeapon *weapon = alias_list[lower_alias];
+	if (!weapon)
+	{
+		// No weapon found so check other names for weapons
+		for (int i = 0; i < 29; i ++)
+		{
+			if (stricmp(weapons[i]->GetWeaponName(), weapon_name) == 0)
+			{
+				weapon = weapons[i];
+				break;
+			}
+
+			if (stricmp(Translate(NULL, weapons[i]->GetDisplayID()), weapon_name) == 0)
+			{
+				weapon = weapons[i];
+				break;
+			}
+		}
+
+		if (!weapon)
+		{
+			return false;
+		}
+	}
+
+	weapon->SetRestricted(restricted);
+	weapon->SetTeamLimit(team_limit);
+	weapon->SetRoundRatio(0);
+	return true;
+}
+
+bool	ManiWeaponMgr::SetWeaponRatio
+(
+ const char *weapon_name, 
+ int ratio
+ )
+{
+	char lower_alias[32];
+
+	int length = strlen(weapon_name);
+	if (length > 30) return true;
+
+	for (int i = 0; i <= length; i++)
+	{
+		lower_alias[i] = tolower(weapon_name[i]);
+	}
+
+	MWeapon *weapon = alias_list[lower_alias];
+	if (!weapon)
+	{
+		// No weapon found so check other names for weapons
+		for (int i = 0; i < 29; i ++)
+		{
+			if (strcmp(weapons[i]->GetWeaponName(), weapon_name) == 0)
+			{
+				weapon = weapons[i];
+				break;
+			}
+
+			if (strcmp(Translate(NULL, weapons[i]->GetDisplayID()), weapon_name) == 0)
+			{
+				weapon = weapons[i];
+				break;
+			}
+		}
+
+		if (!weapon)
+		{
+			return false;
+		}
+	}
+
+	weapon->SetRoundRatio(ratio);
+	return true;
+}
+//---------------------------------------------------------------------------------
+// Purpose: Handle the restrict weapon menu
+//---------------------------------------------------------------------------------
+int RestrictWeaponItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	int i;
+	if (this->params.GetParam("index", &i))
+	{
+		if (gpManiWeaponMgr->weapons[i]->IsRestricted())
+		{
+			if (gpManiWeaponMgr->weapons[i]->GetTeamLimit() >= 5)
+			{
+				gpCmd->NewCmd();
+				gpCmd->AddParam("ma_unrestrict");
+				gpCmd->AddParam("%s", gpManiWeaponMgr->weapons[i]->GetWeaponName());
+				gpManiWeaponMgr->ProcessMaUnRestrict(player_ptr, "ma_unrestrict", 0, M_MENU);
+				return REPOP_MENU;
+			}
+			else
+			{
+				int new_count = gpManiWeaponMgr->weapons[i]->GetTeamLimit() + 1;
+				gpCmd->NewCmd();
+				gpCmd->AddParam("ma_restrict");
+				gpCmd->AddParam("%s", gpManiWeaponMgr->weapons[i]->GetWeaponName());
+				gpCmd->AddParam("%i", new_count);
+				gpManiWeaponMgr->ProcessMaRestrict(player_ptr, "ma_restrict", 0, M_MENU);
+			}
+		}
+		else
+		{
+			gpCmd->NewCmd();
+			gpCmd->AddParam("ma_restrict");
+			gpCmd->AddParam("%s", gpManiWeaponMgr->weapons[i]->GetWeaponName());
+			gpCmd->AddParam("0");
+			gpManiWeaponMgr->ProcessMaRestrict(player_ptr, "ma_restrict", 0, M_MENU);
+		}
+	}
+
+	return REPOP_MENU;
+}
+
+bool RestrictWeaponPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 530));
+	this->SetTitle("%s", Translate(player_ptr, 531));
+
+	// Setup weapon list
+	for( int i = 0; i < 29; i++ )
+	{
+		if (gpManiWeaponMgr->weapons[i]->GetDisplayID() == 0) continue;
+
+		MenuItem *ptr = new RestrictWeaponItem();
+		if (!gpManiWeaponMgr->weapons[i]->IsRestricted())
+		{
+			ptr->SetDisplayText("%s", Translate(player_ptr, gpManiWeaponMgr->weapons[i]->GetDisplayID()));	
+		}
+		else
+		{
+			ptr->SetDisplayText("* %s <%i>", 
+				Translate(player_ptr, gpManiWeaponMgr->weapons[i]->GetDisplayID()), 
+				gpManiWeaponMgr->weapons[i]->GetTeamLimit());
+		}
+
+		ptr->SetHiddenText("%s", Translate(player_ptr, gpManiWeaponMgr->weapons[i]->GetDisplayID()));
+		ptr->params.AddParam("index", i);
+		this->AddItem(ptr);
+	}
+
+	this->SortHidden();
+	return true;
+
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_showrestrict
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaShowRestrict(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShowRestrict(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
 
 	OutputToConsole(player_ptr, "Current weapons and their restrictions\n\n");
-	OutputToConsole(player_ptr, "Weapon Alias         Restricted\n");
-	OutputToConsole(player_ptr, "-------------------------------\n");
+	OutputToConsole(player_ptr, "Weapon Alias                  Restricted  Limit  Ratio\n");
+	OutputToConsole(player_ptr, "------------------------------------------------------\n");
 
-	for (int i = 0; i < weapon_list_size; i++)
+	for (int i = 0; i < 29; i++)
 	{
-		OutputToConsole(player_ptr, "%-20s %s\n", weapon_list[i].weapon_name, (weapon_list[i].restricted)? "YES":"NO");
+		if (weapons[i]->GetDisplayID() == 0) continue;
+		OutputToConsole(player_ptr, "%-29s %-11s %i      %i\n", 
+					Translate(player_ptr, weapons[i]->GetDisplayID()), 
+					(weapons[i]->IsRestricted()) ? Translate(player_ptr, M_MENU_YES):Translate(player_ptr, M_MENU_NO),
+					weapons[i]->GetTeamLimit(),
+					weapons[i]->GetRoundRatio());
+
 	}
 
 	return PLUGIN_STOP;
@@ -1265,108 +752,112 @@ PLUGIN_RESULT	ProcessMaShowRestrict(player_t *player_ptr, const char	*command_na
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_restrict command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaRestrict(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrict
+(
+ player_t *player_ptr, 
+ const char	*command_name, 
+ const int	help_id, 
+ const int	command_type
+ )
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	int	limit_weapon = 0;
-
 	if (gpCmd->Cmd_Argc() == 3)
 	{
-		limit_weapon = Q_atoi(gpCmd->Cmd_Argv(2));
-	}
-
-	// check if valid weapon name 
-	int weapon_index = -1;
-
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		if (FStrEq(gpCmd->Cmd_Argv(1), weapon_list[i].weapon_name))
+		if (!this->SetWeaponRestriction(gpCmd->Cmd_Argv(1), true, atoi(gpCmd->Cmd_Argv(2))))
 		{
-			weapon_index = i;
-			break;
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 3044, "%s", gpCmd->Cmd_Argv(1)));
+			return PLUGIN_STOP;
 		}
-	}
-
-	if (weapon_index == -1)
-	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Weapon [%s] not found", gpCmd->Cmd_Argv(1));
-		return PLUGIN_STOP;
-	}
-
-	char	log_text[256];
-
-	// Restrict weapon
-
-	weapon_list[weapon_index].restricted = true;
-	weapon_list[weapon_index].limit_per_team = limit_weapon;
-	Q_snprintf( log_text, sizeof(log_text),	"restrict [%s]\n", weapon_list[weapon_index].weapon_name);
-	LogCommand (player_ptr, "%s", log_text);
-	if (limit_weapon == 0)
-	{
-		SayToAll(GREEN_CHAT, true, "Weapon [%s] is restricted", weapon_list[weapon_index].weapon_name);
 	}
 	else
 	{
-		SayToAll(GREEN_CHAT, true, "Weapon [%s] is restricted to %i per team", weapon_list[weapon_index].weapon_name, limit_weapon);
+		if (!this->SetWeaponRestriction(gpCmd->Cmd_Argv(1), true))
+		{
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 3044, "%s", gpCmd->Cmd_Argv(1)));
+			return PLUGIN_STOP;
+		}
 	}
 
-	weapons_restricted = true;
+	LogCommand (player_ptr, "restrict [%s]\n", gpCmd->Cmd_Argv(1));
+	if (gpCmd->Cmd_Argc() == 2)
+	{
+		SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 3045, "%s", gpCmd->Cmd_Argv(1)));
+	}
+	else
+	{
+		SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 3046, "%s%s", gpCmd->Cmd_Argv(1), gpCmd->Cmd_Argv(2)));
+	}
+
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_unrestrict command
+// Purpose: Process the ma_restrict_ratio command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaUnRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictRatio
+(
+ player_t *player_ptr, 
+ const char	*command_name, 
+ const int	help_id, 
+ const int	command_type
+ )
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	// check if valid weapon name 
-	int weapon_index = -1;
-
-	for (int i = 0; i < weapon_list_size; i++)
+	// Validate negative
+	int ratio = atoi(gpCmd->Cmd_Argv(2));
+	if (ratio < 0)
 	{
-		if (FStrEq(gpCmd->Cmd_Argv(1), weapon_list[i].weapon_name))
-		{
-			weapon_index = i;
-			break;
-		}
+		return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 	}
 
-	if (weapon_index == -1)
+	if (!this->SetWeaponRatio(gpCmd->Cmd_Argv(1), ratio))
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Weapon [%s] not found", gpCmd->Cmd_Argv(1));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 3044, "%s", gpCmd->Cmd_Argv(1)));
 		return PLUGIN_STOP;
 	}
 
-	// Un restrict weapon
-	char	log_text[256];
+	LogCommand (player_ptr, "restrict ratio [%s] [%s]\n", gpCmd->Cmd_Argv(1), gpCmd->Cmd_Argv(2));
+	SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 3054, "%s%i", gpCmd->Cmd_Argv(1), ratio));
 
-	weapon_list[weapon_index].restricted = false;
-	weapon_list[weapon_index].limit_per_team = 0;
+	return PLUGIN_STOP;
+}
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_unrestrict command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+{
+	if (player_ptr)
+	{
+		// Check if player is admin
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
+	}
 
-	Q_snprintf( log_text, sizeof(log_text),	"un-restrict [%s]\n", weapon_list[weapon_index].weapon_name);
-	LogCommand (player_ptr, "%s", log_text);
-	SayToAll(GREEN_CHAT, true, "Weapon [%s] is un-restricted", weapon_list[weapon_index].weapon_name);
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	weapons_restricted = AreWeaponsRestricted();
+	// check if valid weapon name
+	if (!this->SetWeaponRestriction(gpCmd->Cmd_Argv(1), false))
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 3044, "%s", gpCmd->Cmd_Argv(1)));
+		return PLUGIN_STOP;
+	}
+
+	// Un-restrict weapon
+	LogCommand (player_ptr, "un-restrict [%s]\n", gpCmd->Cmd_Argv(1));
+	SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 3047, "%s", gpCmd->Cmd_Argv(1)));
 
 	return PLUGIN_STOP;
 }
@@ -1374,30 +865,43 @@ PLUGIN_RESULT	ProcessMaUnRestrict(player_t *player_ptr, const char *command_name
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_unrestrictall command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaUnRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		int admin_index;
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	// UnRestrict all the weapons
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		weapon_list[i].restricted = false;
-		weapon_list[i].ct_count = 0;
-		weapon_list[i].t_count = 0;
-		weapon_list[i].limit_per_team = 0;
-	}
+	this->UnRestrictAll();
 
 	LogCommand (player_ptr, "unrestricted all weapons\n");
-	SayToAll(GREEN_CHAT, true, "All weapons are unrestricted");
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3048));
 
-	weapons_restricted = true;
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_unrestrictall command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+
+	if (player_ptr)
+	{
+		// Check if player is admin
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
+	}
+
+	// Restrict All weapons
+	this->RestrictAll();
+
+	LogCommand (player_ptr, "restricted all weapons\n");
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3049));
 
 	return PLUGIN_STOP;
 }
@@ -1405,7 +909,7 @@ PLUGIN_RESULT	ProcessMaUnRestrictAll(player_t *player_ptr, const char *command_n
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_knives
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaKnives(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaKnives(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
@@ -1413,27 +917,13 @@ PLUGIN_RESULT	ProcessMaKnives(player_t *player_ptr, const char *command_name, co
 	if (player_ptr)
 	{
 		// Check if player is admin
-		int	admin_index;
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		weapon_list[i].restricted = true;
-		weapon_list[i].limit_per_team = 0;
-	}
-
-	int	weapon_index;
-
-	if (-1 != (weapon_index = FindWeaponIndex("vest"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("vesthelm"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("defuser"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("nvgs"))) weapon_list[weapon_index].restricted = false; 
+	this->RestrictAll();
 
 	LogCommand (player_ptr, "Only knives can be used next round !!!\n");
-	SayToAll(GREEN_CHAT, true, "Only knives can be used next round !!!");
-
-	weapons_restricted = true;
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3050));
 
 	return PLUGIN_STOP;
 }
@@ -1441,44 +931,25 @@ PLUGIN_RESULT	ProcessMaKnives(player_t *player_ptr, const char *command_name, co
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_pistols
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaPistols(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaPistols(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		int admin_index;
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		weapon_list[i].restricted = true;
-		weapon_list[i].limit_per_team = 0;
-	}
-
-	int	weapon_index;
-
-	if (-1 != (weapon_index = FindWeaponIndex("glock"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("usp"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("p228"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("deagle"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("elite"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("fiveseven"))) weapon_list[weapon_index].restricted = false; 
-
-	if (-1 != (weapon_index = FindWeaponIndex("vest"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("primammo"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("secammo"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("vest"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("vesthelm"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("defuser"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("nvgs"))) weapon_list[weapon_index].restricted = false; 
+	this->RestrictAll();
+	this->SetWeaponRestriction("glock", false);
+	this->SetWeaponRestriction("usp", false);
+	this->SetWeaponRestriction("p228", false);
+	this->SetWeaponRestriction("deagle", false);
+	this->SetWeaponRestriction("elite", false);
 
 	LogCommand (player_ptr, "Only pistols can be used next round !!!\n");
-	SayToAll(GREEN_CHAT, true, "Only pistols can be used next round !!!");
-
-	weapons_restricted = true;
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3051));
 
 	return PLUGIN_STOP;
 }
@@ -1486,40 +957,22 @@ PLUGIN_RESULT	ProcessMaPistols(player_t *player_ptr, const char *command_name, c
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_shotguns
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaShotguns(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShotguns(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		int admin_index;
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		weapon_list[i].restricted = true;
-		weapon_list[i].limit_per_team = 0;
-	}
-
-	int	weapon_index;
-
-	if (-1 != (weapon_index = FindWeaponIndex("m3"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("xm1014"))) weapon_list[weapon_index].restricted = false;
-
-	if (-1 != (weapon_index = FindWeaponIndex("primammo"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("secammo"))) weapon_list[weapon_index].restricted = false; 
-
-	if (-1 != (weapon_index = FindWeaponIndex("vest"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("vesthelm"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("defuser"))) weapon_list[weapon_index].restricted = false; 
-	if (-1 != (weapon_index = FindWeaponIndex("nvgs"))) weapon_list[weapon_index].restricted = false; 
+	this->RestrictAll();
+	this->SetWeaponRestriction("m3", false);
+	this->SetWeaponRestriction("xm1014", false);
 
 	LogCommand (player_ptr, "Only shotguns can be used next round !!!\n");
-	SayToAll(GREEN_CHAT, true, "Only shotguns can be used next round !!!");
-
-	weapons_restricted = true;
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3052));
 
 	return PLUGIN_STOP;
 }
@@ -1527,70 +980,27 @@ PLUGIN_RESULT	ProcessMaShotguns(player_t *player_ptr, const char *command_name, 
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_nosnipers
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaNoSnipers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
+PLUGIN_RESULT	ManiWeaponMgr::ProcessMaNoSnipers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		int admin_index;
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RESTRICTWEAPON, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		weapon_list[i].restricted = false;
-		weapon_list[i].limit_per_team = 0;
-	}
-
-	int	weapon_index;
-
-	if (-1 != (weapon_index = FindWeaponIndex("awp"))) weapon_list[weapon_index].restricted = true; 
-	if (-1 != (weapon_index = FindWeaponIndex("g3sg1"))) weapon_list[weapon_index].restricted = true;
-	if (-1 != (weapon_index = FindWeaponIndex("sg550"))) weapon_list[weapon_index].restricted = true;
-	if (-1 != (weapon_index = FindWeaponIndex("scout"))) weapon_list[weapon_index].restricted = true;
+	this->UnRestrictAll();
+	this->SetWeaponRestriction("awp", true);
+	this->SetWeaponRestriction("g3sg1", true);
+	this->SetWeaponRestriction("sg550", true);
+	this->SetWeaponRestriction("scout", true);
 
 	LogCommand (player_ptr, "No sniper weapons next round !!!\n");
-	SayToAll(GREEN_CHAT, true, "No snipers weapons next round !!!");
-
-	weapons_restricted = true;
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3053));
 
 	return PLUGIN_STOP;
 }
-
-//---------------------------------------------------------------------------------
-// Purpose: Find the index of a weapon name
-//---------------------------------------------------------------------------------
-int	FindWeaponIndex(char *weapon_name)
-{
-	for (int i = 0; i < weapon_list_size; i++)
-	{
-		for (int j = 0; j < weapon_list[i].number_of_weapons; j ++)
-		{
-			if (FStrEq(weapon_name, weapon_list[i].weapon_alias[j]))
-			{
-				return i;
-			}
-		}
-	}
-
-	return -1;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Add cash for a weapon back to a player
-//---------------------------------------------------------------------------------
-static
-void WeaponAddCash(edict_t *pEntity, int cost)
-{
-	int cash = Prop_GetAccount(pEntity);
-	cash += cost;
-	if (cash > 16000) cash = 16000;
-	Prop_SetAccount(pEntity, cash);
-}
-
-
 
 SCON_COMMAND(ma_showrestrict, 2139, MaShowRestrict, false);
 SCON_COMMAND(ma_restrict, 2141, MaRestrict, false);
@@ -1600,3 +1010,23 @@ SCON_COMMAND(ma_shotguns, 2147, MaShotguns, false);
 SCON_COMMAND(ma_nosnipers, 2149, MaNoSnipers, false);
 SCON_COMMAND(ma_unrestrict, 2151, MaUnRestrict, false);
 SCON_COMMAND(ma_unrestrictall, 2153, MaUnRestrictAll, false);
+SCON_COMMAND(ma_restrictall, 2225, MaRestrictAll, false);
+SCON_COMMAND(ma_restrictratio, 2229, MaRestrictRatio, false);
+
+CON_COMMAND(ma_listweapons, "Debug Tool")
+{
+	for (int i = 0; i < 29; i++)
+	{
+		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
+		if (weapon_info == NULL)
+		{
+			MMsg("Sigscan failed for CCSGetFileWeaponInfoFromHandle\n");
+			return;
+		}
+
+		MMsg("Weapon name [%s] Price [%i]\n", weapon_info->weapon_name, weapon_info->dynamic_price);
+	}	
+}
+
+ManiWeaponMgr	g_ManiWeaponMgr;
+ManiWeaponMgr	*gpManiWeaponMgr;

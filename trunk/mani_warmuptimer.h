@@ -42,7 +42,13 @@ public:
 	void		RoundStart(void);
 	void		PlayerDeath(player_t *player_ptr);
 	PLUGIN_RESULT		JoinClass(edict_t	*pEdict);
-	bool		InWarmupRound(void) {return check_timer;}
+	inline		bool InWarmupRound(void) {return check_timer;}
+	void		SetRandomItem(ConVar *cvar_ptr, int item_number);
+
+	struct		item_t
+	{
+		char	item_name[80];
+	};
 
 private:
 
@@ -52,7 +58,10 @@ private:
 		float	time_to_respawn;
 	};
 
+	char		item_name[5][80];
+
 	void		GiveItem(edict_t *pEntity, const char	*item_name);
+	void		GiveAllAmmo(void);
 	bool		check_timer;
 	bool		fire_restart;
 	float		next_check;

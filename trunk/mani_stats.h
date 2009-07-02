@@ -31,6 +31,7 @@ const int  MANI_MAX_DODS_USER_DEF = 8;
 const int  MANI_MAX_STATS_CSS_WEAPONS = 28;
 const int  MANI_MAX_STATS_DODS_WEAPONS = 25;
 
+#include "mani_menu.h"
 
 #define MANI_STATS_ME_TIMEOUT (15)
 
@@ -129,8 +130,55 @@ struct weaponme_t
 	float	percent;
 };
 
+class ShowTopFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr);
+	bool	SetStartRank(int start_rank);
+	void	SetBackMore(int list_size);
+private:
+	bool	back;
+	bool	more;
+	int		current_rank;
+};
+
+class StatsMeFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr, player_t *output_player_ptr);
+};
+
+class SessionFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr, player_t *output_player_ptr);
+};
+
+class HitBoxMeFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr);
+};
+
+class WeaponMeFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr);
+	int		page;
+};
+
 class ManiStats
 {
+	friend class ShowTopFreePage;
+	friend class StatsMeFreePage;
+	friend class SessionFreePage;
+	friend class HitBoxMeFreePage;
+	friend class WeaponMeFreePage;
 
 public:
 	ManiStats();
@@ -166,11 +214,6 @@ public:
 	void		CSSRoundEnd(int winning_team, const char *message);
 	void		DODSRoundEnd(int winning_team);
 	void		ShowRank(player_t *player_ptr);
-	void		ShowTop(player_t *player_ptr ,int rank_start);
-	void		ShowStatsMe(player_t *player_ptr, player_t *output_player_ptr);
-	void		ShowSession(player_t *player_ptr, player_t *output_player_ptr);
-	void		ShowHitBoxMe(player_t *player_ptr);
-	void		ShowWeaponMe(player_t *player_ptr, int page);
 	void		ResetStats(void);
 	PLUGIN_RESULT	ProcessMaRanks(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaPLRanks(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
@@ -188,12 +231,15 @@ private:
 		rank_t	*rank_ptr;
 	};
 
+	active_player_t	active_player_list[MANI_MAX_PLAYERS];
+	session_t	session[MANI_MAX_PLAYERS];
+
+	rank_t	**rank_list;
+	rank_t	**rank_name_list;
 	rank_t	**rank_player_list;
 	rank_t	**rank_player_name_list;
 	rank_t	**rank_player_waiting_list;
 	rank_t	**rank_player_name_waiting_list;
-	rank_t	**rank_list;
-	rank_t	**rank_name_list;
 
 	int	rank_list_size;
 	int	rank_name_list_size;
@@ -205,12 +251,10 @@ private:
 	time_t	last_stats_calculate_time;
 	time_t	last_stats_write_time;
 
-	active_player_t	active_player_list[MANI_MAX_PLAYERS];
 
 	rank_t		*FindStoredRank (player_t *player_ptr);
 	bool		level_ended;
-
-	session_t	session[MANI_MAX_PLAYERS];
+	
 	// Hash table of user ids
 	short		hash_table[65536];
 	int			weapon_hash_table[255];

@@ -28,6 +28,8 @@
 
 #define MANI_STEAM_PENDING ("STEAM_ID_PENDING")
 
+#include <vector>
+
 class ManiNetIDValid
 {
 public:
@@ -36,13 +38,14 @@ public:
 
 	void		Load(void);
 	void		LevelInit(void);
-	void		ClientActive(edict_t *pEntity);
+	void		ClientActive(player_t *player_ptr);
 	void		GameFrame(void);
 	void		ClientDisconnect(player_t *player_ptr);
 
 private:
 	void		CleanUp(void);
 	void		NetworkIDValidated( player_t *player_ptr );
+	bool		TimeoutKick(player_t *player_ptr, time_t timeout);
 
 	struct net_id_t
 	{
@@ -50,8 +53,7 @@ private:
 		time_t	timer;
 	};
 
-	net_id_t	*net_id_list;
-	int			net_id_list_size;
+	vector	<net_id_t> net_id_list;
 
 	float		timeout;
 

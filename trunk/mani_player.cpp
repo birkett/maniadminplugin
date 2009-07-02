@@ -50,13 +50,16 @@
 #include "mani_gametype.h"
 #include "mani_reservedslot.h"
 #include "mani_skins.h"
+#include "mani_vfuncs.h"
 #include "mani_keyvalues.h"
 #include "mani_commands.h"
 #include "mani_trackuser.h"
+#include "cbaseentity.h"
 
 extern IFileSystem	*filesystem;
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IPlayerInfoManager *playerinfomanager;
+extern	IEngineSound *esounds;
 extern	int	max_players;
 extern	bool	war_mode;
 
@@ -65,10 +68,10 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
-inline bool FStrEq(const char *sz1, const char *sz2)
+/*inline bool FStrEq(const char *sz1, const char *sz2)
 {
 	return(Q_stricmp(sz1, sz2) == 0);
-}
+}*/
 
 player_t	*target_player_list;
 int			target_player_list_size;
@@ -125,15 +128,14 @@ bool ProcessPluginPaused(void)
 //---------------------------------------------------------------------------------
 // Purpose: FindTargetPlayers using a search string
 //---------------------------------------------------------------------------------
-bool FindTargetPlayers(player_t *requesting_player, const char *target_string, int	immunity_flag)
+bool FindTargetPlayers(player_t *requesting_player, const char *target_string, char *immunity_flag)
 {
 	player_t player;
 	player_t *temp_player_list = NULL;
 	int temp_player_list_size = 0;
 	
-	int	target_user_id = Q_atoi(target_string);
+	int	target_user_id = atoi(target_string);
 	char target_steam_id[MAX_NETWORKID_LENGTH];
-	int	immunity_index;
 
 	FreeList((void **) &target_player_list, &target_player_list_size);
 
@@ -153,16 +155,13 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 				player.index = i;
 				if (!FindPlayerByIndex(&player)) continue;
 				if (player.team != team) continue;
+				if (player.player_info->IsHLTV()) continue;
 
-				if (immunity_flag != IMMUNITY_DONT_CARE)
+				if (!player.is_bot &&
+					immunity_flag && 
+					gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
 				{
-					if (gpManiClient->IsImmune(&player, &immunity_index))
-					{
-						if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
-						{
-							continue;
-						}
-					}
+					continue;
 				}
 
 				AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
@@ -185,17 +184,13 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 		{
 			player.index = i;
 			if (!FindPlayerByIndex(&player)) continue;
+			if (player.player_info->IsHLTV()) continue;
 
-			if (immunity_flag != IMMUNITY_DONT_CARE)
+			if (!player.is_bot &&
+				immunity_flag && 
+				gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
 			{
-
-				if (gpManiClient->IsImmune(&player, &immunity_index))
-				{
-					if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
-					{
-						continue;
-					}
-				}
+				continue;
 			}
 
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
@@ -242,6 +237,13 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
 
+			if (!player.is_bot &&
+				immunity_flag && 
+				gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
+			{
+				continue;
+			}
+
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 			target_player_list[target_player_list_size - 1] = player;
 		}	
@@ -264,6 +266,13 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 			if (!player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
 
+			if (!player.is_bot &&
+				immunity_flag && 
+				gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
+			{
+				continue;
+			}
+
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 			target_player_list[target_player_list_size - 1] = player;
 		}	
@@ -285,7 +294,7 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 			if (!FindPlayerByIndex(&player)) continue;
 			if (player.is_dead) continue;
 			if (player.player_info->IsHLTV()) continue;
-			if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) continue;
+			if (player.is_bot) continue;
 
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 			target_player_list[target_player_list_size - 1] = player;
@@ -305,21 +314,19 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 		player.user_id = target_user_id;
 		if (FindPlayerByUserID(&player))
 		{
-			if (requesting_player && requesting_player->entity && requesting_player->index == player.index)	immunity_flag = -1;
-
-			if (immunity_flag == IMMUNITY_DONT_CARE || player.is_bot)
+			if (player.is_bot || 
+				(requesting_player && 
+				requesting_player->entity && 
+				requesting_player->index == player.index))
 			{
 				AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 				target_player_list[0] = player;
 				return true;
 			}
 
-			if (gpManiClient->IsImmune(&player, &immunity_index))
+			if (immunity_flag && gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
 			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
-				{
-					return false;
-				}
+				return false;
 			}
 
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
@@ -338,21 +345,19 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 			Q_strcpy(player.steam_id, target_string);
 			if (FindPlayerBySteamID(&player))
 			{
-				if (requesting_player && requesting_player->entity && requesting_player->index == player.index)	immunity_flag = -1;
-
-				if (immunity_flag == IMMUNITY_DONT_CARE || player.is_bot)
+				if (player.is_bot ||
+					(requesting_player && 
+					requesting_player->entity && 
+					requesting_player->index == player.index))	
 				{
 					AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 					target_player_list[0] = player;
 					return true;
 				}
 	
-				if (gpManiClient->IsImmune(&player, &immunity_index))
+				if (immunity_flag && gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
 				{
-					if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
-					{
-						return false;
-					}
+					return false;
 				}
 
 				AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
@@ -375,6 +380,8 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 			continue;
 		}
 
+		if (player.player_info->IsHLTV()) continue;
+
 		AddToList((void **) &temp_player_list, sizeof(player_t), &temp_player_list_size);
 		temp_player_list[temp_player_list_size - 1] = player;
 	}
@@ -382,90 +389,100 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, i
 	// Search using exact name
 	for (int i = 0; i < temp_player_list_size; i++)
 	{
+		player_t *target_ptr = &(temp_player_list[i]);
 		// Is an exact name found ?
-		if (!FStruEq(temp_player_list[i].name, target_string))
+		if (!FStruEq(target_ptr->name, target_string))
 		{
 			continue;
 		}
 
-		if (requesting_player && requesting_player->entity && requesting_player->index == temp_player_list[i].index)	immunity_flag = -1;
-
-		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
+		if (target_ptr->is_bot || 
+			(requesting_player && 
+			requesting_player->entity && 
+			requesting_player->index == target_ptr->index))
 		{
-			if (gpManiClient->IsImmune(&(temp_player_list[i]), &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, immunity_flag))
-				{
-					FreeList ((void **) &temp_player_list, &temp_player_list_size);
-					return false;
-				}
-			}
+			// Player is bot or is player requesting the the target function
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[target_player_list_size - 1] = temp_player_list[i];
+			FreeList ((void **) &temp_player_list, &temp_player_list_size);
+			return true;
 		}
 
-		AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
-		target_player_list[target_player_list_size - 1] = temp_player_list[i];
-		FreeList ((void **) &temp_player_list, &temp_player_list_size);
-		return true;
+		if (immunity_flag == NULL || !gpManiClient->HasAccess(target_ptr->index, IMMUNITY, immunity_flag))
+		{
+			// Client doesn't have immunity
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[target_player_list_size - 1] = temp_player_list[i];
+			FreeList ((void **) &temp_player_list, &temp_player_list_size);
+			return true;
+		}
+
+		return false;
 	}
 
 	// Search using exact name (case insensitive)
 	for (int i = 0; i < temp_player_list_size; i++)
 	{
+		player_t *target_ptr = &(temp_player_list[i]);
+
 		// Is an exact name found (case insensitive) ?
-		if (!FStrEq(temp_player_list[i].name, target_string))
+		if (!FStrEq(target_ptr->name, target_string))
 		{
 			continue;
 		}
 
-		int	temp_immunity = immunity_flag;
-
-		if (requesting_player && requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
-
-		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
+		if (target_ptr->is_bot || 
+			(requesting_player && 
+			requesting_player->entity && 
+			requesting_player->index == target_ptr->index))
 		{
-			if (gpManiClient->IsImmune(&(temp_player_list[i]), &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, temp_immunity))
-				{
-					FreeList ((void **) &temp_player_list, &temp_player_list_size);
-					return false;
-				}
-			}
+			// Player is bot or is player requesting the the target function
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[target_player_list_size - 1] = temp_player_list[i];
+			FreeList ((void **) &temp_player_list, &temp_player_list_size);
+			return true;
 		}
 
-		AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
-		target_player_list[target_player_list_size - 1] = temp_player_list[i];
-		FreeList ((void **) &temp_player_list, &temp_player_list_size);
-		return true;
+		if (immunity_flag == NULL || !gpManiClient->HasAccess(target_ptr->index, IMMUNITY, immunity_flag))
+		{
+			// Client doesn't have immunity
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[target_player_list_size - 1] = temp_player_list[i];
+			FreeList ((void **) &temp_player_list, &temp_player_list_size);
+			return true;
+		}
+
+		return false;
 	}
 
 	// Search using Partial name match
 	for (int i = 0; i < temp_player_list_size; i++)
 	{
+		player_t *target_ptr = &(temp_player_list[i]);
+
 		// Is a partial name found ?
-		if (Q_stristr(temp_player_list[i].name, target_string) == NULL)
+		if (Q_stristr(target_ptr->name, target_string) == NULL)
 		{
 			continue;
 		}
 
-		int	temp_immunity = immunity_flag;
-
-		if (requesting_player && requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
-
-		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
+		if (target_ptr->is_bot || 
+			(requesting_player && 
+			requesting_player->entity && 
+			requesting_player->index == target_ptr->index))
 		{
-			if (gpManiClient->IsImmune(&(temp_player_list[i]), &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, temp_immunity))
-				{
-					FreeList ((void **) &temp_player_list, &temp_player_list_size);
-					return false;
-				}
-			}
+			// Player is bot or is player requesting the the target function
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[target_player_list_size - 1] = temp_player_list[i];
+			continue;
 		}
 
-		AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
-		target_player_list[target_player_list_size - 1] = temp_player_list[i];
+		if (immunity_flag == NULL || !gpManiClient->HasAccess(target_ptr->index, IMMUNITY, immunity_flag))
+		{
+			// Client doesn't have immunity
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[target_player_list_size - 1] = temp_player_list[i];
+		}
 	}
 
 	FreeList ((void **) &temp_player_list, &temp_player_list_size);
@@ -532,7 +549,7 @@ bool FindPlayerByUserID(player_t *player_ptr)
 	player_ptr->index = gpManiTrackUser->GetIndex(org_user_id);
 	if (player_ptr->index == -1) return false;
 
-	bool return_value = FindPlayerByIndex(player_ptr);
+	FindPlayerByIndex(player_ptr);
 
 	// Last check if returned user_id matches original
 	if (player_ptr->user_id != org_user_id)
@@ -1054,7 +1071,7 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 	ManiKeyValues *settings;
 
 	//Write stats to disk
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/data/%s", mani_path.GetString(), filename);
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/data/%s", mani_path.GetString(), filename);
 
 	if (filesystem->FileExists( base_filename))
 	{
@@ -1167,7 +1184,7 @@ void	ReadPlayerSettings(void)
 			//			MMsg("Attempting to read %s file\n", ps_filename);
 
 			//Get settings into memory
-			Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
+			snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
 			file_handle = filesystem->Open (base_filename,"rb",NULL);
 			if (file_handle == NULL)
 			{
@@ -1464,7 +1481,7 @@ void	ReadPlayerSettings(void)
 
 			//			MMsg("Read %i player settings into memory from file %s\n", player_settings_list_size, ps_filename);
 			filesystem->Close(file_handle);
-			Q_snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_player_settings.dat.old", mani_path.GetString());
+			snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_player_settings.dat.old", mani_path.GetString());
 			filesystem->RenameFile(base_filename, old_base_filename);
 
 			break;
@@ -1479,7 +1496,7 @@ void	ReadPlayerSettings(void)
 			Q_strcpy(ps_filename, "mani_player_settings.txt");
 
 			kv_ptr = new ManiKeyValues("mani_player_settings.txt");
-			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
+			snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
 
 			kv_ptr->SetKeyPairSize(5,20);
 			kv_ptr->SetKeySize(5, 500);
@@ -1599,7 +1616,7 @@ void	ReadPlayerSettings(void)
 //			MMsg("Attempting to read %s file\n", ps_filename);
 
 			//Get settings into memory
-			Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
+			snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
 			file_handle = filesystem->Open (base_filename,"rb",NULL);
 			if (file_handle == NULL)
 			{
@@ -1896,7 +1913,7 @@ void	ReadPlayerSettings(void)
 
 //			MMsg("Read %i player name settings into memory from file %s\n", player_settings_name_list_size, ps_filename);
 			filesystem->Close(file_handle);
-			Q_snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_player_name_settings.dat.old", mani_path.GetString());
+			snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_player_name_settings.dat.old", mani_path.GetString());
 			filesystem->RenameFile(base_filename, old_base_filename);
 			break;
 		}
@@ -1910,7 +1927,7 @@ void	ReadPlayerSettings(void)
 			Q_strcpy(ps_filename, "mani_player_name_settings.txt");
 
 			kv_ptr = new ManiKeyValues("mani_player_name_settings.txt");
-			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
+			snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
 
 			kv_ptr->SetKeyPairSize(5,20);
 			kv_ptr->SetKeySize(5, 500);
@@ -2195,137 +2212,191 @@ void	DeleteOldPlayerSettings(void)
 //---------------------------------------------------------------------------------
 // Purpose: Handle menu selection via settings selection
 //---------------------------------------------------------------------------------
-void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
+int PlayerSettingsItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	/* Draw Main Menu */
-	int	 range = 0;
-	int  team_index = 0;
+	char *option;
+	this->params.GetParam("option", &option);
 
-	if (war_mode) return;
+	if (strcmp(option, "damagetype") == 0)
+	{
+		ProcessMaDamage (player_ptr->index);
+	}
+	else if (strcmp(option, "damagetimeout") == 0)
+	{
+		ProcessMaDamageTimeout (player_ptr->index);
+	}
+	else if (strcmp(option, "destruction") == 0)
+	{
+		ProcessMaDestruction (player_ptr->index);
+	}
+	else if (strcmp(option, "quake") == 0)
+	{
+		ProcessMaQuake (player_ptr->index);
+	}
+	else if (strcmp(option, "deathbeam") == 0)
+	{
+		ProcessMaDeathBeam (player_ptr->index);
+	}
+	else if (strcmp(option, "sounds") == 0)
+	{
+		ProcessMaSounds (player_ptr->index);
+	}
+	else if (strcmp(option, "voteprogress") == 0)
+	{
+		ProcessMaVoteProgress (player_ptr->index);
+	}
+	else if (strcmp(option, "admin_t") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SkinChoicePage, player_ptr, AddParam("skin_type", MANI_ADMIN_T_SKIN), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(option, "admin_ct") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SkinChoicePage, player_ptr, AddParam("skin_type", MANI_ADMIN_CT_SKIN), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(option, "immunity_t") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SkinChoicePage, player_ptr, AddParam("skin_type", MANI_RESERVE_T_SKIN), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(option, "immunity_ct") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SkinChoicePage, player_ptr, AddParam("skin_type", MANI_RESERVE_CT_SKIN), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(option, "public_t") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SkinChoicePage, player_ptr, AddParam("skin_type", MANI_T_SKIN), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(option, "public_ct") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SkinChoicePage, player_ptr, AddParam("skin_type", MANI_CT_SKIN), 0, -1);
+		return NEW_MENU;
+	}
 
-	player_settings_t *player_settings = FindPlayerSettings(player);
-	if (player_settings == NULL) return;
+	return REPOP_MENU;
+}
 
-	FreeMenu();
+bool PlayerSettingsPage::PopulateMenuPage(player_t *player_ptr)
+{
+	int team_index;
+	if (war_mode) return false;
+	player_settings_t *player_settings = FindPlayerSettings(player_ptr);
+	if (player_settings == NULL) return false;
+
+	this->SetEscLink("%s", Translate(player_ptr, 1370));
+	this->SetTitle("%s", Translate(player_ptr, 1371));
+
+	MenuItem *ptr = NULL;
 
 	if (mani_show_victim_stats.GetInt() != 0)
 	{
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size);
-		if (player_settings->damage_stats == 0) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1372));
-		else if (player_settings->damage_stats == 1) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1373));
-		else if (player_settings->damage_stats == 3) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1374));
-		else Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1375));
+		ptr = new PlayerSettingsItem;
 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings damagetype");
+		if (player_settings->damage_stats == 0) ptr->SetDisplayText("%s", Translate(player_ptr, 1372));
+		else if (player_settings->damage_stats == 1) ptr->SetDisplayText("%s", Translate(player_ptr, 1373));
+		else if (player_settings->damage_stats == 3) ptr->SetDisplayText("%s", Translate(player_ptr, 1374));
+		else ptr->SetDisplayText("%s", Translate(player_ptr, 1375));
+
+		ptr->params.AddParam("option", "damagetype");
+		this->AddItem(ptr);
 
 		// Only show victim stats timer if AMX menu allowed and in GUI stats mode
 		if (gpManiGameType->IsAMXMenuAllowed() && player_settings->damage_stats == 3)
 		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size);
+			ptr = new PlayerSettingsItem;
 
 			char	seconds[4];
-			Q_snprintf(seconds, sizeof(seconds), "%is", player_settings->damage_stats_timeout);
-
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, 
-						sizeof(menu_list[menu_list_size - 1].menu_text), 
-						"Damage Stats GUI Timer : %s", (player_settings->damage_stats_timeout == 0) ? Translate(1376):seconds);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings damagetimeout");
+			snprintf(seconds, sizeof(seconds), "%is", player_settings->damage_stats_timeout);
+			ptr->SetDisplayText("Damage Stats GUI Timer : %s", (player_settings->damage_stats_timeout == 0) ? Translate(player_ptr, 1376):seconds);
+			ptr->params.AddParam("option", "damagetimeout");
+			this->AddItem(ptr);
 		}
 	}
 
 	if (mani_stats_most_destructive.GetInt() != 0 && gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
-//		char	beam_mode[32];
-
-//		if (player_settings->show_death_beam == 0) Q_snprintf(beam_mode, sizeof(beam_mode), "Off");
-//		else if (player_settings->show_death_beam
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text),   "%s", Translate(1377, "%s",
-											(player_settings->show_destruction == 0) ? Translate(M_OFF):Translate(M_ON)));
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings destruction");
+		ptr = new PlayerSettingsItem;
+		ptr->params.AddParam("option", "destruction");
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1377, "%s",	(player_settings->show_destruction == 0) ? Translate(player_ptr, M_OFF):Translate(player_ptr, M_ON)));
+		this->AddItem(ptr);
 	}
 
 	if (mani_quake_sounds.GetInt() != 0)
 	{
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text),   "%s", Translate(1378, "%s",
-											(player_settings->quake_sounds == 0) ? Translate(M_OFF):Translate(M_ON)));
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings quake");
+		ptr = new PlayerSettingsItem;
+		ptr->params.AddParam("option", "quake");
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1378, "%s",	(player_settings->quake_sounds == 0) ? Translate(player_ptr, M_OFF):Translate(player_ptr, M_ON)));
+		this->AddItem(ptr);
 	}
 
 	if (mani_show_death_beams.GetInt() != 0 && gpManiGameType->IsDeathBeamAllowed())
 	{
-//		char	beam_mode[32];
-
-//		if (player_settings->show_death_beam == 0) Q_snprintf(beam_mode, sizeof(beam_mode), "Off");
-//		else if (player_settings->show_death_beam
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text),  "%s", Translate(1379, "%s",
-											(player_settings->show_death_beam == 0) ? Translate(M_OFF):Translate(M_ON)));
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings deathbeam");
+		ptr = new PlayerSettingsItem;
+		ptr->params.AddParam("option", "deathbeam");
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1379, "%s",	(player_settings->show_death_beam == 0) ? Translate(player_ptr, M_OFF):Translate(player_ptr, M_ON)));
+		this->AddItem(ptr);
 	}
 
-	AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1380, "%s",
-											(player_settings->server_sounds == 0) ? Translate(M_OFF):Translate(M_ON)));
-	Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings sounds");
+	ptr = new PlayerSettingsItem;
+	ptr->params.AddParam("option", "sounds");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 1380, "%s", (player_settings->server_sounds == 0) ? Translate(player_ptr, M_OFF):Translate(player_ptr, M_ON)));
+	this->AddItem(ptr);
 
 	if (mani_voting.GetInt() == 1)
 	{
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1381, "%s",
-											(player_settings->show_vote_results_progress == 0) ? Translate(M_OFF):Translate(M_ON)));
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings voteprogress");
+		ptr = new PlayerSettingsItem;
+		ptr->params.AddParam("option", "voteprogress");
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1381, "%s", (player_settings->show_vote_results_progress == 0) ? Translate(player_ptr, M_OFF):Translate(player_ptr, M_ON)));
+		this->AddItem(ptr);
 	}
 
 	if (mani_skins_admin.GetInt() != 0)
 	{
-		int admin_index;
-		if (gpManiClient->IsAdmin(player, &admin_index))
+		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SKINS))
 		{
-			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
-			{
-				team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
-				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1382, "%s%s",
-					Translate(gpManiGameType->GetTeamShortTranslation(team_index)),
-					(!FStrEq(player_settings->admin_t_model,"")) ? player_settings->admin_t_model:Translate(M_NONE)));
-				Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings admin_t");
+			team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
+			ptr = new PlayerSettingsItem;
+			ptr->params.AddParam("option", "admin_t");
+			ptr->SetDisplayText("%s", Translate(player_ptr, 1382, "%s%s",
+				Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(team_index)),
+				(!FStrEq(player_settings->admin_t_model,"")) ? player_settings->admin_t_model:Translate(player_ptr, M_NONE)));
+			this->AddItem(ptr);
 
-				if (gpManiGameType->IsTeamPlayAllowed())
-				{
-					AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1382, "%s%s",
-						Translate(gpManiGameType->GetTeamShortTranslation(TEAM_B)),
-						(!FStrEq(player_settings->admin_ct_model,"")) ? player_settings->admin_ct_model:Translate(M_NONE)));
-					Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings admin_ct");
-				}
+			if (gpManiGameType->IsTeamPlayAllowed())
+			{
+				ptr = new PlayerSettingsItem;
+				ptr->params.AddParam("option", "admin_ct");
+				ptr->SetDisplayText("%s", Translate(player_ptr, 1382, "%s%s",
+					Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(TEAM_B)),
+					(!FStrEq(player_settings->admin_ct_model,"")) ? player_settings->admin_ct_model:Translate(player_ptr, M_NONE)));
+				this->AddItem(ptr);
 			}
 		}
 	}
 
 	if (mani_skins_reserved.GetInt() != 0)
 	{
-		int immunity_index;
-		if (gpManiClient->IsImmune(player, &immunity_index))
+		if (gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_RESERVE_SKIN))
 		{
-			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
-			{
-				team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
-				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1383, "%s%s",
-					Translate(gpManiGameType->GetTeamShortTranslation(team_index)),
-					(!FStrEq(player_settings->immunity_t_model,"")) ? player_settings->immunity_t_model:Translate(M_NONE)));
-				Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings immunity_t");
+			team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
+			ptr = new PlayerSettingsItem;
+			ptr->params.AddParam("option", "immunity_t");
+			ptr->SetDisplayText("%s", Translate(player_ptr, 1383, "%s%s",
+				Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(team_index)),
+				(!FStrEq(player_settings->immunity_t_model,"")) ? player_settings->immunity_t_model:Translate(player_ptr, M_NONE)));
+			this->AddItem(ptr);
 
-				if (gpManiGameType->IsTeamPlayAllowed())
-				{
-					AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1383, "%s%s",
-						Translate(gpManiGameType->GetTeamShortTranslation(TEAM_B)),
-						(!FStrEq(player_settings->immunity_ct_model,"")) ? player_settings->immunity_ct_model:Translate(M_NONE)));
-					Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings immunity_ct");
-				}
+			if (gpManiGameType->IsTeamPlayAllowed())
+			{
+				ptr = new PlayerSettingsItem;
+				ptr->params.AddParam("option", "immunity_ct");
+				ptr->SetDisplayText("%s", Translate(player_ptr, 1383, "%s%s",
+					Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(TEAM_B)),
+					(!FStrEq(player_settings->immunity_ct_model,"")) ? player_settings->immunity_ct_model:Translate(player_ptr, M_NONE)));
+				this->AddItem(ptr);
 			}
 		}
 	}
@@ -2333,314 +2404,102 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 	if (mani_skins_public.GetInt() != 0)
 	{
 		team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
-
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1384, "%s%s",
-				Translate(gpManiGameType->GetTeamShortTranslation(team_index)),
+		ptr = new PlayerSettingsItem;
+		ptr->params.AddParam("option", "public_t");
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1384, "%s%s",
+				Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(team_index)),
 				(!FStrEq(player_settings->t_model,"")) ? player_settings->t_model:"None"));
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings public_t");
+		this->AddItem(ptr);
 
 		if (gpManiGameType->IsTeamPlayAllowed())
 		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1384, "%s%s",
-						Translate(gpManiGameType->GetTeamShortTranslation(TEAM_B)),
-						(!FStrEq(player_settings->ct_model,"")) ? player_settings->ct_model:Translate(M_NONE)));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings public_ct");
+			ptr = new PlayerSettingsItem;
+			ptr->params.AddParam("option", "public_ct");
+			ptr->SetDisplayText("%s", Translate(player_ptr, 1384, "%s%s",
+						Translate(player_ptr, gpManiGameType->GetTeamShortTranslation(TEAM_B)),
+						(!FStrEq(player_settings->ct_model,"")) ? player_settings->ct_model:Translate(player_ptr, M_NONE)));
+			this->AddItem(ptr);
 		}
 	}
 
-	if (menu_list_size == 0) return;
-
-	// List size may have changed
-	if (next_index > menu_list_size)
-	{
-		// Reset index
-		next_index = 0;
-	}
-
-	DrawSubMenu (player, Translate(1371), Translate(1372), next_index, "manisettings", "manisettings", false, -1);
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Draw Primary menu
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
-{
-	player_t player;
-
-	player.entity = pEntity;
-	if (!FindPlayerByEntity(&player))
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (1 == gpCmd->Cmd_Argc())
-	{
-		// User typed manisettings at console
-		ShowSettingsPrimaryMenu(&player, 0);
-		return PLUGIN_STOP;
-	}
-
-	if (gpCmd->Cmd_Argc() > 1) 
-	{
-		const char *temp_command = gpCmd->Cmd_Argv(1);
-		int next_index = 0;
-		int argv_offset = 0;
-
-		if (FStrEq (temp_command, "more"))
-		{
-			// Get next index for menu
-			next_index = Q_atoi(gpCmd->Cmd_Argv(2));
-			argv_offset = 2; 
-		}
-
-		char *menu_command = (char *) gpCmd->Cmd_Argv(1 + argv_offset);
-
-		if (FStrEq (menu_command, "manisettings"))
-		{
-			ShowSettingsPrimaryMenu(&player, next_index);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "damagetype") && 
-			mani_show_victim_stats.GetInt() != 0)
-		{
-			ProcessMaDamage (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "damagetimeout") && 
-			mani_show_victim_stats.GetInt() != 0)
-		{
-			ProcessMaDamageTimeout (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "quake") &&
-			mani_quake_sounds.GetInt() != 0)
-		{
-			ProcessMaQuake (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}		
-		else if (FStrEq (menu_command, "sounds"))
-		{
-			ProcessMaSounds (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}		
-		else if (FStrEq (menu_command, "deathbeam"))
-		{
-			ProcessMaDeathBeam (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "destruction"))
-		{
-			ProcessMaDestruction (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "voteprogress"))
-		{
-			ProcessMaVoteProgress (player.index);
-			ShowSettingsPrimaryMenu(&player, 0);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "joinskin"))
-		{
-			// Handle skin choice menu
-			ProcessJoinSkinChoiceMenu (&player, next_index, argv_offset, menu_command);
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "admin_t") && mani_skins_admin.GetInt() != 0)
-		{
-			int admin_index;
-			if (gpManiClient->IsAdmin(&player, &admin_index))
-			{
-				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
-				{
-					// Handle skin choice menu
-					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_ADMIN_T_SKIN, menu_command))
-					{
-						ShowSettingsPrimaryMenu(&player, 0);
-					}
-					return PLUGIN_STOP;
-				}
-			}
-		}
-	
-		else if (FStrEq (menu_command, "admin_ct") && mani_skins_admin.GetInt() != 0 && gpManiGameType->IsTeamPlayAllowed())
-		{
-			int admin_index;
-			if (gpManiClient->IsAdmin(&player, &admin_index))
-			{
-				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
-				{
-					// Handle skin choice menu
-					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_ADMIN_CT_SKIN, menu_command))
-					{
-						ShowSettingsPrimaryMenu(&player, 0);
-					}
-					return PLUGIN_STOP;
-				}
-			}
-		}
-		else if (FStrEq (menu_command, "immunity_t") && mani_skins_reserved.GetInt() != 0)
-		{
-			int immunity_index;
-			if (gpManiClient->IsImmune(&player, &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
-				{
-					// Handle skin choice menu
-					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_RESERVE_T_SKIN, menu_command))
-					{
-						ShowSettingsPrimaryMenu(&player, 0);
-					}
-					return PLUGIN_STOP;
-				}
-			}
-		}	
-		else if (FStrEq (menu_command, "immunity_ct") && mani_skins_reserved.GetInt() != 0 && gpManiGameType->IsTeamPlayAllowed())
-		{
-			int immunity_index;
-			if (gpManiClient->IsImmune(&player, &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
-				{
-					// Handle skin choice menu
-					if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_RESERVE_CT_SKIN, menu_command))
-					{
-						ShowSettingsPrimaryMenu(&player, 0);
-					}
-					return PLUGIN_STOP;
-				}
-			}
-		}		else if (FStrEq (menu_command, "public_t") && mani_skins_public.GetInt() != 0)
-		{
-			// Handle skin choice menu
-			if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_T_SKIN, menu_command))
-			{
-				ShowSettingsPrimaryMenu(&player, 0);
-			}
-			return PLUGIN_STOP;
-		}
-		else if (FStrEq (menu_command, "public_ct") && mani_skins_public.GetInt() != 0 && gpManiGameType->IsTeamPlayAllowed())
-		{
-			// Handle skin choice menu
-			if (ProcessSkinChoiceMenu (&player, next_index, argv_offset, MANI_CT_SKIN, menu_command))
-			{
-				ShowSettingsPrimaryMenu(&player, 0);
-			}
-			return PLUGIN_STOP;
-		}
-	}
-
-	return PLUGIN_CONTINUE;
+	return true;
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-static
-bool ProcessSkinChoiceMenu
-( 
-  player_t *player_ptr, 
-  int next_index, 
-  int argv_offset, 
-  int skin_type, 
-  char *menu_command 
-)
+int SkinChoiceItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	int index;
+	int skin_type;
+	char skin_name[20];
 
-	if (argc - argv_offset == 3)
+	this->params.GetParam("index", &index);
+	m_page_ptr->params.GetParam("skin_type", &skin_type);
+
+	if (index == 999)
 	{
-		char	skin_name[20];
-		int index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-
-		if (index == 0) return true;
-		if (index > skin_list_size && index != 999) return true;
-		if (index != 999) index --;
-
-		if (index == 999 || skin_list[index].skin_type == skin_type)
-		{
-			if (index == 999)
-			{
-				Q_strcpy(skin_name,"");
-			}
-			else
-			{
-				Q_strcpy(skin_name, skin_list[index].skin_name);
-			}
-
-			// Found name to match !!!
-			player_settings_t *player_settings;
-			player_settings = FindPlayerSettings(player_ptr);
-			if (player_settings)
-			{
-				switch(skin_type)
-				{
-				case MANI_ADMIN_T_SKIN: Q_strcpy(player_settings->admin_t_model, skin_name); break;
-				case MANI_ADMIN_CT_SKIN: Q_strcpy(player_settings->admin_ct_model, skin_name); break;
-				case MANI_RESERVE_T_SKIN: Q_strcpy(player_settings->immunity_t_model, skin_name); break;
-				case MANI_RESERVE_CT_SKIN: Q_strcpy(player_settings->immunity_ct_model, skin_name); break;
-				case MANI_T_SKIN: Q_strcpy(player_settings->t_model, skin_name); break;
-				case MANI_CT_SKIN: Q_strcpy(player_settings->ct_model, skin_name); break;
-				default:break;
-				}
-
-				current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
-			}
-		}
-
-		return true;
+		Q_strcpy(skin_name,"");
 	}
 	else
 	{
-
-		// Setup player list
-		FreeMenu();
-
-		if (mani_skins_force_public.GetInt() == 0 || skin_type == MANI_ADMIN_T_SKIN || skin_type == MANI_ADMIN_CT_SKIN
-			|| skin_type == MANI_RESERVE_T_SKIN || skin_type == MANI_RESERVE_CT_SKIN)
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_NONE));							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s 999", menu_command);
-		}
-
-		for( int i = 0; i < skin_list_size; i++ )
-		{
-			if (skin_list[i].skin_type != skin_type) continue;
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", skin_list[i].skin_name);							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s %i", menu_command, i + 1);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return true;
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		// Draw menu list
-		DrawSubMenu (player_ptr, Translate(1385), Translate(1386), next_index, "manisettings", menu_command, true, -1);
+		Q_strcpy(skin_name, skin_list[index].skin_name);
 	}
 
+	// Found name to match !!!
+	player_settings_t *player_settings;
+	player_settings = FindPlayerSettings(player_ptr);
+	if (player_settings)
+	{
+		switch(skin_type)
+		{
+		case MANI_ADMIN_T_SKIN: Q_strcpy(player_settings->admin_t_model, skin_name); break;
+		case MANI_ADMIN_CT_SKIN: Q_strcpy(player_settings->admin_ct_model, skin_name); break;
+		case MANI_RESERVE_T_SKIN: Q_strcpy(player_settings->immunity_t_model, skin_name); break;
+		case MANI_RESERVE_CT_SKIN: Q_strcpy(player_settings->immunity_ct_model, skin_name); break;
+		case MANI_T_SKIN: Q_strcpy(player_settings->t_model, skin_name); break;
+		case MANI_CT_SKIN: Q_strcpy(player_settings->ct_model, skin_name); break;
+		default:break;
+		}
 
-	return false;
+		current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
+	}
+
+	return PREVIOUS_MENU;
 }
+
+bool SkinChoicePage::PopulateMenuPage(player_t *player_ptr)
+{
+	int skin_type;
+
+	this->params.GetParam("skin_type", &skin_type);
+
+	this->SetEscLink("%s", Translate(player_ptr, 1385));
+	this->SetTitle("%s", Translate(player_ptr, 1386));
+
+	MenuItem *ptr = NULL;
+	if (mani_skins_force_public.GetInt() == 0 || skin_type == MANI_ADMIN_T_SKIN || skin_type == MANI_ADMIN_CT_SKIN
+		|| skin_type == MANI_RESERVE_T_SKIN || skin_type == MANI_RESERVE_CT_SKIN)
+	{
+		ptr = new SkinChoiceItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, M_NONE));
+		ptr->params.AddParam("index", 999);
+		this->AddItem(ptr);
+	}
+
+	for( int i = 0; i < skin_list_size; i++ )
+	{
+		if (skin_list[i].skin_type != skin_type) continue;
+
+		ptr = new SkinChoiceItem;
+		ptr->SetDisplayText("%s", skin_list[i].skin_name);
+		ptr->params.AddParam("index", i);
+		this->AddItem(ptr);
+	}
+
+	return true;
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: Process the damage command
 //---------------------------------------------------------------------------------
@@ -2667,30 +2526,30 @@ PLUGIN_RESULT	ProcessMaDamage
 		// Found player settings
 		if (player_settings->damage_stats == 0)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1387));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1387));
 			player_settings->damage_stats = 1;
 		}
 		else if (player_settings->damage_stats == 1)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1388));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1388));
 			player_settings->damage_stats = 2;
 		}
 		else if (player_settings->damage_stats == 2)
 		{
 			if (gpManiGameType->IsAMXMenuAllowed())
 			{
-				SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1389));
+				SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1389));
 				player_settings->damage_stats = 3;
 			}
 			else
 			{
-				SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1390));
+				SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1390));
 				player_settings->damage_stats = 0;
 			}
 		}
 		else
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1390));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1390));
 			player_settings->damage_stats = 0;
 		}
 	}
@@ -2757,12 +2616,12 @@ PLUGIN_RESULT	ProcessMaSounds
 		// Found player settings
 		if (!player_settings->server_sounds)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1391));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1391));
 			player_settings->server_sounds = 1;
 		}
 		else
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1392));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1392));
 			player_settings->server_sounds = 0;
 		}
 	}
@@ -2794,12 +2653,12 @@ PLUGIN_RESULT	ProcessMaVoteProgress
 		// Found player settings
 		if (!player_settings->show_vote_results_progress)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1393));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1393));
 			player_settings->show_vote_results_progress = 1;
 		}
 		else
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1394));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1394));
 			player_settings->show_vote_results_progress = 0;
 		}
 	}
@@ -2833,12 +2692,12 @@ PLUGIN_RESULT	ProcessMaDeathBeam
 		// Found player settings
 		if (!player_settings->show_death_beam)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1395));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1395));
 			player_settings->show_death_beam = 1;
 		}
 		else
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1396));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1396));
 			player_settings->show_death_beam = 0;
 		}
 	}
@@ -2872,12 +2731,12 @@ PLUGIN_RESULT	ProcessMaDestruction
 		// Found player settings
 		if (!player_settings->show_destruction)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1397));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1397));
 			player_settings->show_destruction = 1;
 		}
 		else
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1398));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1398));
 			player_settings->show_destruction = 0;
 		}
 	}
@@ -2911,12 +2770,12 @@ PLUGIN_RESULT	ProcessMaQuake
 		// Found player settings
 		if (!player_settings->quake_sounds)
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1399));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1399));
 			player_settings->quake_sounds = 1;
 		}
 		else
 		{
-			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1400));
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(&player, 1400));
 			player_settings->quake_sounds = 0;
 		}
 	}
@@ -2977,14 +2836,54 @@ void UTIL_KickPlayer
 
 		j++;
 
-		Q_snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(player_ptr->name[j]));
+		snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(player_ptr->name[j]));
 		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] bot_kick \"%s\"\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, &(player_ptr->name[j]));
 		engine->ServerCommand(kick_cmd);
 		return;
 	}
 
 	PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
-	Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
+	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
 	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, short_reason);
 	engine->ServerCommand(kick_cmd);				
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Drop C4
+//---------------------------------------------------------------------------------
+bool UTIL_DropC4(edict_t *pEntity)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+
+	CBaseEntity *pPlayer = pEntity->GetUnknown()->GetBaseEntity();
+
+	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 4);
+
+	if (pWeapon)
+	{
+		if (FStrEq("weapon_c4", CBaseCombatWeapon_GetName(pWeapon)))
+		{
+			CBasePlayer *pBase = (CBasePlayer *) pPlayer;
+			CBasePlayer_WeaponDrop(pBase, pWeapon);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Emit a sounds only to one player
+//---------------------------------------------------------------------------------
+void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id)
+{
+	if (esounds == NULL) return;
+
+	MRecipientFilter mrf; // this is my class, I'll post it later.
+	mrf.MakeReliable();
+
+	mrf.AddPlayer(player_ptr->index);
+	Vector pos = player_ptr->entity->GetCollideable()->GetCollisionOrigin();
+	esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, sound_id, 0.7,  ATTN_NORM, 0, 100, &pos);
 }

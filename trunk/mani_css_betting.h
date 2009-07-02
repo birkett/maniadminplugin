@@ -26,8 +26,18 @@
 #ifndef MANI_CSS_BETTING_H
 #define MANI_CSS_BETTING_H
 
+#include "mani_menu.h"
+
+class BetRulesFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr);
+};
+
 class ManiCSSBetting
 {
+	friend class BetRulesFreePage;
 public:
 	ManiCSSBetting();
 	~ManiCSSBetting();
@@ -40,7 +50,6 @@ public:
 	void		CSSRoundEnd(int winning_team);
 private:
 
-	void		ShowBetRules(player_t *player_ptr);
 	void		GetAlivePlayerCount(int *t_count, int *t_index, int *ct_count, int *ct_index);
 	void		PlayerNotAlive(void);
 

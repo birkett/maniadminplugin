@@ -52,6 +52,8 @@
 #include "mani_spawnpoints.h"
 #include "mani_vfuncs.h"
 #include "mani_gametype.h"
+#include "mani_commands.h"
+#include "mani_vars.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
 
@@ -214,11 +216,12 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 
 	for (int i = 0; i < 10; i++)
 	{
-		if (spawn_team[i].spawn_list_size != 0)
+		if (spawn_team[i].spawn_list_size != 0 && 
+			strcmp(gpManiGameType->GetTeamSpawnPointClassName(i), "NULL") != 0)
 		{
 			for (int j = 0; j < spawn_team[i].spawn_list_size; j++)
 			{
-				test_length += Q_snprintf(temp_string, sizeof(temp_string),
+				test_length += snprintf(temp_string, sizeof(temp_string),
 					"{\n\"origin\" \"%.0f %.0f %.0f\"\n\"angles\" \"%.0f %.0f %.0f\"\n\"classname\" \"%s\"\n}\n",
 				spawn_team[i].spawn_list[j].vx,
 				spawn_team[i].spawn_list[j].vy,
@@ -246,11 +249,12 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 
 	for (int i = 0; i < 10; i++)
 	{
-		if (spawn_team[i].spawn_list_size != 0)
+		if (spawn_team[i].spawn_list_size != 0 && 
+			strcmp(gpManiGameType->GetTeamSpawnPointClassName(i), "NULL") != 0)
 		{
 			for (int j = 0; j < spawn_team[i].spawn_list_size; j++)
 			{
-				Q_snprintf(temp_string, sizeof(temp_string),
+				snprintf(temp_string, sizeof(temp_string),
 					"{\n\"origin\" \"%.0f %.0f %.0f\"\n\"angles\" \"%.0f %.0f %.0f\"\n\"classname\" \"%s\"\n}\n",
 				spawn_team[i].spawn_list[j].vx,
 				spawn_team[i].spawn_list[j].vy,
@@ -260,7 +264,7 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 				spawn_team[i].spawn_list[j].az,
 				gpManiGameType->GetTeamSpawnPointClassName(i));
 			
-				Q_strcat (replacement_entities, temp_string);
+				strcat (replacement_entities, temp_string);
 			}
 
 //			MMsg("Added %i spawnpoints for class %s\n", spawn_team[i].spawn_list_size, gpManiGameType->GetTeamSpawnPointClassName(i));
@@ -343,7 +347,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 
 	KeyValues *kv_ptr = new KeyValues("spawnpoints.txt");
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/spawnpoints.txt", mani_path.GetString());
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/spawnpoints.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
 //		MMsg("Failed to load spawnpoints.txt\n");
@@ -404,7 +408,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	{
 		int team_number;
 
-		team_number = Q_atoi(kv_map_ptr->GetName());
+		team_number = atoi(kv_map_ptr->GetName());
 		if (team_number == 0 || !gpManiGameType->IsValidActiveTeam(team_number))
 		{
 //			MMsg("Team number [%s] is invalid !!\n", kv_map_ptr->GetName());
@@ -521,7 +525,7 @@ bool ManiSpawnPoints::DecodeString(char *input_string, spawn_vector_t *coord, in
 			number_count ++;
 			temp_string[j] = '\0';
 
-			float value = Q_atof(temp_string);
+			float value = atof(temp_string);
 
 			switch(number_count)
 			{
@@ -560,7 +564,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 	MMsg("You can then copy and paste into spawnpoints.txt for the map\n");
 
 	//Write to clipboard.txt
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/clipboard.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/clipboard.txt", mani_path.GetString());
 
 	if (filesystem->FileExists( base_filename))
 	{
@@ -578,7 +582,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 		return;
 	}
 
-	temp_length = Q_snprintf(temp_string, sizeof(temp_string), 
+	temp_length = snprintf(temp_string, sizeof(temp_string), 
 					"\"spawnpoints.txt\"\n"
 					"{\n"
 					"\t// Spawn points for map %s\n"
@@ -615,7 +619,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 				{
 					if (first_time)
 					{
-						temp_length = Q_snprintf(temp_string, sizeof(temp_string), 
+						temp_length = snprintf(temp_string, sizeof(temp_string), 
 									"\t\t// Spawn points for team index %i (%s)\n"
 									"\t\t\"%i\"\n"
 									"\t\t{\n", j, classname, j);
@@ -630,13 +634,13 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 						first_time = false;
 					}
 
-					Vector *position = Prop_GetVecOrigin(pEntity);
+					Vector *position = Prop_GetVec(pEntity);
 					if (!position) continue;
 
-					QAngle *angle = Prop_GetAngRotation(pEntity);
+					QAngle *angle = Prop_GetAng(pEntity);
 					if (!angle) continue;
 
-					temp_length = Q_snprintf(temp_string, sizeof(temp_string), 
+					temp_length = snprintf(temp_string, sizeof(temp_string), 
 									"\t\t\t\"%i\"\t\"%.0f %.0f %.0f    %.0f %.0f %.0f\"\n",
 									count + 1,
 									position->x, position->y, position->z,
@@ -656,7 +660,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 
 		if (!first_time)
 		{
-			temp_length = Q_snprintf(temp_string, sizeof(temp_string), 
+			temp_length = snprintf(temp_string, sizeof(temp_string), 
 									"\t\t}\n\n");
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
@@ -670,7 +674,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 		MMsg("%i coordinates for classname %s\n", count, classname);
 	}
 
-	temp_length = Q_snprintf(temp_string, sizeof(temp_string), "\t}\n}\n");
+	temp_length = snprintf(temp_string, sizeof(temp_string), "\t}\n}\n");
 
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{

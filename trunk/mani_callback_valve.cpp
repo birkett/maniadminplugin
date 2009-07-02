@@ -68,6 +68,7 @@ typedef unsigned long DWORD;
 #include "networkstringtabledefs.h"
 #include "mani_callback_valve.h"
 #include "mani_main.h"
+#include "mani_memory.h"
 #include "mani_sigscan.h"
 #include "mani_output.h"
 #include "mani_globals.h"
@@ -97,11 +98,53 @@ CValveMAP::CValveMAP()
 {
 	m_iClientCommandIndex = con_command_index = 0;
 	gpManiISPCCallback = this;
-//	gpManiIGELCallback = this;
 }
 
 CValveMAP::~CValveMAP()
 {
+}
+
+// Crap macro to try multiple versions of an interface, Valve tend to release
+// ServerGameDLL versions that are not documented in the SDK. Best we can do 
+// is start at the base version and work up through to _max_iterations until 
+// we get a non-null pointer back.
+#define GET_INTERFACE(_store, _type, _version, _max_iterations, _interface_type) \
+{ \
+	char	interface_version[128]; \
+	int i, length; \
+	Q_strcpy(interface_version, _version); \
+	length = Q_strlen(_version); \
+	i = atoi(&(interface_version[length - 3])); \
+	interface_version[length - 3] = '\0'; \
+	AddToList((void **) &interface_list, sizeof(interface_data_t), &interface_list_size); \
+	Q_strcpy(interface_list[interface_list_size - 1].interface_name, _version); \
+	Q_strcpy(interface_list[interface_list_size - 1].base_interface, _version); \
+	for (int j = i; j < i + _max_iterations; j ++) \
+	{ \
+		char new_interface[128]; \
+		snprintf(new_interface, sizeof(new_interface), "%s%03i", interface_version, j); \
+		_store = (_type *) _interface_type (new_interface, NULL); \
+		if(_store) \
+		{ \
+			Q_strcpy(interface_list[interface_list_size - 1].interface_name, new_interface); \
+			break; \
+		} \
+	} \
+	if (!_store) \
+	{ \
+		for (int j = i; j > 0; j --) \
+		{ \
+			char new_interface[128]; \
+			snprintf(new_interface, sizeof(new_interface), "%s%03i", interface_version, j); \
+			_store = (_type *) _interface_type (new_interface, NULL); \
+			if(_store) \
+			{ \
+				Q_strcpy(interface_list[interface_list_size - 1].interface_name, new_interface); \
+				break; \
+			} \
+		} \
+	} \
+	interface_list[interface_list_size - 1].ptr = (char *) _store; \
 }
 
 //---------------------------------------------------------------------------------
@@ -109,40 +152,27 @@ CValveMAP::~CValveMAP()
 //---------------------------------------------------------------------------------
 bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory )
 {
+	interface_data_t *interface_list = NULL;
+	int	interface_list_size = 0;
 
+	GET_INTERFACE(playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER, 20, gameServerFactory)
+	GET_INTERFACE(engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER, 20, interfaceFactory)
+	GET_INTERFACE(gameeventmanager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2, 20, interfaceFactory)
+	GET_INTERFACE(filesystem, IFileSystem, FILESYSTEM_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(helpers, IServerPluginHelpers, INTERFACEVERSION_ISERVERPLUGINHELPERS, 20, interfaceFactory)
+	GET_INTERFACE(networkstringtable, INetworkStringTableContainer, INTERFACENAME_NETWORKSTRINGTABLESERVER, 20, interfaceFactory)
+	GET_INTERFACE(enginetrace, IEngineTrace, INTERFACEVERSION_ENGINETRACE_SERVER, 20, interfaceFactory)
+	GET_INTERFACE(randomStr, IUniformRandomStream, VENGINE_SERVER_RANDOM_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(serverents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS, 20, gameServerFactory)
+	GET_INTERFACE(effects, IEffects, IEFFECTS_INTERFACE_VERSION, 20, gameServerFactory)
+	GET_INTERFACE(esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS, 20, gameServerFactory)
+	GET_INTERFACE(cvar, ICvar, VENGINE_CVAR_INTERFACE_VERSION, 20, interfaceFactory)
+	GET_INTERFACE(serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, 20, gameServerFactory)
+	GET_INTERFACE(voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER, 20, interfaceFactory)
+	GET_INTERFACE(spatialpartition, ISpatialPartition, INTERFACEVERSION_SPATIALPARTITION, 20, interfaceFactory)
 
-	playerinfomanager = (IPlayerInfoManager *)gameServerFactory(INTERFACEVERSION_PLAYERINFOMANAGER,NULL);
-	engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
-	gameeventmanager = (IGameEventManager2 *)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL);
-	filesystem = (IFileSystem*)interfaceFactory(FILESYSTEM_INTERFACE_VERSION, NULL);
-	helpers = (IServerPluginHelpers*)interfaceFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL);
-	networkstringtable = (INetworkStringTableContainer *)interfaceFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL);
-	enginetrace = (IEngineTrace *)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL);
-	randomStr = (IUniformRandomStream *)interfaceFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL);
-	serverents = (IServerGameEnts*)gameServerFactory(INTERFACEVERSION_SERVERGAMEENTS, NULL);
-	effects = (IEffects*)gameServerFactory(IEFFECTS_INTERFACE_VERSION, NULL);
-	esounds = (IEngineSound*)interfaceFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL);
-	serverclients = (IServerGameClients*)gameServerFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL);
-	cvar = (ICvar*)interfaceFactory(VENGINE_CVAR_INTERFACE_VERSION, NULL);
-	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL005", NULL);
-	if(serverdll)
-	{
-		gamedll = serverdll;
-	}
-	else 
-	{
-		// Hack for unreleased interface version
-		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
-		if(!serverdll)
-		{
-			// Hack for interface 004 not working on older mods
-			serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-		}
-	}
-
-	voiceserver = (IVoiceServer*)interfaceFactory(INTERFACEVERSION_VOICESERVER, NULL);
-	partition = (ISpatialPartition*)interfaceFactory(INTERFACEVERSION_SPATIALPARTITION, NULL);
-
+	gamedll = serverdll;
 	InitCVars( interfaceFactory ); // register any cvars we have defined
 
 	gpGlobals = playerinfomanager->GetGlobalVars();
@@ -160,23 +190,45 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	MMsg("%s\n", mani_version);
 	MMsg("\n");
 
-	if (!UTIL_InterfaceMsg(playerinfomanager,"IPlayerInfoManager", INTERFACEVERSION_PLAYERINFOMANAGER)) return false;
-	if (!UTIL_InterfaceMsg(engine,"IVEngineServer", INTERFACEVERSION_VENGINESERVER)) return false;
-	if (!UTIL_InterfaceMsg(gameeventmanager,"IGameEventManager2", INTERFACEVERSION_GAMEEVENTSMANAGER2)) return false;
-	if (!UTIL_InterfaceMsg(filesystem,"IFileSystem", FILESYSTEM_INTERFACE_VERSION)) return false;
-	if (!UTIL_InterfaceMsg(helpers,"IServerPluginHelpers", INTERFACEVERSION_ISERVERPLUGINHELPERS)) return false;
-	if (!UTIL_InterfaceMsg(networkstringtable,"INetworkStringTableContainer", INTERFACENAME_NETWORKSTRINGTABLESERVER)) return false;
-	if (!UTIL_InterfaceMsg(enginetrace,"IEngineTrace", INTERFACEVERSION_ENGINETRACE_SERVER)) return false;
-	if (!UTIL_InterfaceMsg(randomStr,"IUniformRandomStream", VENGINE_SERVER_RANDOM_INTERFACE_VERSION)) return false;
-	if (!UTIL_InterfaceMsg(serverents,"IServerGameEnts", INTERFACEVERSION_SERVERGAMEENTS)) return false;
-	if (!UTIL_InterfaceMsg(effects,"IEffects", IEFFECTS_INTERFACE_VERSION)) return false;
-	if (!UTIL_InterfaceMsg(esounds,"IEngineSound", IENGINESOUND_SERVER_INTERFACE_VERSION)) return false;
-	if (!UTIL_InterfaceMsg(cvar,"ICvar", VENGINE_CVAR_INTERFACE_VERSION)) return false;
-	if (!UTIL_InterfaceMsg(serverdll,"IServerGameDLL", "ServerGameDLL003")) return false;
-	if (!UTIL_InterfaceMsg(voiceserver,"IVoiceServer", INTERFACEVERSION_VOICESERVER)) return false;
-	if (!UTIL_InterfaceMsg(partition,"ISpatialPartition", INTERFACEVERSION_SPATIALPARTITION)) return false;
-	if (!UTIL_InterfaceMsg(serverclients,"IServerGameClients", INTERFACEVERSION_SERVERGAMECLIENTS)) return false;
+	// Show interfaces that worked
+	for (int i = 0; i < interface_list_size; i++)
+	{
+		if (interface_list[i].ptr)
+		{
+			if (strcmp(interface_list[i].base_interface, interface_list[i].interface_name) == 0)
+			{
+				// Base interface used
+				MMsg("%p SDK %s\n", interface_list[i].ptr, interface_list[i].base_interface);
+			}
+			else
+			{
+				MMsg("%p SDK %s => Upgraded to %s\n", interface_list[i].ptr, interface_list[i].base_interface, interface_list[i].interface_name);
+			}
+		}
+	}
 
+	// Show ones that didn't
+	bool	found_failure = false;
+	for (int i = 0; i < interface_list_size; i++)
+	{
+		if (!interface_list[i].ptr)
+		{
+			if (strcmp(interface_list[i].base_interface, interface_list[i].interface_name) == 0)
+			{
+				// Base interface used
+				MMsg("FAILED !! : %s\n", interface_list[i].base_interface);
+				found_failure = true;
+			}
+		}
+	}
+
+	FreeList((void **) &interface_list, &interface_list_size);
+
+	if (found_failure) 
+	{
+		MMsg("Failure on loading interface, quitting plugin load\n");
+		return false;
+	}
 
 	MMsg("********************************************************\n");
 

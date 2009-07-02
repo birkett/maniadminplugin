@@ -55,6 +55,7 @@
 #include "mani_maps.h"
 #include "mani_skins.h"
 #include "mani_commands.h"
+#include "mani_vars.h"
 #include "mani_help.h"
 #include "KeyValues.h"
 #include "mani_vfuncs.h"
@@ -88,8 +89,6 @@ static	void ManiSkinsAutoDownload ( ConVar *var, char const *pOldString );
 static	void	SetupSkinsAutoDownloads(void);
 static  bool	IsSkinValidForPlayer( int *skin_index_ptr, player_t *player_ptr );
 static	int IsValidSkinName(const char *skin_name);
-static	void AddModelActions(KeyValues *kv_ptr);
-static	void	SetupActionModelsAutoDownloads(void);
 
 ConVar mani_skins_auto_download ("mani_skins_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, ManiSkinsAutoDownload); 
 
@@ -149,40 +148,40 @@ void	LoadSkins(void)
 	// Do Admin T load first
 	if (!gpManiGameType->IsTeamPlayAllowed())
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(0));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetAdminSkinDir(0));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(0));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetAdminSkinDir(0));
 	}
 	else
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(TEAM_A));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetAdminSkinDir(TEAM_A));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(TEAM_A));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetAdminSkinDir(TEAM_A));
 	}
 
-    Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
-	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
+    snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
+	snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 	if(!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_ADMIN_T_SKIN))
 	{
 //		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 		// Do Admin T load first
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir );
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir );
 		LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_ADMIN_T_SKIN);
 	}
 
 	// Do Admin CT load
 	if (gpManiGameType->IsTeamPlayAllowed())
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(TEAM_B));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetAdminSkinDir(TEAM_B));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(TEAM_B));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetAdminSkinDir(TEAM_B));
 
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 		if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_ADMIN_CT_SKIN))
 		{
 //			MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 			// Do Admin CT load
-			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
-			Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
+			snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
+			snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
 			LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_ADMIN_CT_SKIN);
 		}
 	}
@@ -190,40 +189,40 @@ void	LoadSkins(void)
 	// Do Reserved T load first
 	if (!gpManiGameType->IsTeamPlayAllowed())
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetReservedSkinDir(0));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetReservedSkinDir(0));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetReservedSkinDir(0));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetReservedSkinDir(0));
 	}
 	else
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetReservedSkinDir(TEAM_A));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetReservedSkinDir(TEAM_A));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetReservedSkinDir(TEAM_A));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetReservedSkinDir(TEAM_A));
 	}
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
-	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
+	snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 	if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_RESERVE_T_SKIN))
 	{
 //		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 		// Do Reserved T load first
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
 		LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_RESERVE_T_SKIN);
 	}
 
 	// Do Reserved CT load
 	if (gpManiGameType->IsTeamPlayAllowed())
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetReservedSkinDir(TEAM_B));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetReservedSkinDir(TEAM_B));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetReservedSkinDir(TEAM_B));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetReservedSkinDir(TEAM_B));
 
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 		if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_RESERVE_CT_SKIN))
 		{
 //			MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 			// Do Reserved CT load
-			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
-			Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
+			snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
+			snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
 			LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_RESERVE_CT_SKIN);
 		}
 	}
@@ -231,198 +230,57 @@ void	LoadSkins(void)
 	// Do Public T load 
 	if (!gpManiGameType->IsTeamPlayAllowed())
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(0));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetPublicSkinDir(0));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetAdminSkinDir(0));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetPublicSkinDir(0));
 	}
 	else
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetPublicSkinDir(TEAM_A));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetPublicSkinDir(TEAM_A));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetPublicSkinDir(TEAM_A));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetPublicSkinDir(TEAM_A));
 	}
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
-	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
+	snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 	if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_T_SKIN))
 	{
 //		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 		// Do Public T load 
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
 		LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_T_SKIN);
 	}
 
 	// Do Public CT load 
 	if (gpManiGameType->IsTeamPlayAllowed())
 	{
-		Q_snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetPublicSkinDir(TEAM_B));
-		Q_snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetPublicSkinDir(TEAM_B));
+		snprintf(skin_config_file, sizeof(skin_config_file), "%s.txt", gpManiGameType->GetPublicSkinDir(TEAM_B));
+		snprintf(skin_short_dir, sizeof(skin_short_dir), "%s", gpManiGameType->GetPublicSkinDir(TEAM_B));
 
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/%s", mani_path.GetString(), current_map, skin_config_file);
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 		if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_CT_SKIN))
 		{
 //			MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 			// Do Public CT load 
-			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
-			Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
+			snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
+			snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
 			LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_CT_SKIN);
 		}
 	}
 
 	// Do Misc load 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/misc.txt", mani_path.GetString(), current_map);
-	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/misc/", mani_path.GetString(), current_map);
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/maps/%s/misc.txt", mani_path.GetString(), current_map);
+	snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/misc/", mani_path.GetString(), current_map);
 	if (!LoadSkinType (skin_directory, "misc.txt", core_filename, MANI_MISC_SKIN))
 	{
 //		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/misc.txt\n", mani_path.GetString(), current_map);
 		// Do Misc load 
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/misc.txt", mani_path.GetString());
-		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/misc/", mani_path.GetString());
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/misc.txt", mani_path.GetString());
+		snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/misc/", mani_path.GetString());
 		LoadSkinType (skin_directory, "misc.txt", core_filename, MANI_MISC_SKIN);
 	}
 
 	SetupSkinsAutoDownloads();
-
-//	MMsg("************ SKINS LOADED *************\n");
-
-//	MMsg("**** LOADING CUSTOM MODEL ACTIONS *****\n");
-
-	KeyValues * kv = new KeyValues("modelconfig.txt");
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/modelconfig.txt", mani_path.GetString());
-	if (!kv->LoadFromFile( filesystem, core_filename, NULL))
-	{
-//		MMsg("Failed to load modelconfig.txt\n");
-	}
-
-	KeyValues *temp_kv;
-
-	temp_kv = kv->GetFirstTrueSubKey();
-	if (!temp_kv)
-	{
-		kv->deleteThis();
-		return;
-	}
-
-	// Load data into memory
-	for (;;)
-	{
-		if (IsValidSkinName(temp_kv->GetName()) != -1)
-		{
-//			MMsg("Adding action model %s\n", temp_kv->GetName());
-			AddModelActions(temp_kv);
-		}
-
-		temp_kv = temp_kv->GetNextKey();
-		if (!temp_kv)
-		{
-			break;
-		}
-	}
-
-	kv->deleteThis();
-
-	SetupActionModelsAutoDownloads();
-
-//	MMsg("**** CUSTOM MODEL ACTIONS LOADED *****\n");
-
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Find index of skin_list for specified model name
-//---------------------------------------------------------------------------------
-static
-void AddModelActions(KeyValues *kv_ptr)
-{
-	
-	action_model_t	action_model;
-	KeyValues	*temp_key_ptr;
-
-	Q_strcpy(action_model.skin_name, kv_ptr->GetName());
-
-	action_model.gravity = kv_ptr->GetInt("gravity", 100);
-	action_model.random_sound = kv_ptr->GetInt("random_sound", 1);
-	action_model.remove_all_weapons = kv_ptr->GetInt("remove_all_weapons", 0);
-	action_model.allow_weapon_pickup = kv_ptr->GetInt("allow_weapon_pickup", 0);
-
-	action_model.red = 255;
-	action_model.green = 255;
-	action_model.blue = 255;
-	action_model.alpha = 255;
-
-	temp_key_ptr = kv_ptr->FindKey("colour", false);
-	if (temp_key_ptr)
-	{
-//		MMsg("Found colour\n");
-		action_model.red = temp_key_ptr->GetInt("red", 255);
-		action_model.green = temp_key_ptr->GetInt("green", 255);
-		action_model.blue = temp_key_ptr->GetInt("blue", 255);
-		action_model.alpha = temp_key_ptr->GetInt("alpha", 255);
-	}
-
-	action_model.sound_list_size = 0;
-	action_model.sound_list = NULL;
-	action_model.intermission_min = 10;
-	action_model.intermission_max = 20;
-
-	temp_key_ptr = kv_ptr->FindKey("sound", false);
-	if (temp_key_ptr)
-	{
-//		MMsg("Found sound structure \n");
-		action_model.intermission_max = temp_key_ptr->GetFloat("intermission_max", 20);
-		action_model.intermission_min = temp_key_ptr->GetFloat("intermission_min", 10);
-
-		action_model_sound_t model_sound;
-
-		temp_key_ptr = temp_key_ptr->GetFirstTrueSubKey();
-		if (temp_key_ptr)
-		{
-			int i = 1;
-
-			for (;;)
-			{
-				// Read sound list
-				model_sound.play_once = temp_key_ptr->GetInt("play_once", 0);
-				model_sound.primary_sound = temp_key_ptr->GetInt("primary_sound", 0);
-				model_sound.sequence = temp_key_ptr->GetInt("sequence", i);
-				model_sound.sound_length = temp_key_ptr->GetFloat("sound_length", 0.0);
-				model_sound.auto_download = temp_key_ptr->GetInt("auto_download", 0);
-				Q_strcpy(model_sound.sound_file, temp_key_ptr->GetString("sound_file", "NONE"));
-				if (!FStrEq("NONE", model_sound.sound_file))
-				{
-					esounds->PrecacheSound(model_sound.sound_file, true);
-					AddToList((void **) &action_model.sound_list, sizeof(action_model_sound_t), &action_model.sound_list_size);
-					action_model.sound_list[action_model.sound_list_size - 1] = model_sound;
-//					MMsg("Adding sound %s\n", temp_key_ptr->GetName());
-				}
-				temp_key_ptr = temp_key_ptr->GetNextKey();
-				i++;
-
-				if (!temp_key_ptr)
-				{
-					break;
-				}
-			}
-		}
-	}
-
-	action_model.weapon_list = NULL;
-	action_model.weapon_list_size = 0;
-
-	temp_key_ptr = kv_ptr->FindKey("weapon_disable", false);
-	if (temp_key_ptr)
-	{
-		for (int i = 0; i < weapon_list_size; i ++)
-		{
-			if (temp_key_ptr->FindKey(weapon_list[i].weapon_name, false) != NULL)
-			{
-				AddToList((void **) &action_model.weapon_list, sizeof(action_model_weapon_t), &action_model.weapon_list_size);
-				action_model.weapon_list[action_model.weapon_list_size - 1].weapon_index = i;
-			}
-		}
-	}
-
-	AddToList((void **) &action_model_list, sizeof(action_model_t), &action_model_list_size);
-	action_model_list[action_model_list_size - 1] = action_model;
 }
 
 //---------------------------------------------------------------------------------
@@ -481,7 +339,7 @@ bool LoadSkinType
 			char	exists_string[512];
 
 			// Check file exists on server
-			Q_snprintf(exists_string, sizeof(exists_string), "%s%s", skin_directory, skin_details);
+			snprintf(exists_string, sizeof(exists_string), "%s%s", skin_directory, skin_details);
 			if (!filesystem->FileExists(exists_string))
 			{
 //				MMsg("Warning did not find [%s%s]\n", skin_directory, skin_details);
@@ -490,7 +348,7 @@ bool LoadSkinType
 
 			AddToList((void **) &skin_list, sizeof(skin_t), &skin_list_size);
 			skin_list[skin_list_size - 1].skin_type = skin_type;
-			Q_snprintf(skin_list[skin_list_size - 1].skin_name, sizeof(skin_list[skin_list_size - 1].skin_name), "%s", skin_name);
+			snprintf(skin_list[skin_list_size - 1].skin_name, sizeof(skin_list[skin_list_size - 1].skin_name), "%s", skin_name);
 			skin_list[skin_list_size - 1].model_index = -1;
 			skin_list[skin_list_size - 1].resource_list = NULL;
 			skin_list[skin_list_size - 1].resource_list_size = 0;
@@ -513,7 +371,7 @@ bool LoadSkinType
 						continue;
 					}
 
-					Q_snprintf(exists_string, sizeof(exists_string), "%s", resource_details);
+					snprintf(exists_string, sizeof(exists_string), "%s", resource_details);
 					if (!filesystem->FileExists(exists_string))
 					{
 //						MMsg("ERROR !!! Did not find resource file [%s]\n", resource_details);
@@ -634,14 +492,14 @@ void SkinTeamJoin
 			if (mani_skins_force_choose_on_join.GetInt() == 1)
 			{			
 				// Player changed to new team so give them menu option
-				engine->ClientCommand(player_ptr->entity, "manisettings joinskin\n");
+				MENUPAGE_CREATE_FIRST(JoinSkinChoicePage, player_ptr, 0, -1);
 				return;
 			}
 			else
 			{
 				// Player changed to new team so give them settings menu option
-				engine->ClientCommand(player_ptr->entity, "manisettings\n");
 				current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
+				MENUPAGE_CREATE_FIRST(PlayerSettingsPage, player_ptr, 0, -1);
 				return;
 			}
 		}
@@ -718,7 +576,7 @@ void ForceSkinType
 				chosen_skin --;
 				if (chosen_skin == -1)
 				{
-					Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+					Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 					return;
 				}
 			}
@@ -734,60 +592,55 @@ void ForceSkinType
 	player_settings = FindPlayerSettings(player_ptr);
 	if (!player_settings) return;
 	
-	int admin_index = -1;
-
 	/* Do admin skins */
 	for (;;)
 	{
 		if (mani_skins_admin.GetInt() != 0)
 		{
-			if (gpManiClient->IsAdmin(player_ptr, &admin_index))
+			if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SKINS))
 			{
-				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
+				// Use admin skin for this player
+				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
 				{
-					// Use admin skin for this player
-					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
-					{
-						// No model in use
-						if (!player_settings->admin_t_model) break;
-						if (FStrEq(player_settings->admin_t_model,"")) break;
+					// No model in use
+					if (!player_settings->admin_t_model) break;
+					if (FStrEq(player_settings->admin_t_model,"")) break;
 
-						for (int i = 0; i < skin_list_size; i++)
+					for (int i = 0; i < skin_list_size; i++)
+					{
+						if (skin_list[i].skin_type == MANI_ADMIN_T_SKIN)
 						{
-							if (skin_list[i].skin_type == MANI_ADMIN_T_SKIN)
+							if (FStrEq(skin_list[i].skin_name, player_settings->admin_t_model))
 							{
-								if (FStrEq(skin_list[i].skin_name, player_settings->admin_t_model))
-								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
-									return;
-								}
+								Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+								return;
 							}
 						}
-
-						/* Nothing found */
-						Q_strcpy(player_settings->admin_t_model, "");
 					}
-					else if (player_ptr->team == TEAM_B)
-					{
-						// No model in use
-						if (!player_settings->admin_ct_model) break;
-						if (FStrEq(player_settings->admin_ct_model,"")) break;
 
-						for (int i = 0; i < skin_list_size; i++)
+					/* Nothing found */
+					Q_strcpy(player_settings->admin_t_model, "");
+				}
+				else if (player_ptr->team == TEAM_B)
+				{
+					// No model in use
+					if (!player_settings->admin_ct_model) break;
+					if (FStrEq(player_settings->admin_ct_model,"")) break;
+
+					for (int i = 0; i < skin_list_size; i++)
+					{
+						if (skin_list[i].skin_type == MANI_ADMIN_CT_SKIN)
 						{
-							if (skin_list[i].skin_type == MANI_ADMIN_CT_SKIN)
+							if (FStrEq(skin_list[i].skin_name, player_settings->admin_ct_model))
 							{
-								if (FStrEq(skin_list[i].skin_name, player_settings->admin_ct_model))
-								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
-									return;
-								}
+								Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+								return;
 							}
 						}
-
-						/* Nothing found */
-						Q_strcpy(player_settings->admin_ct_model, "");
 					}
+
+					/* Nothing found */
+					Q_strcpy(player_settings->admin_ct_model, "");
 				}
 			}
 		}
@@ -795,60 +648,55 @@ void ForceSkinType
 		break;
 	}
 
-	int immunity_index = -1;
-
 	/* Do reserve skins */
 	for (;;)
 	{
 		if (mani_skins_reserved.GetInt() != 0)
 		{
-			if (gpManiClient->IsImmune(player_ptr, &immunity_index))
+			if (gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_RESERVE_SKIN))
 			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
+				// Use admin skin for this player
+				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
 				{
-					// Use admin skin for this player
-					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
-					{
-						// No model in use
-						if (!player_settings->immunity_t_model) break;
-						if (FStrEq(player_settings->immunity_t_model,"")) break;
+					// No model in use
+					if (!player_settings->immunity_t_model) break;
+					if (FStrEq(player_settings->immunity_t_model,"")) break;
 
-						for (int i = 0; i < skin_list_size; i++)
+					for (int i = 0; i < skin_list_size; i++)
+					{
+						if (skin_list[i].skin_type == MANI_RESERVE_T_SKIN)
 						{
-							if (skin_list[i].skin_type == MANI_RESERVE_T_SKIN)
+							if (FStrEq(skin_list[i].skin_name, player_settings->immunity_t_model))
 							{
-								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_t_model))
-								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
-									return;
-								}
+								Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+								return;
 							}
 						}
-
-						/* Nothing found */
-						Q_strcpy(player_settings->immunity_t_model, "");
 					}
-					else if (player_ptr->team == TEAM_B)
-					{
-						// No model in use
-						if (!player_settings->immunity_ct_model) break;
-						if (FStrEq(player_settings->immunity_ct_model,"")) break;
 
-						for (int i = 0; i < skin_list_size; i++)
+					/* Nothing found */
+					Q_strcpy(player_settings->immunity_t_model, "");
+				}
+				else if (player_ptr->team == TEAM_B)
+				{
+					// No model in use
+					if (!player_settings->immunity_ct_model) break;
+					if (FStrEq(player_settings->immunity_ct_model,"")) break;
+
+					for (int i = 0; i < skin_list_size; i++)
+					{
+						if (skin_list[i].skin_type == MANI_RESERVE_CT_SKIN)
 						{
-							if (skin_list[i].skin_type == MANI_RESERVE_CT_SKIN)
+							if (FStrEq(skin_list[i].skin_name, player_settings->immunity_ct_model))
 							{
-								if (FStrEq(skin_list[i].skin_name, player_settings->immunity_ct_model))
-								{
-									Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
-									return;
-								}
+								Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
+								return;
 							}
 						}
-
-						/* Nothing found */
-						Q_strcpy(player_settings->immunity_ct_model, "");
 					}
+
+					/* Nothing found */
+					Q_strcpy(player_settings->immunity_ct_model, "");
 				}
 			}
 		}
@@ -874,13 +722,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->t_model))
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 					}
@@ -900,13 +748,13 @@ void ForceSkinType
 					{
 						if (mani_skins_force_public.GetInt() == 1)
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 
 						if (FStrEq(skin_list[i].skin_name, player_settings->ct_model))
 						{
-							Prop_SetModelIndex(player_ptr->entity, skin_list[i].model_index);
+							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
 							return;
 						}
 					}
@@ -924,217 +772,177 @@ void ForceSkinType
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ProcessJoinSkinChoiceMenu
-( 
-  player_t *player_ptr, 
-  int next_index, 
-  int argv_offset, 
-  char *menu_command 
-)
+int JoinSkinChoiceItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	int	skin_type;
+	int index;
+	if (!this->params.GetParam("index", &index)) return CLOSE_MENU;
 
-	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
-	if (mani_skins_admin.GetInt() == 0 &&
-		mani_skins_reserved.GetInt() == 0 &&
-		mani_skins_public.GetInt() == 0)
+	char	skin_name[20];
+	if (current_skin_list[player_ptr->index - 1].team_id == player_ptr->team) return CLOSE_MENU;
+	current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
+	if (index >= skin_list_size && index != 999) return CLOSE_MENU;
+
+	// Resonable number passed in
+	// Need to validate player can actually choose this skin though
+
+	if (!IsSkinValidForPlayer(&index, player_ptr))
 	{
-		// Skins not enabled
-		return;
+		return CLOSE_MENU;
 	}
 
-	if (argc - argv_offset == 3)
+	if (index == 999)
 	{
-		char	skin_name[20];
-		if (current_skin_list[player_ptr->index - 1].team_id == player_ptr->team)
-		{
-			return;
-		}
-
-		current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
-
-		int index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-
-		if (index == 0) return;
-
-		if (index > skin_list_size && index != 999) return;
-		if (index != 999) index --;
-
-		// Resonable number passed in
-		// Need to validate player can actually choose this skin though
-
-		if (!IsSkinValidForPlayer(&index, player_ptr))
-		{
-			return;
-		}
-
-		if (index == 999)
-		{
-			// Found name to match !!!
-			player_settings_t *player_settings;
-			player_settings = FindPlayerSettings(player_ptr);
-			if (player_settings)
-			{
-				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
-				{
-					Q_strcpy(player_settings->admin_ct_model, "");
-					Q_strcpy(player_settings->immunity_ct_model, "");
-					Q_strcpy(player_settings->ct_model, "");
-				}
-				else
-				{
-					Q_strcpy(player_settings->admin_t_model, "");
-					Q_strcpy(player_settings->immunity_t_model, "");
-					Q_strcpy(player_settings->t_model, "");
-				}
-			}
-			
-			return;	
-		}
-		else
-		{
-			Q_strcpy(skin_name, skin_list[index].skin_name);
-		}
-
-		skin_type = skin_list[index].skin_type;
-
 		// Found name to match !!!
 		player_settings_t *player_settings;
 		player_settings = FindPlayerSettings(player_ptr);
 		if (player_settings)
 		{
-			switch(skin_type)
+			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
 			{
-			case MANI_ADMIN_T_SKIN: Q_strcpy(player_settings->admin_t_model, skin_name); break;
-			case MANI_ADMIN_CT_SKIN: Q_strcpy(player_settings->admin_ct_model, skin_name); break;
-			case MANI_RESERVE_T_SKIN: Q_strcpy(player_settings->immunity_t_model, skin_name); break;
-			case MANI_RESERVE_CT_SKIN: Q_strcpy(player_settings->immunity_ct_model, skin_name); break;
-			case MANI_T_SKIN: Q_strcpy(player_settings->t_model, skin_name); break;
-			case MANI_CT_SKIN: Q_strcpy(player_settings->ct_model, skin_name); break;
-			default:break;
-			}
-		}
-
-		return;
-	}
-	else
-	{
-		if (current_skin_list[player_ptr->index - 1].team_id == player_ptr->team)
-		{
-			return;
-		}
-
-		// Setup player list
-		FreeMenu();
-
-		if (mani_skins_admin.GetInt() != 0)
-		{
-			int admin_index = -1;
-
-			if (gpManiClient->IsAdmin(player_ptr, &admin_index))
-			{
-				if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
-				{
-					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
-					{
-						skin_type = MANI_ADMIN_T_SKIN;
-					}
-					else
-					{
-						skin_type = MANI_ADMIN_CT_SKIN;
-					}
-
-					for (int i = 0; i < skin_list_size; i ++)
-					{
-						if (skin_list[i].skin_type == skin_type)
-						{
-							AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-							Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Admin : %s", skin_list[i].skin_name);							
-							Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s %i", menu_command, i + 1);
-						}
-					}
-				}
-			}
-		}
-
-		if (mani_skins_reserved.GetInt() != 0)
-		{
-			int immunity_index = -1;
-
-			if (gpManiClient->IsImmune(player_ptr, &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
-				{
-					if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
-					{
-						skin_type = MANI_RESERVE_T_SKIN;
-					}
-					else
-					{
-						skin_type = MANI_RESERVE_CT_SKIN;
-					}
-
-					for (int i = 0; i < skin_list_size; i ++)
-					{
-						if (skin_list[i].skin_type == skin_type)
-						{
-							AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-							Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Reserved : %s", skin_list[i].skin_name);							
-							Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s %i", menu_command, i + 1);
-						}
-					}
-				}
-			}
-		}
-
-		if (mani_skins_public.GetInt() != 0)
-		{
-			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
-			{
-				skin_type = MANI_T_SKIN;
+				Q_strcpy(player_settings->admin_ct_model, "");
+				Q_strcpy(player_settings->immunity_ct_model, "");
+				Q_strcpy(player_settings->ct_model, "");
 			}
 			else
 			{
-				skin_type = MANI_CT_SKIN;
+				Q_strcpy(player_settings->admin_t_model, "");
+				Q_strcpy(player_settings->immunity_t_model, "");
+				Q_strcpy(player_settings->t_model, "");
+			}
+		}
+		
+		return CLOSE_MENU;	
+	}
+	else
+	{
+		Q_strcpy(skin_name, skin_list[index].skin_name);
+	}
+
+	int skin_type = skin_list[index].skin_type;
+
+	// Found name to match !!!
+	player_settings_t *player_settings;
+	player_settings = FindPlayerSettings(player_ptr);
+	if (player_settings)
+	{
+		switch(skin_type)
+		{
+		case MANI_ADMIN_T_SKIN: Q_strcpy(player_settings->admin_t_model, skin_name); break;
+		case MANI_ADMIN_CT_SKIN: Q_strcpy(player_settings->admin_ct_model, skin_name); break;
+		case MANI_RESERVE_T_SKIN: Q_strcpy(player_settings->immunity_t_model, skin_name); break;
+		case MANI_RESERVE_CT_SKIN: Q_strcpy(player_settings->immunity_ct_model, skin_name); break;
+		case MANI_T_SKIN: Q_strcpy(player_settings->t_model, skin_name); break;
+		case MANI_CT_SKIN: Q_strcpy(player_settings->ct_model, skin_name); break;
+		default:break;
+		}
+	}
+
+	return CLOSE_MENU;
+}
+
+bool JoinSkinChoicePage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return false;
+	if (mani_skins_admin.GetInt() == 0 &&
+		mani_skins_reserved.GetInt() == 0 &&
+		mani_skins_public.GetInt() == 0)
+	{
+		// Skins not enabled
+		return false;
+	}
+
+	int	skin_type;
+
+	this->SetEscLink("Press Esc to choose skin");
+	this->SetTitle("Choose your skin");
+
+	if (current_skin_list[player_ptr->index - 1].team_id == player_ptr->team) return false;
+
+	// Setup player list
+	if (mani_skins_admin.GetInt() != 0)
+	{
+		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SKINS))
+		{
+			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
+			{
+				skin_type = MANI_ADMIN_T_SKIN;
+			}
+			else
+			{
+				skin_type = MANI_ADMIN_CT_SKIN;
 			}
 
 			for (int i = 0; i < skin_list_size; i ++)
 			{
 				if (skin_list[i].skin_type == skin_type)
 				{
-					AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", skin_list[i].skin_name);							
-					Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s %i", menu_command, i + 1);
+					MenuItem *ptr = new JoinSkinChoiceItem();
+					ptr->SetDisplayText("Admin : %s", skin_list[i].skin_name);
+					ptr->params.AddParam("index", i);
+					this->AddItem(ptr);
 				}
 			}
 		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		if (mani_skins_force_public.GetInt() == 0)
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Standard");							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s 999", menu_command);
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		// Draw menu list
-		DrawSubMenu (player_ptr, "Press Esc to choose skin", "Choose your skin", next_index, "manisettings", menu_command, false, -1);
 	}
 
+	if (mani_skins_reserved.GetInt() != 0)
+	{
+		if (gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_RESERVE_SKIN))
+		{
+			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
+			{
+				skin_type = MANI_RESERVE_T_SKIN;
+			}
+			else
+			{
+				skin_type = MANI_RESERVE_CT_SKIN;
+			}
 
-	return;
+			for (int i = 0; i < skin_list_size; i ++)
+			{
+				if (skin_list[i].skin_type == skin_type)
+				{
+					MenuItem *ptr = new JoinSkinChoiceItem();
+					ptr->SetDisplayText("Reserved : %s", skin_list[i].skin_name);	
+					ptr->params.AddParam("index", i);
+					this->AddItem(ptr);
+				}
+			}
+		}
+	}
+
+	if (mani_skins_public.GetInt() != 0)
+	{
+		if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
+		{
+			skin_type = MANI_T_SKIN;
+		}
+		else
+		{
+			skin_type = MANI_CT_SKIN;
+		}
+
+		for (int i = 0; i < skin_list_size; i ++)
+		{
+			if (skin_list[i].skin_type == skin_type)
+			{
+				MenuItem *ptr = new JoinSkinChoiceItem();
+				ptr->SetDisplayText("%s", skin_list[i].skin_name);
+				ptr->params.AddParam("index", i);
+				this->AddItem(ptr);
+			}
+		}
+	}
+
+	if (mani_skins_force_public.GetInt() == 0)
+	{
+		MenuItem *ptr = new JoinSkinChoiceItem();
+		ptr->SetDisplayText("Standard");
+		ptr->params.AddParam("index", 999);
+		this->AddItem(ptr);
+	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -1163,7 +971,7 @@ bool	IsSkinValidForPlayer
 
 		for (int i = 0; i < skin_list_size; i ++)
 		{
-			if (skin_list[i].skin_type = skin_type)
+			if (skin_list[i].skin_type == skin_type)
 			{
 				*skin_index_ptr = i;
 				return true;
@@ -1175,27 +983,22 @@ bool	IsSkinValidForPlayer
 
 	if (mani_skins_admin.GetInt() != 0)
 	{
-		int admin_index = -1;
-
-		if (gpManiClient->IsAdmin(player_ptr, &admin_index))
+		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SKINS))
 		{
-			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SKINS))
+			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
 			{
-				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
-				{
-					skin_type = MANI_ADMIN_T_SKIN;
-				}
-				else
-				{
-					skin_type = MANI_ADMIN_CT_SKIN;
-				}
+				skin_type = MANI_ADMIN_T_SKIN;
+			}
+			else
+			{
+				skin_type = MANI_ADMIN_CT_SKIN;
+			}
 
-				for (int i = 0; i < skin_list_size; i ++)
+			for (int i = 0; i < skin_list_size; i ++)
+			{
+				if (skin_list[i].skin_type == skin_type)
 				{
-					if (skin_list[i].skin_type == skin_type)
-					{
-						if (*skin_index_ptr == i) return true;
-					}
+					if (*skin_index_ptr == i) return true;
 				}
 			}
 		}
@@ -1203,27 +1006,22 @@ bool	IsSkinValidForPlayer
 
 	if (mani_skins_reserved.GetInt() != 0)
 	{
-		int immunity_index = -1;
-
-		if (gpManiClient->IsImmune(player_ptr, &immunity_index))
+		if (gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_RESERVE_SKIN))
 		{
-			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_RESERVE_SKIN))
+			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
 			{
-				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed()) 
-				{
-					skin_type = MANI_RESERVE_T_SKIN;
-				}
-				else
-				{
-					skin_type = MANI_RESERVE_CT_SKIN;
-				}
+				skin_type = MANI_RESERVE_T_SKIN;
+			}
+			else
+			{
+				skin_type = MANI_RESERVE_CT_SKIN;
+			}
 
-				for (int i = 0; i < skin_list_size; i ++)
+			for (int i = 0; i < skin_list_size; i ++)
+			{
+				if (skin_list[i].skin_type == skin_type)
 				{
-					if (skin_list[i].skin_type == skin_type)
-					{
-						if (*skin_index_ptr == i) return true;
-					}
+					if (*skin_index_ptr == i) return true;
 				}
 			}
 		}
@@ -1271,7 +1069,7 @@ void	SetupSkinsAutoDownloads(void)
 			// Set up .res downloadables
 			if (pDownloadablesTable)
 			{
-				Q_snprintf(res_string, sizeof(res_string), "%s", skin_list[i].resource_list[j].resource);
+				snprintf(res_string, sizeof(res_string), "%s", skin_list[i].resource_list[j].resource);
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
 			}
 		}
@@ -1299,7 +1097,7 @@ void	SetupActionModelsAutoDownloads(void)
 			// Set up .res downloadables
 			if (pDownloadablesTable)
 			{
-				Q_snprintf(res_string, sizeof(res_string), "sound/%s", action_model_list[i].sound_list[j].sound_file);
+				snprintf(res_string, sizeof(res_string), "sound/%s", action_model_list[i].sound_list[j].sound_file);
 				if (filesystem->FileExists(res_string))
 				{
 					pDownloadablesTable->AddString(res_string, sizeof(res_string));
@@ -1332,140 +1130,82 @@ static void ManiSkinsAutoDownload ( ConVar *var, char const *pOldString )
 //---------------------------------------------------------------------------------
 // Purpose: Handle Kick Player menu draw and actual kick request
 //---------------------------------------------------------------------------------
-void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset )
+int SkinOptionsItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	int	index;
+	if (!this->params.GetParam("index", &index)) return CLOSE_MENU;
 
-	if (argc - argv_offset == 3)
+	MENUPAGE_CREATE_PARAM(SetSkinPage, player_ptr, AddParam("name", skin_list[index].skin_name), 0, -1);
+	return NEW_MENU;
+}
+
+bool SkinOptionsPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 782));
+	this->SetTitle("%s", Translate(player_ptr, 783));
+
+	for( int i = 0; i < skin_list_size; i++ )
 	{
-		int found_skin = -1;
-		for (int i = 0; i < skin_list_size; i ++)
+		if (mani_skins_setskin_misc_only.GetInt() == 1 &&
+			skin_list[i].skin_type != MANI_MISC_SKIN)
 		{
-			if (mani_skins_setskin_misc_only.GetInt() == 1 &&
-				skin_list[i].skin_type != MANI_MISC_SKIN)
-			{
-				continue;
-			}
-
-			if (FStrEq(skin_list[i].skin_name, gpCmd->Cmd_Argv(2 + argv_offset)))
-			{
-				found_skin = i;
-				break;
-			}
+			continue;
 		}
 
-		if (found_skin != -1)
-		{
-			/* Find Player menu */
-			engine->ClientCommand(admin->entity, "admin setskin \"%s\"\n", skin_list[i].skin_name);
-		}
-
-		return;
-	}
-	else
-	{
-		// Setup skin list to choose
-		FreeMenu();
-
-		for( int i = 0; i < skin_list_size; i++ )
-		{
-			if (mani_skins_setskin_misc_only.GetInt() == 1 &&
-				skin_list[i].skin_type != MANI_MISC_SKIN)
-			{
-				continue;
-			}
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", skin_list[i].skin_name);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin skinoptions \"%s\"", skin_list[i].skin_name);
-		}
-
-		if (menu_list_size == 0) return;
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		// Draw menu list
-		DrawSubMenu (admin, Translate(782), Translate(783), next_index, "admin", "skinoptions", true, -1);
+		MenuItem *ptr = new SkinOptionsItem();
+		ptr->SetDisplayText("%s", skin_list[i].skin_name);
+		ptr->params.AddParam("index", i);
+		this->AddItem(ptr);
 	}
 
-	return;
+	return true;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Handle Kick Player menu draw and actual kick request
+// Purpose: Admin selects player to have skin applied to them
 //---------------------------------------------------------------------------------
-void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
+int SetSkinItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	player_t	player;
+	int	user_id;
+	char *name;
+	if (!this->params.GetParam("user_id", &user_id)) return CLOSE_MENU;
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
 
-	if (argc - argv_offset == 4)
+	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_setskin");
+	gpCmd->AddParam("%i", user_id);
+	gpCmd->AddParam("%s", name);
+	ProcessMaSetSkin(player_ptr, "ma_setskin", 0, M_MENU);
+	return RePopOption(REPOP_MENU);
+}
+
+bool SetSkinPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 780));
+	this->SetTitle("%s", Translate(player_ptr, 781));
+
+	for( int i = 1; i <= max_players; i++ )
 	{
-		// Set the players skin
-		char	target_string[64];
-		char	skin_name[64];
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_dead)	continue;
 
-		Q_snprintf(target_string, sizeof(target_string), "%s", gpCmd->Cmd_Argv(3 + argv_offset));
-		Q_snprintf(skin_name, sizeof(skin_name), "%s", gpCmd->Cmd_Argv(2 + argv_offset));
-		gpCmd->NewCmd();
-		gpCmd->AddParam("ma_setskin");
-		gpCmd->AddParam("%s", target_string);
-		gpCmd->AddParam("%s", skin_name);
-
-		ProcessMaSetSkin(admin, "ma_setskin", 0, M_MENU);
-		return;
-	}
-	else
-	{
-		// Setup player list
-		FreeMenu();
-		for( int i = 1; i <= max_players; i++ )
+		if (player_ptr->index != player.index &&
+			gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_SETSKIN))
 		{
-			player.index = i;
-			if (!FindPlayerByIndex(&player))
-			{
-				// Player entity is bad
-				continue;
-			}
-
-			if (player.is_dead)	continue;
-
-			int immunity_index = -1;
-			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
-			{
-				if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_SETSKIN))
-				{
-					continue;
-				}
-			}
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%s] %i", player.name, player.user_id);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin setskin \"%s\" %i", gpCmd->Cmd_Argv(2 + argv_offset), player.user_id);
+			continue;
 		}
 
-		if (menu_list_size == 0) return;
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		char more_cmd[128];
-		Q_snprintf( more_cmd, sizeof(more_cmd), "setskin \"%s\"", gpCmd->Cmd_Argv(2 + argv_offset));
-
-		// Draw menu list
-		DrawSubMenu (admin, Translate(780), Translate(781), next_index, "admin", more_cmd, true, -1);
+		MenuItem *ptr = new SetSkinItem();
+		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
+		ptr->SetHiddenText("%s", player.name);
+		ptr->params.AddParam("user_id", player.user_id);
+		this->AddItem(ptr);
 	}
 
-	return;
+	this->SortHidden();
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -1475,12 +1215,11 @@ PLUGIN_RESULT	ProcessMaSetSkin(player_t *player_ptr, const char *command_name, c
 {
 	const char *target_string = gpCmd->Cmd_Argv(1);
 	const char *skin_name = gpCmd->Cmd_Argv(2);
-	int	admin_index;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_SETSKINS, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SETSKINS, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
@@ -1502,9 +1241,9 @@ PLUGIN_RESULT	ProcessMaSetSkin(player_t *player_ptr, const char *command_name, c
 	}
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_ALLOW_SETSKIN))
+	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_SETSKIN))
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
 		return PLUGIN_STOP;
 	}
 
@@ -1519,7 +1258,7 @@ PLUGIN_RESULT	ProcessMaSetSkin(player_t *player_ptr, const char *command_name, c
 
 //		CBaseEntity *pPlayer = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 //		CBaseEntity_SetModelIndex(pPlayer, skin_list[found_skin].model_index);
-		Prop_SetModelIndex(target_player_list[i].entity, skin_list[found_skin].model_index);
+		Prop_SetVal(target_player_list[i].entity, MANI_PROP_MODEL_INDEX, skin_list[found_skin].model_index);
 
 		LogCommand (player_ptr, "skinned user [%s] [%s] with skin %s\n", target_player_list[i].name, target_player_list[i].steam_id, skin_name);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)

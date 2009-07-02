@@ -113,7 +113,7 @@ void	LoadWebShortcuts(void)
 //	MMsg("********** LOADING WEB SHORTCUTS ***********\n");
 
 	//Get rcon list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/webshortcutlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/webshortcutlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -213,44 +213,31 @@ PLUGIN_RESULT	ProcessMaFavourites(player_t *player_ptr, const char *command_name
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ProcessMenuMaFavourites( player_t *player, int next_index, int argv_offset )
+int FavouritesItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-
-	if (!gpManiGameType->IsBrowseAllowed()) return;
-
-	if (argc - argv_offset == 2)
+	int	index;
+	if (this->params.GetParam("index", &index))
 	{
-		// User voted by menu system, should be a map index
-		const int web_index = Q_atoi(gpCmd->Cmd_Argv(1 + argv_offset));
-		ProcessWebShortcuts (player->entity, web_shortcut_list[web_index].shortcut);
-		return;
-	}
-	else
-	{
-		// Setup map list that the user can vote for
-		FreeMenu();
-
-		for (int i = 0; i < web_shortcut_list_size; i++)
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", web_shortcut_list[i].shortcut);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "favourites %i", i);
-		}
-
-		if (menu_list_size == 0) return;
-
-		// List size may have changed
-		if (next_index > menu_list_size) next_index = 0;
-
-		char	menu_title[128];
-		Q_snprintf( menu_title, sizeof(menu_title), Translate(771));							
-
-		// Draw menu list
-		DrawSubMenu (player, Translate(770), menu_title, next_index, "favourites", "", false,-1);
+		ProcessWebShortcuts (player_ptr->entity, web_shortcut_list[index].shortcut);
 	}
 
-	return;
+	return CLOSE_MENU;
+}
+
+bool FavouritesPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 770));
+	this->SetTitle("%s", Translate(player_ptr, 771));
+	
+	for (int i = 0; i < web_shortcut_list_size; i++)
+	{
+		MenuItem *ptr = new FavouritesItem;
+		ptr->params.AddParam("index", i);
+		ptr->SetDisplayText("%s", web_shortcut_list[i].shortcut);
+		this->AddItem(ptr);
+	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------

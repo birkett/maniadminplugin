@@ -52,6 +52,7 @@
 #include "mani_gametype.h"
 #include "mani_effects.h"
 #include "mani_vfuncs.h"
+#include "mani_vars.h"
 #include "mani_css_bounty.h" 
 #include "mani_warmuptimer.h"
 #include "shareddefs.h"
@@ -62,8 +63,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
-
 
 ConVar mani_css_bounty ("mani_css_bounty", "0", 0, "0 = disable css bounty, 1 = enable css bounty", true, 0, true, 1);
 ConVar mani_css_bounty_kill_streak ("mani_css_bounty_kill_streak", "5", 0, "Kill streak required before bounty is started", true, 1, true, 100);
@@ -173,7 +172,7 @@ void ManiCSSBounty::PlayerDeath
 		// Start Bounty
 		bounty_list[attacker_index].current_bounty = mani_css_bounty_start_cash.GetInt();
 		this->SetPlayerColour(attacker_ptr);
-		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(1340, "%s%i", attacker_ptr->name, bounty_list[attacker_index].current_bounty));
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 1340, "%s%i", attacker_ptr->name, bounty_list[attacker_index].current_bounty));
 	}
 	else if (bounty_list[attacker_index].kill_streak > mani_css_bounty_kill_streak.GetInt())
 	{
@@ -186,16 +185,16 @@ void ManiCSSBounty::PlayerDeath
 	{
 		int new_value;
 
-		new_value = Prop_GetAccount(attacker_ptr->entity);
+		new_value = Prop_GetVal(attacker_ptr->entity, MANI_PROP_ACCOUNT, 0);
 		new_value += bounty_list[victim_index].current_bounty;
 		if (new_value > 16000)
 		{
 			new_value = 16000;
 		}
 		// Attacker must receive the bounty
-		Prop_SetAccount(attacker_ptr->entity, new_value);
-		SayToPlayer(LIGHT_GREEN_CHAT, attacker_ptr, "%s", Translate(1341, "%i%s", bounty_list[victim_index].current_bounty, victim_ptr->name));
-		SayToPlayer(LIGHT_GREEN_CHAT, victim_ptr, "%s", Translate(1342, "%s%i", attacker_ptr->name, bounty_list[victim_index].current_bounty));
+		Prop_SetVal(attacker_ptr->entity, MANI_PROP_ACCOUNT, new_value);
+		SayToPlayer(LIGHT_GREEN_CHAT, attacker_ptr, "%s", Translate(attacker_ptr, 1341, "%i%s", bounty_list[victim_index].current_bounty, victim_ptr->name));
+		SayToPlayer(LIGHT_GREEN_CHAT, victim_ptr, "%s", Translate(victim_ptr, 1342, "%s%i", attacker_ptr->name, bounty_list[victim_index].current_bounty));
 	}
 
 	// Reset victim bounty and kill streak
@@ -261,22 +260,25 @@ void ManiCSSBounty::PlayerSpawn(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Show top 5 bounties
 //---------------------------------------------------------------------------------
-void ManiCSSBounty::ShowTop(player_t *player_ptr)
+bool BountyFreePage::OptionSelected(player_t *player_ptr, const int option)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
-	if (war_mode) return;
-	if (mani_css_bounty.GetInt() == 0) return;
+	return false;
+}
+
+bool BountyFreePage::Render(player_t *player_ptr)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if (war_mode) return false;
+	if (mani_css_bounty.GetInt() == 0) return false;
 
 	top_bounty_t	*top_bounty_list = NULL;
 	int				top_bounty_list_size = 0;
-
-	FreeMenu();
 
 	for (int i = 0; i < max_players; i++)
 	{
 		player_t player;
 
-		if (bounty_list[i].kill_streak >= mani_css_bounty_kill_streak.GetInt())
+		if (gpManiCSSBounty->bounty_list[i].kill_streak >= mani_css_bounty_kill_streak.GetInt())
 		{
 			player.index = i + 1;
 			if (!FindPlayerByIndex(&player)) continue;
@@ -284,7 +286,7 @@ void ManiCSSBounty::ShowTop(player_t *player_ptr)
 
 			// Valid player with bounty so add bounty and name
 			AddToList((void **) &top_bounty_list, sizeof (top_bounty_t), &top_bounty_list_size);
-			top_bounty_list[top_bounty_list_size - 1].bounty = bounty_list[i].current_bounty;
+			top_bounty_list[top_bounty_list_size - 1].bounty = gpManiCSSBounty->bounty_list[i].current_bounty;
 			Q_strcpy(top_bounty_list[top_bounty_list_size - 1].name, player.name);
 		}
 	}
@@ -293,43 +295,42 @@ void ManiCSSBounty::ShowTop(player_t *player_ptr)
 
 	char	menu_string[512];
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1343));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1343));
 	DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
 
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1344, "%i", mani_css_bounty_kill_streak.GetInt()));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1344, "%i", mani_css_bounty_kill_streak.GetInt()));
 	DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1345, "%i", mani_css_bounty_start_cash.GetInt()));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1345, "%i", mani_css_bounty_start_cash.GetInt()));
 	DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1346, "%i", mani_css_bounty_kill_cash.GetInt()));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1346, "%i", mani_css_bounty_kill_cash.GetInt()));
 	DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1347, "%i", mani_css_bounty_survive_round_cash.GetInt()));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1347, "%i", mani_css_bounty_survive_round_cash.GetInt()));
 	DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
-	Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1348));
+	snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1348));
 	DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
 
 	if (top_bounty_list_size == 0)
 	{
-		Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1349));
+		snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1349));
 		DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
-		Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(M_MENU_EXIT_AMX));
+		snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, M_MENU_EXIT_AMX));
 		DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 7, true, true, true, menu_string, true);
 	}
 	else
 	{
 		for (int i = 0; i < top_bounty_list_size && i < 5; i++)
 		{
-			Q_snprintf(menu_string, sizeof(menu_string), "%s", Translate(1350, "%i%s", top_bounty_list[i].bounty, top_bounty_list[i].name));
+			snprintf(menu_string, sizeof(menu_string), "%s", Translate(player_ptr, 1350, "%i%s", top_bounty_list[i].bounty, top_bounty_list[i].name));
 			DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 0, false, false, true, menu_string, false);
 		}
 
-		Q_snprintf(menu_string, sizeof(menu_string), Translate(M_MENU_EXIT_AMX));
+		snprintf(menu_string, sizeof(menu_string), Translate(player_ptr, M_MENU_EXIT_AMX));
 		DrawMenu (player_ptr->index, mani_stats_top_display_time.GetInt(), 7, true, true, true, menu_string, true);
 	}
 
-	menu_confirm[player_ptr->index - 1].in_use = false;
-
 	// Clean up memory
 	FreeList((void **) &top_bounty_list, &top_bounty_list_size);
+	return true;
 }
 
 

@@ -63,6 +63,7 @@
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IServerGameDLL	*serverdll;
 extern	IPlayerInfoManager *playerinfomanager;
+extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 extern	bool	war_mode;
 
 extern	CGlobalVars *gpGlobals;
@@ -92,9 +93,9 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 	char	temp_line[2048];
 
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
-
 	if (mani_use_amx_style_menu.GetInt() == 0 || !gpManiGameType->IsAMXMenuAllowed()) return ;
+
+	gpCmd->ExtractClientAndServerCommand();
 
 	if (gpCmd->Cmd_Argc() < 4) 
 	{
@@ -109,22 +110,22 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 	//					say_argv[1].argv_string, // The player target string
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, NULL))
 	{
-		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputToConsole(NULL, "%s\n", Translate(NULL, M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
 	const char *say_string = gpCmd->Cmd_Args(3);
 
-	time_to_display = Q_atoi(time_to_display_str);
+	time_to_display = atoi(time_to_display_str);
 	if (time_to_display < 0) time_to_display = 0;
 	else if (time_to_display > 100) time_to_display = 100;
 
 	if (time_to_display == 0) time_to_display = -1;
 
 	// Build up lines to display
-	int	message_length = Q_strlen (say_string);
+//	int	message_length = Q_strlen (say_string);
 
 	Q_strcpy(temp_line,"");
 	int	j = 0;
@@ -140,7 +141,7 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 				{
 					AddToList((void **) &lines_list, sizeof(msay_t), &lines_list_size);
 					temp_line[j] = '\0';
-					Q_strcat(temp_line,"\n");
+					strcat(temp_line,"\n");
 					Q_strcpy(lines_list[lines_list_size - 1].line_string, temp_line);
 					Q_strcpy(temp_line,"");
 					j = -1;
@@ -173,8 +174,6 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 		player_t *target_player = &(target_player_list[i]);
 
 		if (target_player_list[i].is_bot) continue;
-		menu_confirm[target_player->index - 1].in_use = false;
-
 		for (j = 0; j < lines_list_size; j ++)
 		{
 			if (j == lines_list_size - 1)
@@ -211,9 +210,9 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 	const char *target_string = gpCmd->Cmd_Argv(1);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, NULL))
 	{
-		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputToConsole(NULL, "%s", Translate(NULL, M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
@@ -237,7 +236,7 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 
 //	char	temp_string[1024];
 
-//	Q_snprintf(temp_string, sizeof(temp_string), "%s", say_string);
+//	snprintf(temp_string, sizeof(temp_string), "%s", say_string);
 
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
 	msg_buffer->WriteByte(4); // Center area
@@ -262,9 +261,9 @@ CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 	const char *target_string = gpCmd->Cmd_Argv(1);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, NULL))
 	{
-		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputToConsole(NULL, "%s\n", Translate(NULL, M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
@@ -307,17 +306,15 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 	const char *target_string = gpCmd->Cmd_Args(1);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, NULL))
 	{
-		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputToConsole(NULL, "%s\n", Translate(NULL, M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
 	// Found some players to talk to
 	for (int i = 0; i < target_player_list_size; i++)
 	{
-		player_t *target_player = &(target_player_list[i]);
-
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
 			if (!CCSPlayer_SwitchTeam(EdictToCBE(target_player_list[i].entity),gpManiGameType->GetOpposingTeam(target_player_list[i].team)))
@@ -326,6 +323,8 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 			}
 			else
 			{
+				UTIL_DropC4(target_player_list[i].entity);
+
 				// If not dead then force model change
 				if (!target_player_list[i].player_info->IsDead())
 				{
@@ -341,6 +340,7 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 
 	return ;
 }
+
 // HLX Version of ma_psay
 CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 {
@@ -357,15 +357,15 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 	const char *say_string = gpCmd->Cmd_Args(2);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, NULL))
 	{
-		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputToConsole(NULL, "%s\n", Translate(NULL, M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
 	char	temp_string[1024];
 
-	Q_snprintf (temp_string, sizeof (temp_string), "HLstatsX: %s", say_string);
+	snprintf (temp_string, sizeof (temp_string), "HLstatsX: %s", say_string);
 
 	// Found some players to talk to
 	for (int i = 0; i < target_player_list_size; i++)
@@ -396,6 +396,84 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 			msg_buffer->WriteString(temp_string);
 			engine->MessageEnd();
 		}	
+	}
+
+	return ;
+}
+
+CON_COMMAND(ma_hlx_cexec, "ma_hlx_cexec <target> <command>")
+{
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
+
+	if (gpCmd->Cmd_Argc() < 3) 
+	{
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <target> <command>\n", gpCmd->Cmd_Argv(0));
+		return;
+	}
+
+	const char *target_string = gpCmd->Cmd_Argv(1);
+	const char *cmd_string = gpCmd->Cmd_Args(2);
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!FindTargetPlayers(NULL, target_string, NULL))
+	{
+		OutputToConsole(NULL, "%s\n", Translate(NULL, M_NO_TARGET, "%s", target_string));
+		return;
+	}
+
+	char	client_cmd[2048];
+	snprintf(client_cmd, sizeof (client_cmd), "%s\n", cmd_string);
+			
+	// Found some players to run the command on
+	for (int i = 0; i < target_player_list_size; i++)
+	{
+		player_t *target_player = &(target_player_list[i]);
+		if (target_player->is_bot) continue;
+		helpers->ClientCommand(target_player->entity, client_cmd);
+	}
+
+	return;
+}
+
+// HLX Version of ma_psay
+CON_COMMAND(ma_hlx_hint, "ma_hlx_hint <target> <message>")
+{
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
+
+	if (gpCmd->Cmd_Argc() < 3) 
+	{
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <target> <message>\n", gpCmd->Cmd_Argv(0));
+		return;
+	}
+
+	const char *target_string = gpCmd->Cmd_Argv(1);
+	const char *say_string = gpCmd->Cmd_Args(2);
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!FindTargetPlayers(NULL, target_string, NULL))
+	{
+		OutputToConsole(NULL, "%s\n", Translate(NULL, M_NO_TARGET, "%s", target_string));
+		return;
+	}
+
+	char	temp_string[192];
+	snprintf(temp_string, sizeof(temp_string), "%s", say_string); 
+	SplitHintString(temp_string, 35);
+
+	// Found some players to talk to
+	for (int i = 0; i < target_player_list_size; i++)
+	{
+		player_t *target_player = &(target_player_list[i]);
+
+		if (target_player_list[i].is_bot) continue;
+
+		MRecipientFilter mrf;
+		mrf.RemoveAllRecipients();
+		mrf.MakeReliable();
+		mrf.AddPlayer(target_player->index);
+		UTIL_SayHint(&mrf, temp_string);
 	}
 
 	return ;

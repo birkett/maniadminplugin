@@ -54,6 +54,7 @@
 #include "mani_help.h" 
 #include "mani_vfuncs.h"
 #include "mani_client.h"
+#include "mani_client_flags.h"
 #include "mani_commands.h"
 #include "shareddefs.h"
 
@@ -64,7 +65,6 @@ extern	IServerGameEnts *serverents;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -86,31 +86,20 @@ ManiHelp::~ManiHelp()
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiHelp::ShowHelp(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	bool server_console = false;
-	bool client_console = false;
-	bool client_chat = false;
-	bool war_allowed = false;
-
 	if (help_id == 0)
 	{
 		OutputHelpText(GREEN_CHAT, player_ptr, "No help available for this command");
 		return PLUGIN_STOP;
 	}
 
-	gpCmd->GetCommandModes(help_id, &server_console, &client_console, &client_chat, &war_allowed);
-	// Show command name
-	OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(2000, "%s", command_name));
-	// Show types of operation
-	OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(2001, "%s%s%s%s", 
-		(server_console == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO),
-		(client_console == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO),
-		(client_chat == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO),
-		(war_allowed == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO)));
-	// Show Parameters
-	OutputHelpText(GREEN_CHAT, player_ptr, "%s %s", Translate(2002), Translate(help_id));
-	// Show Description
-	OutputHelpText(GREEN_CHAT, player_ptr, "%s %s", Translate(2003), Translate(help_id + 1));
+	int index = gpCmd->GetCmdIndexForHelpID(help_id);
+	if (index == -1)
+	{
+		OutputHelpText(GREEN_CHAT, player_ptr, "No help available for this command");
+		return PLUGIN_STOP;
+	}
 
+	gpCmd->DumpHelp(player_ptr, index, command_type);
 	return PLUGIN_STOP;
 }
 
@@ -119,14 +108,12 @@ PLUGIN_RESULT	ManiHelp::ShowHelp(player_t *player_ptr, const char *command_name,
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiHelp::ProcessMaHelp(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
-	int		admin_index = -1;
 	bool	admin_flag = true;
-	const char *help_string = gpCmd->Cmd_Argv(1);
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 		{
 			admin_flag = false;
 		}
@@ -138,7 +125,7 @@ PLUGIN_RESULT	ManiHelp::ProcessMaHelp(player_t *player_ptr, const char *command_
 		return PLUGIN_STOP;
 	}
 
-	gpCmd->SearchCommands(player_ptr, admin_flag, gpCmd->Cmd_Argv(1));
+	gpCmd->SearchCommands(player_ptr, admin_flag, gpCmd->Cmd_Argv(1), command_type);
 	return PLUGIN_STOP;
 }
 

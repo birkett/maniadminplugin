@@ -28,6 +28,7 @@
 
 #include "mani_player.h"
 #include "mani_maps.h"
+#include "mani_menu.h"
 
 struct vote_option_t
 {
@@ -46,10 +47,19 @@ struct show_vote_t
 
 class ManiVote
 {
+	MENUFRIEND_DEC(SystemVotemap);
+	MENUFRIEND_DEC(UserVoteMap);
+	MENUFRIEND_DEC(RockTheVoteNominateMap);
+	MENUFRIEND_DEC(UserVoteKick);
+	MENUFRIEND_DEC(UserVoteBan);
+	MENUFRIEND_DEC(RConVote);
+	MENUFRIEND_DEC(QuestionVote);
+
 public:
 	ManiVote();
 	~ManiVote();
 
+	void		NetworkIDValidated(player_t	*player_ptr);
 	void		ClientDisconnect(player_t *player_ptr);
 	void		Load(void);
 	void		Unload(void);
@@ -70,24 +80,13 @@ public:
 
 	void			ProcessMaUserVoteBan(player_t *player, int argc, const char	*user_id);
 	void			ProcessUserVoteBanWin(player_t *player);
-	void			ProcessMenuUserVoteBan(	player_t *player, int next_index, int argv_offset );
-	void			ProcessMenuSystemVotemap( player_t *player,	int	next_index,	int	argv_offset	);
-	void			ProcessMenuUserVoteMap(	player_t *player, int next_index, int argv_offset );
-	void			ProcessRConVote( player_t *admin, int next_index, int argv_offset );
-	void			ProcessQuestionVote( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuRockTheVoteNominateMap( player_t	*player, int next_index, int argv_offset );
 	void			ProcessMaRockTheVoteNominateMap(player_t *player, int argc,	const char *map_id);
 	void			ProcessMaRockTheVote(player_t *player);
 	void			ProcessMaUserVoteKick(player_t *player,	int	argc, const	char *user_id);
+	void			ProcessMaUserVoteMap(player_t *player_ptr, int argc, const char *map_id);
 	void			ProcessBuildUserVoteMaps(void);
-	void			ProcessRockTheVoteNominateMap(player_t *player);
-	void			ProcessMaUserVoteMap(player_t *player, int argc, const char	*map_id);
 	void			ProcessVoteConfirmation	(player_t *player, bool	accept);
-	void			ProcessMenuSystemVoteRandomMap(	player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuSystemVoteSingleMap(	player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuSystemVoteBuildMap( player_t	*admin,	int	next_index,	int	argv_offset	);
-	void			ProcessMenuSystemVoteMultiMap( player_t	*admin,	int	admin_index	);
-	void			ProcessMenuUserVoteKick( player_t *player, int next_index, int argv_offset );
+	void			ProcessMenuSystemVoteMultiMap( player_t	*admin, const char *delay_type_string);
 
 private:
 
@@ -128,10 +127,10 @@ private:
 		bool	rock_the_vote;		// User	typed rock the vote
 		float	nominate_timestamp;
 		int		nominated_map;		// User	nominated map index
-		int		kick_id;			// User	ID of kick target
+		char	kick_id[MAX_NETWORKID_LENGTH];			// Steam ID
 		float	kick_vote_timestamp;
 		int		kick_votes;			// Number of votes against player
-		int		ban_id;				// User	ID of player to	ban
+		char	ban_id[MAX_NETWORKID_LENGTH];				// User	ID of player to	ban
 		float	ban_vote_timestamp;
 		int		ban_votes;			// Number of votes against player
 	};
@@ -224,5 +223,18 @@ private:
 };
 
 extern	ManiVote *gpManiVote;
+
+MENUALL_DEC(SystemVoteRandomMap);
+MENUALL_DEC(SystemVoteSingleMap);
+MENUALL_DEC(SystemVoteBuildMap);
+MENUALL_DEC(SystemAcceptVote);
+MENUALL_DEC(SystemVotemap);
+MENUALL_DEC(UserVoteMap);
+MENUALL_DEC(RockTheVoteNominateMap);
+MENUALL_DEC(UserVoteKick);
+MENUALL_DEC(UserVoteBan);
+MENUALL_DEC(RConVote);
+MENUALL_DEC(QuestionVote);
+
 
 #endif

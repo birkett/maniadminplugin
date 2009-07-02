@@ -26,48 +26,79 @@
 #ifndef MANI_WEAPON_H
 #define MANI_WEAPON_H
 
-// Define structure types
-struct weapon_type_t
+#include <map>
+
+class MWeapon
 {
-	char	weapon_alias[MAX_WEAPON_ALIAS][128];
-	int		number_of_weapons;
-	char	weapon_name[128];
+public:
+	MWeapon(){};
+	~MWeapon(){};
+	MWeapon(const char *weapon_name, const int translation_id, int weapon_index);
+	const char *GetWeaponName() {return weapon_name;}
+	const int	GetDisplayID() {return translation_id;}
+	void	SetTeamLimit(int limit) {team_limit = limit;}
+	void	SetRestricted(bool enabled) {restricted = enabled;}
+	void	SetRoundRatio(int ratio) {round_ratio = ratio;}
+	bool	CanBuy(player_t *player_ptr, int offset);
+	bool	IsRestricted() {return restricted;}
+	int		GetTeamLimit(){return team_limit;}
+	int		GetRoundRatio() {return round_ratio;}
+	int		GetWeaponIndex() {return index;}
+
+private:
+	int		index;
+	char	weapon_name[80];
+	int		translation_id;
 	bool	restricted;
-	int		limit_per_team;
-	int		ct_count;
-	int		t_count;
+	int		team_limit;
+	int		round_ratio;
+	int		count[4];
 };
 
-struct main_weapon_t
+class ManiWeaponMgr
 {
-	char	name[128];
-	char	core_name[128];
-	int		cost;
-	int	restrict_index;
+public:
+	MENUFRIEND_DEC(RestrictWeapon);
+
+	ManiWeaponMgr();
+	~ManiWeaponMgr();
+	void	Load();
+	void	LevelInit();
+	void	PlayerSpawn(player_t *player_ptr); 
+	PLUGIN_RESULT	CanBuy(player_t *player_ptr, const char *alias_name);
+	void	AutoBuyReBuy();
+	void	RestrictAll();
+	void	UnRestrictAll();
+	bool	SetWeaponRestriction(const char *weapon_name, bool restricted, int team_limit = 0);
+	bool	SetWeaponRatio(const char *weapon_name, int ratio);
+	void	RemoveWeapons(player_t *player_ptr, bool refund, bool show_refund);
+	void	RoundStart();
+
+	PLUGIN_RESULT	ProcessMaShowRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaKnives(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaPistols(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaShotguns(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaNoSnipers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaUnRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaUnRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaRestrictRatio(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+
+private:
+	void	CleanUp();
+	void	SetupWeapons();
+	void	LoadRestrictions();
+
+	std::map <BasicStr, MWeapon *> alias_list;
+	MWeapon *weapons[29];
 };
 
-extern	weapon_type_t	*weapon_list;
-extern	int				weapon_list_size;
+extern	ManiWeaponMgr *gpManiWeaponMgr;
 
-extern	void	FreeWeapons(void);
-extern	void	LoadWeapons(const char *pMapName);
-extern	PLUGIN_RESULT ProcessClientBuy(const char *pcmd, const char *pcmd2, const int pargc, player_t *player_ptr);
-extern	void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_offset );
-extern	bool HookAutobuyCommand(void);
-extern	bool HookRebuyCommand(void);
-extern	void PostProcessRebuyCommand(void);
-extern	void ResetWeaponCount(void);
-extern	void RemoveRestrictedWeapons(player_t *player_ptr);
-extern	PLUGIN_RESULT	ProcessMaShowRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaKnives(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaPistols(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaShotguns(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaNoSnipers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaUnRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	PLUGIN_RESULT	ProcessMaUnRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	void ShowWeapons(void);
 
-
+MENUALL_DEC(RestrictWeapon);
 
 
 #endif

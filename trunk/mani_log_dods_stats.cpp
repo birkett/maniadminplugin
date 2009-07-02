@@ -59,7 +59,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 // This is a map for weapon bytes sent via events, the indexes translate into 
 // our text name array.
@@ -205,6 +204,10 @@ void ManiLogDODSStats::PlayerDeath
 	player_stats_list[attacker_index].team = attacker_ptr->team;
 	player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].dump = true;
 	player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].total_kills += 1;
+	if (player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].last_hit_headshot)
+	{
+		player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].total_headshots++;
+	}
 
 	// Handle team kills
 	if (attacker_ptr->team == victim_ptr->team &&
@@ -266,6 +269,14 @@ void ManiLogDODSStats::PlayerHurt
 	{
 		player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].total_shots_hit += 1;
 		player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].hit_groups[hit_group] += 1;
+		if (hit_group == HITGROUP_HEAD)
+		{
+			player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].last_hit_headshot = true;
+		}
+		else
+		{
+			player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].last_hit_headshot = false;
+		}
 	}
 
 	player_stats_list[attacker_index].weapon_stats_list[attacker_weapon].last_hit_time = gpGlobals->curtime;
@@ -419,6 +430,7 @@ void	ManiLogDODSStats::ResetPlayerStats(int index)
 		player_stats_list[index].weapon_stats_list[j].total_shots_hit = 0;
 		player_stats_list[index].weapon_stats_list[j].total_kills = 0;
 		player_stats_list[index].weapon_stats_list[j].total_headshots = 0;
+		player_stats_list[index].weapon_stats_list[j].last_hit_headshot = false;
 		player_stats_list[index].weapon_stats_list[j].total_team_kills = 0;
 		player_stats_list[index].weapon_stats_list[j].total_deaths = 0;
 		player_stats_list[index].weapon_stats_list[j].total_damage = 0;
@@ -441,7 +453,7 @@ void	ManiLogDODSStats::UpdatePlayerIDInfo(player_t *player_ptr, bool reset_stats
 	Q_strcpy(player_stats_list[index].steam_id, player_ptr->steam_id);
 	player_stats_list[index].user_id = player_ptr->user_id;
 
-	if (reset_stats)
+	if (reset_stats) 
 	{
 		for (int j = 0; j < MANI_MAX_LOG_DODS_WEAPONS; j ++)
 		{
@@ -451,6 +463,7 @@ void	ManiLogDODSStats::UpdatePlayerIDInfo(player_t *player_ptr, bool reset_stats
 			player_stats_list[index].weapon_stats_list[j].total_shots_hit = 0;
 			player_stats_list[index].weapon_stats_list[j].total_kills = 0;
 			player_stats_list[index].weapon_stats_list[j].total_headshots = 0;
+			player_stats_list[index].weapon_stats_list[j].last_hit_headshot = false;
 			player_stats_list[index].weapon_stats_list[j].total_team_kills = 0;
 			player_stats_list[index].weapon_stats_list[j].total_deaths = 0;
 			player_stats_list[index].weapon_stats_list[j].total_damage = 0;
