@@ -37,11 +37,27 @@ public:
 	void		GameFrame(void);
 	bool		KnivesOnly(void);
 	bool		IgnoreTK(void);
+	bool		UnlimitedHE(void);
+	void		PlayerSpawn(player_t *player_ptr);
+	void		RoundStart(void);
+	void		PlayerDeath(player_t *player_ptr);
+	PLUGIN_RESULT		JoinClass(edict_t	*pEdict);
+	bool		InWarmupRound(void) {return check_timer;}
 
 private:
 
+	struct		respawn_t
+	{
+		bool	needs_respawn;
+		float	time_to_respawn;
+	};
+
+	void		GiveItem(edict_t *pEntity, const char	*item_name);
 	bool		check_timer;
+	bool		fire_restart;
 	float		next_check;
+	respawn_t	respawn_list[MANI_MAX_PLAYERS];
+
 };
 
 extern	ManiWarmupTimer *gpManiWarmupTimer;

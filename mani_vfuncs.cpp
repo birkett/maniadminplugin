@@ -43,6 +43,7 @@
 #include "mani_main.h"
 #include "mani_gametype.h"
 #include "mani_player.h"
+#include "mani_output.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
 #include "mani_convar.h"
@@ -246,6 +247,27 @@ void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon)
 #endif
 
 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pWeapon, NULL, NULL);
+}
+
+CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType)
+{
+//	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0 );
+
+	int index = gpManiGameType->GetVFuncIndex(MANI_VFUNC_GIVE_ITEM);
+	if (index == -1) return NULL;
+
+	void **this_ptr = *(void ***)&pThisPtr;
+	void **vtable = *(void ***)pThisPtr;
+	void *func = vtable[index]; 
+
+	union {CBaseEntity * (ManiEmptyClass::*mfpnew)(const char *, int);
+#ifndef __linux__
+        void *addr;	} u; 	u.addr = func;
+#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+	return (CBaseEntity *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(szName, iSubType);
 }
 
 //********************************************************************
@@ -708,7 +730,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 
         if (engine->Cmd_Argc() < 4)
         {
-                Msg("Need more args :)\n");
+                MMsg("Need more args :)\n");
                 return;
         }
 
@@ -732,7 +754,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 
         if (handle == NULL)
         {
-                Msg("Failed to open server image, error [%s]\n", dlerror());
+                MMsg("Failed to open server image, error [%s]\n", dlerror());
                 gpManiGameType->SetAdvancedEffectsAllowed(false);
         }
         else
@@ -768,7 +790,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                         }
                         else
                         {
-                                Msg("Failed to get Combat Character\n");
+                                MMsg("Failed to get Combat Character\n");
 								dlclose(handle);
                                 return;
                         }
@@ -780,7 +802,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 //                        CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
                         if (!pCombat)
                         {
-                                Msg("Failed to get combat character\n");
+                                MMsg("Failed to get combat character\n");
 								dlclose(handle);
                                 return;
                         }
@@ -790,7 +812,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 						CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
                         if (!pWeapon)
                         {
-                                Msg("Failed to get weapon info\n");
+                                MMsg("Failed to get weapon info\n");
 								dlclose(handle);
                                 return;
                         }
@@ -799,7 +821,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                 }
                 else
                 {
-                        Msg("Invalid 3rd arg\n");
+                        MMsg("Invalid 3rd arg\n");
 						dlclose(handle);
                         return;
                 }
@@ -807,7 +829,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                 file_handle = filesystem->Open (base_filename,"wt", NULL);
                 if (file_handle == NULL)
                 {
-                        Msg ("Failed to open file [%s] for writing\n", base_filename);
+                        MMsg("Failed to open file [%s] for writing\n", base_filename);
 						dlclose(handle);
                         return;
                 }
@@ -825,16 +847,16 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 
                                 if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
                                 {
-                                        Msg ("Failed to write data !!\n");
+                                        MMsg("Failed to write data !!\n");
                                         filesystem->Close(file_handle);
                                         return;
                                 }
 
-                                Msg("%s\n", d.dli_sname);
+                                MMsg("%s\n", d.dli_sname);
                         }
                         else
                         {
-                                Msg("Failed offset [%i]\n", i);
+                                MMsg("Failed offset [%i]\n", i);
                         }
                 }
 
@@ -855,7 +877,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 	if (engine->Cmd_Argc() < 4)
 	{
-		Msg("Need more args :)\n");
+		MMsg("Need more args :)\n");
 		return;
 	}
 
@@ -893,7 +915,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 		}
 		else
 		{
-			Msg("Failed to get Combat Character\n");
+			MMsg("Failed to get Combat Character\n");
 			return;
 		}
 	}
@@ -903,7 +925,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 		//		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
 		if (!pCombat)
 		{
-			Msg("Failed to get combat character\n");
+			MMsg("Failed to get combat character\n");
 			return;
 		}
 
@@ -911,7 +933,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
 		if (!pWeapon)
 		{
-			Msg("Failed to get weapon info\n");
+			MMsg("Failed to get weapon info\n");
 			return;
 		}
 
@@ -919,7 +941,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	}
 	else
 	{
-		Msg("Invalid 3rd arg\n");
+		MMsg("Invalid 3rd arg\n");
 		return;
 	}
 
@@ -938,11 +960,11 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 	if (index == -1)
 	{
-		Msg("Did not find index :(\n");
+		MMsg("Did not find index :(\n");
 		return;
 	}
 
-	Msg("Found Index [%i] [0x%x] [%s]\n", index, index, mangled_name);
+	MMsg("Found Index [%i] [0x%x] [%s]\n", index, index, mangled_name);
 }
 
 CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
@@ -957,14 +979,14 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 	if (engine->Cmd_Argc() < 3)
 	{
-		Msg("Need more args :)\n");
+		MMsg("Need more args :)\n");
 		return;
 	}
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(&player, engine->Cmd_Argv(1), IMMUNITY_DONT_CARE))
 	{
-		Msg("Need a target player to work the magic\n");
+		MMsg("Need a target player to work the magic\n");
 		return;
 	}
 
@@ -979,7 +1001,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 	int index = -1;
 
-	Msg("\t\t\"vfuncs\"\n\t\t{\n");
+	MMsg("\t\t\"vfuncs\"\n\t\t{\n");
 
 	if (level > 0)
 	{
@@ -989,6 +1011,11 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		CheckVFunc(type_ptr, "CBaseEntity", "SetModelIndex", "set_model_index");
 		CheckVFunc(type_ptr, "CBaseAnimating", "Teleport", "teleport");
 		CheckVFunc(type_ptr, "CBasePlayer", "EyePosition", "eye_position");
+		CheckVFunc(type_ptr, "CBasePlayer", "GiveNamedItem", "give_item");
+		// Dods and CS inherit from CBasePlayer
+		CheckVFunc(type_ptr, "CCSPlayer", "GiveNamedItem", "give_item");
+		CheckVFunc(type_ptr, "CDODPlayer", "GiveNamedItem", "give_item");
+
 		CheckVFunc(type_ptr, "CBaseCombatCharacter", "MyCombatCharacterPointer", "my_combat_character");
 		CheckVFunc(type_ptr, "CBaseAnimating", "GetVelocity", "get_velocity");
 
@@ -996,6 +1023,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 		CheckVFunc(type_ptr, "CBaseAnimating", "Ignite", "ignite");
 		CheckVFunc(type_ptr, "CBasePlayer", "Weapon_Drop", "weapon_drop");
+		CheckVFunc(type_ptr, "CBasePlayer", "ProcessUsercmds", "user_cmds");
 	}
 
 	if (level > 1)
@@ -1023,7 +1051,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		}
 	}
 
-	Msg("\t\t}\n");
+	MMsg("\t\t}\n");
 
 }
 
@@ -1036,11 +1064,11 @@ static	void CheckVFunc(DWORD *class_ptr, char *class_name, char *class_function,
 
 	if (index != -1)
 	{
-		Msg("\t\t\t\"%s\"\t\"%i\"\n", gametype_ptr, index);
+		MMsg("\t\t\t\"%s\"\t\"%i\"\n", gametype_ptr, index);
 	}
 	else
 	{
-		Msg("Failed to find %s::%s () !!\n", class_name, class_function);
+		MMsg("Failed to find %s::%s () !!\n", class_name, class_function);
 	}
 }
 
@@ -1054,7 +1082,7 @@ static	int		FindVFunc(DWORD *class_ptr, char *class_name, char *class_function, 
 
         if (handle == NULL)
         {
-                Msg("Failed to open server image, error [%s]\n", dlerror());
+                MMsg("Failed to open server image, error [%s]\n", dlerror());
                 gpManiGameType->SetAdvancedEffectsAllowed(false);
         }
         else

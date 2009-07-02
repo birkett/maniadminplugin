@@ -75,9 +75,12 @@ typedef unsigned long DWORD;
 #include "mani_gametype.h"
 #include "mani_sprayremove.h"
 #include "mani_spawnpoints.h"
+#include "mani_output.h"
 #include "mani_voice.h"
 #include "mani_globals.h"
 #include "mani_weapon.h"
+#include "mani_afk.h"
+#include "cbaseentity.h"
 
 #define	FIND_IFACE(func, assn_var, num_var, name, type) \
 	do { \
@@ -117,6 +120,7 @@ ConCommand *pChangeLevelCmd = NULL;
 ConCommand *pAutoBuyCmd = NULL;
 ConCommand *pReBuyCmd = NULL;
 
+static offset1 = -1;
 //---------------------------------------------------------------------------------
 // Purpose: constructor/destructor
 //---------------------------------------------------------------------------------
@@ -352,12 +356,38 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	engine_cc = SH_GET_CALLCLASS(engine);
 	voiceserver_cc = SH_GET_CALLCLASS(voiceserver);
 	serverdll_cc = SH_GET_CALLCLASS(serverdll);
+	gamedll = g_SMAPI->serverFactory(false);
 
 	SH_CALL(engine_cc, &IVEngineServer::LogPrint)("All hooks started!\n");
 
 	g_SMAPI->AddListener(g_PLAPI, this);
 
 	gpGlobals = g_SMAPI->pGlobals();
+
+	FindConPrintf();
+
+	MMsg("********************************************************\n");
+	MMsg(" Loading ");
+	MMsg("%s\n", mani_version);
+	MMsg("\n");
+
+	if (!UTIL_InterfaceMsg(playerinfomanager,"IPlayerInfoManager", INTERFACEVERSION_PLAYERINFOMANAGER)) return false;
+	if (!UTIL_InterfaceMsg(engine,"IVEngineServer", INTERFACEVERSION_VENGINESERVER)) return false;
+	if (!UTIL_InterfaceMsg(gameeventmanager,"IGameEventManager2", INTERFACEVERSION_GAMEEVENTSMANAGER2)) return false;
+	if (!UTIL_InterfaceMsg(filesystem,"IFileSystem", FILESYSTEM_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(helpers,"IServerPluginHelpers", INTERFACEVERSION_ISERVERPLUGINHELPERS)) return false;
+	if (!UTIL_InterfaceMsg(networkstringtable,"INetworkStringTableContainer", INTERFACENAME_NETWORKSTRINGTABLESERVER)) return false;
+	if (!UTIL_InterfaceMsg(enginetrace,"IEngineTrace", INTERFACEVERSION_ENGINETRACE_SERVER)) return false;
+	if (!UTIL_InterfaceMsg(randomStr,"IUniformRandomStream", VENGINE_SERVER_RANDOM_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(serverents,"IServerGameEnts", INTERFACEVERSION_SERVERGAMEENTS)) return false;
+	if (!UTIL_InterfaceMsg(effects,"IEffects", IEFFECTS_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(esounds,"IEngineSound", IENGINESOUND_SERVER_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(cvar,"ICvar", VENGINE_CVAR_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(serverdll,"IServerGameDLL", "ServerGameDLL003")) return false;
+	if (!UTIL_InterfaceMsg(voiceserver,"IVoiceServer", INTERFACEVERSION_VOICESERVER)) return false;
+	//if (!UTIL_InterfaceMsg(partition,"ISpatialPartition", INTERFACEVERSION_SPATIALPARTITION)) return false;
+
+	MMsg("********************************************************\n");
 
 	gpManiAdminPlugin->Load();
 
@@ -477,25 +507,43 @@ void *MyListener::OnMetamodQuery(const char *iface, int *ret)
 
 ManiSMMHooks g_ManiSMMHooks;
 
+SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, int, bool);
+
 void	ManiSMMHooks::HookVFuncs(void)
 {
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
 	{
-		//Msg("Hooking voiceserver\n");
+		//MMsg("Hooking voiceserver\n");
 		SH_ADD_HOOK_MEMFUNC(IVoiceServer, SetClientListening, voiceserver, &g_ManiSMMHooks, &ManiSMMHooks::SetClientListening, true);
 	}
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
 	{
-		//Msg("Hooking decals\n");
+		//MMsg("Hooking decals\n");
 		SH_ADD_HOOK_MEMFUNC(ITempEntsSystem, PlayerDecal, temp_ents, &g_ManiSMMHooks, &ManiSMMHooks::PlayerDecal, true);
 	}
 
-//	if (!g_PluginLoadedOnce && gpManiGameType->IsSpawnPointHookAllowed())
-//	{
-//		Msg("Hooking spawnpoints\n");
-//		HOOKVFUNC(serverdll, gpManiGameType->GetSpawnPointHookOffset(), org_LevelInit, myLevelInit);
-//	}
+	int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS);
+	if (offset != -1)
+	{
+		SH_MANUALHOOK_RECONFIGURE(Player_ProcessUsercmds, offset, 0, 0);
+	}
+}
+
+void	ManiSMMHooks::HookProcessUsercmds(CBasePlayer *pPlayer)
+{
+	SH_ADD_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
+}
+
+void	ManiSMMHooks::ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
+{
+	gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds);
+	RETURN_META(MRES_IGNORED);
+}
+
+void	ManiSMMHooks::UnHookProcessUsercmds(CBasePlayer *pPlayer)
+{
+	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
 }
 
 bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)

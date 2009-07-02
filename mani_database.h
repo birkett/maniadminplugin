@@ -35,6 +35,7 @@ public:
 
 	bool	Init(void);
 	int		GetServerID(void) {return server_id;}
+	char	*GetServerGroupID(void) {return server_group_id;}
 	char	*GetServerName(void) {return server_name;}
 	char	*GetServerIPAddress(void) {return server_ip_address;}
 	int		GetServerPort(void) {return server_port;}
@@ -51,6 +52,20 @@ public:
 	char	*GetDBSocketPath(void) {return db_socket_path;}
 	int		GetDBPort(void) {return db_port;}
 
+	char	*GetDBTBClient(void) {return db_tb_client;}
+	char	*GetDBTBSteam(void) {return db_tb_steam;}
+	char	*GetDBTBNick(void) {return db_tb_nick;}
+	char	*GetDBTBIP(void) {return db_tb_ip;}
+	char	*GetDBTBFlag(void) {return db_tb_flag;}
+	char	*GetDBTBServer(void) {return db_tb_server;}
+	char	*GetDBTBGroup(void) {return db_tb_group;}
+	char	*GetDBTBClientGroup(void) {return db_tb_client_group;}
+	char	*GetDBTBClientFlag(void) {return db_tb_client_flag;}
+	char	*GetDBTBClientLevel(void) {return db_tb_client_level;}
+	char	*GetDBTBLevel(void) {return db_tb_level;}
+	char	*GetDBTBClientServer(void) {return db_tb_client_server;}
+	char	*GetDBTBVersion(void) {return db_tb_version;}
+
 private:
 
 	bool	LoadDatabaseFile(void);
@@ -65,8 +80,24 @@ private:
 	char	db_table_prefix[128];
 	char	db_socket_path[256];
 
+	// Table name information
+	char	db_tb_client[64];
+	char	db_tb_steam[64];
+	char	db_tb_nick[64];
+	char	db_tb_ip[64];
+	char	db_tb_flag[64];
+	char	db_tb_server[64];
+	char	db_tb_group[64];
+	char	db_tb_client_group[64];
+	char	db_tb_client_flag[64];
+	char	db_tb_client_level[64];
+	char	db_tb_level[64];
+	char	db_tb_client_server[64];
+	char	db_tb_version[64];
+
 	// Game server information (probably in wrong class really)
 	int		server_id;
+	char	server_group_id[32];
 	char	server_name[128];
 	char	server_ip_address[32];
 	int		server_port;

@@ -27,11 +27,16 @@
 #define MANI_CHATTRIGGER_H
 
 #define	MANI_CT_IGNORE	(0)
+#define	MANI_CT_IGNORE_X	(1)
+
 #define MANI_CT_IGNORE_STRING ("Ignore")
+#define MANI_CT_IGNORE_X_STRING ("Ignore X Times")
 
 struct		chat_trigger_t
 {
 	char	say_command[512];
+	int		ignore_count;
+	int		current_count;
 	int		trigger_type;
 };
 
@@ -52,7 +57,9 @@ private:
 	void		CleanUp(void);
 	void		LoadData(void);
 	bool		ProcessIgnore(player_t *player_ptr, const char *chat_string, bool teamonly, bool from_event);
+	bool		ProcessIgnoreX(player_t *player_ptr, chat_trigger_t *chat_trigger_ptr, const char *chat_string, bool teamonly, bool from_event);
 	void		ProcessLoadIgnore(KeyValues *kv_parent_ptr);
+	void		ProcessLoadIgnoreX(KeyValues *kv_parent_ptr);
 	bool		FindString(const char *chat_string, chat_trigger_t **chat_trigger_ptr);
 	void		DumpTriggerData( player_t *player_ptr,  bool svr_command,  chat_trigger_t *chat_trigger_ptr );
 

@@ -103,7 +103,7 @@ void SetupTeamList(int edict_count)
 
 				AddToList((void **) &team_list, sizeof(team_t), &team_list_size);
 				team_list[team_list_size - 1].team_ptr = team_ptr;
-				Msg("Team index [%i] Name [%s]\n", team_ptr->GetTeamNumber(), team_ptr->GetName());
+				MMsg("Team index [%i] Name [%s]\n", team_ptr->GetTeamNumber(), team_ptr->GetName());
 
 			}
 
@@ -112,7 +112,7 @@ void SetupTeamList(int edict_count)
 				CBaseEntity *pGameRules = pEntity->GetUnknown()->GetBaseEntity();
 				gamerules_ptr = (CGameRules *) pGameRules;
 
-				Msg("Gamerules\n");
+				MMsg("Gamerules\n");
 			}
 
 		}
@@ -120,7 +120,7 @@ void SetupTeamList(int edict_count)
 
 //__thiscall
 
-	Msg("Found [%i] team manager entities\n", team_list_size);
+	MMsg("Found [%i] team manager entities\n", team_list_size);
 
 }
 

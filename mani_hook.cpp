@@ -70,6 +70,7 @@ typedef unsigned long DWORD;
 #include "mani_voice.h"
 #include "mani_spawnpoints.h"
 #include "mani_sprayremove.h"
+#include "mani_afk.h"
 #include "mani_gametype.h"
 #include "mani_globals.h"
 
@@ -137,22 +138,46 @@ void	HookVFuncs(void)
 {
 	if (voiceserver && gpManiGameType->IsVoiceAllowed() && !g_PluginLoadedOnce)
 	{
-//		Msg("Hooking voiceserver\n");
+//		MMsg("Hooking voiceserver\n");
 		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
 	}
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed() && !g_PluginLoadedOnce)
 	{
-//		Msg("Hooking decals\n");
+//		MMsg("Hooking decals\n");
 		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
 	}
 
 	if (!g_PluginLoadedOnce && gpManiGameType->IsSpawnPointHookAllowed())
 	{
-//		Msg("Hooking spawnpoints\n");
+//		MMsg("Hooking spawnpoints\n");
 		HOOKVFUNC(serverdll, gpManiGameType->GetSpawnPointHookOffset(), org_LevelInit, myLevelInit);
 	}
 }
+
+DEFVFUNC_(Player_ProcessUsercmds, void, (CBasePlayer* pPlayer, CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused));
+
+void VFUNC myProcessUsercmds( CBasePlayer* pPlayer, CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
+{
+	gpManiAFK->ProcessUsercmds(pPlayer, cmds, numcmds);
+	Player_ProcessUsercmds(pPlayer, cmds, numcmds, totalcmds, dropped_packets, paused);
+}
+
+void	HookProcessUsercmds(CBasePlayer *pPlayer, int offset)
+{
+	static bool hooked_once = false;
+	if (!hooked_once)
+	{
+		// Hooking Player_ProcessUsercmds vfunc here for a specfic player
+		HOOKVFUNC(pPlayer, offset, Player_ProcessUsercmds, myProcessUsercmds);
+		hooked_once = true;
+	}
+}
+
+void    UnHookProcessUsercmds(CBasePlayer *pPlayer, int offset)
+{
+	return;
+} 
 
 #endif
 

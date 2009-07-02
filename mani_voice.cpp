@@ -90,7 +90,7 @@ bool	ProcessDeadAllTalk
  bool	*new_listen
 )
 {
-//	Msg("Receiver [%i] Sender [%i]\n", receiver_index, sender_index);
+//	MMsg("Receiver [%i] Sender [%i]\n", receiver_index, sender_index);
 	if (!voiceserver) return false;
 	if (war_mode) return false;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return false;

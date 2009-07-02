@@ -27,7 +27,7 @@
 #define MANI_CLIENT_H
 
 #define MAX_ADMIN_FLAGS (54)
-#define MAX_IMMUNITY_FLAGS (28)
+#define MAX_IMMUNITY_FLAGS (29)
 
 #define MANI_ADMIN_TYPE (0)
 #define MANI_IMMUNITY_TYPE (1)
@@ -52,6 +52,8 @@ struct player_level_t
 	int		client_index;
 };
 
+class ManiMySQL;
+
 class ManiClient
 {
 
@@ -69,6 +71,7 @@ public:
 	bool			IsAdmin(player_t *player_ptr, int *client_index);
 	bool			IsImmune(player_t *player_ptr, int *client_index);
 	bool			IsImmuneNoPlayer(player_t *player_ptr, int *client_index);
+	bool			IsPotentialAdmin(player_t *player_ptr, int *client_index);
 	bool			IsAdminAllowed(player_t *player, char *command, int admin_flag, bool check_war, int *admin_index);
 	inline	bool	IsAdminAllowed(int admin_index, int flag) const {return client_list[admin_index].admin_flags[flag];}
 	inline	bool	IsImmunityAllowed(int immunity_index, int flag) const {return client_list[immunity_index].immunity_flags[flag];}
@@ -80,7 +83,7 @@ private:
 
 	struct steam_t
 	{
-		char	steam_id[128];
+		char	steam_id[MAX_NETWORKID_LENGTH];
 	};
 
 	struct nick_t
@@ -133,7 +136,7 @@ private:
 
 	struct old_style_client_t
 	{
-		char	steam_id[128];
+		char	steam_id[MAX_NETWORKID_LENGTH];
 		char	ip_address[128];
 		char	name[128];
 		char	password[128];
@@ -183,7 +186,6 @@ private:
 	void		ComputeImmunityLevels(void);
 	bool		IsAdminCore( player_t *player_ptr, int *client_index, bool recursive);
 	bool		IsImmuneCore( player_t *player_ptr, int *client_index, bool recursive);
-	bool		IsPotentialAdmin(player_t *player_ptr, int *client_index);
 	bool		IsPotentialImmune(player_t *player_ptr, int *client_index);
 	int			FindClientIndex( char *target_string, bool check_if_admin,  bool	check_if_immune);
 	bool		CreateDBTables(void);
@@ -222,6 +224,11 @@ private:
 	void		ProcessClientGroupStatus( player_t *player_ptr,  bool svr_command,  char *param1 );
 	void		ProcessClientFlagDesc( int type, player_t *player_ptr,  bool svr_command,  char *param1);
 	void		ProcessAllClientFlagDesc( int type, player_t *player_ptr,  bool svr_command);
+
+	// V1.2BetaM upgrade functions
+	void		UpgradeDB1( void );
+	bool		UpgradeServerIDToServerGroupID( ManiMySQL *mani_mysql_ptr, const char	*table_name );
+	bool		UpgradeClassTypes( ManiMySQL *mani_mysql_ptr, const char	*table_name );
 
 	client_t		*client_list;
 	int				client_list_size;

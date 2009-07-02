@@ -126,14 +126,14 @@ void	LoadQuakeSounds(void)
 	file_handle = filesystem->Open(base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load quakesoundlist.txt\n");
+//		MMsg("Failed to load quakesoundlist.txt\n");
 	}
 	else
 	{
-//		Msg("Quake Style Sound list\n");
+//		MMsg("Quake Style Sound list\n");
 		while (filesystem->ReadLine (sound_id, sizeof(sound_id), file_handle) != NULL)
 		{
-			if (!ParseAliasLine(sound_id, sound_name, true))
+			if (!ParseAliasLine(sound_id, sound_name, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -161,13 +161,13 @@ void	LoadQuakeSounds(void)
 
 			if (!found_id)
 			{
-//				Msg("WARNING Quake Sound Name [%s] for sound file [%s] is not valid !!\n",
+//				MMsg("WARNING Quake Sound Name [%s] for sound file [%s] is not valid !!\n",
 //								sound_name,
 //								sound_id);
 			}
 			else
 			{
-//				Msg("Loaded Quake Sound Name [%s] for file [%s]\n", 
+//				MMsg("Loaded Quake Sound Name [%s] for file [%s]\n", 
 //								sound_name,
 //								sound_id);
 			}
@@ -240,7 +240,7 @@ void	ProcessQuakeRoundStart(void)
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_PREPARE, 1);
 		if (mani_quake_prepare_to_fight_visual_mode.GetInt() == 1)
 		{
-			ShowQuakeSound(&attacker, &victim, 1, Translate(M_QUAKE_PREPARE_TO_FIGHT));
+			ShowQuakeSound(&attacker, &victim, 1, Translate(800));
 		}
 	}
 
@@ -329,7 +329,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	{
 		quake_first_blood = false;
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_FIRSTBLOOD, mani_quake_firstblood_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_firstblood_visual_mode.GetInt(), Translate(M_QUAKE_FIRST_BLOOD), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_firstblood_visual_mode.GetInt(), "%s", Translate(801,"%s", attacker.name));
 		return;
 	}
 
@@ -337,7 +337,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (FStrEq(mani_quake_humiliation_weapon.GetString(), weapon_name) && mani_quake_humiliation_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_HUMILIATION, mani_quake_humiliation_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_humiliation_visual_mode.GetInt(), Translate(M_QUAKE_HUMILIATION), victim.name, attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_humiliation_visual_mode.GetInt(), "%s", Translate(802, "%s%s", victim.name, attacker.name));
 		return;
 	}
 
@@ -345,7 +345,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (multi_kill && mani_quake_multi_kill_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_MULTIKILL, mani_quake_multi_kill_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_multi_kill_visual_mode.GetInt(), Translate(M_QUAKE_MULTI_KILL), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_multi_kill_visual_mode.GetInt(), "%s", Translate(803, "%s", attacker.name));
 		return;
 	}
 
@@ -353,7 +353,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_dominating_trigger_count.GetInt() && mani_quake_dominating_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_DOMINATING, mani_quake_dominating_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_dominating_visual_mode.GetInt(), Translate(M_QUAKE_DOMINATING), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_dominating_visual_mode.GetInt(), "%s", Translate(804, "%s", attacker.name));
 		return;
 	}
 
@@ -361,7 +361,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_rampage_trigger_count.GetInt() && mani_quake_rampage_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_RAMPAGE, mani_quake_rampage_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_rampage_visual_mode.GetInt(), Translate(M_QUAKE_RAMPAGE), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_rampage_visual_mode.GetInt(), "%s", Translate(805, "%s", attacker.name));
 		return;
 	}
 
@@ -369,7 +369,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_killing_spree_trigger_count.GetInt() && mani_quake_killing_spree_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_KILLINGSPREE, mani_quake_killing_spree_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_killing_spree_visual_mode.GetInt(), Translate(M_QUAKE_KILLING_SPREE), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_killing_spree_visual_mode.GetInt(), "%s", Translate(806, "%s", attacker.name));
 		return;
 	}
 
@@ -377,7 +377,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_monster_kill_trigger_count.GetInt() && mani_quake_monster_kill_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_MONSTERKILL, mani_quake_monster_kill_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_monster_kill_visual_mode.GetInt(), Translate(M_QUAKE_MONSTER_KILL), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_monster_kill_visual_mode.GetInt(), "%s", Translate(807, "%s", attacker.name));
 		return;
 	}
 
@@ -385,7 +385,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_unstoppable_trigger_count.GetInt() && mani_quake_unstoppable_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_UNSTOPPABLE, mani_quake_unstoppable_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_unstoppable_visual_mode.GetInt(), Translate(M_QUAKE_UNSTOPPABLE), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_unstoppable_visual_mode.GetInt(), "%s", Translate(808, "%s", attacker.name));
 		return;
 	}
 
@@ -393,7 +393,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_ultra_kill_trigger_count.GetInt() && mani_quake_ultra_kill_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_ULTRAKILL, mani_quake_ultra_kill_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_ultra_kill_visual_mode.GetInt(), Translate(M_QUAKE_ULTRA_KILL), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_ultra_kill_visual_mode.GetInt(), "%s", Translate(809, "%s", attacker.name));
 		return;
 	}
 
@@ -401,7 +401,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_god_like_trigger_count.GetInt() && mani_quake_god_like_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_GODLIKE, mani_quake_god_like_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_god_like_visual_mode.GetInt(), Translate(M_QUAKE_GOD_LIKE), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_god_like_visual_mode.GetInt(), "%s", Translate(810, "%s", attacker.name));
 		return;
 	}
 
@@ -409,7 +409,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_wicked_sick_trigger_count.GetInt() && mani_quake_wicked_sick_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_WICKEDSICK, mani_quake_wicked_sick_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_wicked_sick_visual_mode.GetInt(), Translate(M_QUAKE_WICKED_SICK), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_wicked_sick_visual_mode.GetInt(), "%s", Translate(811, "%s", attacker.name));
 		return;
 	}
 
@@ -417,7 +417,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_ludicrous_kill_trigger_count.GetInt() && mani_quake_ludicrous_kill_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_LUDICROUSKILL, mani_quake_ludicrous_kill_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_ludicrous_kill_visual_mode.GetInt(), Translate(M_QUAKE_LUDICROUS_KILL), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_ludicrous_kill_visual_mode.GetInt(), "%s", Translate(812, "%s", attacker.name));
 		return;
 	}
 
@@ -425,7 +425,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (kill_streak == mani_quake_holy_shit_trigger_count.GetInt() && mani_quake_holy_shit_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_HOLYSHIT, mani_quake_holy_shit_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_holy_shit_visual_mode.GetInt(), Translate(M_QUAKE_HOLY_SHIT), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_holy_shit_visual_mode.GetInt(), "%s", Translate(813, "%s", attacker.name));
 		return;
 	}
 
@@ -433,7 +433,7 @@ void	ProcessQuakeDeath(IGameEvent *event)
 	if (headshot && mani_quake_headshot_mode.GetInt() != 0)
 	{
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_HEADSHOT, mani_quake_headshot_mode.GetInt());
-		ShowQuakeSound(&attacker, &victim, mani_quake_headshot_visual_mode.GetInt(), Translate(M_QUAKE_HEADSHOT), attacker.name);
+		ShowQuakeSound(&attacker, &victim, mani_quake_headshot_visual_mode.GetInt(), "%s", Translate(814, "%s", attacker.name));
 		return;
 	}
 

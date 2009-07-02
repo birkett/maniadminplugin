@@ -374,4 +374,8 @@
 #define	IMMUNITY_ALLOW_AUTOJOIN_FLAG ("autojoin")		
 #define	IMMUNITY_ALLOW_AUTOJOIN_DESC ("Autojoin")
 
+#define	IMMUNITY_ALLOW_AFK (28)			//immunity flag
+#define	IMMUNITY_ALLOW_AFK_FLAG ("afk")		
+#define	IMMUNITY_ALLOW_AFK_DESC ("AFK")
+
 #endif

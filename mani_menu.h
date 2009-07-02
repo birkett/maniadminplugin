@@ -45,6 +45,7 @@ struct menu_select_t
 struct menu_confirm_t
 {
 	bool	in_use;
+	float	timeout;
 	menu_select_t menu_select[10];
 };
 

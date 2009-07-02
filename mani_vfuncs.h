@@ -47,7 +47,7 @@ extern void CBaseEntity_SetModelIndex(CBaseEntity *pThisPtr, int iIndex);
 extern void CBasePlayer_Ignite(CBasePlayer *pThisPtr, float flFlameLifetime, bool bNPCOnly, float flSize, bool bCalledByLevelDesigner);
 extern bool CBasePlayer_RemovePlayerItem(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon);
 extern void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon);
-
+extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0);
 extern int  CBaseCombatWeapon_GetPrimaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern int  CBaseCombatWeapon_GetSecondaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern const char *CBaseCombatWeapon_GetName(CBaseCombatWeapon *pThisPtr);

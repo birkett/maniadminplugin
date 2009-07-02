@@ -50,6 +50,7 @@
 #include "mani_gametype.h"
 #include "mani_reservedslot.h"
 #include "mani_skins.h"
+#include "mani_trackuser.h"
 
 extern IFileSystem	*filesystem;
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -82,7 +83,7 @@ int	player_settings_name_list_size = 0;
 int	player_settings_waiting_list_size = 0;
 int	player_settings_name_waiting_list_size = 0;
 
-static	void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *filename);
+static	void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *filename, bool use_steam_id);
 static	void	ReadPlayerSettings(void);
 static	void	DeleteOldPlayerSettings(void);
 static	int		DeriveVersion( const char	*version_string );
@@ -129,7 +130,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 	int temp_player_list_size = 0;
 	
 	int	target_user_id = Q_atoi(target_string);
-	char target_steam_id[128];
+	char target_steam_id[MAX_NETWORKID_LENGTH];
 	int	immunity_index;
 
 	FreeList((void **) &target_player_list, &target_player_list_size);
@@ -521,10 +522,29 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: FindPlayerByUserID
+// Purpose: FindPlayerByUserID (Using hash table)
 //---------------------------------------------------------------------------------
 bool FindPlayerByUserID(player_t *player_ptr)
 {
+	int	org_user_id = player_ptr->user_id;
+	player_ptr->index = gpManiTrackUser->GetIndex(org_user_id);
+	if (player_ptr->index == -1) return false;
+
+	bool return_value = FindPlayerByIndex(player_ptr);
+
+	// Last check if returned user_id matches original
+	if (player_ptr->user_id != org_user_id)
+	{
+		// This should not happen but deal with it anyway
+		MMsg("User ID Error in FindPlayerByUserID()\n");
+		return false;
+	}
+
+	return true;
+
+	/* Removed to use a 128k hash table for much faster
+	   lookup of entity index
+	
 	for (int i = 1; i <= max_players; i++)
 	{
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
@@ -560,7 +580,7 @@ bool FindPlayerByUserID(player_t *player_ptr)
 		}
 	}
 
-	return false;
+	return false;*/
 }
 
 //---------------------------------------------------------------------------------
@@ -799,6 +819,8 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	Q_strcpy(add_player.steam_id, player->steam_id);
 	Q_strcpy(add_player.name, player->name);
 	add_player.damage_stats = mani_player_settings_damage.GetInt();
+	add_player.show_destruction = mani_player_settings_destructive.GetInt();
+	add_player.damage_stats_timeout = 15;
 	add_player.quake_sounds = mani_player_settings_quake.GetInt();
 	add_player.server_sounds = mani_player_settings_sounds.GetInt();
 	add_player.show_death_beam = mani_player_settings_death_beam.GetInt();
@@ -947,7 +969,7 @@ void AddWaitingPlayerSettings(void)
 
 	if (player_settings_waiting_list_size != 0)
 	{
-//		Msg("Added %i new players to the main player settings list\n", player_settings_waiting_list_size);
+//		MMsg("Added %i new players to the main player settings list\n", player_settings_waiting_list_size);
 		// Re-sort the list
 		qsort(player_settings_list, player_settings_list_size, sizeof(player_settings_t *), sort_settings_by_steam_id); 
 		FreeList((void **) &player_settings_waiting_list, &player_settings_waiting_list_size);
@@ -962,7 +984,7 @@ void AddWaitingPlayerSettings(void)
 
 	if (player_settings_name_waiting_list_size != 0)
 	{
-//		Msg("Added %i new players to the main player name settings list\n", player_settings_name_waiting_list_size);
+//		MMsg("Added %i new players to the main player name settings list\n", player_settings_name_waiting_list_size);
 		// Re-sort the list
 		qsort(player_settings_name_list, player_settings_name_list_size, sizeof(player_settings_t *), sort_settings_by_name); 
 		FreeList((void **) &player_settings_name_waiting_list, &player_settings_name_waiting_list_size);
@@ -1001,89 +1023,115 @@ void	ProcessPlayerSettings(void)
 	ResetActivePlayers();
 	ReadPlayerSettings();
 	DeleteOldPlayerSettings();
-	WritePlayerSettings(player_settings_list, player_settings_list_size, "mani_player_settings.dat");
-	WritePlayerSettings(player_settings_name_list, player_settings_name_list_size, "mani_player_name_settings.dat");
+	WritePlayerSettings(player_settings_list, player_settings_list_size, "mani_player_settings.txt", true);
+	WritePlayerSettings(player_settings_name_list, player_settings_name_list_size, "mani_player_name_settings.txt", false);
+
+	int	steam_size = (sizeof(player_settings_t) * player_settings_list_size) + (sizeof(player_settings_t *) * player_settings_list_size);
+	int	name_size = (sizeof(player_settings_t) * player_settings_name_list_size) + (sizeof(player_settings_t *) * player_settings_name_list_size);
+
+	float steam_size_meg = 0;
+	float name_size_meg = 0;
+
+	if (steam_size != 0)
+	{
+		steam_size_meg = ((float) steam_size) / 1048576.0;
+	}
+
+	if (name_size != 0)
+	{
+		name_size_meg = ((float) name_size) / 1048576.0;
+	}
+
+	MMsg("Steam ID Player Settings memory usage %fMB with %i records\n", steam_size_meg, player_settings_list_size);
+	MMsg("Name Player Settings memory usage %fMB with %i records\n", name_size_meg, player_settings_name_list_size);
+
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Write player settings to disk
 //---------------------------------------------------------------------------------
 static
-void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *filename)
+void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *filename, bool use_steam_id)
 {
-	FileHandle_t file_handle;
 	char	base_filename[512];
+	KeyValues *settings;
+	KeyValues *kv;
 
 	//Write stats to disk
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename);
+	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/data/%s", mani_path.GetString(), filename);
 
 	if (filesystem->FileExists( base_filename))
 	{
-//		Msg("File %s exists, preparing to delete then write new updated stats\n", filename);
+//		MMsg("File %s exists, preparing to delete then write new updated stats\n", filename);
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-//			Msg("Failed to delete %s\n", filename);
+//			MMsg("Failed to delete %s\n", filename);
 		}
 	}
 
-	file_handle = filesystem->Open (base_filename,"wb", NULL);
-	if (file_handle == NULL)
-	{
-//		Msg ("Failed to open %s for writing\n", filename);
-		return;
-	}
-
-	char temp_string[64];
-	int temp_length = Q_snprintf(temp_string, sizeof(temp_string), "%s", PLUGIN_VERSION_ID);
-
-	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
-	{
-//		Msg ("Failed to write version info to %s\n", filename);
-		filesystem->Close(file_handle);
-		return;
-	}
+	kv = new KeyValues( filename );
+	kv->SetString("version", PLUGIN_VERSION_ID2);
 
 	// Write Player setttings
 	for (int i = 0; i < ps_list_size; i ++)
 	{
-		filesystem->Write((void *) &(ps_list[i]->steam_id), sizeof(ps_list[i]->steam_id), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->name), sizeof(ps_list[i]->name), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->damage_stats), sizeof(ps_list[i]->damage_stats), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->quake_sounds), sizeof(ps_list[i]->quake_sounds), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->server_sounds), sizeof(ps_list[i]->server_sounds), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->last_connected), sizeof(ps_list[i]->last_connected), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->show_death_beam), sizeof(ps_list[i]->show_death_beam), file_handle);
+		settings = kv->CreateNewKey();
+		settings->SetString("na", ps_list[i]->name);
+		settings->SetString("st", ps_list[i]->steam_id);
 
-		filesystem->Write((void *) &(ps_list[i]->admin_t_model), sizeof(ps_list[i]->admin_t_model), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->admin_ct_model), sizeof(ps_list[i]->admin_ct_model), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->immunity_t_model), sizeof(ps_list[i]->immunity_t_model), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->immunity_ct_model), sizeof(ps_list[i]->immunity_ct_model), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->t_model), sizeof(ps_list[i]->t_model), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->ct_model), sizeof(ps_list[i]->ct_model), file_handle);
-		filesystem->Write((void *) &(ps_list[i]->language), sizeof(ps_list[i]->language), file_handle);
+		if (ps_list[i]->damage_stats != 0) settings->SetInt("ds", ps_list[i]->damage_stats);
+		if (ps_list[i]->damage_stats_timeout != 0) settings->SetInt("dt", ps_list[i]->damage_stats_timeout);
+		if (ps_list[i]->show_destruction != 0) settings->SetInt("de", ps_list[i]->show_destruction);
+		if (ps_list[i]->quake_sounds != 0) settings->SetInt("qs", ps_list[i]->quake_sounds);
+		if (ps_list[i]->server_sounds != 0) settings->SetInt("ss", ps_list[i]->server_sounds);
+		if (ps_list[i]->show_death_beam != 0) settings->SetInt("sd", ps_list[i]->show_death_beam);
 
-		for (int j = 0; j < 8; j ++)
-		{
-			filesystem->Write((void *) &(ps_list[i]->bit_array[j]), sizeof(ps_list[i]->bit_array[j]), file_handle);
-		}
-		
-		filesystem->Write((void *) &(ps_list[i]->teleport_coords_list_size), sizeof(ps_list[i]->teleport_coords_list_size), file_handle);
+		settings->SetInt("lc", ps_list[i]->last_connected);
+
+		// Only output if needed, saves disk space
+		if (ps_list[i]->admin_t_model && !FStrEq(ps_list[i]->admin_t_model,"")) settings->SetString("at", ps_list[i]->admin_t_model);
+		if (ps_list[i]->admin_ct_model && !FStrEq(ps_list[i]->admin_ct_model,"")) settings->SetString("ac", ps_list[i]->admin_ct_model);
+		if (ps_list[i]->immunity_t_model && !FStrEq(ps_list[i]->immunity_t_model,"")) settings->SetString("it", ps_list[i]->immunity_t_model);
+		if (ps_list[i]->immunity_ct_model && !FStrEq(ps_list[i]->immunity_ct_model,"")) settings->SetString("ic", ps_list[i]->immunity_ct_model);
+		if (ps_list[i]->t_model && !FStrEq(ps_list[i]->t_model,"")) settings->SetString("nt", ps_list[i]->t_model);
+		if (ps_list[i]->ct_model && !FStrEq(ps_list[i]->ct_model,"")) settings->SetString("nc", ps_list[i]->ct_model);
+
+		if (ps_list[i]->language && !FStrEq(ps_list[i]->language,"")) settings->SetString("la", ps_list[i]->language);
+
+		// Handle bit array
+		if (ps_list[i]->bit_array[0] != 0) settings->SetInt("b0", ps_list[i]->bit_array[0]);
+		if (ps_list[i]->bit_array[1] != 0) settings->SetInt("b1", ps_list[i]->bit_array[1]);
+		if (ps_list[i]->bit_array[2] != 0) settings->SetInt("b2", ps_list[i]->bit_array[2]);
+		if (ps_list[i]->bit_array[3] != 0) settings->SetInt("b3", ps_list[i]->bit_array[3]);
+		if (ps_list[i]->bit_array[4] != 0) settings->SetInt("b4", ps_list[i]->bit_array[4]);
+		if (ps_list[i]->bit_array[5] != 0) settings->SetInt("b5", ps_list[i]->bit_array[5]);
+		if (ps_list[i]->bit_array[6] != 0) settings->SetInt("b6", ps_list[i]->bit_array[6]);
+		if (ps_list[i]->bit_array[7] != 0) settings->SetInt("b7", ps_list[i]->bit_array[7]);
+
+		// Do teleport coords if needed
 		if (ps_list[i]->teleport_coords_list_size != 0)
 		{
-			// Write coord list to disk 
+			// Write sub key
+			KeyValues *teleport = settings->FindKey("teleport", true);
+
 			for (int j = 0; j < ps_list[i]->teleport_coords_list_size; j++)
 			{
-				filesystem->Write((void *) &(ps_list[i]->teleport_coords_list[j].map_name), sizeof(ps_list[i]->teleport_coords_list[j].map_name), file_handle);
-				filesystem->Write((void *) &(ps_list[i]->teleport_coords_list[j].coords.x), sizeof(float), file_handle);
-				filesystem->Write((void *) &(ps_list[i]->teleport_coords_list[j].coords.y), sizeof(float), file_handle);
-				filesystem->Write((void *) &(ps_list[i]->teleport_coords_list[j].coords.z), sizeof(float), file_handle);
+				// Add map subkey
+				KeyValues *map_teleport = teleport->FindKey(ps_list[i]->teleport_coords_list[j].map_name, true);
+				map_teleport->SetFloat("x", ps_list[i]->teleport_coords_list[j].coords.x);
+				map_teleport->SetFloat("y", ps_list[i]->teleport_coords_list[j].coords.y);
+				map_teleport->SetFloat("z", ps_list[i]->teleport_coords_list[j].coords.z);
 			}
 		}
 	}
 
-//	Msg("Wrote %i player settings to %s\n", ps_list_size, filename);
-	filesystem->Close(file_handle);
+	if (!kv->SaveToFile( filesystem, base_filename, NULL))
+	{
+		MMsg("Failed to write %s\n", base_filename);
+	}
+
+	kv->deleteThis();
 }
 
 //---------------------------------------------------------------------------------
@@ -1096,41 +1144,47 @@ void	ReadPlayerSettings(void)
 	char	base_filename[512];
 	char	ps_filename[512];
 	char	stats_version[128];
+	char	old_base_filename[512];
+	char	name[64];
+	char	steam_id[50];
 
 	if (player_settings_list_size == 0)
 	{
+		bool	file_found = true;
+
 		Q_strcpy(ps_filename, "mani_player_settings.dat");
 
 		for (;;)
 		{
 			Q_strcpy(ps_filename, "mani_player_settings.dat");
 
-//			Msg("Attempting to read %s file\n", ps_filename);
+			//			MMsg("Attempting to read %s file\n", ps_filename);
 
 			//Get settings into memory
 			Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
 			file_handle = filesystem->Open (base_filename,"rb",NULL);
 			if (file_handle == NULL)
 			{
-//				Msg ("Failed to load %s, did not find file\n", ps_filename);
+				//				MMsg("Failed to load %s, did not find file\n", ps_filename);
+				file_found = false;
 				break;
 			}
 
 			if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
 			{
-//				Msg("Failed to get version string for %s!!\n", ps_filename);
+				//				MMsg("Failed to get version string for %s!!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
-			if (!ParseLine(stats_version, true))
+			if (!ParseLine(stats_version, true, false))
 			{
-//				Msg("Failed to get version string for %s, top line empty !!\n", ps_filename);
+				//				MMsg("Failed to get version string for %s, top line empty !!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
-//			Msg("%s version [%s]\n", ps_filename, stats_version);
+			//			MMsg("%s version [%s]\n", ps_filename, stats_version);
 
 			player_settings_t ps;
 
@@ -1141,9 +1195,11 @@ void	ReadPlayerSettings(void)
 			case 0:
 				{
 					// Get player settings into	memory
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1165,8 +1221,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1183,9 +1239,11 @@ void	ReadPlayerSettings(void)
 			case 1:
 				{
 					// Get player settings into	memory (Version 1)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1214,8 +1272,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1232,9 +1290,11 @@ void	ReadPlayerSettings(void)
 			case 2:
 				{
 					// Get player settings into	memory (Version 2)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1265,8 +1325,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1283,9 +1343,11 @@ void	ReadPlayerSettings(void)
 			case 3:
 				{
 					// Get player settings into	memory (Version 3)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1317,8 +1379,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1335,9 +1397,11 @@ void	ReadPlayerSettings(void)
 			case 4:
 				{
 					// Get player settings into	memory (Version 3)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1374,8 +1438,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1392,44 +1456,158 @@ void	ReadPlayerSettings(void)
 			default : break;
 			}
 
-//			Msg("Read %i player settings into memory from file %s\n", player_settings_list_size, ps_filename);
+			//			MMsg("Read %i player settings into memory from file %s\n", player_settings_list_size, ps_filename);
 			filesystem->Close(file_handle);
+			Q_snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_player_settings.dat.old", mani_path.GetString());
+			filesystem->RenameFile(base_filename, old_base_filename);
+
 			break;
+		}
+
+		if (file_found == false)
+		{
+			// Do KeyValues system for reading player settings in
+			char	core_filename[256];
+			KeyValues *base_key_ptr;
+			KeyValues *kv_ptr;
+
+			Q_strcpy(ps_filename, "mani_player_settings.txt");
+
+			kv_ptr = new KeyValues("mani_player_settings.txt");
+			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
+
+			if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
+			{
+				MMsg("Failed to load %s\n", core_filename);
+				kv_ptr->deleteThis();
+				return;
+			}
+
+			base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+			if (!base_key_ptr)
+			{
+				kv_ptr->deleteThis();
+				return;
+			}
+
+			player_settings_t ps;
+
+			for (;;)
+			{
+				Q_memset(&ps, 0, sizeof(player_settings_t));
+
+				Q_strcpy(ps.name, base_key_ptr->GetString("na","NULL"));
+				Q_strcpy(ps.steam_id, base_key_ptr->GetString("st","NULL"));
+
+				ps.damage_stats = base_key_ptr->GetInt("ds", 0);
+				ps.damage_stats_timeout = base_key_ptr->GetInt("dt", 15);
+				ps.show_destruction = base_key_ptr->GetInt("de", 0);
+				ps.quake_sounds = base_key_ptr->GetInt("qs", 0);
+				ps.server_sounds = base_key_ptr->GetInt("ss", 0);
+				ps.show_death_beam = base_key_ptr->GetInt("sd", 0);
+				ps.last_connected = base_key_ptr->GetInt("lc", 0);
+
+				Q_strcpy(ps.admin_t_model,base_key_ptr->GetString("at", ""));
+				Q_strcpy(ps.admin_ct_model,base_key_ptr->GetString("ac", ""));
+				Q_strcpy(ps.immunity_t_model,base_key_ptr->GetString("it", ""));
+				Q_strcpy(ps.immunity_ct_model,base_key_ptr->GetString("ic", ""));
+				Q_strcpy(ps.t_model, base_key_ptr->GetString("nt", ""));
+				Q_strcpy(ps.ct_model,base_key_ptr->GetString("nc", ""));
+				Q_strcpy(ps.language,base_key_ptr->GetString("la", ""));
+
+				// Bit array loading 
+				ps.bit_array[0] = base_key_ptr->GetInt("b0", 0);
+				ps.bit_array[1] = base_key_ptr->GetInt("b1", 0);
+				ps.bit_array[2] = base_key_ptr->GetInt("b2", 0);
+				ps.bit_array[3] = base_key_ptr->GetInt("b3", 0);
+				ps.bit_array[4] = base_key_ptr->GetInt("b4", 0);
+				ps.bit_array[5] = base_key_ptr->GetInt("b5", 0);
+				ps.bit_array[6] = base_key_ptr->GetInt("b6", 0);
+				ps.bit_array[7] = base_key_ptr->GetInt("b7", 0);
+
+				
+				KeyValues *t_key_ptr = base_key_ptr->GetFirstTrueSubKey();
+				if (t_key_ptr && FStrEq(t_key_ptr->GetName(), "teleport"))
+				{
+					// Found teleport sub key so start getting coord lists
+					KeyValues *tm_key_ptr = t_key_ptr->GetFirstTrueSubKey();
+
+					if (tm_key_ptr)
+					{
+						for (;;)
+						{
+							teleport_coords_t tc;
+
+							Q_strcpy(tc.map_name, tm_key_ptr->GetName());
+							tc.coords.x = tm_key_ptr->GetFloat("x", 0);
+							tc.coords.y = tm_key_ptr->GetFloat("y", 0);
+							tc.coords.z = tm_key_ptr->GetFloat("z", 0);
+
+							// Need	to add a new map to	the	list
+							AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
+							ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
+
+							// Find next map
+							tm_key_ptr = tm_key_ptr->GetNextKey();
+							if (!tm_key_ptr)
+							{
+								break;
+							}
+						}
+					}
+				}	
+
+				AddToList((void	**)	&player_settings_list, sizeof(player_settings_t	*),	&player_settings_list_size);
+				player_settings_list[player_settings_list_size - 1]	= (player_settings_t *)	malloc (sizeof(player_settings_t));
+				*(player_settings_list[player_settings_list_size - 1]) = ps;
+
+				base_key_ptr = base_key_ptr->GetNextKey();
+				if (!base_key_ptr)
+				{
+					break;
+				}
+			}
+
+			kv_ptr->deleteThis();
+			qsort(player_settings_list, player_settings_list_size, sizeof(player_settings_t *), sort_settings_by_steam_id); 
+
 		}
 	}
 
 	if (player_settings_name_list_size == 0)
 	{
 		Q_strcpy(ps_filename, "mani_player_name_settings.dat");
+		bool file_found = true;
 
 		for (;;)
 		{
-//			Msg("Attempting to read %s file\n", ps_filename);
+//			MMsg("Attempting to read %s file\n", ps_filename);
 
 			//Get settings into memory
 			Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
 			file_handle = filesystem->Open (base_filename,"rb",NULL);
 			if (file_handle == NULL)
 			{
-//				Msg ("Failed to load %s, did not find file\n", ps_filename);
+//				MMsg("Failed to load %s, did not find file\n", ps_filename);
+				file_found = false;
 				break;
 			}
 
 			if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
 			{
-//				Msg("Failed to get version string for %s!!\n", ps_filename);
+//				MMsg("Failed to get version string for %s!!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
-			if (!ParseLine(stats_version, true))
+			if (!ParseLine(stats_version, true, false))
 			{
-//				Msg("Failed to get version string for %s, top line empty !!\n", ps_filename);
+//				MMsg("Failed to get version string for %s, top line empty !!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
-//			Msg("%s version [%s]\n", ps_filename, stats_version);
+//			MMsg("%s version [%s]\n", ps_filename, stats_version);
 
 			player_settings_t ps;
 			Q_memset(&ps, 0, sizeof(player_settings_t));
@@ -1439,9 +1617,11 @@ void	ReadPlayerSettings(void)
 			case 0:
 				{
 					// Get player settings into	memory
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1463,8 +1643,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1481,9 +1661,11 @@ void	ReadPlayerSettings(void)
 			case 1:
 				{
 					// Get player settings into	memory (Version 1)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1512,8 +1694,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1530,9 +1712,11 @@ void	ReadPlayerSettings(void)
 			case 2:
 				{
 					// Get player settings into	memory (Version 1)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1563,8 +1747,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1581,9 +1765,11 @@ void	ReadPlayerSettings(void)
 			case 3:
 				{
 					// Get player settings into	memory (Version 1)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1615,8 +1801,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1633,9 +1819,11 @@ void	ReadPlayerSettings(void)
 			case 4:
 				{
 					// Get player settings into	memory (Version 1)
-					while (filesystem->Read(&(ps.steam_id),	sizeof(ps.steam_id), file_handle) >	0)
+					while (filesystem->Read(&steam_id,	sizeof(steam_id), file_handle) >	0)
 					{
-						filesystem->Read(&(ps.name), sizeof(ps.name), file_handle);
+						filesystem->Read(&name, sizeof(name), file_handle);
+						strcpy(ps.name, name);
+						strcpy(ps.steam_id, steam_id);
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1672,8 +1860,8 @@ void	ReadPlayerSettings(void)
 								filesystem->Read(&z, sizeof(float),	file_handle);
 
 								tc.coords.x	= x;
-								tc.coords.y	= x;
-								tc.coords.z	= x;
+								tc.coords.y	= y;
+								tc.coords.z	= z;
 								// Need	to add a new map to	the	list
 								AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 								ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
@@ -1691,9 +1879,120 @@ void	ReadPlayerSettings(void)
 			default : break;
 			}
 
-//			Msg("Read %i player name settings into memory from file %s\n", player_settings_name_list_size, ps_filename);
+//			MMsg("Read %i player name settings into memory from file %s\n", player_settings_name_list_size, ps_filename);
 			filesystem->Close(file_handle);
+			Q_snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_player_name_settings.dat.old", mani_path.GetString());
+			filesystem->RenameFile(base_filename, old_base_filename);
 			break;
+		}
+
+		if (file_found == false)
+		{
+			// Do KeyValues system for reading player settings in
+			char	core_filename[256];
+			KeyValues *base_key_ptr;
+			KeyValues *kv_ptr;
+
+			Q_strcpy(ps_filename, "mani_player_name_settings.txt");
+
+			kv_ptr = new KeyValues("mani_player_settings.txt");
+			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
+
+			if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
+			{
+				MMsg("Failed to load %s\n", core_filename);
+				kv_ptr->deleteThis();
+				return;
+			}
+
+			base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+			if (!base_key_ptr)
+			{
+				kv_ptr->deleteThis();
+				return;
+			}
+
+			player_settings_t ps;
+
+			for (;;)
+			{
+				Q_memset(&ps, 0, sizeof(player_settings_t));
+
+				Q_strcpy(ps.name, base_key_ptr->GetString("na","NULL"));
+				Q_strcpy(ps.steam_id, base_key_ptr->GetString("st","NULL"));
+
+				ps.damage_stats = base_key_ptr->GetInt("ds", 0);
+				ps.damage_stats_timeout = base_key_ptr->GetInt("dt", 15);
+				ps.show_destruction = base_key_ptr->GetInt("de", 0);
+				ps.quake_sounds = base_key_ptr->GetInt("qs", 0);
+				ps.server_sounds = base_key_ptr->GetInt("ss", 0);
+				ps.show_death_beam = base_key_ptr->GetInt("sd", 0);
+				ps.last_connected = base_key_ptr->GetInt("lc", 0);
+
+				Q_strcpy(ps.admin_t_model,base_key_ptr->GetString("at", ""));
+				Q_strcpy(ps.admin_ct_model,base_key_ptr->GetString("ac", ""));
+				Q_strcpy(ps.immunity_t_model,base_key_ptr->GetString("it", ""));
+				Q_strcpy(ps.immunity_ct_model,base_key_ptr->GetString("ic", ""));
+				Q_strcpy(ps.t_model, base_key_ptr->GetString("nt", ""));
+				Q_strcpy(ps.ct_model,base_key_ptr->GetString("nc", ""));
+				Q_strcpy(ps.language,base_key_ptr->GetString("la", ""));
+
+				// Bit array loading
+				ps.bit_array[0] = base_key_ptr->GetInt("b0", 0);
+				ps.bit_array[1] = base_key_ptr->GetInt("b1", 0);
+				ps.bit_array[2] = base_key_ptr->GetInt("b2", 0);
+				ps.bit_array[3] = base_key_ptr->GetInt("b3", 0);
+				ps.bit_array[4] = base_key_ptr->GetInt("b4", 0);
+				ps.bit_array[5] = base_key_ptr->GetInt("b5", 0);
+				ps.bit_array[6] = base_key_ptr->GetInt("b6", 0);
+				ps.bit_array[7] = base_key_ptr->GetInt("b7", 0);
+
+				
+				KeyValues *t_key_ptr = base_key_ptr->GetFirstTrueSubKey();
+				if (t_key_ptr && FStrEq(t_key_ptr->GetName(), "teleport"))
+				{
+					// Found teleport sub key so start getting coord lists
+					KeyValues *tm_key_ptr = t_key_ptr->GetFirstTrueSubKey();
+
+					if (tm_key_ptr)
+					{
+						for (;;)
+						{
+							teleport_coords_t tc;
+
+							Q_strcpy(tc.map_name, tm_key_ptr->GetName());
+							tc.coords.x = tm_key_ptr->GetFloat("x", 0);
+							tc.coords.y = tm_key_ptr->GetFloat("y", 0);
+							tc.coords.z = tm_key_ptr->GetFloat("z", 0);
+
+							// Need	to add a new map to	the	list
+							AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
+							ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
+
+							// Find next map
+							tm_key_ptr = tm_key_ptr->GetNextKey();
+							if (!tm_key_ptr)
+							{
+								break;
+							}
+						}
+					}
+				}	
+
+				AddToList((void	**)	&player_settings_name_list, sizeof(player_settings_t	*),	&player_settings_name_list_size);
+				player_settings_name_list[player_settings_name_list_size - 1]	= (player_settings_t *)	malloc (sizeof(player_settings_t));
+				*(player_settings_name_list[player_settings_name_list_size - 1]) = ps;
+
+				base_key_ptr = base_key_ptr->GetNextKey();
+				if (!base_key_ptr)
+				{
+					break;
+				}
+			}
+
+			kv_ptr->deleteThis();
+			qsort(player_settings_name_list, player_settings_name_list_size, sizeof(player_settings_t *), sort_settings_by_name); 
+
 		}
 	}
 }
@@ -1889,9 +2188,35 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size);
 		if (player_settings->damage_stats == 0) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : Off");
 		else if (player_settings->damage_stats == 1) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : Partial text");
+		else if (player_settings->damage_stats == 3) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : GUI Based");
 		else Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : Full text");
 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings damagetype");
+
+		if (gpManiGameType->IsAMXMenuAllowed())
+		{
+			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size);
+
+			char	seconds[4];
+			Q_snprintf(seconds, sizeof(seconds), "%is", player_settings->damage_stats_timeout);
+
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, 
+						sizeof(menu_list[menu_list_size - 1].menu_text), 
+						"Damage Stats GUI Timer : %s", (player_settings->damage_stats_timeout == 0) ? "No Timer":seconds);
+			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings damagetimeout");
+		}
+	}
+
+	if (mani_stats_most_destructive.GetInt() != 0 && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+//		char	beam_mode[32];
+
+//		if (player_settings->show_death_beam == 0) Q_snprintf(beam_mode, sizeof(beam_mode), "Off");
+//		else if (player_settings->show_death_beam
+		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Most Destructive : %s",
+											(player_settings->show_destruction == 0) ? "Off":"On");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings destruction");
 	}
 
 	if (mani_quake_sounds.GetInt() != 0)
@@ -2052,6 +2377,13 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
 		}
+		else if (FStrEq (menu_command, "damagetimeout") && 
+			mani_show_victim_stats.GetInt() != 0)
+		{
+			ProcessMaDamageTimeout (player.index);
+			ShowSettingsPrimaryMenu(&player, 0);
+			return PLUGIN_STOP;
+		}
 		else if (FStrEq (menu_command, "quake") &&
 			mani_quake_sounds.GetInt() != 0)
 		{
@@ -2070,7 +2402,13 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 			ProcessMaDeathBeam (player.index);
 			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
-		}		
+		}
+		else if (FStrEq (menu_command, "destruction"))
+		{
+			ProcessMaDestruction (player.index);
+			ShowSettingsPrimaryMenu(&player, 0);
+			return PLUGIN_STOP;
+		}
 		else if (FStrEq (menu_command, "joinskin"))
 		{
 			// Handle skin choice menu
@@ -2298,10 +2636,61 @@ PLUGIN_RESULT	ProcessMaDamage
 			SayToPlayer(&player, "Full round based stats with hit groups are now enabled");
 			player_settings->damage_stats = 2;
 		}
+		else if (player_settings->damage_stats == 2)
+		{
+			if (gpManiGameType->IsAMXMenuAllowed())
+			{
+				SayToPlayer(&player, "Round based stats will be shown on your screen in a GUI when you die or at the end of a round");
+				player_settings->damage_stats = 3;
+			}
+			else
+			{
+				SayToPlayer(&player, "Round based stats have been turned off");
+				player_settings->damage_stats = 0;
+			}
+		}
 		else
 		{
 			SayToPlayer(&player, "Round based stats have been turned off");
 			player_settings->damage_stats = 0;
+		}
+
+
+		UpdatePlayerSettings(&player, player_settings);
+	}
+
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the damage command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ProcessMaDamageTimeout
+(
+ int index
+)
+{
+	player_t player;
+	player_settings_t *player_settings;
+	player.entity = NULL;
+
+	if (war_mode) return PLUGIN_STOP;
+
+	if (mani_show_victim_stats.GetInt() != 1) return PLUGIN_STOP;
+	if (!gpManiGameType->IsAMXMenuAllowed()) return PLUGIN_STOP;
+
+	// Get player details
+	player.index = index;
+	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+
+	player_settings = FindStoredPlayerSettings(&player);
+	if (player_settings)
+	{
+		// Found player settings
+		player_settings->damage_stats_timeout += 1;
+		if (player_settings->damage_stats_timeout == 26)
+		{
+			player_settings->damage_stats_timeout = 0;
 		}
 
 		UpdatePlayerSettings(&player, player_settings);
@@ -2391,6 +2780,47 @@ PLUGIN_RESULT	ProcessMaDeathBeam
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Process the destruction command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ProcessMaDestruction
+(
+ int index
+)
+{
+	player_t player;
+	player_settings_t *player_settings;
+	player.entity = NULL;
+
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_STOP;
+	if (mani_stats_most_destructive.GetInt() == 0) return PLUGIN_STOP;
+	if (war_mode) return PLUGIN_STOP;
+
+	// Get player details
+	player.index = index;
+	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+
+	player_settings = FindStoredPlayerSettings(&player);
+	if (player_settings)
+	{
+		// Found player settings
+		if (!player_settings->show_destruction)
+		{
+			SayToPlayer(&player, "You will now be able to see most the destructive player information at the end of a round");
+			player_settings->show_destruction = 1;
+		}
+		else
+		{
+			SayToPlayer(&player, "You will not be able to see the most destructive player information at the end of a round");
+			player_settings->show_destruction = 0;
+		}
+
+		UpdatePlayerSettings(&player, player_settings);
+	}
+
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Process the quake command
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ProcessMaQuake
@@ -2455,4 +2885,43 @@ int GetNumberOfActivePlayers(void)
 	}
 
 	return number_of_players;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Kick a player
+//---------------------------------------------------------------------------------
+void UTIL_KickPlayer
+(
+ player_t *player_ptr, 
+ char *short_reason, 
+ char *long_reason, 
+ char *log_reason
+ )
+{
+	char	kick_cmd[256];
+
+	// Handle a bot kick
+	if (player_ptr->is_bot)
+	{
+		int j = Q_strlen(player_ptr->name) - 1;
+
+		while (j != -1)
+		{
+			if (player_ptr->name[j] == '\0') break;
+			if (player_ptr->name[j] == ' ') break;
+			j--;
+		}
+
+		j++;
+
+		Q_snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(player_ptr->name[j]));
+		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, kick_cmd);
+		engine->ServerCommand(kick_cmd);
+		return;
+	}
+
+	PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
+	Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
+	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, kick_cmd);
+	engine->ServerCommand(kick_cmd);				
 }

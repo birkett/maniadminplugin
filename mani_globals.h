@@ -36,6 +36,7 @@ extern	IServerGameDLL	*serverdll;
 extern	IServerGameEnts	*serverents;
 extern	IGameEventManager2 *gameeventmanager; // game events interface
 extern	IPlayerInfoManager *playerinfomanager; // game dll interface to interact with players
+extern	void *gamedll;
 extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 extern	IEffects *effects; // fx
 extern	IEngineSound *esounds; // sound

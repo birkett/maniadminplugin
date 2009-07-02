@@ -81,17 +81,17 @@ void	InitPanels(void)
 {
 
 	return;
-//	Msg("Number of Tables [%i]\n", networkstringtable->GetNumTables());
+//	MMsg("Number of Tables [%i]\n", networkstringtable->GetNumTables());
 
 	g_pStringTableManiScreen = networkstringtable->FindTable("InfoPanel");
 	if (!g_pStringTableManiScreen)
 	{
-//		Msg("Did not find InfoPanel\n");
+//		MMsg("Did not find InfoPanel\n");
 	}
 	else
 	{
 		g_pStringTableManiScreen->AddString( MANI_WEB_STATS_PANEL, 5, "INIT");
-//		Msg("Added 1 new network string\n");
+//		MMsg("Added 1 new network string\n");
 	}
 }
 
@@ -109,20 +109,20 @@ void	LoadWebShortcuts(void)
 
 	FreeWebShortcuts();
 
-//	Msg("********** LOADING WEB SHORTCUTS ***********\n");
+//	MMsg("********** LOADING WEB SHORTCUTS ***********\n");
 
 	//Get rcon list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/webshortcutlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load webshortcutlist.txt\n");
+//		MMsg("Failed to load webshortcutlist.txt\n");
 	}
 	else
 	{
 		while (filesystem->ReadLine (url_string, sizeof(url_string), file_handle) != NULL)
 		{
-			if (!ParseAliasLine(url_string, web_shortcut_string, false))
+			if (!ParseAliasLine(url_string, web_shortcut_string, false, true))
 			{
 				// String is empty after parsing
 				continue;
@@ -133,13 +133,13 @@ void	LoadWebShortcuts(void)
 			AddToList((void **) &web_shortcut_list, sizeof(web_shorcut_t), &web_shortcut_list_size);
 			web_shortcut_list[web_shortcut_list_size - 1] = web_shortcut;
 
-//			Msg("command [%s] url [%s]\n", web_shortcut_string, url_string);
+//			MMsg("command [%s] url [%s]\n", web_shortcut_string, url_string);
 		}
 
 		filesystem->Close(file_handle);
 	}
 
-//	Msg("********** WEB SHORTCUTS LOADED ***********\n");
+//	MMsg("********** WEB SHORTCUTS LOADED ***********\n");
 
 }
 
@@ -266,10 +266,10 @@ void ProcessMenuMaFavourites( player_t *player, int next_index, int argv_offset 
 		if (next_index > menu_list_size) next_index = 0;
 
 		char	menu_title[128];
-		Q_snprintf( menu_title, sizeof(menu_title), Translate(M_WEB_FAVOURITES_MENU_TITLE));							
+		Q_snprintf( menu_title, sizeof(menu_title), Translate(771));							
 
 		// Draw menu list
-		DrawSubMenu (player, Translate(M_WEB_FAVOURITES_MENU_ESCAPE), menu_title, next_index, "favourites", "", false,-1);
+		DrawSubMenu (player, Translate(770), menu_title, next_index, "favourites", "", false,-1);
 	}
 
 	return;
@@ -301,7 +301,7 @@ void	DrawPanel(MRecipientFilter *mrf, char *panel_title, char *network_string, c
 	msg_buffer->WriteString("type");
 	msg_buffer->WriteString("1");
 
-	msg_buffer->WriteString("msg");
+	msg_buffer->WriteString("Msg");
 	msg_buffer->WriteString(network_string);
 
 	engine->MessageEnd();
@@ -328,7 +328,7 @@ void	DrawMOTD(MRecipientFilter *mrf)
 	msg_buffer->WriteString("type");
 	msg_buffer->WriteString("1");
 
-	msg_buffer->WriteString("msg");
+	msg_buffer->WriteString("Msg");
 	msg_buffer->WriteString("motd");
 
 	engine->MessageEnd();
@@ -352,7 +352,7 @@ void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 	msg_buffer->WriteString("type");
 	msg_buffer->WriteString("2");  // URL
 
-	msg_buffer->WriteString("msg");
+	msg_buffer->WriteString("Msg");
 	msg_buffer->WriteString(url);
 
 	engine->MessageEnd();

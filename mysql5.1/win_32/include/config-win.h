@@ -61,6 +61,10 @@ functions */
 #define __WIN__			      /* To make it easier in VC++ */
 #endif
 
+#ifndef MAX_INDEXES
+#define MAX_INDEXES 64
+#endif
+
 /* File and lock constants */
 #define O_SHARE		0x1000		/* Open file in sharing mode */
 #ifdef __BORLANDC__
@@ -279,10 +283,10 @@ inline double ulonglong2double(ulonglong value)
 			  *((T)+4)=(uchar) (((A) >> 32)); }
 #define int8store(T,A)	*((ulonglong *) (T))= (ulonglong) (A)
 
-#define doubleget(V,M)	{ *((long *) &V) = *((long*) M); \
-			  *(((long *) &V)+1) = *(((long*) M)+1); }
-#define doublestore(T,V) { *((long *) T) = *((long*) &V); \
-			   *(((long *) T)+1) = *(((long*) &V)+1); }
+#define doubleget(V,M)	do { *((long *) &V) = *((long*) M); \
+			    *(((long *) &V)+1) = *(((long*) M)+1); } while(0)
+#define doublestore(T,V) do { *((long *) T) = *((long*) &V); \
+			      *(((long *) T)+1) = *(((long*) &V)+1); } while(0)
 #define float4get(V,M) { *((long *) &(V)) = *((long*) (M)); }
 #define floatstore(T,V) memcpy((byte*)(T), (byte*)(&V), sizeof(float))
 #define floatget(V,M)   memcpy((byte*)(&V), (byte*)(M), sizeof(float))
@@ -324,6 +328,11 @@ inline double ulonglong2double(ulonglong value)
 #define SPRINTF_RETURNS_INT
 #define HAVE_SETFILEPOINTER
 #define HAVE_VIO_READ_BUFF
+
+#ifndef __NT__
+#undef FILE_SHARE_DELETE
+#define FILE_SHARE_DELETE 0     /* Not implemented on Win 98/ME */
+#endif
 
 #ifdef NOT_USED
 #define HAVE_SNPRINTF		/* Gave link error */

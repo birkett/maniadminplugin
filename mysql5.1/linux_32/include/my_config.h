@@ -951,6 +951,9 @@
 /* Machine type name, eg sun10 */
 #define MACHINE_TYPE "i686"
 
+/* Maximum number of indexes per table */
+#define MAX_INDEXES 64
+
 /* Define the default charset name */
 #define MYSQL_DEFAULT_CHARSET_NAME "latin1"
 
@@ -964,7 +967,7 @@
 /* #undef NDB_SHM_TRANSPORTER */
 
 /* NDB build version */
-#define NDB_VERSION_BUILD 16
+#define NDB_VERSION_BUILD 18
 
 /* NDB major version */
 #define NDB_VERSION_MAJOR 5
@@ -1107,7 +1110,7 @@
 /* #undef USE_PSTACK */
 
 /* Version number of package */
-#define VERSION "5.0.16"
+#define VERSION "5.0.18"
 
 /* sighandler type is void (*signal ()) (); */
 #define VOID_SIGHANDLER 1

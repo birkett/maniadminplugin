@@ -43,8 +43,8 @@
 
 struct tk_player_t
 {
-	char	steam_id[128];
-	char	name[128];
+	char	steam_id[MAX_NETWORKID_LENGTH];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	int		user_id; // Required for bots
 	int		violations_committed;
 	int		round_to_action_punishment; // CSS only 
@@ -76,7 +76,7 @@ extern	bool	TKBanPlayer (player_t	*attacker, int ban_index);
 extern	void	CreateNewTKPlayer(char *name, char *steam_id, int user_id, int violations, int rounds_to_miss);
 extern	bool	IsTKPlayerMatch( tk_player_t *tk_player, player_t *player);
 extern	bool	IsOnSameTeam(player_t *, player_t *);
-extern	void	ProcessTKDeath( player_t *attacker_ptr, player_t *victim_ptr );
+extern	bool	ProcessTKDeath( player_t *attacker_ptr, player_t *victim_ptr );
 extern	void	ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset );
 extern	PLUGIN_RESULT	ProcessMaTKList( int index,  bool svr_command);
 extern	bool	ProcessTKCmd( player_t	*player_ptr );

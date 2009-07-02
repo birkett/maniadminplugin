@@ -118,14 +118,14 @@ void	LoadSounds(void)
 	file_handle = filesystem->Open (base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load soundlist.txt\n");
+//		MMsg("Failed to load soundlist.txt\n");
 	}
 	else
 	{
-//		Msg("Sound list\n");
+//		MMsg("Sound list\n");
 		while (filesystem->ReadLine (sound_id, 512, file_handle) != NULL)
 		{
-			if (!ParseAliasLine(sound_id, alias_command, true))
+			if (!ParseAliasLine(sound_id, alias_command, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -141,7 +141,7 @@ void	LoadSounds(void)
 			Q_strcpy(sound_list[sound_list_size-1].sound_name, sound_id);
 			Q_strcpy(sound_list[sound_list_size-1].alias, alias_command);
 
-//			Msg("Alias [%s] Sound File [%s]\n", alias_command, sound_id); 
+//			MMsg("Alias [%s] Sound File [%s]\n", alias_command, sound_id); 
 		}
 
 		filesystem->Close(file_handle);
@@ -161,14 +161,14 @@ void	LoadSounds(void)
 	file_handle = filesystem->Open(base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load actionsoundlist.txt\n");
+//		MMsg("Failed to load actionsoundlist.txt\n");
 	}
 	else
 	{
-//		Msg("Action Sound list\n");
+//		MMsg("Action Sound list\n");
 		while (filesystem->ReadLine (sound_id, sizeof(sound_id), file_handle) != NULL)
 		{
-			if (!ParseAliasLine(sound_id, sound_name, true))
+			if (!ParseAliasLine(sound_id, sound_name, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -196,13 +196,13 @@ void	LoadSounds(void)
 
 			if (!found_id)
 			{
-//				Msg("WARNING Action Sound Name [%s] for sound file [%s] is not valid !!\n",
+//				MMsg("WARNING Action Sound Name [%s] for sound file [%s] is not valid !!\n",
 //								sound_name,
 //								sound_id);
 			}
 			else
 			{
-//				Msg("Loaded Action Sound Name [%s] for file [%s]\n", 
+//				MMsg("Loaded Action Sound Name [%s] for file [%s]\n", 
 //								sound_name,
 //								sound_id);
 			}
@@ -510,15 +510,7 @@ void ProcessPlaySound( player_t *admin, int next_index, int argv_offset )
 			next_index = 0;
 		}
 
-		DrawSubMenu (admin, 
-						Translate(M_PLAY_SOUND_MENU_ESCAPE), 
-						Translate(M_PLAY_SOUND_MENU_TITLE), 
-						next_index,
-						"admin",
-						"play_sound",
-						true,
-						-1);
-
+		DrawSubMenu (admin, Translate(540), Translate(541), next_index, "admin", "play_sound", true, -1);
 	}
 }
 

@@ -32,13 +32,23 @@
 #include "interface.h"
 #include "filesystem.h"
 #include "engine/iserverplugin.h"
+#include "dlls/iplayerinfo.h"
+#include "eiface.h"
+#include "inetchannelinfo.h"
+#include "igameevents.h"
+#include "mrecipientfilter.h" 
+#include "bitbuf.h"
+#include "engine/IEngineSound.h"
+#include "inetchannelinfo.h"
+#include "networkstringtabledefs.h"
 //#include "convar.h"
 #include "mani_language.h"
+#include "mani_output.h"
 #include "mani_memory.h"
 #include "mani_parser.h"
 #include "mani_convar.h"
 
-#define MANI_MAX_TRANSLATIONS (2000)
+#define MANI_MAX_TRANSLATIONS (1500)
 
 extern IFileSystem	*filesystem;
 
@@ -55,6 +65,8 @@ static  int		GetParamIndex ( const char	*param_in, int	*index);
 
 static	lang_trans_t	*lang_list = NULL;
 static  int				lang_list_size = 0;
+static  bool			correct_version = true;
+static	time_t			next_time_check = 0;
 
 //---------------------------------------------------------------------------------
 // Purpose: Loads language text into memory
@@ -68,7 +80,18 @@ bool LoadLanguage(void)
 	// Load English first as it should be reliable
 	if (!GetLanguageIntoMemory("english", false))
 	{
+		correct_version = false;
 		return false;
+	}
+
+	// Check version string
+	if (lang_list[1].translation == NULL)
+	{
+		correct_version = false;
+	}
+	else if (strcmp(lang_list[1].translation, MANI_LANG_VER_REQUIRED) != 0)
+	{
+		correct_version = false;
 	}
 
 	// Get the language type into language
@@ -84,6 +107,25 @@ bool LoadLanguage(void)
 	return true;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: GameFrame check if invalid english.cfg file
+//---------------------------------------------------------------------------------
+void LanguageGameFrame(void)
+{
+	if (correct_version) return;
+
+	time_t	current_time;
+
+	time(&current_time);
+	if (current_time > next_time_check)
+	{
+		SayToAll(true, "MANI-ADMIN-PLUGIN: Warning, your server plugin english.cfg file is out of date which will cause instability!"); 
+		SayToAll(true, "Please download http://www.mani-admin-plugin.com/mani_admin_plugin/language_pack/english.cfg");
+		MMsg("MANI-ADMIN-PLUGIN: Warning, your server plugin english.cfg file is out of date which will cause instability!\n"); 
+		MMsg("Please download http://www.mani-admin-plugin.com/mani_admin_plugin/language_pack/english.cfg\n");
+		next_time_check = current_time + 5;
+	}
+}
 //---------------------------------------------------------------------------------
 // Purpose: Unloads Language from memory
 //---------------------------------------------------------------------------------
@@ -101,20 +143,6 @@ void FreeLanguage(void)
 	}
 
 	FreeList((void **) &lang_list, &lang_list_size);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Gets translation
-//---------------------------------------------------------------------------------
-char *Translate(int translate_id)
-{
-	if (lang_list[translate_id].translation == NULL)
-	{
-		Msg("WARNING TRANSLATION ID [%05i] DOES NOT EXIST !!!\n", translate_id);
-		return NULL;
-	}
-
-	return (lang_list[translate_id].translation);
 }
 
 //---------------------------------------------------------------------------------
@@ -148,14 +176,14 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 		}
 	}
 
-//	Msg("Attempting to load %s.cfg\n", language_type);
+//	MMsg("Attempting to load %s.cfg\n", language_type);
 
 	// Get the language type we are trying to load
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/%s.cfg", mani_path.GetString(), language_type);
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load %s.cfg, defaulting to english\n", language_type);
+		MMsg("Failed to load %s.cfg, defaulting to english\n", language_type);
 		return false;
 	}
 	else
@@ -171,7 +199,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 			{
 				if (error_string && error_string[0] != '\0')
 				{
-					Msg("Line [%i] Error : %s\n", line_count, error_string);
+					MMsg("Line [%i] Error : %s\n", line_count, error_string);
 					// Translation is borked for this line
 					if (!overwrite_old)
 					{
@@ -186,7 +214,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 					if (lang_list[translation_id].translation == NULL)
 					{
 						// Overwriting the wrong index !!!
-						Msg ("Line [%i] Error : Translation ID [%05i] number incorrect !!!\n", line_count, translation_id);
+						MMsg("Line [%i] Error : Translation ID [%05i] number incorrect !!!\n", line_count, translation_id);
 					}
 					else
 					{
@@ -200,7 +228,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 					if (lang_list[translation_id].translation != NULL)
 					{
 						// Overwriting the wrong index !!!
-						Msg ("Line [%i] Error : Translation ID [%05i] number incorrect !!!\n", line_count, translation_id);
+						MMsg("Line [%i] Error : Translation ID [%05i] number incorrect !!!\n", line_count, translation_id);
 						failed_translation = true;
 					}
 					else
@@ -217,7 +245,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 		}
 
 		filesystem->Close(file_handle);
-//		Msg("Processed %i translations for file [%s.cfg]\n", translations_processed, language_type);
+//		MMsg("Processed %i translations for file [%s.cfg]\n", translations_processed, language_type);
 		if (failed_translation)
 		{
 			return false;
@@ -240,12 +268,12 @@ void GetLanguageType(char *language)
 	// Get the language type we are trying to load
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/language.cfg", mani_path.GetString());
 
-	Msg("Attempting to load [%s]\n", base_filename);
+	MMsg("Attempting to load [%s]\n", base_filename);
 
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load language.cfg, defaulting to english\n");
+		MMsg("Failed to load language.cfg, defaulting to english\n");
 		Q_strcpy(language,"english");
 		return;
 	}
@@ -253,7 +281,7 @@ void GetLanguageType(char *language)
 	{
 		while (filesystem->ReadLine (language, 128, file_handle) != NULL)
 		{
-			if (!ParseLine(language, true))
+			if (!ParseLine(language, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -262,7 +290,7 @@ void GetLanguageType(char *language)
 			break;
 		}
 
-		Msg("Language to be used [%s]\n", language);
+		MMsg("Language to be used [%s]\n", language);
 		filesystem->Close(file_handle);
 	}
 
@@ -288,11 +316,11 @@ char *error_string
 	char	trans_no_string[128];	
 	int	trans_string_length;
 	char	params_string[128];
-	char	single_param[128];
+//	char	single_param[128];
 	bool	no_params = false;
-	char	*find_param;
+//	char	*find_param;
 	char	*translation;
-	int		parameter_number;
+//	int		parameter_number;
 
 	// Cut carriage return out
 	if (!in) return NULL;
@@ -434,7 +462,7 @@ char *error_string
 		{
 			switch (in[i + 1])
 			{
-				case 'n': translation[j] = 0x0d; i++; break;
+				case 'n': translation[j] = 0x0a; i++; break;
 				case '\\': translation[j] = '\\'; i++; break;
 				default : translation[j] = in[i];break;
 			}
@@ -448,97 +476,54 @@ char *error_string
 		j ++;
 	}
 
-	translation[j] = '\0';
-	
-	// Check if we need to parse the string
-	if (!no_params)
-	{
-		// Set up start search 
-		find_param = translation;
-		i = 0;
-		parameter_number = 1;
-
-		for (;;)
-		{
-			if (params_string[i] == '\0') break;
-
-			if (params_string[i] != '%')
-			{
-				Q_snprintf(error_string, 1024, "Invalid parameter string [%s], translation id [%s]", params_string, trans_no_string);
-				free (translation);
-				return NULL;
-			}
-
-			j = 0;
-
-			for (;;)
-			{
-				single_param[j] = params_string[i];
-				j ++;
-				i ++;
-				if (params_string[i] == '\0' ||
-				    params_string[i] == '%')
-				{
-					single_param[j] = '\0';
-					break;
-				}
-			}
-
-			if (!single_param)
-			{
-				Q_snprintf(error_string, 1024, "Invalid parameter string [%s], translation id [%s]", params_string, trans_no_string);
-				free (translation);
-				return NULL;
-			}
-
-			if (Q_strlen(single_param) < 2)
-			{
-				// Only a % in there
-				Q_snprintf(error_string, 1024, "Invalid parameter string [%s], translation id [%s]", params_string, trans_no_string);
-				free (translation);
-				return NULL;
-			}	
-
-			// Check param exists
-			find_param = strstr(find_param, single_param);
-			if (find_param == NULL)
-			{
-				Q_snprintf(error_string, 1024, "Parameter %i [%s] from param list [%s] is not in translation string [%s] or in wrong order, translation id [%s]", 
-																	parameter_number, 
-																	single_param, 
-																	params_string,
-																	translation,
-																	trans_no_string);
-				free (translation);
-				return NULL;
-			}
-
-			parameter_number ++;
-		}	
-	}			
+	translation[j] = '\0';		
 
 	return translation;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Gets translation
+// Purpose: Gets translation without formatting parameters. Use this if you can
+//          as it is much faster than the fmt version
 //---------------------------------------------------------------------------------
-char *Translate2
+char *Translate(int translate_id)
+{
+	if (lang_list[translate_id].translation == NULL)
+	{
+		MMsg("WARNING TRANSLATION ID [%05i] DOES NOT EXIST !!!\n", translate_id);
+		return NULL;
+	}
+
+	return (lang_list[translate_id].translation);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Gets translation and applies the %1p formatting rules for safe types
+//          and variable parameter ordering.
+//---------------------------------------------------------------------------------
+char *Translate
 (
  int translate_id, 
- char *fmt1, 
- char *fmt2, 
+ const char *fmt1, 
  ...
  )
 {
 	static	char final_string[4096];
-	static	char fmt_parameter[20][10];
-	static	char converted_parameter[20][2048];
+	static	char fmt_parameter[15][10];
+	static	char converted_parameter[15][2048];
 	va_list		argptr;
-	char	*translation_ptr;
 	int		index = 0;
 	int		final_index = 0;
 	int		param_size = 0;
+
+	char *translation_ptr = lang_list[translate_id].translation;
+
+	if (translation_ptr == NULL)
+	{
+		MMsg("WARNING TRANSLATION ID [%05i] DOES NOT EXIST !!!\n", translate_id);
+		Q_snprintf(final_string, sizeof(final_string), "Missing lang [%i]", translate_id);
+		return final_string;
+	}
+
 
 	/* fmt1 contains the actual parameters used by sprintf
 	   and should match any va_arg parameters begin passed in */
@@ -555,12 +540,14 @@ char *Translate2
 
 			if (!ExtractFmtToken(fmt1, fmt_parameter[param_size], &index))
 			{
-				Msg("Error in fmt string [%s] for string [%s] translation id [%i]\n", fmt1, fmt2, translate_id);
-				return ("Error");
+				MMsg("Error in fmt string [%s] for string [%s] translation id [%i]\n", fmt1, translation_ptr, translate_id);
+				Q_snprintf(final_string, sizeof(final_string), "Lang error [%i]", translate_id);
+				return (final_string);
 			}
 
+//			Msg("Token is [%s]\n",fmt_parameter[param_size]); 
 			param_size ++;
-			if (param_size == 20)
+			if (param_size == 15)
 			{
 				break;
 			}
@@ -572,7 +559,7 @@ char *Translate2
 
 	if (param_size != 0)
 	{
-		va_start (argptr, fmt2); 
+		va_start (argptr, fmt1); 
 		for (int i = 0; i < param_size; i++)
 		{
 			int	param_len = Q_strlen(fmt_parameter[i]) - 1;
@@ -586,7 +573,7 @@ char *Translate2
 			case 'X' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
 			case 'c' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], (char) va_arg(argptr, int)); break;
 			default :	{
-						Msg("Error in fmt string [%s] for string [%s] translation id [%i]\n", fmt1, fmt2, translate_id);
+						MMsg("Error in fmt string [%s] for string [%s] translation id [%i]\n", fmt1, translation_ptr, translate_id);
 						va_end(argptr);
 						return ("Error");
 						}
@@ -596,20 +583,6 @@ char *Translate2
 		va_end(argptr);
 	}
 
-   /* fmt2 contains the default text to be used should none be provided.
-      In this text %1p */
-
-	if (lang_list[translate_id].translation != NULL)
-	{
-		// Use provided translation
-		translation_ptr = lang_list[translate_id].translation;
-	}
-	else
-	{
-		// Use default
-		translation_ptr = fmt2;
-	}
-
 	index = 0;
 
 	Q_strcpy(final_string, "");
@@ -617,44 +590,39 @@ char *Translate2
 	// Build our final string
 	while (translation_ptr[index] != '\0')
 	{
-		if (translation_ptr[index] == '%')
+		if (translation_ptr[index] == '%' && translation_ptr[index + 1] == '%')
 		{
-			if (translation_ptr[index + 1] != '%' && translation_ptr[index + 1] != '\0')
-			{
-				int parameter_index = GetParamIndex(translation_ptr, &index);
-				if (parameter_index < param_size)
-				{
-					int param_len = Q_strlen(converted_parameter[parameter_index]);
+			final_string[final_index++] = '%';
+			index+=2;
+			continue;
+		}
 
-					for (int i = 0; i < param_len; i++)
-					{
-						final_string[final_index ++] = converted_parameter[parameter_index][i];
-					}
-				}
-				else
-				{
-					if (translation_ptr[index] != '\0')
-					{
-						final_string[final_index++] = translation_ptr[index++];
-					}
-				}
-			}
-			else
-			{
-				final_string[final_index++] = translation_ptr[index++];
-			}
-		}
-		else
+		if (translation_ptr[index] == '%' && translation_ptr[index + 1] != '\0')
 		{
-			final_string[final_index++] = translation_ptr[index++];
+			int parameter_index = GetParamIndex(translation_ptr, &index);
+			if (parameter_index < param_size)
+			{
+				int param_len = Q_strlen(converted_parameter[parameter_index]);
+
+				for (int i = 0; i < param_len; i++)
+				{
+					final_string[final_index ++] = converted_parameter[parameter_index][i];
+				}
+
+				continue;
+			}
 		}
+	
+		final_string[final_index++] = translation_ptr[index++];
 	}
+
+	final_string[final_index] = '\0';
 
 	return (final_string);
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Gets our %1p, %p, %20p etc parameter index
+// Purpose: Gets our %1p, %20p etc parameter index
 //---------------------------------------------------------------------------------
 static
 int	GetParamIndex 
@@ -665,13 +633,6 @@ int	GetParamIndex
 {
 	char	param_string[3];
 	int		param_number;
-
-	// Handle just %p (parameter 1)
-	if (param_in[*index + 1] == 'p')
-	{
-		*index = *index + 2;
-		return 0;
-	}
 
 	*index = *index + 1;
 	param_string[0] = param_in[*index];
@@ -690,7 +651,7 @@ int	GetParamIndex
 	}
 
 	param_number = Q_atoi(param_string);
-	if (param_number == 0)
+	if (param_number <= 0)
 	{
 		// Just in case
 		return 0;
@@ -725,7 +686,7 @@ bool	ExtractFmtToken
 		fmt_token[i++] = fmt_in[*index];
 		*index = *index + 1;
 
-		if (fmt_token[*index] == '%')
+		if (fmt_in[*index] == '%')
 		{
 			break;
 		}

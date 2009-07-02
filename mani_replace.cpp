@@ -104,11 +104,11 @@ void	LoadCommandList(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load commandlist.txt\n");
+//		MMsg("Failed to load commandlist.txt\n");
 	}
 	else
 	{
-//		Msg("Replacement command list\n");
+//		MMsg("Replacement command list\n");
 		while (filesystem->ReadLine (data_in, sizeof(data_in), file_handle) != NULL)
 		{
 			if (!ParseCommandReplace(data_in, alias, command_type, command_string))
@@ -122,7 +122,7 @@ void	LoadCommandList(void)
 			Q_strcpy(command_list[command_list_size - 1].command_string, command_string);
 			Q_strcpy(command_list[command_list_size - 1].command_alias, alias);
 
-//			Msg("Alias [%s] Type [%s] Command [%s]\n", alias, command_type, command_string);
+//			MMsg("Alias [%s] Type [%s] Command [%s]\n", alias, command_type, command_string);
 		}
 
 		filesystem->Close(file_handle);
@@ -155,6 +155,22 @@ bool	CheckForReplacement
 
 				char	rcon_cmd[512];
 				Q_snprintf(rcon_cmd, sizeof(rcon_cmd), "%s\n", command_list[i].command_string);
+
+				if (Q_strstr(rcon_cmd, "ma_setcash") ||
+					Q_strstr(rcon_cmd, "ma_givecash") ||
+					Q_strstr(rcon_cmd, "ma_givecashp") ||
+					Q_strstr(rcon_cmd, "ma_takecash") ||
+					Q_strstr(rcon_cmd, "ma_takecashp") ||
+					Q_strstr(rcon_cmd, "ma_sethealth") ||
+					Q_strstr(rcon_cmd, "ma_takehealth") ||
+					Q_strstr(rcon_cmd, "ma_takehealthp") ||
+					Q_strstr(rcon_cmd, "ma_givehealth") ||
+					Q_strstr(rcon_cmd, "ma_givehealthp"))
+				{
+					SayToPlayer(player,"The command [%s] should be used as a 'C' type command only");
+					return false;
+				}
+
 				LogCommand(player->entity, "%s => %s\n", command_string, command_list[i].command_string);
 				engine->ServerCommand(rcon_cmd);
 				return false;

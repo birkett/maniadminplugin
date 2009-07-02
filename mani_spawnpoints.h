@@ -37,6 +37,7 @@ public:
 	void		Load(char	*map_name);
 	void		LevelInit(char	*map_name);
 	bool		AddSpawnPoints(char **pReplaceEnts, const char *pMapEntities);
+	void		LevelShutdown(void);
 
 private:
 
@@ -62,7 +63,7 @@ private:
 	// Handle up to 10 teams
 	spawn_team_t	spawn_team[10];
 
-	char		replacement_entities[65536 * 4];
+	char		*replacement_entities;
 
 };
 

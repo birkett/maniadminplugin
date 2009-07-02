@@ -119,7 +119,7 @@ void ManiMapAdverts::Init(void)
 
 	if (!gpManiGameType->IsAdvertDecalAllowed()) return;
 
-//	Msg("*********** Loading mapadverts.txt ************\n");
+//	MMsg("*********** Loading mapadverts.txt ************\n");
 
 	FreeMapAdverts();
 	KeyValues *kv_ptr = new KeyValues("mapadverts.txt");
@@ -127,7 +127,7 @@ void ManiMapAdverts::Init(void)
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/mapadverts.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-//		Msg("Failed to load mapadverts.txt\n");
+//		MMsg("Failed to load mapadverts.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -139,7 +139,7 @@ void ManiMapAdverts::Init(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -152,7 +152,7 @@ void ManiMapAdverts::Init(void)
 		if (FStrEq(base_key_ptr->GetName(), current_map))
 		{
 			found_match = true;
-//			Msg("Found record for %s\n", current_map);
+//			MMsg("Found record for %s\n", current_map);
 			break;
 		}
 
@@ -167,7 +167,7 @@ void ManiMapAdverts::Init(void)
 	if (!found_match)
 	{
 		kv_ptr->deleteThis();
-//		Msg("Map entry %s not found\n", current_map);
+//		MMsg("Map entry %s not found\n", current_map);
 		return;
 	}
 
@@ -176,7 +176,7 @@ void ManiMapAdverts::Init(void)
 	kv_decal_ptr = base_key_ptr->GetFirstTrueSubKey();
 	if (!kv_decal_ptr)
 	{
-//		Msg("No decal key name found\n");
+//		MMsg("No decal key name found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -186,10 +186,10 @@ void ManiMapAdverts::Init(void)
 		char decal_name[64];
 
 		Q_strcpy(decal_name, kv_decal_ptr->GetName());
-//		Msg("Decal Name [%s]\n", decal_name);		
+//		MMsg("Decal Name [%s]\n", decal_name);		
 		if (gpManiCustomEffects->GetDecal(decal_name) == -1)
 		{
-//			Msg("Decal name [%s] is invalid !!\n", decal_name);
+//			MMsg("Decal name [%s] is invalid !!\n", decal_name);
 			// No decal of that name found
 			kv_decal_ptr = kv_decal_ptr->GetNextKey();
 			if (!kv_decal_ptr)
@@ -211,14 +211,14 @@ void ManiMapAdverts::Init(void)
 
 	kv_ptr->deleteThis();
 
-//	Msg("*********** mapadverts.txt loaded ************\n");
+//	MMsg("*********** mapadverts.txt loaded ************\n");
 
 /*	for (int i = 0; i < decal_list_size; i ++)
 	{
-		Msg("Decal Name [%s]\n" , decal_list[i].name);
+		MMsg("Decal Name [%s]\n" , decal_list[i].name);
 		for (int j = 0; j < decal_list[i].decal_coord_list_size; j ++)
 		{
-			Msg ("%f %f %f\n", 
+			MMsg("%f %f %f\n", 
 					decal_list[i].decal_coord_list[j].x,
 					decal_list[i].decal_coord_list[j].y,
 					decal_list[i].decal_coord_list[j].z);

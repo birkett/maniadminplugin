@@ -147,6 +147,7 @@ bool		ManiChatTriggers::PlayerSay
 	switch (chat_trigger_ptr->trigger_type)
 	{
 		case MANI_CT_IGNORE: return (this->ProcessIgnore(player_ptr, chat_string, teamonly, from_event)); // Np processing required, just block the chat :)
+		case MANI_CT_IGNORE_X: return (this->ProcessIgnoreX(player_ptr, chat_trigger_ptr, chat_string, teamonly, from_event)); // Np processing required, just block the chat :)
 		default : return true;
 	}
 
@@ -164,8 +165,8 @@ bool		ManiChatTriggers::ProcessIgnore
  bool from_event
  )
 {
-	// This came from an event so just return true
-	if (from_event) return true;
+	// This came from an event so just return false so it doesn't get parsed by player say event
+	if (from_event) return false;
 
 	// Just log the chat in format HLstatsX can recognise
 
@@ -199,6 +200,67 @@ bool		ManiChatTriggers::ProcessIgnore
 
 	return false;
 }
+
+//---------------------------------------------------------------------------------
+// Purpose: Player has said something we only want to ignore it x times
+//---------------------------------------------------------------------------------
+bool		ManiChatTriggers::ProcessIgnoreX
+(
+ player_t *player_ptr, 
+ chat_trigger_t *chat_trigger_ptr,
+ const	char *chat_string, 
+ bool teamonly, 
+ bool from_event
+ )
+{
+	// This came from an event so just return true
+	if (from_event) return true;
+
+	// Check if we should let this one through or not based on this trigger count
+	if (chat_trigger_ptr->ignore_count > 0)
+	{
+		if (chat_trigger_ptr->current_count == chat_trigger_ptr->ignore_count)
+		{
+			chat_trigger_ptr->current_count = 0;
+			return true;
+		}
+	}
+
+	chat_trigger_ptr->current_count ++;
+
+	// Get CTeam pointer so we can use the proper team name in the log message
+	// This will probably blow up on some mod when the CTeam header is changed :/
+	// Yup this blows up on hl2mp so I've switched to using the gametypes.txt file
+	// instead.
+
+	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return false;
+
+	char *team_name = gpManiGameType->GetTeamLogName(player_ptr->team);
+
+	// Just log the chat in format HLstatsX can recognise
+
+	if ( teamonly )
+	{
+		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
+	}
+	else
+	{
+		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
+	}
+
+	// Fire the event so other plugins can see it
+	IGameEvent * event = gameeventmanager->CreateEvent( "player_say" );
+	if ( event )	// will be null if there are no listeners!
+	{
+		event->SetInt("userid", player_ptr->user_id );
+		event->SetString("text", chat_string );
+		event->SetInt("priority", 1 );	// HLTV event priority, not transmitted
+		gameeventmanager->FireEvent( event );
+	}
+
+	return false;
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: Do a binary search for the string
 //---------------------------------------------------------------------------------
@@ -233,14 +295,14 @@ void ManiChatTriggers::LoadData(void)
 {
 	char	core_filename[256];
 
-//	Msg("*********** Loading chattriggers.txt ************\n");
+//	MMsg("*********** Loading chattriggers.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("chattriggers.txt");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/chattriggers.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-//		Msg("Failed to load chattriggers.txt\n");
+//		MMsg("Failed to load chattriggers.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -250,7 +312,7 @@ void ManiChatTriggers::LoadData(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -262,6 +324,11 @@ void ManiChatTriggers::LoadData(void)
 		{
 			// Get 'Ignore' options
 			this->ProcessLoadIgnore(base_key_ptr);
+		}
+		else if (FStrEq(base_key_ptr->GetName(), MANI_CT_IGNORE_X_STRING))
+		{
+			// Get 'Ignore X' options
+			this->ProcessLoadIgnoreX(base_key_ptr);
 		}
 
 		base_key_ptr = base_key_ptr->GetNextKey();
@@ -275,7 +342,7 @@ void ManiChatTriggers::LoadData(void)
 
 	qsort(chat_trigger_list, chat_trigger_list_size, sizeof(chat_trigger_t), sort_chat_triggers); 
 
-//	Msg("*********** chattriggers.txt loaded ************\n");
+//	MMsg("*********** chattriggers.txt loaded ************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -298,6 +365,42 @@ void ManiChatTriggers::ProcessLoadIgnore(KeyValues *kv_parent_ptr)
 		chat_trigger.trigger_type = MANI_CT_IGNORE;
 
 		Q_strcpy(chat_trigger.say_command, kv_ignore_ptr->GetString(NULL, ""));
+
+		if (chat_trigger.say_command && !FStrEq(chat_trigger.say_command, ""))
+		{
+			AddToList((void **) &(chat_trigger_list), sizeof(chat_trigger_t), &(chat_trigger_list_size));
+			chat_trigger_list[chat_trigger_list_size - 1] = chat_trigger;
+		}
+
+		kv_ignore_ptr = kv_ignore_ptr->GetNextValue();
+		if (!kv_ignore_ptr)
+		{
+			break;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Read in Ignore X Types
+//---------------------------------------------------------------------------------
+void ManiChatTriggers::ProcessLoadIgnoreX(KeyValues *kv_parent_ptr)
+{
+	KeyValues *kv_ignore_ptr;
+	chat_trigger_t	chat_trigger;
+
+	kv_ignore_ptr = kv_parent_ptr->GetFirstValue();
+	if (!kv_ignore_ptr)
+	{
+		return;
+	}
+
+	for (;;)
+	{
+		Q_memset(&chat_trigger, 0, sizeof(chat_trigger));
+		chat_trigger.trigger_type = MANI_CT_IGNORE_X;
+
+		Q_strcpy(chat_trigger.say_command, kv_ignore_ptr->GetName());
+		chat_trigger.ignore_count = Q_atoi(kv_ignore_ptr->GetString(NULL, ""));
 
 		if (chat_trigger.say_command && !FStrEq(chat_trigger.say_command, ""))
 		{
@@ -388,6 +491,7 @@ void	ManiChatTriggers::DumpTriggerData
 	switch (chat_trigger_ptr->trigger_type)
 	{
 		case MANI_CT_IGNORE: Q_snprintf(temp_string, sizeof(temp_string), "%s", MANI_CT_IGNORE_STRING); break;
+		case MANI_CT_IGNORE_X: Q_snprintf(temp_string, sizeof(temp_string), "%s Limit = %i Current = %i", MANI_CT_IGNORE_X_STRING, chat_trigger_ptr->ignore_count, chat_trigger_ptr->current_count); break;
 		default:Q_snprintf(temp_string, sizeof(temp_string), "UNKNOWN"); break;
 	}
 

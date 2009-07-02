@@ -57,11 +57,25 @@ extern	bool war_mode;
 extern	int	max_players;
 extern	bf_write *msg_buffer;
 extern	int	text_message_index;
+extern	int hintMsg_message_index;
+
+#define SIGLEN			8
+#define ENGINE486_SIG	"\x55\x89\xE5\x53\x83\xEC\x14\xBB"
+#define ENGINE486_OFFS	40
+#define ENGINE686_SIG	"\x53\x83\xEC\x08\xBB\x01\x00\x00"
+#define ENGINE686_OFFS	50
+#define	ENGINEAMD_SIG	"\x53\x51\xBB\x01\x00\x00\x00\x51"
+#define	ENGINEAMD_OFFS	47
+#define ENGINEW32_SIG	"\xA1\x2A\x2A\x2A\x2A\x56\xBE\x01"
+#define ENGINEW32_OFFS	38
+#define IA32_CALL		0xE8
 
 say_argv_t		say_argv[MAX_SAY_ARGC];
 static	int	map_count = -1;
 static	char mani_log_filename[512]="temp.log";
 
+typedef void (*CONPRINTF_FUNC)(const char *, ...);
+CONPRINTF_FUNC MMsg = Msg;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -75,6 +89,8 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 
 static void ManiLogMode ( ConVar *var, char const *pOldString );
 static void WriteToManiLog ( char *log_string, char *steam_id);
+static bool vcmp(void *_addr1, void *_addr2, size_t len);
+
 
 ConVar mani_log_directory ("mani_log_directory", "mani_logs", 0, "This defines the directory to store admin logs in"); 
 ConVar mani_log_mode ("mani_log_mode", "0", 0, "0 = to main valve log file, 1 = per map in mani_log_directory, 2 = log to one big file in mani_log_directory, 3 = per steam id in mani_log_directory", true, 0, true, 3, ManiLogMode); 
@@ -893,6 +909,187 @@ void SayToPlayerColoured(player_t *player, const char	*fmt, ...)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Say admin string to all
+//---------------------------------------------------------------------------------
+void AdminHSayToAll
+(
+player_t	*player,
+int			anonymous,
+const char	*fmt, 
+...
+)
+{
+	va_list		argptr;
+	char		tempString[1024];
+	char	admin_final_string[1024];
+	char	non_admin_final_string[1024];
+	int		admin_index;
+	bool	found_player = false;
+	bool	found_admin = false;
+
+	va_start ( argptr, fmt );
+	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	va_end   ( argptr );
+
+	player_t	server_player;
+
+	if (player->entity == NULL)
+	{
+		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
+		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
+	}
+	else
+	{
+		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
+		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
+	}
+
+	OutputToConsole(NULL, true, "%s\n", admin_final_string);
+
+	SplitHintString(admin_final_string, 34);
+	SplitHintString(non_admin_final_string, 34);
+
+	if (anonymous == 1)
+	{
+		MRecipientFilter mrfadmin;
+		MRecipientFilter mrf;
+		mrf.MakeReliable();
+		mrfadmin.MakeReliable();
+
+		for (int i = 1; i <= max_players; i++)
+		{
+			bool is_admin;
+
+			is_admin = false;
+			server_player.index = i;
+			if (!FindPlayerByIndex(&server_player))
+			{
+				continue;
+			}
+
+			if (server_player.is_bot)
+			{
+				continue;
+			}
+
+			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
+			if (is_admin)
+			{
+				found_admin = true;
+				mrfadmin.AddPlayer(i);
+//				OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+			}
+			else
+			{
+				found_player = true;
+				mrf.AddPlayer(i);
+//				OutputToConsole(server_player.entity, false, "%s\n", non_admin_final_string);
+			}
+		}
+
+		if (found_player)
+		{
+			SayHintMsg(&mrf, non_admin_final_string);
+		}
+
+		if (found_admin)
+		{
+			SayHintMsg(&mrfadmin, admin_final_string);
+		}
+	}
+	else
+	{
+		for (int i = 1; i <= max_players; i++)
+		{
+			server_player.index = i;
+			if (!FindPlayerByIndex(&server_player))
+			{
+				continue;
+			}
+
+			if (server_player.is_bot)
+			{
+				continue;
+			}
+
+			found_player = true;
+//			OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+		}
+
+		if (found_player)
+		{
+			MRecipientFilter mrf;
+			mrf.MakeReliable();
+			mrf.AddAllPlayers(max_players);
+
+			SayHintMsg(&mrf, admin_final_string);
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Use Hint type message to ouput text
+//---------------------------------------------------------------------------------
+void SayHintMsg(MRecipientFilter *mrf_ptr, char *text_ptr)
+{
+	char text_out[192];
+
+	// Copy to restricted size
+	Q_snprintf(text_out, sizeof(text_out), "%s", text_ptr);
+	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index);
+	msg_buffer->WriteByte(1);
+	msg_buffer->WriteString(text_out);
+	engine->MessageEnd();	
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Use Hint type message to ouput text
+//---------------------------------------------------------------------------------
+void SplitHintString(char *string, int width)
+{
+	int	length = Q_strlen(string);
+	int	last_space = -1;
+	int	wrap_count = 0;
+
+	if (length < width)
+	{
+		return;
+	}
+
+	for (int i = 0; i < length; i++) 
+	{
+		if (string[i] == ' ')
+		{
+			last_space = i;
+		}
+
+		if (string[i] == '%' && string[i] == 's')
+		{
+			string[i] = ' ';
+		}
+
+		if (string[i] == '\n')
+		{
+			wrap_count = -1;
+		}
+
+		if (wrap_count == width)
+		{
+			if (last_space != -1)
+			{
+				string[last_space] = '\n';
+			}
+
+			wrap_count = 0;
+		}
+		else
+		{
+			wrap_count ++;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Say string to specific teams
 //---------------------------------------------------------------------------------
 void SayToTeam
@@ -981,7 +1178,7 @@ void	OutputToConsole(edict_t *pEntity, bool svr_command, char *fmt, ...)
 
 	if (svr_command || pEntity == NULL)
 	{
-		Msg("%s", tempString);
+		MMsg("%s", tempString);
 	}
 	else
 	{
@@ -1014,7 +1211,7 @@ void LogCommand(edict_t *pEntity, char *fmt, ... )
 	char		tempString[1024]="";
 	char		tempString2[1024]="";
 	char		user_details[128]="CONSOLE : ";
-	char		steam_id[128]="CONSOLE";
+	char		steam_id[MAX_NETWORKID_LENGTH]="CONSOLE";
 
 	if(pEntity != NULL && !pEntity->IsFree() )
 	{
@@ -1073,7 +1270,7 @@ void WriteToManiLog
 			filehandle = filesystem->Open(mani_log_filename, "at+");
 			if (filehandle == NULL)
 			{
-					Msg("Failed to open log file [%s] for writing\n", mani_log_filename);
+					MMsg("Failed to open log file [%s] for writing\n", mani_log_filename);
 					engine->LogPrint( log_string );
 					return;
 			}
@@ -1103,7 +1300,7 @@ void WriteToManiLog
 			filehandle = filesystem->Open(steam_filename, "at+");
 			if (filehandle == NULL)
 			{
-					Msg("Failed to open log file [%s] for writing\n", steam_filename);
+					MMsg("Failed to open log file [%s] for writing\n", steam_filename);
 					engine->LogPrint( log_string );
 					return;
 			}
@@ -1156,7 +1353,7 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 		{
 			char	filename[512];
 
-			Msg("Searching for old log file...\n");
+			MMsg("Searching for old log file...\n");
 
 			// Search for existing log files for todays date
 			for (int i = 0; i < 1000; i++)
@@ -1206,7 +1403,7 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 		filehandle = filesystem->Open(mani_log_filename, "at+");
 		if (filehandle == NULL)
 		{
-				Msg("Failed to open log file [%s] for writing\n", mani_log_filename);
+				MMsg("Failed to open log file [%s] for writing\n", mani_log_filename);
 				return;
 		}
 
@@ -1244,6 +1441,62 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Update log mode
+//---------------------------------------------------------------------------------
+void WriteDebug 
+(
+ char *fmt,
+ ...
+)
+{
+	if (!gpManiGameType->DebugOn()) return;
+
+	va_list		argptr;
+	char		tempString[1024];
+
+	va_start ( argptr, fmt );
+	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	va_end   ( argptr );
+
+	char	filename[512];
+
+	Q_snprintf(filename, sizeof(filename), "./cfg/%s/%s/debug.log", 
+									mani_path.GetString(),
+									mani_log_directory.GetString()
+									);
+
+	// Log to custom log file (same filename format as Valves)
+	FileHandle_t	filehandle;
+
+	filehandle = filesystem->Open(filename, "at+");
+	if (filehandle == NULL)
+	{
+		MMsg("Failed to open log file [%s] for writing\n", filename);
+		return;
+	}
+
+	char		logString[1024];
+
+	struct	tm	*time_now;
+	time_t	current_time;
+
+	time(&current_time);
+	time_now = localtime(&current_time);
+
+	int	length = Q_snprintf(logString, sizeof(logString), "M %02i/%02i/%04i - %02i:%02i:%02i: %s", 
+								time_now->tm_mon + 1,
+								time_now->tm_mday,
+								time_now->tm_year + 1900,
+								time_now->tm_hour,
+								time_now->tm_min,
+								time_now->tm_sec,
+								tempString);
+
+	filesystem->Write((void *) logString, length, filehandle);
+	filesystem->Close(filehandle);
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Take a string, remove carriage return, remove comments, strips leading
 //          and ending spaces
 //---------------------------------------------------------------------------------
@@ -1263,9 +1516,9 @@ void ClientMsgSinglePlayer
 
 	szBuf[sizeof(szBuf)-1] = 0;
 
-	KeyValues *kv = new KeyValues("msg");
+	KeyValues *kv = new KeyValues("Msg");
 	kv->SetString("title", szBuf);
-	kv->SetString("msg", "message");
+	kv->SetString("Msg", "message");
 	kv->SetColor("color", Color(255, 255, 255, 255)); // White
 	kv->SetInt("level", level);
 	kv->SetInt("time", seconds);
@@ -1314,9 +1567,9 @@ void ClientMsg
 		{
 			if (gpManiClient->IsAdmin(&player, &admin_index))
 			{
-				KeyValues *kv = new KeyValues("msg");
+				KeyValues *kv = new KeyValues("Msg");
 				kv->SetString("title", szBuf);
-				kv->SetString("msg", "message");
+				kv->SetString("Msg", "message");
 				kv->SetColor("color", admin_only_colour); // Red
 				kv->SetInt("level", level);
 				kv->SetInt("time", seconds);
@@ -1326,9 +1579,9 @@ void ClientMsg
 		}
 		else
 		{
-			KeyValues *kv = new KeyValues("msg");
+			KeyValues *kv = new KeyValues("Msg");
 			kv->SetString("title", szBuf);
-			kv->SetString("msg", "message");
+			kv->SetString("Msg", "message");
 			kv->SetColor("color", *col); 
 			kv->SetInt("level", level);
 			kv->SetInt("time", seconds);
@@ -1499,4 +1752,82 @@ void UTIL_LogPrintf( char *fmt, ... )
 
 	// Print to server console
 	engine->LogPrint( tempString );
+}
+
+bool UTIL_InterfaceMsg( void *ptr, char *interface_id, char *version)
+{
+	if (ptr)
+	{
+		MMsg("Interface %s @ %p\n", interface_id, ptr);
+		return true;
+	}
+
+	MMsg("Interface %s version %s failed to load\n", interface_id, version);
+	return false;
+}
+
+static 
+bool vcmp(void *_addr1, void *_addr2, size_t len)
+{
+	unsigned char *addr1 = (unsigned char *)_addr1;
+	unsigned char *addr2 = (unsigned char *)_addr2;
+
+	for (size_t i=0; i<len; i++)
+	{
+		if (addr2[i] == '*')
+			continue;
+		if (addr1[i] != addr2[i])
+			return false;
+	}
+
+	return true;
+}
+
+void FindConPrintf(void)
+{
+	ConCommandBase *pBase = cvar->GetCommands();
+	unsigned char *ptr = NULL;
+	FnCommandCallback callback = NULL;
+	int offs = 0;
+
+	while (pBase)
+	{
+		if ( strcmp(pBase->GetName(), "echo") == 0 )
+		{
+			//callback = //*((FnCommandCallback *)((char *)pBase + offsetof(ConCommand, m_fnCommandCallback)));
+			callback = ((ConCommand *)pBase)->m_fnCommandCallback;
+			ptr = (unsigned char *)callback;
+			if (vcmp(ptr, ENGINE486_SIG, SIGLEN))
+			{
+				offs = ENGINE486_OFFS;
+			} else if (vcmp(ptr, ENGINE686_SIG, SIGLEN)) {
+				offs = ENGINE686_OFFS;
+			} else if (vcmp(ptr, ENGINEAMD_SIG, SIGLEN)) {
+				offs = ENGINEAMD_OFFS;
+			} else if (vcmp(ptr, ENGINEW32_SIG, SIGLEN)) {
+				offs = ENGINEW32_OFFS;
+			}
+			if (!offs || ptr[offs-1] != IA32_CALL)
+			{
+				return;
+			}
+			//get the relative offset
+			MMsg = *((CONPRINTF_FUNC *)(ptr + offs));
+			//add the base offset, to the ip (which is the address+offset + 4 bytes for next instruction)
+			MMsg = (CONPRINTF_FUNC)((unsigned long)MMsg + (unsigned long)(ptr + offs) + 4);
+			Msg("Using conprintf\n");
+			return;
+		}
+		pBase = const_cast<ConCommandBase *>(pBase->GetNext());
+	}
+
+	Msg("Using Msg()\n");
+	MMsg = (CONPRINTF_FUNC)Msg;
+	return;
+
+}
+
+CON_COMMAND(ma_echo, "Runs an echo test")
+{
+	MMsg("Test\n");
 }

@@ -125,7 +125,7 @@ void ManiReservedSlot::Load(void)
 void ManiReservedSlot::LevelInit(void)
 {
 	FileHandle_t file_handle;
-	char	steam_id[128];
+	char	steam_id[MAX_NETWORKID_LENGTH];
 	char	base_filename[256];
 
 	this->CleanUp();
@@ -134,14 +134,14 @@ void ManiReservedSlot::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load reserveslots.txt\n");
+//		MMsg("Failed to load reserveslots.txt\n");
 	}
 	else
 	{
-//		Msg("Reserve Slot list\n");
+//		MMsg("Reserve Slot list\n");
 		while (filesystem->ReadLine (steam_id, sizeof(steam_id), file_handle) != NULL)
 		{
-			if (!ParseLine(steam_id, true))
+			if (!ParseLine(steam_id, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -149,7 +149,7 @@ void ManiReservedSlot::LevelInit(void)
 
 			AddToList((void **) &reserve_slot_list, sizeof(reserve_slot_t), &reserve_slot_list_size);
 			Q_strcpy(reserve_slot_list[reserve_slot_list_size - 1].steam_id, steam_id);
-//			Msg("[%s]\n", steam_id);
+//			MMsg("[%s]\n", steam_id);
 		}
 
 		qsort(reserve_slot_list, reserve_slot_list_size, sizeof(reserve_slot_t), sort_reserve_slots_by_steam_id); 

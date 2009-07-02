@@ -39,12 +39,13 @@ public:
 	void		Load(void);
 	void		Unload(void);
 	void		LevelInit(void);
+	void		GameCommencing(void);
 
 private:
 
 	struct save_scores_t
 	{
-		char	steam_id[64];
+		char	steam_id[MAX_NETWORKID_LENGTH];
 		int		kills;
 		int		deaths;
 		int		cash;

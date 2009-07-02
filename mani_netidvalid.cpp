@@ -54,6 +54,9 @@
 #include "mani_save_scores.h"
 #include "mani_gametype.h"
 #include "mani_netidvalid.h"
+#include "mani_trackuser.h"
+#include "mani_afk.h"
+#include "mani_ping.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
 
@@ -350,7 +353,7 @@ void ManiNetIDValid::ClientDisconnect(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 {
-//	Msg("Mani -> Network ID [%s] Validated\n", player_ptr->steam_id);
+//	MMsg("Mani -> Network ID [%s] Validated\n", player_ptr->steam_id);
 
 	if (ProcessPluginPaused()) return ;
 
@@ -369,18 +372,8 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	}
 
 	gpManiClient->NetworkIDValidated(player_ptr);
-
-	if (mani_stats.GetInt() == 1)
-	{
-		if (mani_stats_by_steam_id.GetInt() == 1)
-		{
-			AddPlayerToRankList(player_ptr);
-		}
-		else
-		{
-			AddPlayerNameToRankList(player_ptr); 
-		}
-	}
+	gpManiStats->NetworkIDValidated(player_ptr);
+	gpManiPing->NetworkIDValidated(player_ptr);
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
@@ -388,6 +381,7 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	}
 
 	gpManiSaveScores->NetworkIDValidated(player_ptr);
+	gpManiAFK->NetworkIDValidated(player_ptr);
 
 	return ;
 }

@@ -26,8 +26,8 @@
 #ifndef MANI_LOG_CSS_STATS_H
 #define MANI_LOG_CSS_STATS_H
 
-const int MANI_MAX_CSS_HITGROUPS = 11;
-const int MANI_MAX_CSS_WEAPONS = 28;
+const int MANI_MAX_LOG_CSS_HITGROUPS = 11;
+const int MANI_MAX_LOG_CSS_WEAPONS = 28;
 
 class ManiLogCSSStats
 {
@@ -61,17 +61,19 @@ private:
 		int total_damage;
 		int total_deaths;
 		float last_hit_time;
-		int	hit_groups[MANI_MAX_CSS_HITGROUPS];
+		int	hit_groups[MANI_MAX_LOG_CSS_HITGROUPS];
 	};
 
 	struct player_info_t
 	{
-		char name[128];
-		char steam_id[128];
+		char name[MAX_PLAYER_NAME_LENGTH];
+		char steam_id[MAX_NETWORKID_LENGTH];
 		int	 user_id;
 		int	 team;
-		weapon_stats_t weapon_stats_list[MANI_MAX_CSS_WEAPONS];
+		weapon_stats_t weapon_stats_list[MANI_MAX_LOG_CSS_WEAPONS];
 	};
+
+	int		hash_table[255];
 
 	player_info_t	player_stats_list[MANI_MAX_PLAYERS];
 	bool	level_ended;
@@ -84,6 +86,7 @@ private:
 	int		FindWeapon(char *weapon_string);
 	void	AddHitGroup(int hits, char *final_string, char *bodypart);
 	void	InitStats(void);
+	int		GetHashIndex(char *weapon_string);
 };
 
 extern	ManiLogCSSStats *gpManiLogCSSStats;

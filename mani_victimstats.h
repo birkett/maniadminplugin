@@ -37,7 +37,8 @@ public:
 
 	void		ClientActive(player_t *player_ptr);
 	void		ClientDisconnect(player_t *player_ptr);
-	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, bool headshot,  char *weapon_name );
+	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, bool headshot,  char *weapon_name, bool menu_displayed );
+	void		DODSPlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, int  weapon, bool menu_displayed );
 	void		PlayerHurt( player_t *victim_ptr,  player_t *attacker_ptr,  IGameEvent * event);
 	void		PlayerSpawn(player_t *player_ptr);
 	void		RoundStart(void);
@@ -56,7 +57,7 @@ private:
 		bool killed;
 		char weapon_name[128];
 		bool headshot;
-		char name[128];
+		char name[MAX_PLAYER_NAME_LENGTH];
 		float	last_hit_time;
 		bool shown_stats;
 		float	distance;
@@ -67,7 +68,9 @@ private:
 	damage_t		damage_list[MANI_MAX_PLAYERS][MANI_MAX_PLAYERS];
 
 	void	AddHitGroup(int hits, char *final_string, char *bodypart);
-	void	ShowStats(player_t *victim_ptr);
+	void	ShowStats(player_t *victim_ptr, player_t *attacker_ptr, bool menu_displayed);
+	void	ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr, int mode);
+	void	ShowMenuStats(player_t *victim_ptr, player_t *attacker_ptr, int timeout);
 };
 
 extern	ManiVictimStats *gpManiVictimStats;

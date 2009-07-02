@@ -29,7 +29,8 @@
 // Hash defines
 #define	MAX_WEAPON_ALIAS (10)
 
-#define MANI_MAX_PLAYERS (64)
+const int MANI_MAX_PLAYERS = 64;
+
 #define MAX_LAST_MAPS (20)
 #define	MANI_MAX_TEAMS (5)
 
@@ -41,13 +42,14 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaK, www.mani-admin-plugin.com"
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaM, www.mani-admin-plugin.com"
 #ifdef SOURCEMM
-#define PLUGIN_CORE_VERSION "1.2BetaK SMM"
+#define PLUGIN_CORE_VERSION "1.2BetaM SMM"
 #else
-#define PLUGIN_CORE_VERSION "1.2BetaK"
+#define PLUGIN_CORE_VERSION "1.2BetaM"
 #endif
-#define PLUGIN_VERSION_ID "V1.2BetaK\n"
+#define PLUGIN_VERSION_ID "V1.2BetaM\n"
+#define PLUGIN_VERSION_ID2 "V1.2BetaM"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)
@@ -73,13 +75,6 @@ struct map_vote_t
 	float	vote_time_stamp;
 };
 
-struct average_ping_t
-{
-	float	ping;
-	int		count;
-	bool	in_use;
-};
-
 struct	rcon_t
 {
 	char	rcon_command[512];
@@ -103,11 +98,6 @@ struct	cexec_t
 {
 	char	cexec_command[512];
 	char	alias[512];
-};
-
-struct ping_immunity_t
-{
-	char	steam_id[128];
 };
 
 struct msay_t
@@ -142,13 +132,13 @@ struct autokick_ip_t
 
 struct autokick_steam_t
 {
-	char	steam_id[64];
+	char	steam_id[MAX_NETWORKID_LENGTH];
 	bool	kick;
 };
 
 struct autokick_name_t
 {
-	char	name[128];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	bool	kick;
 	bool	ban;
 	int		ban_time;
@@ -156,7 +146,7 @@ struct autokick_name_t
 
 struct autokick_pname_t
 {
-	char	pname[128];
+	char	pname[MAX_PLAYER_NAME_LENGTH];
 	bool	kick;
 	bool	ban;
 	int		ban_time;
@@ -250,7 +240,7 @@ struct lang_trans_t
 
 struct name_change_t
 {
-	char	name[128];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	bool	in_use;
 };
 

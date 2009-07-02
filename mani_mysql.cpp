@@ -113,13 +113,13 @@ bool ManiMySQL::Init(void)
 
 	if ((my_data = mysql_init((MYSQL*) 0)) == NULL) 
 	{
-		Msg("Failed to init database\n");
+		MMsg("Failed to init database\n");
 		return false;
 	}
 
 	if (mysql_options(my_data, MYSQL_OPT_CONNECT_TIMEOUT, (char *) &timeout))
 	{
-		Msg("mysql_options failed !!\n");
+		MMsg("mysql_options failed !!\n");
 		Msg( "%s\n", mysql_error(my_data));
 	}
 

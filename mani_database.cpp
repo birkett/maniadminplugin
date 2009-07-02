@@ -104,13 +104,28 @@ bool ManiDatabase::LoadDatabaseFile(void)
 
 	// Game server information (probably in wrong class really)
 	server_id = 1;
+	Q_strcpy(server_group_id,"Default");
 	Q_strcpy(server_name,"");
 	Q_strcpy(server_ip_address,"");
 	server_port = 27015;
 	Q_strcpy(mod_name,"");
 	Q_strcpy(rcon_password,"");
 
-//	Msg("*********** Loading database.txt ************\n");
+	Q_strcpy(db_tb_client,"client");
+	Q_strcpy(db_tb_steam,"steam");
+	Q_strcpy(db_tb_nick,"nick");
+	Q_strcpy(db_tb_ip,"ip");
+	Q_strcpy(db_tb_flag,"flag");
+	Q_strcpy(db_tb_server,"server");
+	Q_strcpy(db_tb_group,"group");
+	Q_strcpy(db_tb_client_group,"client_group");
+	Q_strcpy(db_tb_client_flag,"client_flag");
+	Q_strcpy(db_tb_client_level,"client_level");
+	Q_strcpy(db_tb_level,"level");
+	Q_strcpy(db_tb_client_server,"client_server");
+	Q_strcpy(db_tb_version,"version");
+
+//	MMsg("*********** Loading database.txt ************\n");
 	// Read the database.txt file
 
 	KeyValues *kv_ptr = new KeyValues("database.txt");
@@ -118,7 +133,7 @@ bool ManiDatabase::LoadDatabaseFile(void)
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/database.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-//		Msg("Failed to load database.txt, no database usage possible\n");
+//		MMsg("Failed to load database.txt, no database usage possible\n");
 		kv_ptr->deleteThis();
 		return false;
 	}
@@ -136,10 +151,25 @@ bool ManiDatabase::LoadDatabaseFile(void)
 		db_enabled = true;
 	}
 
+	Q_strcpy(db_tb_client, kv_ptr->GetString("db_table_client", "client"));
+	Q_strcpy(db_tb_steam, kv_ptr->GetString("db_table_steam", "steam"));
+	Q_strcpy(db_tb_nick, kv_ptr->GetString("db_table_nick", "nick"));
+	Q_strcpy(db_tb_ip, kv_ptr->GetString("db_table_ip", "ip"));;
+	Q_strcpy(db_tb_flag, kv_ptr->GetString("db_table_flag", "flag"));
+	Q_strcpy(db_tb_server, kv_ptr->GetString("db_table_server", "server"));
+	Q_strcpy(db_tb_client_group, kv_ptr->GetString("db_table_client_group", "client_group"));
+	Q_strcpy(db_tb_client_flag, kv_ptr->GetString("db_table_client_flag", "client_flag"));
+	Q_strcpy(db_tb_client_level, kv_ptr->GetString("db_table_client_level", "client_level"));
+	Q_strcpy(db_tb_level, kv_ptr->GetString("db_table_level", "level"));
+	Q_strcpy(db_tb_client_server, kv_ptr->GetString("db_table_client_server", "client_server"));
+	Q_strcpy(db_tb_version, kv_ptr->GetString("db_table_version", "version"));
+
+
 	Q_strcpy(server_name, kv_ptr->GetString("server_name"));
 	Q_strcpy(server_ip_address, kv_ptr->GetString("server_ip_address"));
 	Q_strcpy(mod_name, kv_ptr->GetString("mod_name"));
 	Q_strcpy(rcon_password, kv_ptr->GetString("rcon_password"));
+	Q_strcpy(server_group_id, kv_ptr->GetString("server_group_id", "Default"));
 	server_id = kv_ptr->GetInt("server_id", 1);
 	server_port = kv_ptr->GetInt("server_port", 27015);
 
@@ -147,10 +177,10 @@ bool ManiDatabase::LoadDatabaseFile(void)
 
 	if (db_enabled)
 	{
-//		Msg("Using database connection for administration\n");
+//		MMsg("Using database connection for administration\n");
 	}
 
-//	Msg("*********** database.txt loaded ************\n");
+//	MMsg("*********** database.txt loaded ************\n");
 
 	return true;
 }

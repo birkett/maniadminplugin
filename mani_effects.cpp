@@ -1650,7 +1650,7 @@ void	ProcessTeleportPlayer(player_t *player_to_teleport, Vector *origin_ptr)
 	vVel.y = 0;
 	vVel.z = 0;
 
-/*	Msg("Teleporting [%s] to X = %f, Y = %f, Z = %f\n", 
+/*	MMsg("Teleporting [%s] to X = %f, Y = %f, Z = %f\n", 
 				player_to_teleport->name,
 				origin_ptr->x,
 				origin_ptr->y,
@@ -2203,7 +2203,8 @@ void	MANI_TraceLineWorldProps
  const Vector& vecAbsStart, 
  const Vector& vecAbsEnd, 
  unsigned int mask, 
- int collisionGroup, trace_t *ptr
+ int collisionGroup, 
+ trace_t *ptr
  )
 {
 	Ray_t ray;

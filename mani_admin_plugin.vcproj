@@ -27,6 +27,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
+				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				RuntimeTypeInfo="TRUE"
@@ -51,6 +52,7 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\
 "
 				Outputs="..\bin\mani_admin_plugin.dll"/>
 			<Tool
@@ -136,6 +138,7 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\
 copy..\plugin_output\Release\mani_admin_plugin.pdb .\
 "
 				Outputs="..\bin\mani_admin_plugin.dll"/>
@@ -223,6 +226,7 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\mani_admin_plugin\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\mani_admin_plugin\bin\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\mani_admin_plugin\bin\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin\bin\
 copy..\plugin_output\ReleaseMM\mani_admin_plugin_mm.pdb .\
 
 "
@@ -309,6 +313,7 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\mani_admin_plugin\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\mani_admin_plugin\bin\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\mani_admin_plugin\bin\
 copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin\bin\
 
 "
 				Outputs="..\bin\mani_admin_plugin_mm.dll"/>
@@ -404,6 +409,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 					RelativePath=".\mani_adverts.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_afk.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_autokickban.cpp">
 				</File>
 				<File
@@ -458,6 +466,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 					RelativePath=".\mani_log_css_stats.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_log_dods_stats.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_main.cpp">
 				</File>
 				<File
@@ -471,6 +482,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 				</File>
 				<File
 					RelativePath=".\mani_menu.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_mostdestructive.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_mysql.cpp">
@@ -491,6 +505,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 					RelativePath=".\mani_parser.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_ping.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_player.cpp">
 				</File>
 				<File
@@ -504,6 +521,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 				</File>
 				<File
 					RelativePath=".\mani_save_scores.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_sigscan.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_skins.cpp">
@@ -531,6 +551,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 				</File>
 				<File
 					RelativePath=".\mani_timers.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_trackuser.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_vfuncs.cpp">
@@ -662,6 +685,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 					RelativePath=".\mani_adverts.h">
 				</File>
 				<File
+					RelativePath=".\mani_afk.h">
+				</File>
+				<File
 					RelativePath=".\mani_autokickban.h">
 				</File>
 				<File
@@ -719,6 +745,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 					RelativePath=".\mani_log_css_stats.h">
 				</File>
 				<File
+					RelativePath=".\mani_log_dods_stats.h">
+				</File>
+				<File
 					RelativePath=".\mani_main.h">
 				</File>
 				<File
@@ -735,6 +764,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 				</File>
 				<File
 					RelativePath=".\mani_menu.h">
+				</File>
+				<File
+					RelativePath=".\mani_mostdestructive.h">
 				</File>
 				<File
 					RelativePath=".\mani_mysql.h">
@@ -755,6 +787,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 					RelativePath=".\mani_parser.h">
 				</File>
 				<File
+					RelativePath=".\mani_ping.h">
+				</File>
+				<File
 					RelativePath=".\mani_player.h">
 				</File>
 				<File
@@ -768,6 +803,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 				</File>
 				<File
 					RelativePath=".\mani_save_scores.h">
+				</File>
+				<File
+					RelativePath=".\mani_sigscan.h">
 				</File>
 				<File
 					RelativePath=".\mani_skins.h">
@@ -795,6 +833,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\
 				</File>
 				<File
 					RelativePath=".\mani_timers.h">
+				</File>
+				<File
+					RelativePath=".\mani_trackuser.h">
 				</File>
 				<File
 					RelativePath=".\mani_vfuncs.h">

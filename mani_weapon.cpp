@@ -74,6 +74,8 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
+static void WeaponAddCash(edict_t *pEntity, int cost);
+
 main_weapon_t	primary_weapon[18];
 main_weapon_t	secondary_weapon[6];
 weapon_type_t	*weapon_list = NULL;
@@ -105,39 +107,65 @@ void	LoadWeapons(const char *pMapName)
 	char	weapon_name[128];
 	char	restrict_filename[256];
 	char	base_filename[256];
+	int		index = 0;
 
-//	Msg("**** LOADING WEAPON INFO ****\n");
+//	MMsg("**** LOADING WEAPON INFO ****\n");
 
 	FreeWeapons();
 
 	weapons_restricted = false;
 
 	/* Setup primary and secondary weapons */
-	Q_strcpy(primary_weapon[0].name, "awp");
-	Q_strcpy(primary_weapon[1].name, "g3sg1");
-	Q_strcpy(primary_weapon[2].name, "sg550");
-	Q_strcpy(primary_weapon[3].name, "galil");
-	Q_strcpy(primary_weapon[4].name, "ak47");
-	Q_strcpy(primary_weapon[5].name, "scout");
-	Q_strcpy(primary_weapon[6].name, "sg552");
-	Q_strcpy(primary_weapon[7].name, "famas");
-	Q_strcpy(primary_weapon[8].name, "m4a1");
-	Q_strcpy(primary_weapon[9].name, "aug");
-	Q_strcpy(primary_weapon[10].name, "m3");
-	Q_strcpy(primary_weapon[11].name, "xm1014");
-	Q_strcpy(primary_weapon[12].name, "mac10");
-	Q_strcpy(primary_weapon[13].name, "tmp");
-	Q_strcpy(primary_weapon[14].name, "mp5navy");
-	Q_strcpy(primary_weapon[15].name, "ump45");
-	Q_strcpy(primary_weapon[16].name, "p90");
-	Q_strcpy(primary_weapon[17].name, "m249");
+	Q_strcpy(primary_weapon[index].name, "awp");
+	primary_weapon[index++].cost = 4750;
+	Q_strcpy(primary_weapon[index].name, "g3sg1");
+	primary_weapon[index++].cost = 5000;
+	Q_strcpy(primary_weapon[index].name, "sg550");
+	primary_weapon[index++].cost = 4200;
+	Q_strcpy(primary_weapon[index].name, "galil");
+	primary_weapon[index++].cost = 2000;
+	Q_strcpy(primary_weapon[index].name, "ak47");
+	primary_weapon[index++].cost = 2500;
+	Q_strcpy(primary_weapon[index].name, "scout");
+	primary_weapon[index++].cost = 2750;
+	Q_strcpy(primary_weapon[index].name, "sg552");
+	primary_weapon[index++].cost = 3500;
+	Q_strcpy(primary_weapon[index].name, "famas");
+	primary_weapon[index++].cost = 2250;
+	Q_strcpy(primary_weapon[index].name, "m4a1");
+	primary_weapon[index++].cost = 3100;
+	Q_strcpy(primary_weapon[index].name, "aug");
+	primary_weapon[index++].cost = 3500;
+	Q_strcpy(primary_weapon[index].name, "m3");
+	primary_weapon[index++].cost = 1700;
+	Q_strcpy(primary_weapon[index].name, "xm1014");
+	primary_weapon[index++].cost = 3000;
+	Q_strcpy(primary_weapon[index].name, "mac10");
+	primary_weapon[index++].cost = 1400;
+	Q_strcpy(primary_weapon[index].name, "tmp");
+	primary_weapon[index++].cost = 1250;
+	Q_strcpy(primary_weapon[index].name, "mp5navy");
+	primary_weapon[index++].cost = 1500;
+	Q_strcpy(primary_weapon[index].name, "ump45");
+	primary_weapon[index++].cost = 1700;
+	Q_strcpy(primary_weapon[index].name, "p90");
+	primary_weapon[index++].cost = 2350;
+	Q_strcpy(primary_weapon[index].name, "m249");
+	primary_weapon[index++].cost = 5750;
 
-	Q_strcpy(secondary_weapon[0].name, "glock");
-	Q_strcpy(secondary_weapon[1].name, "usp");
-	Q_strcpy(secondary_weapon[2].name, "p228");
-	Q_strcpy(secondary_weapon[3].name, "deagle");
-	Q_strcpy(secondary_weapon[4].name, "elite");
-	Q_strcpy(secondary_weapon[5].name, "fiveseven");
+	index = 0;
+	Q_strcpy(secondary_weapon[index].name, "glock");
+	secondary_weapon[index++].cost = 400;
+	Q_strcpy(secondary_weapon[index].name, "usp");
+	secondary_weapon[index++].cost = 500;
+	Q_strcpy(secondary_weapon[index].name, "p228");
+	secondary_weapon[index++].cost = 600;
+	Q_strcpy(secondary_weapon[index].name, "deagle");
+	secondary_weapon[index++].cost = 650;
+	Q_strcpy(secondary_weapon[index].name, "elite");
+	secondary_weapon[index++].cost = 800;
+	Q_strcpy(secondary_weapon[index].name, "fiveseven");
+	secondary_weapon[index++].cost = 750;
 
 	for (int i = 0; i < 18; i ++)
 	{
@@ -156,14 +184,14 @@ void	LoadWeapons(const char *pMapName)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg("No default weapons restrictions found, weapon restrict menu will be empty\n");
+//		MMsg("No default weapons restrictions found, weapon restrict menu will be empty\n");
 	}
 	else
 	{
-//		Msg("Weapon Restrictions\n");
+//		MMsg("Weapon Restrictions\n");
 		while (filesystem->ReadLine (weapon_line, sizeof(weapon_line), file_handle) != NULL)
 		{
-			if (!ParseLine(weapon_line, true))
+			if (!ParseLine(weapon_line, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -181,7 +209,7 @@ void	LoadWeapons(const char *pMapName)
 
 			if (index == -1)
 			{
-//				Msg("Failed to bind primary weapon [%s]\n", primary_weapon[i].name);
+//				MMsg("Failed to bind primary weapon [%s]\n", primary_weapon[i].name);
 				continue;
 			}
 
@@ -195,7 +223,7 @@ void	LoadWeapons(const char *pMapName)
 
 			if (index == -1)
 			{
-//				Msg("Failed to bind secondary weapon [%s]\n", secondary_weapon[i].name);
+//				MMsg("Failed to bind secondary weapon [%s]\n", secondary_weapon[i].name);
 				continue;
 			}
 
@@ -208,14 +236,14 @@ void	LoadWeapons(const char *pMapName)
 	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg("No default weapons restrictions found for this map\n");
+//		MMsg("No default weapons restrictions found for this map\n");
 	}
 	else
 	{
-//		Msg("Weapon Restriction List for map\n");
+//		MMsg("Weapon Restriction List for map\n");
 		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
 		{
-			if (!ParseLine(weapon_name, true))
+			if (!ParseLine(weapon_name, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -233,7 +261,7 @@ void	LoadWeapons(const char *pMapName)
 					break;
 				}
 			}
-//			Msg("[%s] is restricted\n", weapon_name);
+//			MMsg("[%s] is restricted\n", weapon_name);
 		}
 
 		filesystem->Close(file_handle);
@@ -244,14 +272,14 @@ void	LoadWeapons(const char *pMapName)
 	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg("No default weapons restrictions found.\n");
+//		MMsg("No default weapons restrictions found.\n");
 	}
 	else
 	{
-//		Msg("Weapon Restriction List for all maps\n");
+//		MMsg("Weapon Restriction List for all maps\n");
 		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
 		{
-			if (!ParseLine(weapon_name, true))
+			if (!ParseLine(weapon_name, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -269,14 +297,14 @@ void	LoadWeapons(const char *pMapName)
 					break;
 				}
 			}
-//			Msg("[%s] is restricted\n", weapon_name);
+//			MMsg("[%s] is restricted\n", weapon_name);
 		}
 
 		filesystem->Close(file_handle);
 	}
 
 
-//	Msg("**** WEAPON INFO LOADED ****\n");
+//	MMsg("**** WEAPON INFO LOADED ****\n");
 
 }
 
@@ -323,12 +351,12 @@ void AddWeapon(char *weapon_line)
 			}
 
 			weapon_list[weapon_list_size - 1] = weapon;
-//			Msg ("Weapon Name [%s] Weapon Aliases ", weapon.weapon_name);
+//			MMsg("Weapon Name [%s] Weapon Aliases ", weapon.weapon_name);
 			for (i = 0; i < weapon.number_of_weapons; i++)
 			{
-//				Msg ("[%s] ", weapon.weapon_alias[i]);
+//				MMsg("[%s] ", weapon.weapon_alias[i]);
 			}
-//			Msg ("\n");
+//			MMsg("\n");
 			return;
 		}
 
@@ -536,7 +564,7 @@ void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_offset )
 
 			Q_snprintf( log_text, sizeof(log_text),	"un-restrict [%s]\n", weapon_list[weapon_index].weapon_name);
 			LogCommand (admin->entity, "%s", log_text);
-			SayToAll(true, Translate(M_RESTRICT_MENU_UNRESTRICT), weapon_list[weapon_index].weapon_name);
+			SayToAll(true, "%s", Translate(532,"%s", weapon_list[weapon_index].weapon_name));
 		}
 		else
 		{
@@ -545,7 +573,7 @@ void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_offset )
 			weapon_list[weapon_index].restricted = true;
 			Q_snprintf( log_text, sizeof(log_text),	"restrict [%s]\n", weapon_list[weapon_index].weapon_name);
 			LogCommand (admin->entity, "%s", log_text);
-			SayToAll(true, Translate(M_RESTRICT_MENU_RESTRICT), weapon_list[weapon_index].weapon_name);
+			SayToAll(true, "%s", Translate(533, "%s", weapon_list[weapon_index].weapon_name));
 		}
 
 		weapons_restricted = AreWeaponsRestricted();
@@ -578,7 +606,7 @@ void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_offset )
 			next_index = 0;
 		}
 
-		DrawSubMenu (admin, Translate(M_RESTRICT_MENU_ESCAPE), Translate(M_RESTRICT_MENU_TITLE), next_index, "admin", "restrict_weapon", true, -1);
+		DrawSubMenu (admin, Translate(530), Translate(531), next_index, "admin", "restrict_weapon", true, -1);
 	}
 
 	return;
@@ -602,7 +630,7 @@ bool HookAutobuyCommand(void)
 	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
-//		Msg("Did not find player\n");
+//		MMsg("Did not find player\n");
 		return true;
 	}
 
@@ -669,7 +697,7 @@ bool HookRebuyCommand(void)
 	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
-//		Msg("Did not find player\n");
+//		MMsg("Did not find player\n");
 		return true;
 	}
 
@@ -802,7 +830,7 @@ void PostProcessRebuyCommand(void)
 	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
-//		Msg("Did not find player\n");
+//		MMsg("Did not find player\n");
 		return;
 	}
 
@@ -855,6 +883,13 @@ void PostProcessRebuyCommand(void)
 						{
 							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							WeaponAddCash(player.entity, primary_weapon[i].cost);
+
+							pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+							if (pWeapon)
+							{
+								CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+							}
 							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 							SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
 						}
@@ -866,6 +901,12 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, primary_weapon[i].cost);
+									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+									if (pWeapon)
+									{
+										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+									}
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 								}
@@ -880,6 +921,12 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, primary_weapon[i].cost);
+									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+									if (pWeapon)
+									{
+										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+									}
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 								}
@@ -917,6 +964,12 @@ void PostProcessRebuyCommand(void)
 						{
 							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							WeaponAddCash(player.entity, secondary_weapon[i].cost);
+							pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+							if (pWeapon)
+							{
+								CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+							}
 							ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 							SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
 						}
@@ -928,6 +981,12 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, secondary_weapon[i].cost);
+									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+									if (pWeapon)
+									{
+										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+									}
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 								}
@@ -942,6 +1001,12 @@ void PostProcessRebuyCommand(void)
 								{
 									CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 									CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+									WeaponAddCash(player.entity, secondary_weapon[i].cost);
+									pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+									if (pWeapon)
+									{
+										CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+									}
 									ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 									SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 								}
@@ -965,7 +1030,7 @@ void PostProcessRebuyCommand(void)
 //---------------------------------------------------------------------------------
 void ResetWeaponCount(void)
 {
-// Msg("Resetting weapon count\n");
+// MMsg("Resetting weapon count\n");
 	// Reset all weapons count
 	for (int i = 0; i < weapon_list_size; i ++)
 	{
@@ -985,8 +1050,10 @@ void RemoveRestrictedWeapons(player_t *player_ptr)
 		return;
 	}
 
+	// Bots buy their weapons after this call so no point stripping them
 	if (player_ptr->is_bot) return;
-//	Msg("Checking weapon count for player %s\n", player_ptr->name);
+
+//	MMsg("Checking weapon count for player %s\n", player_ptr->name);
 
 	CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
 	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
@@ -1590,6 +1657,18 @@ int	FindWeaponIndex(char *weapon_name)
 	}
 
 	return -1;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Add cash for a weapon back to a player
+//---------------------------------------------------------------------------------
+static
+void WeaponAddCash(edict_t *pEntity, int cost)
+{
+	int cash = Prop_GetAccount(pEntity);
+	cash += cost;
+	if (cash > 16000) cash = 16000;
+	Prop_SetAccount(pEntity, cash);
 }
 
 //---------------------------------------------------------------------------------
