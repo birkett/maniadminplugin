@@ -63,6 +63,7 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	IEngineSound *esounds;
 extern	int	max_players;
 extern	bool	war_mode;
+extern	ConVar *tv_name;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -523,6 +524,10 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 
 					if (FStrEq(player_ptr->steam_id,"BOT"))
 					{
+						if (tv_name && strcmp(player_ptr->name, tv_name->GetString()) == 0)
+						{
+							return false;
+						}
 						player_ptr->is_bot = true;
 						Q_strcpy(player_ptr->ip_address,"");
 					}
@@ -550,7 +555,10 @@ bool FindPlayerByUserID(player_t *player_ptr)
 	player_ptr->index = gpManiTrackUser->GetIndex(org_user_id);
 	if (player_ptr->index == -1) return false;
 
-	FindPlayerByIndex(player_ptr);
+	if (!FindPlayerByIndex(player_ptr))
+	{
+		return false;
+	}
 
 	// Last check if returned user_id matches original
 	if (player_ptr->user_id != org_user_id)
@@ -626,6 +634,11 @@ bool FindPlayerByEntity(player_t *player_ptr)
 
 			if (FStrEq(player_ptr->steam_id,"BOT"))
 			{
+				if (tv_name && strcmp(player_ptr->name, tv_name->GetString()) == 0)
+				{
+					return false;
+				}
+
 				player_ptr->is_bot = true;
 				Q_strcpy(player_ptr->ip_address,"");
 			}
@@ -671,6 +684,11 @@ bool FindPlayerByIndex(player_t *player_ptr)
 
 			if (FStrEq(player_ptr->steam_id,"BOT"))
 			{
+				if (tv_name && strcmp(player_ptr->name, tv_name->GetString()) == 0)
+				{
+					return false;
+				}
+
 				Q_strcpy(player_ptr->ip_address,"");
 				player_ptr->is_bot = true;
 			}

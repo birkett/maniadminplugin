@@ -33,6 +33,7 @@ class CBaseEntity;
 #define MANI_GAME_CSS_STR "Counter-Strike: Source"
 #define MANI_GAME_CSS (1)
 #define MANI_GAME_DM_STR "Deathmatch"
+#define MANI_GAME_DM1_STR "Half-Life 2 Deathmatch"
 #define MANI_GAME_DM (2)
 #define MANI_GAME_TEAM_DM_STR "Team Deathmatch"
 #define MANI_GAME_TEAM_DM (3)
@@ -129,6 +130,7 @@ public:
 	void		Init(void);
 	void		GameFrame(void);
 	const char	*GetGameType(void);
+	int			GetGameIndex(void) {return game_type_index;}
 	bool		IsGameType(const char *game_str);
 	bool		IsGameType(int game_index) {return ((game_index == game_type_index) ? true:false);}
 	bool		GetAdvancedEffectsAllowed(void);

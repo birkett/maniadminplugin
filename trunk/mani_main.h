@@ -49,15 +49,15 @@ const int	gametypes_min_version = 1;
 #endif
 
 #ifdef SOURCEMM
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaQ SMM, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaQ SMM"
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaR SMM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaR SMM"
 #else
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaQ VSP, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaQ VSP"
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaR VSP, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaR VSP"
 #endif
 
-#define PLUGIN_VERSION_ID "V1.2BetaQ\n"
-#define PLUGIN_VERSION_ID2 "V1.2BetaQ"
+#define PLUGIN_VERSION_ID "V1.2BetaR\n"
+#define PLUGIN_VERSION_ID2 "V1.2BetaR"
 
 // Define vote types
 enum
