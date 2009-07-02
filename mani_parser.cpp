@@ -35,6 +35,7 @@
 #include "mani_player.h"
 #include "mani_maps.h"
 #include "mani_main.h"
+#include "mani_vote.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 
@@ -45,7 +46,6 @@
 extern	int	server_tickrate;
 extern	ConVar	*mp_friendlyfire;
 extern	ConVar	*hostname;
-extern  system_vote_t system_vote;
 
 static	char	*GetSubToken( const char *in_string, int *token_length);
 static	char	*TranslateToken( player_t *player, const char *token_string);
@@ -1145,7 +1145,7 @@ char	*TranslateToken
 	}	
 	else if (FStrEq(token_string, "{NEXTMAP}"))
 	{
-		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 		{
 			Q_strcpy(translated_string, "Map decided by vote");
 		}

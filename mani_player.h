@@ -51,7 +51,6 @@ struct	teleport_coords_t
 
 struct player_settings_t
 {
-	bool	active;
 	char	steam_id[MAX_NETWORKID_LENGTH];
 	char	name[MAX_PLAYER_NAME_LENGTH];
 	char	damage_stats;
@@ -59,6 +58,7 @@ struct player_settings_t
 	char	show_destruction;
 	char	quake_sounds;
 	char	server_sounds;
+	char	show_vote_results_progress;
 	time_t	last_connected;
 	char	admin_t_model[20];
 	char	admin_ct_model[20];
@@ -73,13 +73,19 @@ struct player_settings_t
 	teleport_coords_t *teleport_coords_list;
 };
 
+struct	active_settings_t
+{
+	player_settings_t *ptr;
+	bool	active;
+};
+
 extern	player_t	*target_player_list;
 extern  int			target_player_list_size;
 
 extern	void	SetPluginPausedStatus(bool status);
 extern	bool	ProcessPluginPaused(void);
 
-extern	bool	FindTargetPlayers(player_t *requesting_player, char *target_string, int immunity_flag);
+extern	bool	FindTargetPlayers(player_t *requesting_player, const char *target_string, int immunity_flag);
 extern	bool	FindPlayerBySteamID(player_t *player_ptr);
 extern	bool	FindPlayerByUserID(player_t *player_ptr);
 extern	bool	FindPlayerByEntity(player_t *player_ptr);
@@ -95,7 +101,6 @@ extern	player_settings_t *FindPlayerSettings (player_t *player);
 extern	bool	FindPlayerFlag (player_settings_t *player_settings_ptr, int flag_index);
 extern	void	SetPlayerFlag (player_settings_t *player_settings_ptr, int flag_index, bool flag_value);
 
-extern	void	UpdatePlayerSettings (player_t *player, player_settings_t *new_player_settings);
 extern	void	PlayerSettingsDisconnect (player_t *player);
 
 extern	void	AddWaitingPlayerSettings(void);
@@ -112,6 +117,7 @@ extern	PLUGIN_RESULT	ProcessMaSounds( int index);
 extern	PLUGIN_RESULT	ProcessMaQuake( int index);
 extern	PLUGIN_RESULT	ProcessMaDeathBeam ( int index);
 extern	PLUGIN_RESULT	ProcessMaDestruction( int index);
+extern	PLUGIN_RESULT	ProcessMaVoteProgress( int index);
 extern	int				GetNumberOfActivePlayers(void );
 extern  void UTIL_KickPlayer( player_t *player_ptr,  char *short_reason,  char *long_reason,  char *log_reason );
 

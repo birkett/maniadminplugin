@@ -56,6 +56,7 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	CGlobalVars *gpGlobals;
 extern	IVoiceServer *voiceserver;
 extern	ITempEntsSystem *temp_ents;
+extern	int	max_players;
 
 #ifdef __linux__
 static	void	CheckVFunc(DWORD *class_ptr, char *class_name, char *class_function, char *gametype_ptr);
@@ -67,317 +68,536 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
-class ManiEmptyClass {};
-
 CBaseEntity *EdictToCBE(edict_t *pEdict)
 {
 	return (CBaseEntity *) pEdict->GetUnknown()->GetBaseEntity();
 }
 
+class ManiEmptyClass {};
+
+#ifdef __linux__
+#define VFUNC_OS_DEP void *addr;	} u; 	u.addr = func;
+#else
+#define VFUNC_OS_DEP struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+#define VFUNC_SETUP_PTR(_vfunc_index)  \
+{ \
+	void **this_ptr = *(void ***)&pThisPtr; \
+	void **vtable = *(void ***)pThisPtr; \
+	void *func = vtable[gpManiGameType->GetVFuncIndex(_vfunc_index)]
+
 //********************************************************************
 // CBaseEntity
 
-QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr)
-{
+#define VFUNC_CALL0(_vfunc_index, _return_type, _class_type, _func_name ) \
+	_return_type _func_name(_class_type *pThisPtr) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();} 
+
+#define VFUNC_CALL1(_vfunc_index, _return_type, _class_type, _func_name, _param1) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1);} 
+
+#define VFUNC_CALL2(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2);} 
+
+#define VFUNC_CALL3(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3);} 
+
+#define VFUNC_CALL4(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3, _param4) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4);} 
+
+#define VFUNC_CALL5(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5);} 
+
+#define VFUNC_CALL6(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6);} 
+
+#define VFUNC_CALL7(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6, _param7) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6, _param7 p7) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6, _param7); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6, p7);} 
+
+#define VFUNC_CALL8(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6, _param7 p7, _param8 p8) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6, p7, p8);} 
+
+#define VFUNC_CALL9(_vfunc_index, _return_type, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9) \
+	_return_type _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6, _param7 p7, _param8 p8, _param9) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { _return_type (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9); \
+	VFUNC_OS_DEP \
+ 	return (_return_type) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6, p7, p8, p9);} 
+
+#define VFUNC_CALL0_void(_vfunc_index, _class_type, _func_name ) \
+	void _func_name(_class_type *pThisPtr) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();} 
+
+#define VFUNC_CALL1_void(_vfunc_index, _class_type, _func_name, _param1) \
+	void _func_name(_class_type *pThisPtr, _param1 p1) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1);} 
+
+#define VFUNC_CALL2_void(_vfunc_index, _class_type, _func_name, _param1, _param2) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2);} 
+
+#define VFUNC_CALL3_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3);} 
+
+#define VFUNC_CALL4_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3, _param4) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4);} 
+
+#define VFUNC_CALL5_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5);} 
+
+#define VFUNC_CALL6_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6);} 
+
+#define VFUNC_CALL7_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6, _param7) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6, _param7 p7) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6, _param7); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6, p7);} 
+
+#define VFUNC_CALL8_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6, _param7 p7, _param8 p8) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6, p7, p8);} 
+
+#define VFUNC_CALL9_void(_vfunc_index, _class_type, _func_name, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9) \
+	void _func_name(_class_type *pThisPtr, _param1 p1, _param2 p2, _param3 p3, _param4 p4, _param5 p5, _param6 p6, _param7 p7, _param8 p8, _param9) \
+	VFUNC_SETUP_PTR(_vfunc_index); \
+	union { void (ManiEmptyClass::*mfpnew)(_param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9); \
+	VFUNC_OS_DEP \
+ 	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(p1, p2, p3, p4, p5, p6, p7, p8, p9);} 
+
+
 // virtual const QAngle &EyeAngles( void );
-//	DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) pThisPtr)) + 0x1b0));
+VFUNC_CALL0(MANI_VFUNC_EYE_ANGLES, const QAngle &, CBaseEntity, CBaseEntity_EyeAngles)
 
+// virtual void	Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
+VFUNC_CALL3_void(MANI_VFUNC_TELEPORT, CBaseEntity, CBaseEntity_Teleport, const Vector *, const QAngle *, const Vector *)
+
+// virtual Vector	EyePosition( void );
+VFUNC_CALL0(MANI_VFUNC_EYE_POSITION, Vector, CBaseEntity, CBaseEntity_EyePosition)
+
+//virtual void	GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
+VFUNC_CALL2_void(MANI_VFUNC_GET_VELOCITY, CBaseEntity, CBaseEntity_GetVelocity, Vector *, AngularImpulse *)
+
+// virtual CBaseCombatCharacter *MyCombatCharacterPointer( void );
+VFUNC_CALL0(MANI_VFUNC_MY_COMBAT_CHARACTER, CBaseCombatCharacter *, CBaseEntity, CBaseEntity_MyCombatCharacterPointer)
+
+// virtual void SetModelIndex( int index );
+VFUNC_CALL1_void(MANI_VFUNC_SET_MODEL_INDEX, CBaseEntity, CBaseEntity_SetModelIndex, int)
+
+// virtual void Ignite( float flFlameLifetime, bool bNPCOnly = true, float flSize = 0.0f, bool bCalledByLevelDesigner = false );
+VFUNC_CALL4_void(MANI_VFUNC_IGNITE, CBasePlayer, CBasePlayer_Ignite, float, bool, float, bool)
+
+// virtual bool	RemovePlayerItem( CBaseCombatWeapon *pItem )
+VFUNC_CALL1(MANI_VFUNC_REMOVE_PLAYER_ITEM, bool, CBasePlayer, CBasePlayer_RemovePlayerItem, CBaseCombatWeapon *)
+
+// virtual void	Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
+VFUNC_CALL3_void(MANI_VFUNC_WEAPON_DROP, CBasePlayer, CBasePlayer_WeaponDrop, CBaseCombatWeapon *, const Vector *, const Vector *)
+
+// virtual CBaseEntity	*GiveNamedItem( const char *szName, int iSubType = 0 );
+VFUNC_CALL2(MANI_VFUNC_GIVE_ITEM, CBaseEntity *, CBasePlayer, CBasePlayer_GiveNamedItem, const char *, int)
+
+// virtual CBaseCombatWeapon *Weapon_GetSlot( int slot ) const;
+VFUNC_CALL1(MANI_VFUNC_GET_WEAPON_SLOT, CBaseCombatWeapon *, CBaseCombatCharacter, CBaseCombatCharacter_Weapon_GetSlot, int)
+
+// virtual bool Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelindex = 0 );
+VFUNC_CALL2_void(MANI_VFUNC_WEAPON_SWITCH, CBaseCombatCharacter, CBaseCombatCharacter_Weapon_Switch, CBaseCombatWeapon *, int)
+
+// virtual int GiveAmmo( int iCount, int iAmmoIndex, bool bSuppressSound = false );
+VFUNC_CALL3_void(MANI_VFUNC_GIVE_AMMO, CBaseCombatCharacter, CBaseCombatCharacter_GiveAmmo, int, int, bool)
+
+// virtual int	GetPrimaryAmmoType( void );
+VFUNC_CALL0(MANI_VFUNC_GET_PRIMARY_AMMO_TYPE, int, CBaseCombatWeapon, CBaseCombatWeapon_GetPrimaryAmmoType)
+
+// virtual int	GetSecondaryAmmoType( void );
+VFUNC_CALL0(MANI_VFUNC_GET_SECONDARY_AMMO_TYPE, int, CBaseCombatWeapon, CBaseCombatWeapon_GetSecondaryAmmoType)
+
+// virtual char const *GetName( void );
+VFUNC_CALL0(MANI_VFUNC_WEAPON_GET_NAME, const char *, CBaseCombatWeapon, CBaseCombatWeapon_GetName)
+
+//QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr)
+//{
+//// virtual const QAngle &EyeAngles( void );
+////	DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) pThisPtr)) + 0x1b0));
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_EYE_ANGLES)]; 
+//
+//	union {QAngle &(ManiEmptyClass::*mfpnew)();
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (QAngle &) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+//}
+//
+//void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity)
+//{
+////	DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) pCBE)) + 0x170));
+////  pCBE->Teleport(newPosition, newAngles, newVelocity);
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_TELEPORT)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(const Vector *, const QAngle *, const Vector *);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(newPosition, newAngles, newVelocity);
+//}
+//
+//Vector CBaseEntity_EyePosition (CBaseEntity *pThisPtr)
+//{
+////	pVector = pThisPtr->EyePosition();
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_EYE_POSITION)]; 
+//
+//	union {Vector (ManiEmptyClass::*mfpnew)();
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (Vector) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+//
+//}
+//
+//
+//void CBaseEntity_GetVelocity (CBaseEntity *pThisPtr, Vector *vVelocity, AngularImpulse *vAngVelocity)
+//{
+////	virtual void	GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_VELOCITY)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(Vector *, AngularImpulse *);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(vVelocity, vAngVelocity);
+//}
+//
+//
+//
+//CBaseCombatCharacter *CBaseEntity_MyCombatCharacterPointer(CBaseEntity *pThisPtr)
+//{
+////	pCombat = pThisPtr->MyCombatCharacterPointer();
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_MY_COMBAT_CHARACTER)]; 
+//
+//	union {CBaseCombatCharacter * (ManiEmptyClass::*mfpnew)();
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (CBaseCombatCharacter *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+//}
+//
+//void CBaseEntity_SetGravity(CBaseEntity *pThisPtr, float newGravity)
+//{
+//	pThisPtr->SetGravity(newGravity);
+//}
+//
+///*
+//void CBaseEntity_SetModelIndex(CBaseEntity *pThisPtr, int iIndex)
+//{
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_SET_MODEL_INDEX)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(int);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+///*			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(iIndex);
+//}
+//*/
+//
+////********************************************************************
+//// CBasePlayer 
+//
+//void CBasePlayer_Ignite(CBasePlayer *pThisPtr, float flFlameLifetime, bool bNPCOnly, float flSize, bool bCalledByLevelDesigner)
+//{
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_IGNITE)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(float , bool , float , bool );
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(flFlameLifetime, bNPCOnly, flSize, bCalledByLevelDesigner);
+//}
+//
+//bool CBasePlayer_RemovePlayerItem(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon)
+//{
+////	pThisPtr->RemovePlayerItem(pWeapon);
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_REMOVE_PLAYER_ITEM)]; 
+//
+//	union {bool (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (bool) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pWeapon);
+//
+//}
+//
+//void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon)
+//{
+////	pThisPtr->Weapon_Drop(pWeapon);
+////	virtual void		Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_DROP)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *, const Vector *, const Vector *);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pWeapon, NULL, NULL);
+//}
+//
+//CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType)
+//{
+////	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0 );
+//
+//	int index = gpManiGameType->GetVFuncIndex(MANI_VFUNC_GIVE_ITEM);
+//	if (index == -1) return NULL;
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[index]; 
+//
+//	union {CBaseEntity * (ManiEmptyClass::*mfpnew)(const char *, int);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (CBaseEntity *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(szName, iSubType);
+//}
+//
+////********************************************************************
+//// CBaseCombatCharacter 
+//
+//CBaseCombatWeapon *CBaseCombatCharacter_Weapon_GetSlot(CBaseCombatCharacter *pThisPtr, int slot)
+//{
+////	pWeapon = pThisPtr->Weapon_GetSlot(slot);
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_WEAPON_SLOT)]; 
+//
+//	union {CBaseCombatWeapon * (ManiEmptyClass::*mfpnew)(int);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(slot);
+//}
+//
+//void CBaseCombatCharacter_Weapon_Switch(CBaseCombatCharacter *pThisPtr, CBaseCombatWeapon *pCombat, int slot)
+//{
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_SWITCH)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *, int);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pCombat, slot);
+//}
+//
+//void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int amount, int ammo_index, bool suppress_noise)
+//{
+////	pThisPtr->GiveAmmo(amount, ammo_index, suppress_noise);
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GIVE_AMMO)]; 
+//
+//	union {void (ManiEmptyClass::*mfpnew)(int, int, bool);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(amount, ammo_index, suppress_noise);
+//}
+//
+////********************************************************************
+//// CBaseCombatWeapon 
+//
+//int CBaseCombatWeapon_GetPrimaryAmmoType(CBaseCombatWeapon *pThisPtr)
+//{
+////	virtual int				GetPrimaryAmmoType( void )  const { return m_iPrimaryAmmoType; }
+//
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_PRIMARY_AMMO_TYPE)]; 
+//
+//	union {int (ManiEmptyClass::*mfpnew)();
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+//}
+//
+//int CBaseCombatWeapon_GetSecondaryAmmoType(CBaseCombatWeapon *pThisPtr)
+//{
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_SECONDARY_AMMO_TYPE)]; 
+//
+//	union {int (ManiEmptyClass::*mfpnew)();
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+//}
+//
+//const char *CBaseCombatWeapon_GetName(CBaseCombatWeapon *pThisPtr)
+//{
+////	pWeaponName = pThisPtr->GetName();
+////  virtual char const		*GetName( void ) const;
+//	void **this_ptr = *(void ***)&pThisPtr;
+//	void **vtable = *(void ***)pThisPtr;
+//	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_GET_NAME)]; 
+//
+//	union {char const		*(ManiEmptyClass::*mfpnew)();
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (char const *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+//}
+
+datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr)
+{
 	void **this_ptr = *(void ***)&pThisPtr;
 	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_EYE_ANGLES)]; 
+	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_MAP)]; 
 
-	union {QAngle &(ManiEmptyClass::*mfpnew)();
+	union {datamap_t		*(ManiEmptyClass::*mfpnew)();
 #ifndef __linux__
         void *addr;	} u; 	u.addr = func;
 #else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
 			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
 #endif
 
-	return (QAngle &) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
-}
-
-void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity)
-{
-//	DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) pCBE)) + 0x170));
-//  pCBE->Teleport(newPosition, newAngles, newVelocity);
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_TELEPORT)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(const Vector *, const QAngle *, const Vector *);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(newPosition, newAngles, newVelocity);
-}
-
-Vector CBaseEntity_EyePosition (CBaseEntity *pThisPtr)
-{
-//	pVector = pThisPtr->EyePosition();
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_EYE_POSITION)]; 
-
-	union {Vector (ManiEmptyClass::*mfpnew)();
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (Vector) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
-
-}
-
-
-void CBaseEntity_GetVelocity (CBaseEntity *pThisPtr, Vector *vVelocity, AngularImpulse *vAngVelocity)
-{
-//	virtual void	GetVelocity(Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_VELOCITY)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(Vector *, AngularImpulse *);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(vVelocity, vAngVelocity);
-}
-
-
-
-CBaseCombatCharacter *CBaseEntity_MyCombatCharacterPointer(CBaseEntity *pThisPtr)
-{
-//	pCombat = pThisPtr->MyCombatCharacterPointer();
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_MY_COMBAT_CHARACTER)]; 
-
-	union {CBaseCombatCharacter * (ManiEmptyClass::*mfpnew)();
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (CBaseCombatCharacter *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
-}
-
-void CBaseEntity_SetGravity(CBaseEntity *pThisPtr, float newGravity)
-{
-	pThisPtr->SetGravity(newGravity);
-}
-
-void CBaseEntity_SetModelIndex(CBaseEntity *pThisPtr, int iIndex)
-{
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_SET_MODEL_INDEX)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(int);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(iIndex);
-}
-
-//********************************************************************
-// CBasePlayer 
-
-void CBasePlayer_Ignite(CBasePlayer *pThisPtr, float flFlameLifetime, bool bNPCOnly, float flSize, bool bCalledByLevelDesigner)
-{
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_IGNITE)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(float , bool , float , bool );
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(flFlameLifetime, bNPCOnly, flSize, bCalledByLevelDesigner);
-}
-
-bool CBasePlayer_RemovePlayerItem(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon)
-{
-//	pThisPtr->RemovePlayerItem(pWeapon);
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_REMOVE_PLAYER_ITEM)]; 
-
-	union {bool (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (bool) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pWeapon);
-
-}
-
-void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon)
-{
-//	pThisPtr->Weapon_Drop(pWeapon);
-//	virtual void		Weapon_Drop( CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL );
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_DROP)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *, const Vector *, const Vector *);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pWeapon, NULL, NULL);
-}
-
-CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType)
-{
-//	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0 );
-
-	int index = gpManiGameType->GetVFuncIndex(MANI_VFUNC_GIVE_ITEM);
-	if (index == -1) return NULL;
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[index]; 
-
-	union {CBaseEntity * (ManiEmptyClass::*mfpnew)(const char *, int);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (CBaseEntity *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(szName, iSubType);
-}
-
-//********************************************************************
-// CBaseCombatCharacter 
-
-CBaseCombatWeapon *CBaseCombatCharacter_Weapon_GetSlot(CBaseCombatCharacter *pThisPtr, int slot)
-{
-//	pWeapon = pThisPtr->Weapon_GetSlot(slot);
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_WEAPON_SLOT)]; 
-
-	union {CBaseCombatWeapon * (ManiEmptyClass::*mfpnew)(int);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(slot);
-}
-
-void CBaseCombatCharacter_Weapon_Switch(CBaseCombatCharacter *pThisPtr, CBaseCombatWeapon *pCombat, int slot)
-{
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_SWITCH)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *, int);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pCombat, slot);
-}
-
-void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int amount, int ammo_index, bool suppress_noise)
-{
-//	pThisPtr->GiveAmmo(amount, ammo_index, suppress_noise);
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GIVE_AMMO)]; 
-
-	union {void (ManiEmptyClass::*mfpnew)(int, int, bool);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(amount, ammo_index, suppress_noise);
-}
-
-//********************************************************************
-// CBaseCombatWeapon 
-
-int CBaseCombatWeapon_GetPrimaryAmmoType(CBaseCombatWeapon *pThisPtr)
-{
-//	virtual int				GetPrimaryAmmoType( void )  const { return m_iPrimaryAmmoType; }
-
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_PRIMARY_AMMO_TYPE)]; 
-
-	union {int (ManiEmptyClass::*mfpnew)();
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
-}
-
-int CBaseCombatWeapon_GetSecondaryAmmoType(CBaseCombatWeapon *pThisPtr)
-{
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_GET_SECONDARY_AMMO_TYPE)]; 
-
-	union {int (ManiEmptyClass::*mfpnew)();
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
-}
-
-const char *CBaseCombatWeapon_GetName(CBaseCombatWeapon *pThisPtr)
-{
-//	pWeaponName = pThisPtr->GetName();
-//  virtual char const		*GetName( void ) const;
-	void **this_ptr = *(void ***)&pThisPtr;
-	void **vtable = *(void ***)pThisPtr;
-	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_GET_NAME)]; 
-
-	union {char const		*(ManiEmptyClass::*mfpnew)();
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (char const *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+	return (datamap_t *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
 }
 
 //********************************************************************
@@ -875,37 +1095,48 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 
-	if (engine->Cmd_Argc() < 4)
+	if (engine->Cmd_Argc() < 3)
 	{
 		MMsg("Need more args :)\n");
 		return;
 	}
 
-	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, engine->Cmd_Argv(1), IMMUNITY_DONT_CARE))
+	bool	found_player = false;
+
+	for (int i = 1; i <= max_players; i++)
 	{
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		found_player = true;
+	}
+
+	// Whoever issued the commmand is authorised to do it.
+	if (!found_player)
+	{
+		MMsg("Need a target player to work the magic\n");
 		return;
 	}
 
-	player_t *target_ptr = &(target_player_list[0]);
+	player_t *target_ptr = &player;
 
 	CBaseEntity *pPlayer = target_ptr->entity->GetUnknown()->GetBaseEntity();
 	DWORD *type_ptr;
 
 	//Write to disk
-	if (FStrEq("CBE", engine->Cmd_Argv(2)))
+	if (FStrEq("CBE", engine->Cmd_Argv(1)))
 	{
 		type_ptr = (DWORD *) pPlayer;
 	}
-	else if (FStrEq("VOICE", engine->Cmd_Argv(2)))
+	else if (FStrEq("VOICE", engine->Cmd_Argv(1)))
 	{
 		type_ptr = (DWORD *) voiceserver;
 	}
-	else if (FStrEq("TE", engine->Cmd_Argv(2)))
+	else if (FStrEq("TE", engine->Cmd_Argv(1)))
 	{
 		type_ptr = (DWORD *) temp_ents;
 	}
-	else if (FStrEq("CBCC", engine->Cmd_Argv(2)))
+	else if (FStrEq("CBCC", engine->Cmd_Argv(1)))
 	{
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		//		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
@@ -919,7 +1150,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 			return;
 		}
 	}
-	else if (FStrEq("CBCW", engine->Cmd_Argv(2)))
+	else if (FStrEq("CBCW", engine->Cmd_Argv(1)))
 	{
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		//		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
@@ -941,7 +1172,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	}
 	else
 	{
-		MMsg("Invalid 3rd arg\n");
+		MMsg("Invalid 2nd arg\n");
 		return;
 	}
 
@@ -951,11 +1182,11 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 	if (engine->Cmd_Argc() < 5)
 	{
-		index = FindVFunc(type_ptr, engine->Cmd_Argv(3), NULL, mangled_name);
+		index = FindVFunc(type_ptr, engine->Cmd_Argv(2), NULL, mangled_name);
 	}
 	else
 	{
-		index = FindVFunc(type_ptr, engine->Cmd_Argv(3), engine->Cmd_Argv(4), mangled_name);
+		index = FindVFunc(type_ptr, engine->Cmd_Argv(2), engine->Cmd_Argv(3), mangled_name);
 	}
 
 	if (index == -1)
@@ -977,22 +1208,32 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 
-	if (engine->Cmd_Argc() < 3)
+	if (engine->Cmd_Argc() < 2)
 	{
 		MMsg("Need more args :)\n");
 		return;
 	}
 
+	bool	found_player = false;
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		found_player = true;
+	}
+
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, engine->Cmd_Argv(1), IMMUNITY_DONT_CARE))
+	if (!found_player)
 	{
 		MMsg("Need a target player to work the magic\n");
 		return;
 	}
 
-	int level = Q_atoi(engine->Cmd_Argv(2));
+	int level = Q_atoi(engine->Cmd_Argv(1));
 
-	player_t *target_ptr = &(target_player_list[0]);
+	player_t *target_ptr = &player;
 
 	CBaseEntity *pPlayer = target_ptr->entity->GetUnknown()->GetBaseEntity();
 	CBasePlayer *pBase = (CBasePlayer *) pPlayer;
@@ -1018,6 +1259,11 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 		CheckVFunc(type_ptr, "CBaseCombatCharacter", "MyCombatCharacterPointer", "my_combat_character");
 		CheckVFunc(type_ptr, "CBaseAnimating", "GetVelocity", "get_velocity");
+
+		CheckVFunc(type_ptr, "CBaseEntity", "GetDataDescMap", "map_desc");
+		CheckVFunc(type_ptr, "CBasePlayer", "GetDataDescMap", "map_desc");
+		CheckVFunc(type_ptr, "CCSPlayer", "GetDataDescMap", "map_desc");
+		CheckVFunc(type_ptr, "CDODPlayer", "GetDataDescMap", "map_desc");
 
 		type_ptr = (DWORD *) pBase;
 

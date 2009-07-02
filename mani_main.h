@@ -42,14 +42,14 @@ const int MANI_MAX_PLAYERS = 64;
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaM, www.mani-admin-plugin.com"
+#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaN, www.mani-admin-plugin.com"
 #ifdef SOURCEMM
-#define PLUGIN_CORE_VERSION "1.2BetaM SMM"
+#define PLUGIN_CORE_VERSION "1.2BetaN SMM"
 #else
-#define PLUGIN_CORE_VERSION "1.2BetaM"
+#define PLUGIN_CORE_VERSION "1.2BetaN"
 #endif
-#define PLUGIN_VERSION_ID "V1.2BetaM\n"
-#define PLUGIN_VERSION_ID2 "V1.2BetaM"
+#define PLUGIN_VERSION_ID "V1.2BetaN\n"
+#define PLUGIN_VERSION_ID2 "V1.2BetaN"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)
@@ -67,30 +67,9 @@ const int MANI_MAX_PLAYERS = 64;
 
 extern ConVar mani_stats_by_steam_id;
 
-struct map_vote_t
-{
-	int	user_id;
-	bool	slot_in_use;
-	int	map_index;
-	float	vote_time_stamp;
-};
-
 struct	rcon_t
 {
 	char	rcon_command[512];
-	char	alias[512];
-};
-
-struct	vote_rcon_t
-{
-	char	rcon_command[512];
-	char	question[512];
-	char	alias[512];
-};
-
-struct	vote_question_t
-{
-	char	question[512];
 	char	alias[512];
 };
 
@@ -176,61 +155,6 @@ struct kill_progress_t
 struct gimp_t
 {
 	char	phrase[256];
-};
-
-struct vote_option_t
-{
-	char	vote_name[512];
-	char	vote_command[512];
-	bool	null_command;
-	int		votes_cast;
-};
-
-struct system_vote_t
-{
-	bool	vote_in_progress;	// Flag if vote is in progress
-	int		vote_starter;		// Player index who started vote
-	bool	vote_confirmation;	// Flag if vote confirmation required
-	int		vote_type;			// Type of vote in progress
-	int		votes_required;		// Number of votes required for early result
-	float	end_vote_time;		// end vote time when results are collated
-	bool	waiting_decision;	// Used for Admin refuse/accept
-	float	waiting_decision_time;	// Used for Admin refuse timeout
-	int		delay_action;		// Delay action of vote
-	char	vote_title[512];	// Name of vote title
-	bool	map_decided;		// Stops end of map vote overriding an already selected map
-	int		winner_index;		// Index of the winning vote option
-	bool	start_rock_the_vote;	// Flag to start rock the vote
-	bool	no_more_rock_the_vote;  // Flag to stop more rock the votes
-	int		max_votes;			//	Max players who can vote
-	int		number_of_extends;	// Max number of extends allowed
-};
-
-struct voter_t
-{
-	bool	allowed_to_vote;
-	bool	voted;
-	int		vote_option_index;
-};
-
-struct user_vote_t
-{
-	int		map_index;			// Map that user voted for
-	float	map_vote_timestamp; 
-	bool	rock_the_vote;		// User typed rock the vote
-	float	nominate_timestamp;
-	int		nominated_map;		// User nominated map index
-	int		kick_id;			// User ID of kick target
-	float	kick_vote_timestamp;
-	int		kick_votes;			// Number of votes against player
-	int		ban_id;				// User ID of player to ban
-	float	ban_vote_timestamp;
-	int		ban_votes;			// Number of votes against player
-};
-
-struct user_vote_map_t
-{
-	char	map_name[128];
 };
 
 struct lang_trans_t

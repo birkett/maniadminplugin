@@ -26,6 +26,8 @@
 #ifndef MANI_GAMETYPE_H
 #define MANI_GAMETYPE_H
 
+class CBaseEntity;
+
 // Define known game types so far
 #define MANI_GAME_UNKNOWN (0)
 #define MANI_GAME_CSS_STR "Counter-Strike: Source"
@@ -64,6 +66,7 @@
 #define MANI_VFUNC_WEAPON_SWITCH (16)
 #define MANI_VFUNC_USER_CMDS (17)
 #define MANI_VFUNC_GIVE_ITEM (18)
+#define MANI_VFUNC_MAP (19)
 
 //Property defs
 #define MANI_PROP_HEALTH		(0)
@@ -78,6 +81,14 @@
 #define MANI_PROP_MODEL_INDEX	(9)
 #define MANI_PROP_VEC_ORIGIN	(10)
 #define MANI_PROP_ANG_ROTATION	(11)
+
+// Var indexes
+#define MANI_VAR_DEATHS			(0)
+#define MANI_VAR_FRAGS			(1)
+#define MANI_VAR_GRAVITY		(2)
+#define MANI_VAR_FRICTION		(3)
+#define MANI_VAR_ELASTICITY		(4)
+
 
 class ManiGameType
 {
@@ -126,16 +137,8 @@ public:
 
 	int			GetMaxMessages(void);
 //	bool		IsClientSuicide(void);
-	bool		IsKillsAllowed(void);
-	int			GetKillsOffset(void);
-
-	bool		IsDeathsAllowed(void);
-	int			GetDeathsOffset(void);
 	int			DebugOn() { return debug_log; }
 
-	bool		IsGravityAllowed(void);
-	int			GetGravityOffset(void);
-	
 	int			GetIndexFromGroup(const char *group_id);
 	bool		IsValidActiveTeam(int	index);
 	char		*GetTeamSpawnPointClassName(int index);
@@ -150,6 +153,7 @@ public:
 	int			GetVFuncIndex(int index);
 	int         GetPropIndex(int  index);
 	bool		CanUseProp(int index);
+	int			GetPtrIndex(CBaseEntity *pCBE, int index);
 
 private:
 	void		GetProps(KeyValues *kv_ptr);
@@ -187,15 +191,6 @@ private:
 	int			spectator_allowed;
 	char		spectator_group[32];
 
-	int			kills_allowed;
-	int			kills_offset;
-
-	int			deaths_allowed;
-	int			deaths_offset;
-
-	int			gravity_allowed;
-	int			gravity_offset;
-
 	int			voice_allowed;
 	int			voice_offset;
 
@@ -224,6 +219,17 @@ private:
 
 	int			vfunc_index[200];
 	int			prop_index[200];
+
+	struct	var_t
+	{
+		int		index;
+		char	name[64];
+	};
+
+	var_t		var_index[200];
+
+	FILE *fh;
+
 };
 
 extern	ManiGameType *gpManiGameType;

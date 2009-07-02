@@ -47,6 +47,7 @@
 #include "mani_output.h"
 #include "mani_client.h"
 #include "mani_menu.h"
+#include "mani_commands.h"
 #include "mani_gametype.h"
 #include "mani_panel.h"
 
@@ -182,51 +183,28 @@ bool ProcessWebShortcuts(edict_t *pEntity, const char *say_string)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_favourites command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaFavourites
-(
- int index, 
- bool svr_command,
- bool say_command
-)
+PLUGIN_RESULT	ProcessMaFavourites(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
-	player.entity = NULL;
-
 	if (!gpManiGameType->IsBrowseAllowed()) return PLUGIN_CONTINUE;
 
-	if (war_mode) return PLUGIN_CONTINUE;
-
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (player.is_bot) return PLUGIN_STOP;
-	}
+	if (player_ptr && player_ptr->is_bot) return PLUGIN_STOP;
 
 	if (web_shortcut_list_size != 0)
 	{
-		if (say_command)
+		if (command_type == M_SAY || command_type == M_TSAY)
 		{
-			SayToPlayer(&player, "Web Keywords");
+			SayToPlayer(ORANGE_CHAT, player_ptr, "Web Keywords");
 		}
 		else
 		{
-			OutputToConsole(player.entity, svr_command, "Web Keywords\n");
-			OutputToConsole(player.entity, svr_command, "------------\n");
+			OutputToConsole(player_ptr, "Web Keywords\n");
+			OutputToConsole(player_ptr, "------------\n");
 		}
 	}
 
 	for (int i = 0; i < web_shortcut_list_size; i++)
 	{
-		if (say_command)
-		{
-			SayToPlayer(&player, "%s", web_shortcut_list[i].shortcut);
-		}
-		else
-		{
-			OutputToConsole(player.entity, svr_command, "%s\n", web_shortcut_list[i].shortcut);
-		}
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", web_shortcut_list[i].shortcut); 
 	}
 
 	return PLUGIN_STOP;
@@ -237,14 +215,14 @@ PLUGIN_RESULT	ProcessMaFavourites
 //---------------------------------------------------------------------------------
 void ProcessMenuMaFavourites( player_t *player, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 
 	if (!gpManiGameType->IsBrowseAllowed()) return;
 
 	if (argc - argv_offset == 2)
 	{
 		// User voted by menu system, should be a map index
-		const int web_index = Q_atoi(engine->Cmd_Argv(1 + argv_offset));
+		const int web_index = Q_atoi(gpCmd->Cmd_Argv(1 + argv_offset));
 		ProcessWebShortcuts (player->entity, web_shortcut_list[web_index].shortcut);
 		return;
 	}
@@ -359,10 +337,4 @@ void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 
 }
 
-CON_COMMAND(favourites, "Shows web shortcut favourites")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaFavourites(0, true, false);
-	return;
-}
+SCON_COMMAND(ma_favourites, 2175, MaFavourites, false);

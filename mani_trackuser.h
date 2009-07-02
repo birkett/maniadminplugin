@@ -38,12 +38,12 @@ public:
 	void		Load(void);
 	void		Unload(void);
 	void		LevelInit(void);
-	int			GetIndex(int user_id) { return hash_table[user_id]; }
+	int			GetIndex(int user_id) { return (int) hash_table[user_id]; }
 
 private:
 
 	// Hash table of user ids
-	short		hash_table[65536];
+	char		hash_table[65536];
 };
 
 extern	ManiTrackUser *gpManiTrackUser;

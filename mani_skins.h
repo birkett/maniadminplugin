@@ -97,13 +97,12 @@ extern	skin_t	*skin_list;
 extern	int		skin_list_size;
 extern	void SkinTeamJoin( player_t	*player_ptr);
 extern	void ForceSkinType( player_t	*player_ptr );
-extern	PLUGIN_RESULT	ProcessMaSetSkin( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *skin_name);
+extern	PLUGIN_RESULT	ProcessMaSetSkin(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 extern	void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset );
 extern	void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset );
 extern  void SkinPlayerDisconnect (player_t	*player_ptr);
 extern	void SkinResetTeamID(void);
 extern	void ProcessJoinSkinChoiceMenu(   player_t *player_ptr,   int next_index,   int argv_offset,   char *menu_command );
-extern  void	ForceSkinCExec(player_t *player_ptr);
 
 
 #endif

@@ -88,6 +88,7 @@ typedef unsigned long DWORD;
 #include "tier0/memdbgon.h"
 
 void InitCVars( CreateInterfaceFn cvarFactory );
+extern int max_players;
 
 //---------------------------------------------------------------------------------
 // Purpose: constructor/destructor
@@ -121,8 +122,9 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	serverents = (IServerGameEnts*)gameServerFactory(INTERFACEVERSION_SERVERGAMEENTS, NULL);
 	effects = (IEffects*)gameServerFactory(IEFFECTS_INTERFACE_VERSION, NULL);
 	esounds = (IEngineSound*)interfaceFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL);
+	serverclients = (IServerGameClients*)gameServerFactory(INTERFACEVERSION_SERVERGAMECLIENTS, NULL);
 	cvar = (ICvar*)interfaceFactory(VENGINE_CVAR_INTERFACE_VERSION, NULL);
-	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
+	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL005", NULL);
 	if(serverdll)
 	{
 		gamedll = serverdll;
@@ -130,7 +132,7 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	else 
 	{
 		// Hack for unreleased interface version
-		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
+		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
 		if(!serverdll)
 		{
 			// Hack for interface 004 not working on older mods
@@ -173,9 +175,13 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	if (!UTIL_InterfaceMsg(serverdll,"IServerGameDLL", "ServerGameDLL003")) return false;
 	if (!UTIL_InterfaceMsg(voiceserver,"IVoiceServer", INTERFACEVERSION_VOICESERVER)) return false;
 	if (!UTIL_InterfaceMsg(partition,"ISpatialPartition", INTERFACEVERSION_SPATIALPARTITION)) return false;
+	if (!UTIL_InterfaceMsg(serverclients,"IServerGameClients", INTERFACEVERSION_SERVERGAMECLIENTS)) return false;
 
 
 	MMsg("********************************************************\n");
+
+	// max players = 0 on first load, > 0 on late load
+	max_players = gpGlobals->maxClients;
 
 	return (gpManiAdminPlugin->Load());
 }

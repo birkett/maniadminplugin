@@ -70,7 +70,6 @@ extern	int hintMsg_message_index;
 #define ENGINEW32_OFFS	38
 #define IA32_CALL		0xE8
 
-say_argv_t		say_argv[MAX_SAY_ARGC];
 static	int	map_count = -1;
 static	char mani_log_filename[512]="temp.log";
 
@@ -100,6 +99,7 @@ ConVar mani_log_mode ("mani_log_mode", "0", 0, "0 = to main valve log file, 1 = 
 //---------------------------------------------------------------------------------
 void AdminSayToAdmin
 (
+ const int colour,
 player_t	*player,
 const char	*fmt, 
 ...
@@ -125,7 +125,7 @@ const char	*fmt,
 	MRecipientFilter mrf;
 	mrf.MakeReliable();
 	mrf.RemoveAllRecipients();
-	if (player->entity != NULL)
+	if (player)
 	{
 		Q_snprintf(final_string, sizeof (final_string), "(ADMIN ONLY) %s: %s", player->name, tempString);
 	}
@@ -134,7 +134,7 @@ const char	*fmt,
 		Q_snprintf(final_string, sizeof (final_string), "(ADMIN ONLY) CONSOLE: %s", tempString);
 	}
 
-	OutputToConsole(NULL, true, "%s\n", final_string);
+	OutputToConsole(NULL, "%s\n", final_string);
 
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -160,10 +160,7 @@ const char	*fmt,
 
 	if (found_admin)
 	{
-		msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-		msg_buffer->WriteByte(3); // Say area
-		msg_buffer->WriteString(final_string);
-		engine->MessageEnd();
+		UTIL_SayText(colour, &mrf, final_string);
 	}
 
 }
@@ -173,6 +170,7 @@ const char	*fmt,
 //---------------------------------------------------------------------------------
 void SayToAdmin
 (
+ const int colour,
 player_t	*player,
 const char	*fmt, 
 ...
@@ -198,7 +196,7 @@ const char	*fmt,
 	mrf.MakeReliable();
 	mrf.RemoveAllRecipients();
 	Q_snprintf(final_string, sizeof (final_string), "(TO ADMIN) %s: %s", player->name, tempString);
-	OutputToConsole(NULL, true, "%s\n", final_string);
+	OutputToConsole(NULL, "%s\n", final_string);
 
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -233,10 +231,7 @@ const char	*fmt,
 
 	if (found_player)
 	{
-		msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-		msg_buffer->WriteByte(3); // Say area
-		msg_buffer->WriteString(final_string);
-		engine->MessageEnd();
+		UTIL_SayText(colour, &mrf, final_string);
 	}
 
 }
@@ -246,6 +241,7 @@ const char	*fmt,
 //---------------------------------------------------------------------------------
 void AdminSayToAll
 (
+ const int colour,
 player_t	*player,
 int			anonymous,
 const char	*fmt, 
@@ -266,7 +262,7 @@ const char	*fmt,
 
 	player_t	server_player;
 
-	if (player->entity == NULL)
+	if (!player)
 	{
 		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
 		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
@@ -277,7 +273,7 @@ const char	*fmt,
 		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
 	}
 
-	OutputToConsole(NULL, true, "%s\n", admin_final_string);
+	OutputToConsole(NULL, "%s\n", admin_final_string);
 
 	if (anonymous == 1)
 	{
@@ -319,18 +315,12 @@ const char	*fmt,
 
 		if (found_player)
 		{
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-			msg_buffer->WriteByte(3); // Say area
-			msg_buffer->WriteString(non_admin_final_string);
-			engine->MessageEnd();
+			UTIL_SayText(colour, &mrf, non_admin_final_string);
 		}
 
 		if (found_admin)
 		{
-			msg_buffer = engine->UserMessageBegin( &mrfadmin, text_message_index ); // Show TextMsg type user message
-			msg_buffer->WriteByte(3); // Say area
-			msg_buffer->WriteString(admin_final_string);
-			engine->MessageEnd();
+			UTIL_SayText(colour, &mrfadmin, admin_final_string);
 		}
 	}
 	else
@@ -358,150 +348,11 @@ const char	*fmt,
 			mrf.MakeReliable();
 			mrf.AddAllPlayers(max_players);
 
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-			msg_buffer->WriteByte(3); // Say area
-			msg_buffer->WriteString(admin_final_string);
-			engine->MessageEnd();
+			UTIL_SayText(colour, &mrf, admin_final_string);
 		}
 	}
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Say admin string to all using different colour
-//---------------------------------------------------------------------------------
-void AdminSayToAllColoured
-(
-player_t	*player,
-int			anonymous,
-const char	*fmt, 
-...
-)
-{
-	va_list		argptr;
-	char		tempString[1024];
-	char	admin_final_string[2048];
-	char	non_admin_final_string[2048];
-	int		admin_index;
-	bool	found_player = false;
-	bool	found_admin = false;
-
-	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
-	va_end   ( argptr );
-
-	player_t	server_player;
-
-	if (player->entity == NULL)
-	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
-	}
-	else
-	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
-	}
-
-	OutputToConsole(NULL, true, "%s\n", admin_final_string);
-
-	if (anonymous == 1)
-	{
-		MRecipientFilter mrfadmin;
-		MRecipientFilter mrf;
-		mrf.MakeReliable();
-		mrfadmin.MakeReliable();
-
-		for (int i = 1; i <= max_players; i++)
-		{
-			bool is_admin;
-
-			is_admin = false;
-			server_player.index = i;
-			if (!FindPlayerByIndex(&server_player))
-			{
-				continue;
-			}
-
-			if (server_player.is_bot)
-			{
-				continue;
-			}
-
-			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
-			if (is_admin)
-			{
-				found_admin = true;
-				mrfadmin.AddPlayer(i);
-				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
-				{
-					OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
-				}
-			}
-			else
-			{
-				found_player = true;
-				mrf.AddPlayer(i);
-				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
-				{
-					OutputToConsole(server_player.entity, false, "%s\n", non_admin_final_string);
-				}
-			}
-		}
-
-		if (found_player)
-		{
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-			msg_buffer->WriteByte(3); // Say area
-			msg_buffer->WriteByte(3); // Green
-			msg_buffer->WriteString(non_admin_final_string);
-			engine->MessageEnd();
-		}
-
-		if (found_admin)
-		{
-			msg_buffer = engine->UserMessageBegin( &mrfadmin, text_message_index ); // Show TextMsg type user message
-			msg_buffer->WriteByte(3); // Say area
-			msg_buffer->WriteByte(3); // Green
-			msg_buffer->WriteString(admin_final_string);
-			engine->MessageEnd();
-		}
-	}
-	else
-	{
-		for (int i = 1; i <= max_players; i++)
-		{
-			server_player.index = i;
-			if (!FindPlayerByIndex(&server_player))
-			{
-				continue;
-			}
-
-			if (server_player.is_bot)
-			{
-				continue;
-			}
-
-			found_player = true;
-			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
-			{
-				OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
-			}
-		}
-
-		if (found_player)
-		{
-			MRecipientFilter mrf;
-			mrf.MakeReliable();
-			mrf.AddAllPlayers(max_players);
-
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-			msg_buffer->WriteByte(3); // Say area
-			msg_buffer->WriteByte(3); // Green
-			msg_buffer->WriteString(admin_final_string);
-			engine->MessageEnd();
-		}
-	}
-}
 //---------------------------------------------------------------------------------
 // Purpose: Say admin string to all
 //---------------------------------------------------------------------------------
@@ -527,7 +378,7 @@ const char	*fmt,
 
 	player_t	server_player;
 
-	if (player->entity == NULL)
+	if (!player)
 	{
 		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
 		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
@@ -538,7 +389,7 @@ const char	*fmt,
 		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
 	}
 
-	OutputToConsole(NULL, true, "%s\n", admin_final_string);
+	OutputToConsole(NULL, "%s\n", admin_final_string);
 
 	if (anonymous == 1)
 	{
@@ -570,7 +421,7 @@ const char	*fmt,
 				mrfadmin.AddPlayer(i);
 				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 				{
-					OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+					OutputToConsole(&server_player, false, "%s\n", admin_final_string);
 				}
 			}
 			else
@@ -579,7 +430,7 @@ const char	*fmt,
 				mrf.AddPlayer(i);
 				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 				{
-					OutputToConsole(server_player.entity, false, "%s\n", non_admin_final_string);
+					OutputToConsole(&server_player, false, "%s\n", non_admin_final_string);
 				}
 			}
 		}
@@ -618,7 +469,7 @@ const char	*fmt,
 			found_player = true;
 			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 			{
-				OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+				OutputToConsole(&server_player, false, "%s\n", admin_final_string);
 			}
 		}
 
@@ -692,7 +543,7 @@ const char	*fmt,
 //---------------------------------------------------------------------------------
 // Purpose: Say to all
 //---------------------------------------------------------------------------------
-void SayToAll(bool echo, const char	*fmt, ...)
+void SayToAll(const int colour, bool echo, const char	*fmt, ...)
 {
 	va_list		argptr;
 	char		tempString[1024];
@@ -711,7 +562,7 @@ void SayToAll(bool echo, const char	*fmt, ...)
 	MRecipientFilter mrf;
 	mrf.MakeReliable();
 	mrf.RemoveAllRecipients();
-	if (echo) OutputToConsole(NULL, true, "%s\n", tempString);
+	if (echo) OutputToConsole(NULL, "%s\n", tempString);
 
 	for (int i = 1; i <= max_players; i++)
 		{
@@ -731,23 +582,20 @@ void SayToAll(bool echo, const char	*fmt, ...)
 
 		if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			if (echo) OutputToConsole(server_player.entity, false, "%s\n", tempString);
+			if (echo) OutputToConsole(&server_player, false, "%s\n", tempString);
 		}
 	}
 
 	if (found_player)
 	{
-		msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-		msg_buffer->WriteByte(3); // Say area
-		msg_buffer->WriteString(tempString);
-		engine->MessageEnd();
+		UTIL_SayText(colour, &mrf, tempString);
 	}
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Say to Dead
 //---------------------------------------------------------------------------------
-void SayToDead(const char	*fmt, ...)
+void SayToDead(const int colour, const char	*fmt, ...)
 {
 	va_list		argptr;
 	char		tempString[1024];
@@ -767,7 +615,7 @@ void SayToDead(const char	*fmt, ...)
 	mrf.MakeReliable();
 	mrf.RemoveAllRecipients();
 
-	OutputToConsole(NULL, true, "%s\n", tempString);
+	OutputToConsole(NULL, "%s\n", tempString);
 
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -790,7 +638,7 @@ void SayToDead(const char	*fmt, ...)
 			found_player = true;
 			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 			{
-				OutputToConsole(recipient_player.entity, false, "%s\n", tempString);
+				OutputToConsole(&recipient_player, false, "%s\n", tempString);
 			}
 			continue;
 		}
@@ -801,7 +649,7 @@ void SayToDead(const char	*fmt, ...)
 			found_player = true;
 			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 			{
-				OutputToConsole(recipient_player.entity, false, "%s\n", tempString);
+				OutputToConsole(&recipient_player, false, "%s\n", tempString);
 			}
 
 			continue;
@@ -810,17 +658,14 @@ void SayToDead(const char	*fmt, ...)
 
 	if (found_player)
 	{
-		msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-		msg_buffer->WriteByte(3); // Say area
-		msg_buffer->WriteString(tempString);
-		engine->MessageEnd();
+		UTIL_SayText(colour, &mrf, tempString);
 	}
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Say to player
 //---------------------------------------------------------------------------------
-void SayToPlayer(player_t *player, const char	*fmt, ...)
+void SayToPlayer(const int colour, player_t *player, const char	*fmt, ...)
 {
 	va_list		argptr;
 	char		tempString[1024];
@@ -852,60 +697,11 @@ void SayToPlayer(player_t *player, const char	*fmt, ...)
 	mrf.AddPlayer(player->index);
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
-		OutputToConsole(player->entity, false, "%s\n", tempString);
+		OutputToConsole(player, false, "%s\n", tempString);
 	}
 //	OutputToConsole(NULL, true, "%s\n", tempString);
 
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-	msg_buffer->WriteByte(3); // Say area
-	msg_buffer->WriteString(tempString);
-	engine->MessageEnd();
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Say to player
-//---------------------------------------------------------------------------------
-void SayToPlayerColoured(player_t *player, const char	*fmt, ...)
-{
-	va_list		argptr;
-	char		tempString[1024];
-	player_t	recipient_player;
-	
-	if (war_mode)
-	{
-		return;
-	}
-
-	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
-	va_end   ( argptr );
-
-	MRecipientFilter mrf;
-	mrf.MakeReliable();
-
-	recipient_player.index = player->index;
-	if (!FindPlayerByIndex(&recipient_player))
-	{
-		return;
-	}
-
-	if (recipient_player.is_bot)
-	{
-		return;
-	}
-
-	mrf.AddPlayer(player->index);
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
-	{
-		OutputToConsole(player->entity, false, "%s\n", tempString);
-	}
-//	OutputToConsole(NULL, true, "%s\n", tempString);
-
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-	msg_buffer->WriteByte(3); // Say area
-	msg_buffer->WriteByte(3); // Green
-	msg_buffer->WriteString(tempString);
-	engine->MessageEnd();
+	UTIL_SayText(colour, &mrf, tempString);
 }
 
 //---------------------------------------------------------------------------------
@@ -933,7 +729,7 @@ const char	*fmt,
 
 	player_t	server_player;
 
-	if (player->entity == NULL)
+	if (!player)
 	{
 		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
 		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
@@ -944,7 +740,7 @@ const char	*fmt,
 		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
 	}
 
-	OutputToConsole(NULL, true, "%s\n", admin_final_string);
+	OutputToConsole(NULL, "%s\n", admin_final_string);
 
 	SplitHintString(admin_final_string, 34);
 	SplitHintString(non_admin_final_string, 34);
@@ -989,12 +785,12 @@ const char	*fmt,
 
 		if (found_player)
 		{
-			SayHintMsg(&mrf, non_admin_final_string);
+			UTIL_SayHint(&mrf, non_admin_final_string);
 		}
 
 		if (found_admin)
 		{
-			SayHintMsg(&mrfadmin, admin_final_string);
+			UTIL_SayHint(&mrfadmin, admin_final_string);
 		}
 	}
 	else
@@ -1022,7 +818,7 @@ const char	*fmt,
 			mrf.MakeReliable();
 			mrf.AddAllPlayers(max_players);
 
-			SayHintMsg(&mrf, admin_final_string);
+			UTIL_SayHint(&mrf, admin_final_string);
 		}
 	}
 }
@@ -1030,7 +826,7 @@ const char	*fmt,
 //---------------------------------------------------------------------------------
 // Purpose: Use Hint type message to ouput text
 //---------------------------------------------------------------------------------
-void SayHintMsg(MRecipientFilter *mrf_ptr, char *text_ptr)
+void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr)
 {
 	char text_out[192];
 
@@ -1094,6 +890,7 @@ void SplitHintString(char *string, int width)
 //---------------------------------------------------------------------------------
 void SayToTeam
 (
+ const int colour,
 bool	ct_side,
 bool	t_side,
 bool	spectator,
@@ -1156,18 +953,14 @@ const char	*fmt, ...
 		}
 	}
 
-	OutputToConsole(NULL, true, "%s\n", tempString);
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-	msg_buffer->WriteByte(3); // Say area
-	msg_buffer->WriteString(tempString);
-	engine->MessageEnd();
-
+	OutputToConsole(NULL, "%s\n", tempString);
+	UTIL_SayText(colour, &mrf, tempString);
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Dump string to player console or server console depending on flag
 //---------------------------------------------------------------------------------
-void	OutputToConsole(edict_t *pEntity, bool svr_command, char *fmt, ...)
+void	OutputToConsole(player_t *player_ptr, char *fmt, ...)
 {
 	va_list		argptr;
 	char		tempString[2048];
@@ -1176,13 +969,13 @@ void	OutputToConsole(edict_t *pEntity, bool svr_command, char *fmt, ...)
 	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
-	if (svr_command || pEntity == NULL)
+	if (!player_ptr)
 	{
 		MMsg("%s", tempString);
 	}
 	else
 	{
-		engine->ClientPrintf(pEntity, tempString);
+		engine->ClientPrintf(player_ptr->entity, tempString);
 	}
 }
 
@@ -1205,7 +998,7 @@ void DirectLogCommand(char *fmt, ... )
 //---------------------------------------------------------------------------------
 // Purpose: Log who did what with timestamp to console
 //---------------------------------------------------------------------------------
-void LogCommand(edict_t *pEntity, char *fmt, ... )
+void LogCommand(player_t *player_ptr, char *fmt, ... )
 {
 	va_list		argptr;
 	char		tempString[1024]="";
@@ -1213,15 +1006,10 @@ void LogCommand(edict_t *pEntity, char *fmt, ... )
 	char		user_details[128]="CONSOLE : ";
 	char		steam_id[MAX_NETWORKID_LENGTH]="CONSOLE";
 
-	if(pEntity != NULL && !pEntity->IsFree() )
+	if(player_ptr)
 	{
-		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-		if (playerinfo && playerinfo->IsConnected())
-		{
-			const char *user_name = playerinfo->GetName();
-			Q_strcpy(steam_id, playerinfo->GetNetworkIDString());
-			Q_snprintf( user_details, sizeof(user_details), "[MANI_ADMIN_PLUGIN] Admin [%s] [%s] Executed : ", user_name, steam_id);
-		}
+		Q_strcpy (steam_id, player_ptr->steam_id);
+		Q_snprintf( user_details, sizeof(user_details), "[MANI_ADMIN_PLUGIN] Admin [%s] [%s] Executed : ", player_ptr->name, player_ptr->steam_id);
 	}	
 
 	va_start ( argptr, fmt );
@@ -1612,8 +1400,8 @@ void PrintToClientConsole(edict_t *pEntity, char *fmt, ... )
 //---------------------------------------------------------------------------------
 void OutputHelpText
 (
+ const int colour,
  player_t	*player_ptr,
- bool		to_server_console,
  char		*fmt,
  ...
  )
@@ -1625,119 +1413,37 @@ void OutputHelpText
 	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
-	if (to_server_console)
+	if (!player_ptr)
 	{
-		OutputToConsole(player_ptr->entity, to_server_console, "%s\n", tempString);
+		OutputToConsole(player_ptr, "%s\n", tempString);
 	}
 	else
 	{
-		SayToPlayer(player_ptr, "%s\n", tempString);
+		SayToPlayer(colour, player_ptr, "%s\n", tempString);
 	}
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the Parse the saystring
+// Purpose: Write Text to chat area
 //---------------------------------------------------------------------------------
-void	ParseSayString
-(
- const char *say_string, 
- char *trimmed_string_out,
- int  *say_argc
-)
+void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 {
-	char trimmed_string[2048];
-	int i;
-	int j;
-	char terminate_char;
-	bool found_quotes;
-	int say_length;
-
-	*say_argc = 0;
-
-	for (i = 0; i < MAX_SAY_ARGC; i++)
+	msg_buffer = engine->UserMessageBegin(mrf, text_message_index ); // Show TextMsg type user message
+	msg_buffer->WriteByte(3); // Say area
+	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
-		// Reset strings for safety
-		Q_strcpy(say_argv[i].argv_string,"");
-		say_argv[i].index = 0;
-	}
-
-	if (!say_string) return;
-
-	say_length = Q_strlen(say_string);
-	if (say_length == 0)
-	{
-		return;
-	}
-
-	if (say_length == 1)
-	{
-		// Only one character in string
-		Q_strcpy(trimmed_string, say_string);
-		Q_strcpy(say_argv[0].argv_string, say_string);
-		say_argv[0].index = 0;
-		*say_argc = *say_argc + 1;
-		return;
-	}
-
-	// Check if quotes are needed to be removed
-	if (say_string[0] == '\"' && say_string[Q_strlen(say_string) - 1] == '\"')
-	{
-		Q_snprintf(trimmed_string, sizeof(trimmed_string), "%s", &(say_string[1]));
-		trimmed_string[Q_strlen(trimmed_string) - 1] = '\0';
-	}
-	else
-	{
-		Q_snprintf(trimmed_string, sizeof(trimmed_string), "%s", say_string);
-	}
-
-	Q_strcpy(trimmed_string_out, trimmed_string);
-
-	// Extract tokens
-	i = 0;
-	
-	while (*say_argc != MAX_SAY_ARGC)
-	{
-		// Find first non white space
-		while (trimmed_string[i] == ' ' && trimmed_string[i] != '\0') i++;
-
-		if (trimmed_string[i] == '\0')	return;
-
-		say_argv[*say_argc].index = i;
-
-		found_quotes = false;
-		if (trimmed_string[i] == '\"')
+		switch (colour)
 		{
-			// Use quote to terminate string
-			found_quotes = true;
-			terminate_char = '\"';
-			i++;
+			case ORANGE_CHAT:break;
+			case GREY_CHAT: msg_buffer->WriteByte(-1); break;
+			case LIGHT_GREEN_CHAT: msg_buffer->WriteByte(3);break; // Light Green
+			case GREEN_CHAT: msg_buffer->WriteByte(4);break; // Darker Green
+			default :break;
 		}
-		else
-		{
-			// Use next space to terminate string
-			terminate_char = ' ';
-		}
-
-		if (trimmed_string[i] == '\0')	return;
-
-		j = 0;
-
-		while (trimmed_string[i] != terminate_char && trimmed_string[i] != '\0')
-		{
-			// Copy char
-			say_argv[*say_argc].argv_string[j] = trimmed_string[i];
-			j++;
-			i++;
-		}
-
-		say_argv[*say_argc].argv_string[j] = '\0';
-		*say_argc = *say_argc + 1;
-		if (trimmed_string[i] == '\0') return;
-		if (found_quotes) i++;
-		if (trimmed_string[i] == '\0') return;
 	}
 
-	return;
+	msg_buffer->WriteString(say_text);
+	engine->MessageEnd();
 }
 
 // Log to srcds core log
@@ -1827,7 +1533,3 @@ void FindConPrintf(void)
 
 }
 
-CON_COMMAND(ma_echo, "Runs an echo test")
-{
-	MMsg("Test\n");
-}

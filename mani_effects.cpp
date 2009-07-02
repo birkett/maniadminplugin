@@ -1423,15 +1423,21 @@ void	SlayPlayer
 	}
 */
 
-	if (!kill_as_suicide && gpManiGameType->IsKillsAllowed())
+	if (!kill_as_suicide)
 	{
-		int offset = gpManiGameType->GetKillsOffset();
+		CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
+		int index;
 
-		int *frags;
-		frags = ((int *)player_ptr->entity->GetUnknown() + offset);
-		*frags = *frags + 1;
+		// Need to save the players score
+		index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
+		if (index != -2)
+		{
+			int *frags;
+			frags = ((int *)pCBE + index);
+			*frags = *frags + 1;
+		}
+
 	}
-
 }
 
 //---------------------------------------------------------------------------------
@@ -1538,9 +1544,13 @@ void	ProcessNoClipPlayer(player_t *player)
 
 	if (sv_cheats->GetInt() == 0)
 	{
+        sv_cheats->m_nFlags &= ~FCVAR_SPONLY;
+        sv_cheats->m_nFlags &= ~FCVAR_NOTIFY;
 		sv_cheats->SetValue(1);
 		helpers->ClientCommand(player->entity, "noclip");
 		sv_cheats->SetValue(0);
+        sv_cheats->m_nFlags &= ~FCVAR_SPONLY;
+        sv_cheats->m_nFlags &= ~FCVAR_NOTIFY;
 	}
 	else
 	{
@@ -1702,7 +1712,7 @@ void	ProcessSaveLocation(player_t *player)
 {
 	player_settings_t *player_settings;
 
-	player_settings = FindStoredPlayerSettings(player);
+	player_settings = FindPlayerSettings(player);
 	if (!player_settings) return;
 
 	Vector current_position = player->player_info->GetAbsOrigin();
@@ -1724,7 +1734,6 @@ void	ProcessSaveLocation(player_t *player)
 		AddToList((void **) &(player_settings->teleport_coords_list), sizeof(teleport_coords_t), &(player_settings->teleport_coords_list_size));
 		Q_strcpy(player_settings->teleport_coords_list[player_settings->teleport_coords_list_size - 1].map_name, current_map);
 		player_settings->teleport_coords_list[player_settings->teleport_coords_list_size - 1].coords = current_position;
-		UpdatePlayerSettings(player, player_settings);
 	}
 }
 

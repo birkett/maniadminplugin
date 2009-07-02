@@ -279,7 +279,7 @@ void ManiPing::GameFrame(void)
 						player.index = i + 1;
 						if (FindPlayerByIndex(&player))
 						{
-							SayToAll (false, "Player %s was autokicked for breaking the %ims ping limit on this server\n", 
+							SayToAll (ORANGE_CHAT, false, "Player %s was autokicked for breaking the %ims ping limit on this server\n", 
 											player.name,
 											mani_high_ping_kick_ping_limit.GetInt()
 											);

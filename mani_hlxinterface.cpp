@@ -53,7 +53,9 @@
 #include "mani_client_flags.h"
 #include "mani_gametype.h"
 #include "mani_vfuncs.h"
+#include "mani_language.h"
 #include "mani_sigscan.h"
+#include "mani_commands.h"
 #include "mani_hlxinterface.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
@@ -88,36 +90,34 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 	msay_t	*lines_list = NULL;
 	int		lines_list_size = 0;
 	char	temp_line[2048];
-	char	trimmed_say[2048];
-	int		argc;
 
-	if (!IsCommandIssuedByServerAdmin()) return;
-
-	if (ProcessPluginPaused()) return;
-	if (war_mode) return ;
-
-	ParseSayString(engine->Cmd_Args(), trimmed_say, &argc);
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
 
 	if (mani_use_amx_style_menu.GetInt() == 0 || !gpManiGameType->IsAMXMenuAllowed()) return ;
 
-	if (argc < 3) 
+	if (gpCmd->Cmd_Argc() < 4) 
 	{
-		OutputToConsole(NULL, false, "Mani Admin Plugin: %s <time to display> <part of user name, user id or steam id> <message>\n", engine->Cmd_Argv(0));
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <time to display> <part of user name, user id or steam id> <message>\n", gpCmd->Cmd_Argv(0));
 		return;
 	}
+
+	const char *time_to_display_str = gpCmd->Cmd_Argv(1);
+	const char *target_string = gpCmd->Cmd_Argv(2);
+
 	//					say_argv[0].argv_string, // The time to display
 	//					say_argv[1].argv_string, // The player target string
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, say_argv[1].argv_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
 	{
-		OutputToConsole(NULL, true, "Did not find player %s\n", say_argv[1].argv_string);
+		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
-	char *say_string = &(trimmed_say[say_argv[2].index]);
+	const char *say_string = gpCmd->Cmd_Args(3);
 
-	time_to_display = Q_atoi(say_argv[0].argv_string);
+	time_to_display = Q_atoi(time_to_display_str);
 	if (time_to_display < 0) time_to_display = 0;
 	else if (time_to_display > 100) time_to_display = 100;
 
@@ -197,33 +197,27 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 // HLX version of CSay with player target functions
 CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 {
-	if (!IsCommandIssuedByServerAdmin()) return;
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
 
-	char	trimmed_say[2048];
-	int say_argc;
-	player_t	player;
-	player.entity = NULL;
 	bool	fire_message = false;
 
-	if (ProcessPluginPaused()) return;
-
-	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
-
-	if (engine->Cmd_Argc() < 3) 
+	if (gpCmd->Cmd_Argc() < 3) 
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s <target> <message>\n", engine->Cmd_Argv(0));
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <target> <message>\n", gpCmd->Cmd_Argv(0));
 		return;
 	}
 
+	const char *target_string = gpCmd->Cmd_Argv(1);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, say_argv[0].argv_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
 	{
-		OutputToConsole(NULL, true, "Did not find player %s\n", say_argv[0].argv_string);
+		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
-	char *say_string = &(trimmed_say[say_argv[1].index]);
+	const char *say_string = gpCmd->Cmd_Args(2);
 
 	MRecipientFilter mrf;
 	mrf.RemoveAllRecipients();
@@ -256,36 +250,31 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 // HLX version of CSay with player target functions
 CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 {
-	if (!IsCommandIssuedByServerAdmin()) return;
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
 
-	char	trimmed_say[2048];
-	int say_argc;
-	player_t	player;
-	player.entity = NULL;
-	bool	fire_message = false;
-
-	if (ProcessPluginPaused()) return;
-
-	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
-
-	if (engine->Cmd_Argc() < 3) 
+	if (gpCmd->Cmd_Argc() < 3) 
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s <target> <url>\n", engine->Cmd_Argv(0));
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <target> <url>\n", gpCmd->Cmd_Argv(0));
 		return;
 	}
+
+	const char *target_string = gpCmd->Cmd_Argv(1);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, say_argv[0].argv_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
 	{
-		OutputToConsole(NULL, true, "Did not find player %s\n", say_argv[0].argv_string);
+		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return;
 	}
 
-	char *url_string = &(trimmed_say[say_argv[1].index]);
+	const char *url_string = gpCmd->Cmd_Args(2);
 
 	MRecipientFilter mrf;
 	mrf.RemoveAllRecipients();
 	mrf.MakeReliable();
+
+	bool fire_message = false;
 
 	// Found some players to talk to
 	for (int i = 0; i < target_player_list_size; i++)
@@ -306,32 +295,23 @@ CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 // HLX version of CSay with player target functions
 CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 {
-	if (!IsCommandIssuedByServerAdmin()) return;
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
 
-	char	trimmed_say[2048];
-	int say_argc;
-	player_t	player;
-	player.entity = NULL;
-
-	if (ProcessPluginPaused()) return;
-
-	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
-
-	if (engine->Cmd_Argc() < 2) 
+	if (gpCmd->Cmd_Argc() < 2) 
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s <target>\n", engine->Cmd_Argv(0));
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <target>\n", gpCmd->Cmd_Argv(0));
 		return;
 	}
 
+	const char *target_string = gpCmd->Cmd_Args(1);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, say_argv[0].argv_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
 	{
-		OutputToConsole(NULL, true, "Did not find player %s\n", say_argv[0].argv_string);
+		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return;
 	}
-
-	char *url_string = &(trimmed_say[say_argv[1].index]);
 
 	// Found some players to talk to
 	for (int i = 0; i < target_player_list_size; i++)
@@ -364,34 +344,22 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 // HLX Version of ma_psay
 CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 {
-	if (!IsCommandIssuedByServerAdmin()) return;
-	char	trimmed_say[2048];
-	int say_argc;
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
+	gpCmd->ExtractClientAndServerCommand();
 
-	if (ProcessPluginPaused()) return;
-
-	ParseSayString(engine->Cmd_Args(), trimmed_say, &say_argc);
-
-	player_t player;
-	player.entity = NULL;
-
-	if (war_mode)
+	if (gpCmd->Cmd_Argc() < 3) 
 	{
-		return ;
-	}
-
-	if (engine->Cmd_Argc() < 3) 
-	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s <target> <message>\n", engine->Cmd_Argv(0));
+		OutputToConsole(NULL, "Mani Admin Plugin: %s <target> <message>\n", gpCmd->Cmd_Argv(0));
 		return;
 	}
 
-	char *say_string = &(trimmed_say[say_argv[1].index]);
+	const char *target_string = gpCmd->Cmd_Argv(1);
+	const char *say_string = gpCmd->Cmd_Args(2);
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, say_argv[0].argv_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(NULL, target_string, IMMUNITY_DONT_CARE))
 	{
-		OutputToConsole(NULL, true, "<%s> Did not find player %s\n", engine->Cmd_Argv(0), say_argv[0].argv_string);
+		OutputToConsole(NULL, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return;
 	}
 

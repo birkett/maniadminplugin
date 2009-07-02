@@ -64,14 +64,14 @@ extern	void InitMaps(void);
 extern	void LoadMaps(const char *map_being_loaded);
 extern	void FreeMaps(void);
 extern	last_map_t	*GetLastMapsPlayed (int *number_of_maps_found, int max_number_of_maps);
-extern	PLUGIN_RESULT	ProcessMaMapList( int index, bool svr_command);
-extern	PLUGIN_RESULT	ProcessMaMapCycle( int index, bool svr_command);
-extern	PLUGIN_RESULT	ProcessMaListMaps( int index, bool svr_command);
-extern	PLUGIN_RESULT	ProcessMaNextMap( int index, bool svr_command);
-extern	PLUGIN_RESULT	ProcessMaMap( int index,  bool svr_command,  int argc,  char *command_string,  char *map_name);
-extern	PLUGIN_RESULT	ProcessMaSkipMap( int index,  bool svr_command,  int argc,  char *command_string);
-extern	PLUGIN_RESULT	ProcessMaSetNextMap( int index,  bool svr_command,  int argc,  char *command_string,  char *map_name);
-extern	PLUGIN_RESULT	ProcessMaVoteMapList( int index,  bool svr_command);
+extern	PLUGIN_RESULT	ProcessMaMapList(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaMapCycle(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaListMaps(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaNextMap(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaMap(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaSkipMap(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaSetNextMap(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaVoteMapList(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 
 extern ConVar mani_nextmap;
 

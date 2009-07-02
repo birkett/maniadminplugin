@@ -174,11 +174,11 @@ class ManiSMMHooks
 {
 public:
 	void	HookVFuncs(void);
-	void	HookProcessUsercmds(CBasePlayer *pPlayer);
-	void	UnHookProcessUsercmds(CBasePlayer *pPlayer);
-	void	ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused);
 	bool	SetClientListening(int iReceiver, int iSender, bool bListen);
 	void	PlayerDecal(IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity);
+	void	HookProcessUsercmds(CBasePlayer *pPlayer);
+	void	ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused);
+	void	UnHookProcessUsercmds(CBasePlayer *pPlayer);
 };
 
 extern	void Say_handler();

@@ -50,7 +50,7 @@ public:
 	void		Load(void);
 	void		LevelInit(void);
 	bool		PlayerSay(player_t *player_ptr, const char *chat_string, bool teamonly, bool from_event);
-	PLUGIN_RESULT	ProcessMaChatTriggers( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
+	PLUGIN_RESULT	ProcessMaChatTriggers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 
 private:
 
@@ -61,7 +61,7 @@ private:
 	void		ProcessLoadIgnore(KeyValues *kv_parent_ptr);
 	void		ProcessLoadIgnoreX(KeyValues *kv_parent_ptr);
 	bool		FindString(const char *chat_string, chat_trigger_t **chat_trigger_ptr);
-	void		DumpTriggerData( player_t *player_ptr,  bool svr_command,  chat_trigger_t *chat_trigger_ptr );
+	void		DumpTriggerData( player_t *player_ptr, chat_trigger_t *chat_trigger_ptr );
 
 	chat_trigger_t	*chat_trigger_list;
 	int				chat_trigger_list_size;

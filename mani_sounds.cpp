@@ -50,6 +50,8 @@
 #include "mani_output.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
+#include "mani_commands.h"
+#include "mani_help.h"
 #include "mani_sounds.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -217,42 +219,20 @@ void	LoadSounds(void)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_play command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaPlaySound
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *sound_name
-)
+PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
 	bool unlimited_play = false;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	player.entity = NULL;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
 
-		player.index = index;
-		if (!FindPlayerByIndex(&player))
-		{
-			return PLUGIN_STOP;
-		}
-
-		if (!gpManiClient->IsAdmin(&player, &admin_index))
+		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
 		{
 			if (mani_sounds_per_round.GetInt() == 0)
 			{
-				SayToPlayer(&player, "Mani Admin Plugin: You are not authorised to use admin commands");
+				OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You are not authorised to use admin commands");
 				return PLUGIN_STOP;
 			}
 		}
@@ -263,7 +243,7 @@ PLUGIN_RESULT	ProcessMaPlaySound
 			{
 				if (mani_sounds_per_round.GetInt() == 0)
 				{
-					SayToPlayer(&player, "Mani Admin Plugin: You are not authorised to play sounds");
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You are not authorised to play sounds");
 					return PLUGIN_STOP;
 				}
 			}
@@ -279,30 +259,18 @@ PLUGIN_RESULT	ProcessMaPlaySound
 		unlimited_play = true;
 	}
 
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <sound index or partial sound name>, use ma_showsounds to see sound list\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <sound index or partial sound name>, use ma_showsounds to see sound list", command_string);
-		}
+	if (gpCmd->Cmd_Argc() < 2) return (gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type));
 
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command && !unlimited_play)
+	if (player_ptr && !unlimited_play)
 	{
 		// Check to see if player has reached their limit
-		if (sounds_played[player.index - 1] < mani_sounds_per_round.GetInt())
+		if (sounds_played[player_ptr->index - 1] < mani_sounds_per_round.GetInt())
 		{
-			sounds_played[player.index - 1] ++;
+			sounds_played[player_ptr->index - 1] ++;
 		}
 		else
 		{
-			SayToPlayer(&player, "You can't play any more sounds this round");
+			SayToPlayer(ORANGE_CHAT, player_ptr, "You can't play any more sounds this round");
 			return PLUGIN_STOP;
 		}
 	}
@@ -311,13 +279,13 @@ PLUGIN_RESULT	ProcessMaPlaySound
 	char play_sound[512];
 
 	// See if we can find a match by index or partial match on name
-	sound_index = Q_atoi(sound_name);
+	sound_index = Q_atoi(gpCmd->Cmd_Argv(1));
 	if (sound_index < 1 || sound_index > sound_list_size)
 	{
 		bool found_match = false;
 		for (int i = 0; i < sound_list_size; i ++)
 		{
-			if (NULL != Q_stristr(sound_list[i].alias, sound_name))
+			if (NULL != Q_stristr(sound_list[i].alias, gpCmd->Cmd_Argv(1)))
 			{
 				sound_index = i;
 				found_match = true;
@@ -327,15 +295,7 @@ PLUGIN_RESULT	ProcessMaPlaySound
 
 		if (!found_match)
 		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Did not find sound requested\n");
-			}
-			else
-			{
-				SayToPlayer(&player, "Did not find sound requested");
-			}
-
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Did not find sound requested");
 			return PLUGIN_STOP;
 		}
 	}
@@ -363,7 +323,7 @@ PLUGIN_RESULT	ProcessMaPlaySound
 		if (!unlimited_play && mani_sounds_filter_if_dead.GetInt() == 1)
 		{
 			// Is player who triggered it dead
-			if (player.is_dead)
+			if (player_ptr->is_dead)
 			{
 				if (!target_player.is_dead)
 				{
@@ -382,28 +342,28 @@ PLUGIN_RESULT	ProcessMaPlaySound
 		// Not admin so output message
 		if (mani_sounds_filter_if_dead.GetInt() == 1)
 		{
-			if (player.is_dead)
+			if (player_ptr->is_dead)
 			{
-				SayToDead("Player %s played sound %s", player.name, sound_list[sound_index].alias);
+				SayToDead(ORANGE_CHAT, "Player %s played sound %s", player_ptr->name, sound_list[sound_index].alias);
 			}
 			else
 			{
-				SayToAll(false, "Player %s played sound %s", player.name, sound_list[sound_index].alias);
+				SayToAll(ORANGE_CHAT, false, "Player %s played sound %s", player_ptr->name, sound_list[sound_index].alias);
 			}
 		}
 		else
 		{
-			SayToAll(false, "Player %s played sound %s", player.name, sound_list[sound_index].alias);
+			SayToAll(ORANGE_CHAT, false, "Player %s played sound %s", player_ptr->name, sound_list[sound_index].alias);
 		}			
 
 		DirectLogCommand("[MANI_ADMIN_PLUGIN] Player [%s] Steam ID [%s] played sound [%s]\n", 
-							player.name, 
-							player.steam_id, 
+							player_ptr->name, 
+							player_ptr->steam_id, 
 							sound_list[sound_index].alias);
 	}
 	else
 	{
-		LogCommand(player.entity, "played sound %s\n", sound_list[sound_index].alias);
+		LogCommand(player_ptr, "played sound %s\n", sound_list[sound_index].alias);
 	}
 
 	return PLUGIN_STOP;
@@ -412,36 +372,13 @@ PLUGIN_RESULT	ProcessMaPlaySound
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_showsounds
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaShowSounds
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaShowSounds(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
-	player.entity = NULL;
-
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
-	{
-		// Get Player info
-
-		player.index = index;
-		if (!FindPlayerByIndex(&player))
-		{
-			return PLUGIN_STOP;
-		}
-	}
-
-	OutputToConsole(player.entity, svr_command, "Current Sounds in list\n\n");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Current Sounds in list");
 
 	for (int i = 0; i < sound_list_size; i++)
 	{
-		OutputToConsole(player.entity, svr_command, "%-3i %s\n", i + 1,	sound_list[i].alias);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%-3i %s", i + 1,	sound_list[i].alias);
 	}
 
 	return PLUGIN_STOP;
@@ -452,14 +389,14 @@ PLUGIN_RESULT	ProcessMaShowSounds
 //---------------------------------------------------------------------------------
 void ProcessPlaySound( player_t *admin, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 
 	if (argc - argv_offset == 3)
 	{
 		int sound_index;
 		char play_sound[512];
 
-		sound_index = Q_atoi(engine->Cmd_Argv(2 + argv_offset));
+		sound_index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
 		if (sound_index < 0 || sound_index >= sound_list_size)
 		{
 			return;

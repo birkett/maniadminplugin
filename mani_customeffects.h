@@ -127,7 +127,7 @@ private:
 	int				argv_index;
 	int				argc;
 	int				arg_type;
-	char			*command_string;
+	const char		*command_string;
 
 };
 

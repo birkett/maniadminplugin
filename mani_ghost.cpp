@@ -287,7 +287,7 @@ void ManiGhost::PlayerDeath(player_t *player_ptr)
 		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
 		{
 			BlindPlayer(player_ptr, 255);
-			SayToPlayer(player_ptr, "You have been temporarily blinded for ghosting on an IP address with another player");
+			SayToPlayer(ORANGE_CHAT, player_ptr, "You have been temporarily blinded for ghosting on an IP address with another player");
 		}
 	}
 }
@@ -314,7 +314,7 @@ void ManiGhost::RoundStart(void)
 		if (player.team == gpManiGameType->GetSpectatorIndex())
 		{
 			BlindPlayer(&player, 0);
-			SayToPlayer(&player, "You have been temporarily blinded for ghosting on an IP address with another player");
+			SayToPlayer(ORANGE_CHAT, &player, "You have been temporarily blinded for ghosting on an IP address with another player");
 		}
 	}
 }

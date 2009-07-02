@@ -72,12 +72,13 @@ public:
 	bool			IsImmune(player_t *player_ptr, int *client_index);
 	bool			IsImmuneNoPlayer(player_t *player_ptr, int *client_index);
 	bool			IsPotentialAdmin(player_t *player_ptr, int *client_index);
-	bool			IsAdminAllowed(player_t *player, char *command, int admin_flag, bool check_war, int *admin_index);
+	bool			IsAdminAllowed(player_t *player, const char *command, int admin_flag, bool check_war, int *admin_index);
 	inline	bool	IsAdminAllowed(int admin_index, int flag) const {return client_list[admin_index].admin_flags[flag];}
 	inline	bool	IsImmunityAllowed(int immunity_index, int flag) const {return client_list[immunity_index].immunity_flags[flag];}
-	PLUGIN_RESULT	ProcessMaSetAdminFlag( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *flags);
-	PLUGIN_RESULT	ProcessMaClient( int index,  bool svr_command,  int argc,  char *command_string, char *sub_command, char *param1, char *param2 );
-	PLUGIN_RESULT	ProcessMaClientGroup( int index,  bool svr_command,  int argc,  char *command_string, char *sub_command, char *param1, char *param2 );
+	PLUGIN_RESULT	ProcessMaSetAdminFlag(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaClient(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaClientGroup(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaReloadClients(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 
 private:
 
@@ -192,43 +193,43 @@ private:
 	bool		CreateDBFlags(void);
 	bool		ExportDataToDB(void);
 	bool 		GetClientsFromDatabase(void);
-	void		ProcessMaClientHelp( player_t *player_ptr, bool svr_command);
-	void		ProcessMaClientGroupHelp( player_t *player_ptr, bool svr_command);
-	void		ProcessAddClient( player_t *player_ptr,  bool svr_command,  char *param1);
-	void		ProcessAddSteam( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessAddIP( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessAddNick( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessSetName( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessSetPassword( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessSetEmail( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessSetNotes( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessAddGroup( int type, player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessSetLevel( int type, player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessSetFlag( int type, player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessRemoveClient( player_t *player_ptr,  bool svr_command,  char *param1);
- 	void		ProcessRemoveSteam( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessRemoveIP( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessRemoveNick( player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessRemoveGroup( int type, player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
+	void		ProcessAddClient( player_t *player_ptr,  char *param1);
+	void		ProcessAddSteam( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessAddIP( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessAddNick( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetName( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetPassword( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetEmail( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetNotes( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessAddGroup( int type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetLevel( int type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetFlag( int type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessRemoveClient( player_t *player_ptr,  char *param1);
+ 	void		ProcessRemoveSteam( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessRemoveIP( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessRemoveNick( player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessRemoveGroup( int type, player_t *player_ptr,  char *param1, char *param2);
 	void		RebuildFlags(client_t *client_ptr, int type);
-	void		ProcessClientStatus( player_t *player_ptr,  bool svr_command,  char *param1 );
-	void		ProcessClientUpload( player_t *player_ptr,  bool svr_command);
-	void		ProcessClientDownload( player_t *player_ptr,  bool svr_command);
-	void		ProcessAllClientStatus( player_t *player_ptr,  bool svr_command);
+	void		ProcessClientStatus( player_t *player_ptr,  char *param1 );
+	void		ProcessClientUpload( player_t *player_ptr);
+	void		ProcessClientDownload( player_t *player_ptr);
+	void		ProcessAllClientStatus( player_t *player_ptr);
 
 	// Group based commands
-	void		ProcessAddGroupType( int type, player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessAddLevelType( int type, player_t *player_ptr,  bool svr_command,  char *param1, char *param2);
-	void		ProcessRemoveGroupType( int type, player_t *player_ptr,  bool svr_command,  char *param1);
-	void		ProcessRemoveLevelType( int type, player_t *player_ptr,  bool svr_command,  char *param1);
-	void		ProcessClientGroupStatus( player_t *player_ptr,  bool svr_command,  char *param1 );
-	void		ProcessClientFlagDesc( int type, player_t *player_ptr,  bool svr_command,  char *param1);
-	void		ProcessAllClientFlagDesc( int type, player_t *player_ptr,  bool svr_command);
+	void		ProcessAddGroupType( int type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessAddLevelType( int type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessRemoveGroupType( int type, player_t *player_ptr,  char *param1);
+	void		ProcessRemoveLevelType( int type, player_t *player_ptr,  char *param1);
+	void		ProcessClientGroupStatus( player_t *player_ptr,  char *param1 );
+	void		ProcessClientFlagDesc( int type, player_t *player_ptr,  char *param1);
+	void		ProcessAllClientFlagDesc( int type, player_t *player_ptr);
 
 	// V1.2BetaM upgrade functions
 	void		UpgradeDB1( void );
 	bool		UpgradeServerIDToServerGroupID( ManiMySQL *mani_mysql_ptr, const char	*table_name );
 	bool		UpgradeClassTypes( ManiMySQL *mani_mysql_ptr, const char	*table_name );
+	bool		TestColumnExists(ManiMySQL *mani_mysql_ptr, char *table_name, char *column_name, bool *found_column);
+	bool		TestColumnType(ManiMySQL *mani_mysql_ptr, char *table_name, char *column_name, char *column_type, bool *column_matches);
 
 	client_t		*client_list;
 	int				client_list_size;

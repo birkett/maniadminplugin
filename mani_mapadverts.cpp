@@ -330,11 +330,11 @@ void ManiMapAdverts::DumpCoords(player_t *player_ptr)
 
 	for (int i = 0; i < decal_list_size; i ++)
 	{
-		OutputToConsole(player_ptr->entity, false, "Decal Name [%s] Index [%i]\n", decal_list[i].name, decal_list[i].index);
+		OutputToConsole(player_ptr, "Decal Name [%s] Index [%i]\n", decal_list[i].name, decal_list[i].index);
 
 		for (int j = 0; j < decal_list[i].decal_coord_list_size; j ++)
 		{
-			OutputToConsole(player_ptr->entity, false, "X %.4f  Y %.4f  Z %.4f\n", 
+			OutputToConsole(player_ptr, "X %.4f  Y %.4f  Z %.4f\n", 
 							decal_list[i].decal_coord_list[j].x,
 							decal_list[i].decal_coord_list[j].y,
 							decal_list[i].decal_coord_list[j].z);

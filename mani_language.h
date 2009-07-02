@@ -26,7 +26,7 @@
 #ifndef MANI_LANGUAGE_H
 #define MANI_LANGUAGE_H
 
-#define MANI_LANG_VER_REQUIRED ("0002")
+#define MANI_LANG_VER_REQUIRED ("0003")
 
 extern	bool LoadLanguage(void);
 extern  void FreeLanguage(void);
@@ -69,5 +69,12 @@ extern  void LanguageGameFrame(void);
 #define M_VSTATS_HIT_PLURAL (1122)
 #define M_VSTATS_HS (1123)
 
+#define M_NO_TARGET (1260)
+#define M_TARGET_BOT (1261)
+#define M_TARGET_DEAD (1262)
+#define M_TARGET_UNDER_TK (1263)
+#define M_OFF (1264)
+#define M_ON (1265)
+#define M_NONE (1266)
 
 #endif

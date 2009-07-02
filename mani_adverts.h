@@ -34,6 +34,6 @@ struct	advert_t
 extern	void LoadAdverts(void);
 extern  void FreeAdverts(void);
 extern	void ProcessAdverts(void);
-extern	void ToggleAdverts(player_t *player);
+extern	void ToggleAdverts(player_t *player_ptr);
 
 #endif

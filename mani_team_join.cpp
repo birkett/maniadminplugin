@@ -193,7 +193,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		}
 
 		// Player is trying to join an active team so force auto
-		SayToPlayerColoured(&player, "You must choose Auto-Assign");
+		SayToPlayer(LIGHT_GREEN_CHAT, &player, "You must choose Auto-Assign");
 		CSayToPlayer(&player, "You must choose Auto-Assign");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 		engine->ClientCommand(player.entity, "chooseteam");
@@ -214,7 +214,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		}
 
 		// Player is trying to join an active team so force auto
-		SayToPlayerColoured(&player, "You must choose Auto-Assign");
+		SayToPlayer(LIGHT_GREEN_CHAT, &player, "You must choose Auto-Assign");
 		CSayToPlayer(&player, "You must choose Auto-Assign");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 		engine->ClientCommand(player.entity, "chooseteam");
@@ -231,7 +231,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 	if (saved_team_record->team_id != team_number)
 	{
 		player.player_info->ChangeTeam(saved_team_record->team_id);
-		SayToPlayerColoured(&player, "Auto-forced to same team as before!");
+		SayToPlayer(LIGHT_GREEN_CHAT, &player, "Auto-forced to same team as before!");
 		CSayToPlayer(&player, "Auto-forced to same team as before!");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
 		return PLUGIN_STOP;

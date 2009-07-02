@@ -60,7 +60,7 @@ extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IGameEventListener2 *gpManiIGELCallback;
 extern	int	con_command_index;
 
-#ifdef SOURCEMM
+//#ifdef SOURCEMM
 #include <ISmmPlugin.h>
 #include <sourcehook/sourcehook.h>
 
@@ -70,6 +70,6 @@ extern SourceHook::CallClass<IVoiceServer> *voiceserver_cc;
 extern SourceHook::CallClass<IServerGameDLL> *serverdll_cc;
 extern SourceHook::CallClass<ConCommand> *rebuy_cc;
 
-#endif
+//#endif
 
 #endif

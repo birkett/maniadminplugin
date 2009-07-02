@@ -101,9 +101,9 @@ struct session_t
 	int		deaths;
 	int		suicides;
 	int		headshots;
-	float	points_acquired;
 	int		team_kills;
 	int		damage;
+	float	start_points;
 
 	// Extra fields
 	int		user_def[MANI_MAX_USER_DEF];
@@ -172,11 +172,11 @@ public:
 	void		ShowHitBoxMe(player_t *player_ptr);
 	void		ShowWeaponMe(player_t *player_ptr, int page);
 	void		ResetStats(void);
-	PLUGIN_RESULT	ProcessMaRanks( int index,  bool svr_command,  int argc,  char *command_string,  char *start_rank, char *end_rank);
-	PLUGIN_RESULT	ProcessMaPLRanks( int index,  bool svr_command,  int argc,  char *command_string,  char *start_rank, char *end_rank);
-	PLUGIN_RESULT	ProcessMaResetPlayerRank( int index,  bool svr_command,  int argc,  char *command_string,  char *player_steam_id);
-	PLUGIN_RESULT	ProcessMaSession( int index,  int argc,  char *command_string,  char *target_string);
-	PLUGIN_RESULT	ProcessMaStatsMe( int index,  int argc,  char *command_string,  char *target_string);
+	PLUGIN_RESULT	ProcessMaRanks(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaPLRanks(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaResetRank(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaSession(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaStatsMe(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 
 private:
 

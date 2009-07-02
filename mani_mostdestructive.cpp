@@ -261,7 +261,7 @@ void ManiMostDestructive::RoundEnd(void)
 
 	if (player_found)
 	{
-		SayHintMsg(&mrf, output_message);
+		UTIL_SayHint(&mrf, output_message);
 	}
 }
 

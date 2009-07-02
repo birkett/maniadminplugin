@@ -134,6 +134,14 @@ void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, floa
 	}
 }
 
+DEFVFUNC_(Player_ProcessUsercmds, float, (IServerGameClients* pServerGameClients, edict_t *player, bf_read *buf, int numcmds, int totalcmds, int dropped_packets, bool ignore, bool paused));
+
+float VFUNC myProcessUsercmds( IServerGameClients* pServerGameClients, edict_t *player, bf_read *buf, int numcmds, int totalcmds, int dropped_packets, bool ignore, bool paused)
+{
+	gpManiAFK->ProcessUsercmds(player, buf, numcmds, totalcmds, dropped_packets, ignore, paused);
+	return Player_ProcessUsercmds(pServerGameClients, player, buf, numcmds, totalcmds, dropped_packets, ignore, paused);
+}
+
 void	HookVFuncs(void)
 {
 	if (voiceserver && gpManiGameType->IsVoiceAllowed() && !g_PluginLoadedOnce)
@@ -153,31 +161,17 @@ void	HookVFuncs(void)
 //		MMsg("Hooking spawnpoints\n");
 		HOOKVFUNC(serverdll, gpManiGameType->GetSpawnPointHookOffset(), org_LevelInit, myLevelInit);
 	}
-}
 
-DEFVFUNC_(Player_ProcessUsercmds, void, (CBasePlayer* pPlayer, CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused));
-
-void VFUNC myProcessUsercmds( CBasePlayer* pPlayer, CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
-{
-	gpManiAFK->ProcessUsercmds(pPlayer, cmds, numcmds);
-	Player_ProcessUsercmds(pPlayer, cmds, numcmds, totalcmds, dropped_packets, paused);
-}
-
-void	HookProcessUsercmds(CBasePlayer *pPlayer, int offset)
-{
-	static bool hooked_once = false;
-	if (!hooked_once)
+	int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS);
+	if (!g_PluginLoadedOnce && offset != -1)
 	{
-		// Hooking Player_ProcessUsercmds vfunc here for a specfic player
-		HOOKVFUNC(pPlayer, offset, Player_ProcessUsercmds, myProcessUsercmds);
-		hooked_once = true;
+#ifdef __linux__
+		// Crappy indexes for this hook :'(
+		offset --;
+#endif
+		HOOKVFUNC(serverclients, offset, Player_ProcessUsercmds, myProcessUsercmds);
 	}
 }
-
-void    UnHookProcessUsercmds(CBasePlayer *pPlayer, int offset)
-{
-	return;
-} 
 
 #endif
 

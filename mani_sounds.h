@@ -53,8 +53,8 @@ struct	action_sound_t
 extern	int		sounds_played[];
 extern	void	LoadSounds(void);
 extern	void	FreeSounds(void);
-extern	PLUGIN_RESULT	ProcessMaShowSounds( int index,  bool svr_command);
-extern	PLUGIN_RESULT	ProcessMaPlaySound( int index,  bool svr_command,  int argc,  char *command_string,  char *sound_name);
+extern	PLUGIN_RESULT	ProcessMaShowSounds(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+extern	PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 extern	void			ProcessPlaySound( player_t *player, int next_index, int argv_offset );
 extern	void			ProcessPlayActionSound (player_t *target_player, int sound_id);
 

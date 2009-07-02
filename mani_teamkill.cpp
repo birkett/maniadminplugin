@@ -54,6 +54,7 @@
 #include "mani_effects.h"
 #include "mani_gametype.h"
 #include "mani_teamkill.h"
+#include "mani_commands.h"
 #include "cbaseentity.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -280,7 +281,7 @@ void	ProcessTKSelectedPunishment
 (
  int	punishment, 
  player_t *victim_ptr, 
- char	*attacker_user_id, 
+ const char	*attacker_user_id, 
  char	*attacker_steam_id, 
  bool	bot_calling // Bot called for this punishment
  )
@@ -443,7 +444,7 @@ void	ProcessDelayedPunishment
 			// Check if ban required
 			if (!TKBanPlayer (attacker_ptr, i))
 			{
-				SayToAll(true, say_string);
+				SayToAll(ORANGE_CHAT, true, say_string);
 			}
 			return;
 		}
@@ -466,7 +467,7 @@ void	ProcessDelayedPunishment
 	// Check if ban required
 	if (!TKBanPlayer (attacker_ptr, tk_player_list_size - 1))
 	{
-		SayToAll(true, say_string);
+		SayToAll(ORANGE_CHAT, true, say_string);
 	}
 
 	return;
@@ -549,82 +550,82 @@ void		ProcessTKPunishment
 	if (punishment == MANI_TK_SLAY)
 	{
 		SlayPlayer(attacker_ptr, true, true, true);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_SLAP)
 	{
 		ProcessSlapPlayer(attacker_ptr, attacker_ptr->health - mani_tk_slap_to_damage.GetInt(), false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_BLIND)
 	{
 		BlindPlayer(attacker_ptr, mani_tk_blind_amount.GetInt());
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_FREEZE)
 	{
 		ProcessFreezePlayer(attacker_ptr, false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_CASH)
 	{
 		ProcessTakeCash(attacker_ptr, victim_ptr);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_BURN)
 	{
 		ProcessBurnPlayer(attacker_ptr, mani_tk_burn_time.GetInt());
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_FORGIVE)
 	{
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		return;
 	}
 	else if (punishment == MANI_TK_DRUG)
 	{
 		ProcessDrugPlayer(attacker_ptr, false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_TIME_BOMB)
 	{
 		ProcessTimeBombPlayer(attacker_ptr, just_spawned, false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_FIRE_BOMB)
 	{
 		ProcessFireBombPlayer(attacker_ptr, just_spawned, false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_FREEZE_BOMB)
 	{
 		ProcessFreezeBombPlayer(attacker_ptr, just_spawned, false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}
 	else if (punishment == MANI_TK_BEACON)
 	{
 		ProcessBeaconPlayer(attacker_ptr, false);
-		SayToAll (true, "%s", say_string);
+		SayToAll (ORANGE_CHAT, true, "%s", say_string);
 		DirectLogCommand("%s", log_string);
 		return;
 	}}
@@ -1121,7 +1122,7 @@ bool ProcessTKDeath
 //---------------------------------------------------------------------------------
 void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 	char	steam_id[50];
 	int		user_id;
 	int		punishment;
@@ -1133,16 +1134,16 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 
 	if (war_mode) return;
 
-	if (FStrEq(engine->Cmd_Argv(0), "tkbot"))
+	if (FStrEq(gpCmd->Cmd_Argv(0), "tkbot"))
 	{
 		is_bot = true;
 	}
 
 	if (argc - argv_offset == 4)
 	{
-		Q_snprintf(steam_id, sizeof(steam_id), "%s", engine->Cmd_Argv(2 + argv_offset));
-		punishment = Q_atoi(engine->Cmd_Argv(3 + argv_offset));
-		ProcessTKSelectedPunishment(punishment, player_ptr, engine->Cmd_Argv(1 + argv_offset), steam_id, is_bot);
+		Q_snprintf(steam_id, sizeof(steam_id), "%s", gpCmd->Cmd_Argv(2 + argv_offset));
+		punishment = Q_atoi(gpCmd->Cmd_Argv(3 + argv_offset));
+		ProcessTKSelectedPunishment(punishment, player_ptr, gpCmd->Cmd_Argv(1 + argv_offset), steam_id, is_bot);
 		return;
 	}
 	else if (argc - argv_offset == 3)
@@ -1151,8 +1152,8 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		// tkbot/tkhuman user_id steam_id 
 		//       0          1       2               
 
-		user_id = Q_atoi(engine->Cmd_Argv(1 + argv_offset));
-		Q_snprintf(steam_id, sizeof(steam_id), "%s", engine->Cmd_Argv(2 + argv_offset));
+		user_id = Q_atoi(gpCmd->Cmd_Argv(1 + argv_offset));
+		Q_snprintf(steam_id, sizeof(steam_id), "%s", gpCmd->Cmd_Argv(2 + argv_offset));
 		if (!IsMenuSelectionValid(player_ptr, steam_id, user_id)) return;
 
 		FreeMenu();
@@ -1431,7 +1432,7 @@ void	ProcessTKNoForgiveMode
 		// Don't bother tracking bot
 		SlayPlayer(attacker_ptr, false, true, true);
 		DirectLogCommand("%s", log_string);
-		SayToAll (false, "%s", output_string);
+		SayToAll (ORANGE_CHAT, false, "%s", output_string);
 		return;
 	}
 
@@ -1459,7 +1460,7 @@ void	ProcessTKNoForgiveMode
 		tk_player_list[tk_player_index].last_round_violation = round_number;
 		SlayPlayer(attacker_ptr, true, true, true);
 		DirectLogCommand("%s", log_string);
-		SayToAll (false, "%s", output_string);
+		SayToAll (ORANGE_CHAT, false, "%s", output_string);
 		// Check if ban required
 		TKBanPlayer (attacker_ptr, tk_player_index);
 	}
@@ -1469,7 +1470,7 @@ void	ProcessTKNoForgiveMode
 		CreateNewTKPlayer(attacker_ptr->name, attacker_ptr->steam_id, attacker_ptr->user_id, 1, 0);
 		SlayPlayer(attacker_ptr, true, true, true);
 		DirectLogCommand("%s", log_string);
-		SayToAll (false, "%s", output_string);
+		SayToAll (ORANGE_CHAT, false, "%s", output_string);
 		// Check if ban required
 		TKBanPlayer (attacker_ptr, tk_player_list_size -1);
 	}
@@ -1478,33 +1479,23 @@ void	ProcessTKNoForgiveMode
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_tklist command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaTKList
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaTKList(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode) return PLUGIN_STOP;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_tklist", ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, "ma_tklist", ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current Players in TK Violation list\nViolations needed for ban [%i]\n", mani_tk_offences_for_ban.GetInt());
-	OutputToConsole(player.entity, svr_command, "Steam ID             Name                 User ID  Violations Wounds\n");
-	OutputToConsole(player.entity, svr_command, "--------------------------------------------------------------------\n");
+	OutputToConsole(player_ptr, "Current Players in TK Violation list\nViolations needed for ban [%i]\n", mani_tk_offences_for_ban.GetInt());
+	OutputToConsole(player_ptr, "Steam ID             Name                 User ID  Violations Wounds\n");
+	OutputToConsole(player_ptr, "--------------------------------------------------------------------\n");
 
 	for (int i = 0; i < tk_player_list_size; i++)
 	{
-		OutputToConsole(player.entity, svr_command, "%-20s %-20s %-8i %-10i %i\n", 
+		OutputToConsole(player_ptr, "%-20s %-20s %-8i %-10i %i\n", 
 					tk_player_list[i].steam_id,
 					tk_player_list[i].name,
 					tk_player_list[i].user_id,
@@ -1522,16 +1513,16 @@ bool	ProcessTKCmd( player_t	*player_ptr)
 {
 	if (!FindPlayerByEntity(player_ptr)) return PLUGIN_STOP;
 
-	if (engine->Cmd_Argc() > 2) 
+	if (gpCmd->Cmd_Argc() > 2) 
 	{
-		const char *temp_command = engine->Cmd_Argv(1);
+		const char *temp_command = gpCmd->Cmd_Argv(1);
 		int next_index = 0;
 		int argv_offset = 0;
 
 		if (FStrEq (temp_command, "more"))
 		{
 			// Get next index for menu
-			next_index = Q_atoi(engine->Cmd_Argv(2));
+			next_index = Q_atoi(gpCmd->Cmd_Argv(2));
 			argv_offset = 2;
 		}
 
@@ -1542,11 +1533,5 @@ bool	ProcessTKCmd( player_t	*player_ptr)
 
 	return false;
 }
- 
-CON_COMMAND(ma_tklist, "Prints players who are on the team kill violations list")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaTKList(0,true);
-	return;
-}
+
+SCON_COMMAND(ma_tklist, 2155, MaTKList, false);

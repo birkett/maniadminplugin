@@ -77,6 +77,8 @@ ManiMySQL::ManiMySQL()
 	res_ptr = NULL;
 	fd = NULL;
 	row = NULL;
+	strcpy(sql_server_version, "");
+	major = minor = issue = 0;
 }
 
 ManiMySQL::~ManiMySQL()
@@ -296,3 +298,82 @@ int	ManiMySQL::GetRowID(void)
 	return (int) mysql_insert_id(my_data);
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Get sql server version
+//---------------------------------------------------------------------------------
+char *ManiMySQL::GetServerVersion(void)
+{
+	if (strcmp(sql_server_version,"") == 0)
+	{
+		Q_strcpy(sql_server_version, mysql_get_server_info(my_data));
+		if (strcmp(sql_server_version, "") != 0)
+		{
+			int i = 0;
+			int j = 0;
+			char buffer[16];
+
+			while (sql_server_version[i] != '.')
+			{
+				buffer[j++] = sql_server_version[i++];
+			}
+
+			buffer[j] = '\0';
+			i++;
+			major = Q_atoi(buffer);
+
+			j = 0;
+			while (sql_server_version[i] != '.')
+			{
+				buffer[j++] = sql_server_version[i++];
+			}
+				
+			buffer[j] = '\0';
+			i++;
+			minor = Q_atoi(buffer);
+
+			j = 0;
+			while (sql_server_version[i] != '\0')
+			{
+				buffer[j++] = sql_server_version[i++];
+			}
+
+			buffer[j] = '\0';
+			issue = Q_atoi(buffer);
+		}
+	}
+
+	return sql_server_version;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Check if version higher than passed in version
+//---------------------------------------------------------------------------------
+bool	ManiMySQL::IsHigherVer(int maj, int min, int iss)
+{
+	if (major > maj) return true;
+	if (major == maj && minor > min) return true;
+	if (major == maj && minor == min && issue > iss) return true;
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Check if version higher than passed in version
+//---------------------------------------------------------------------------------
+bool	ManiMySQL::IsHigherVer(int maj, int min)
+{
+	if (major > maj) return true;
+	if (major == maj && minor > min) return true;
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Check if version higher than passed in version
+//---------------------------------------------------------------------------------
+bool	ManiMySQL::IsHigherVer(int maj)
+{
+	if (major > maj) return true;
+
+	return false;
+}

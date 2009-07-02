@@ -150,7 +150,7 @@ void ShowAdvert(const char* advert_text)
 
 	if (mani_adverts_chat_area.GetInt() == 1)
 	{
-		SayToAll(true, "%s", substitute_text2);
+		SayToAll(GREEN_CHAT, true, "%s", substitute_text2);
 	}
 }
 
@@ -184,19 +184,19 @@ void	ProcessAdverts(void)
 //---------------------------------------------------------------------------------
 // Purpose: Toggle adverts on and off
 //---------------------------------------------------------------------------------
-void ToggleAdverts(player_t *player)
+void ToggleAdverts(player_t *player_ptr)
 {
 	if (mani_adverts.GetInt() == 1)
 	{
 		mani_adverts.SetValue(0);
-		SayToAll (true, "ADMIN %s disabled adverts", player->name);
-		LogCommand (player->entity, "Disable adverts\n");
+		SayToAll (GREEN_CHAT, true, "ADMIN %s disabled adverts", player_ptr->name);
+		LogCommand (player_ptr, "Disable adverts\n");
 	}
 	else
 	{
 		mani_adverts.SetValue(1);
 		next_ad_time = gpGlobals->curtime + 5.0;
-		SayToAll (true, "ADMIN %s enabled adverts", player->name);
-		LogCommand (player->entity, "Enable adverts\n");
+		SayToAll (GREEN_CHAT, true, "ADMIN %s enabled adverts", player_ptr->name);
+		LogCommand (player_ptr, "Enable adverts\n");
 	}
 }	

@@ -1134,7 +1134,14 @@ void	ManiMySQLThread::ProcessRequestComplete(request_list_t *request_list_ptr)
 	{
 		if (request_ptr->sql_list[i].status == REQUEST_COMPLETE)
 		{
-			OutputHelpText(&player, svr_command, "SUCCESS %s", request_ptr->sql_list[i].sql_string);
+			if (svr_command)
+			{
+				OutputHelpText(ORANGE_CHAT, NULL, "SUCCESS %s", request_ptr->sql_list[i].sql_string);
+			}
+			else
+			{
+				OutputHelpText(ORANGE_CHAT, &player, "SUCCESS %s", request_ptr->sql_list[i].sql_string);
+			}
 			
 			char	sql_out[4096];
 			for (int j = 0; j < request_ptr->sql_list[i].row_list_size; j ++)
@@ -1147,7 +1154,14 @@ void	ManiMySQLThread::ProcessRequestComplete(request_list_t *request_list_ptr)
 					Q_strcat(sql_out, " ");
 				}
 
-				OutputHelpText(&player, svr_command, "%s", sql_out);
+				if (svr_command)
+				{
+					OutputHelpText(ORANGE_CHAT, NULL, "%s", sql_out);
+				}
+				else
+				{
+					OutputHelpText(ORANGE_CHAT, &player, "%s", sql_out);
+				}
 			}
 		}
 	}
@@ -1185,7 +1199,14 @@ void	ManiMySQLThread::ProcessRequestFailed(request_list_t *request_list_ptr)
 	{
 		if (request_ptr->sql_list[i].status == REQUEST_ERROR)
 		{
-			OutputHelpText(&player, svr_command, "%s", request_ptr->sql_list[i].error_string);
+			if (svr_command)
+			{
+				OutputHelpText(ORANGE_CHAT, NULL, "%s", request_ptr->sql_list[i].error_string);
+			}
+			else
+			{
+				OutputHelpText(ORANGE_CHAT, &player, "%s", request_ptr->sql_list[i].error_string);
+			}
 		}
 	}
 

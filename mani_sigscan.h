@@ -18,8 +18,8 @@ class CGameRules;
 #define UTIL_Remove_Linux "_Z11UTIL_RemoveP11CBaseEntity"
 
 // Win32 function is IsThereABomb
-#define CEntList_Sig			"\x53\x68\x2A\x2A\x3D\x22\x6A\x00\xB9"
-#define CEntList_SigBytes		9
+#define CEntList_Sig			"\x53\x68\x2A\x2A\x2A\x2A\x6A\x00\xB9\x2A\x2A\x2A\x2A\x32\xDB"
+#define CEntList_SigBytes		15
 #define CEntList_Linux			"g_pEntityList"
 
 // Find CBasePlayer_UpdateClientData, then look for mov ecx, dword_xxxxxxxx (there are at least two of them)

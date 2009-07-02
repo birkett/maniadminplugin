@@ -52,6 +52,7 @@
 #include "mani_language.h"
 #include "mani_customeffects.h"
 #include "mani_team.h"
+#include "mani_commands.h"
 #include "mani_chattrigger.h"
 #include "mani_gametype.h"
 #include "KeyValues.h"
@@ -419,58 +420,41 @@ void ManiChatTriggers::ProcessLoadIgnoreX(KeyValues *kv_parent_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_chattriggers command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiChatTriggers::ProcessMaChatTriggers
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *target_string
-)
+PLUGIN_RESULT	ManiChatTriggers::ProcessMaChatTriggers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BASIC_ADMIN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BASIC_ADMIN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (chat_trigger_list_size == 0)
 	{
-		OutputHelpText(&player,svr_command, "No chat triggers installed !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "No chat triggers installed !!");
 		return PLUGIN_STOP;
 	}
 
-	if (argc == 1)
+	if (gpCmd->Cmd_Argc() == 1)
 	{
 		// Just list them all
 		for (int i = 0; i < chat_trigger_list_size; i++)
 		{
-			this->DumpTriggerData(&player, svr_command, &(chat_trigger_list[i]));
+			this->DumpTriggerData(player_ptr, &(chat_trigger_list[i]));
 		}
 	}
 	else
 	{
 		chat_trigger_t *chat_trigger_ptr;
 
-		if (!this->FindString(target_string, &chat_trigger_ptr))
+		if (!this->FindString(gpCmd->Cmd_Argv(1), &chat_trigger_ptr))
 		{
-			OutputHelpText(&player,svr_command, "Did not find chat trigger [%s]", target_string);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1)));
 			return PLUGIN_STOP;
 		}
 
-		this->DumpTriggerData(&player, svr_command, chat_trigger_ptr);
+		this->DumpTriggerData(player_ptr, chat_trigger_ptr);
 	}
 
 	return PLUGIN_STOP;
@@ -481,8 +465,7 @@ PLUGIN_RESULT	ManiChatTriggers::ProcessMaChatTriggers
 //---------------------------------------------------------------------------------
 void	ManiChatTriggers::DumpTriggerData
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  chat_trigger_t *chat_trigger_ptr
  )
 {
@@ -495,26 +478,11 @@ void	ManiChatTriggers::DumpTriggerData
 		default:Q_snprintf(temp_string, sizeof(temp_string), "UNKNOWN"); break;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "%s\t%s", chat_trigger_ptr->say_command, temp_string);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "%s\t%s", chat_trigger_ptr->say_command, temp_string);
 }
 
 // Command that shows the current chat triggers to the server console
-CON_COMMAND(ma_chattriggers, "ma_chattriggers <chat text> (Shows current chat triggers loaded, <chat text> is optional)")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-
-	gpManiChatTriggers->ProcessMaChatTriggers
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command argument
-					engine->Cmd_Argv(1) // Command option
-					);
-	return;
-}
-
+SCON_COMMAND(ma_chattriggers, 2159, MaChatTriggers, false);
 
 // QSort/BSearch function
 static int sort_chat_triggers ( const void *m1,  const void *m2) 

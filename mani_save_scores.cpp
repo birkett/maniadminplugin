@@ -132,21 +132,23 @@ void	ManiSaveScores::NetworkIDValidated(player_t *player_ptr)
 				save_scores_list[i].disconnection_time > current_time)
 			{
 				// Still within time limit for re-connection so set kills/deaths
-				if (gpManiGameType->IsKillsAllowed())
-				{
-					int offset = gpManiGameType->GetKillsOffset();
+				CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
 
+				int index;
+
+				index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
+				if (index != -2)
+				{
 					int *frags;
-					frags = ((int *)player_ptr->entity->GetUnknown() + offset);
+					frags = ((int *)pCBE + index);
 					*frags = *frags + save_scores_list[i].kills;
 				}
 
-				if (gpManiGameType->IsDeathsAllowed())
+				index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_DEATHS);
+				if (index != -2)
 				{
-					int offset = gpManiGameType->GetDeathsOffset();
-
 					int *deaths;
-					deaths = ((int *)player_ptr->entity->GetUnknown() + offset);
+					deaths = ((int *)pCBE + index);
 					*deaths = *deaths + save_scores_list[i].deaths;
 				}
 
@@ -157,14 +159,8 @@ void	ManiSaveScores::NetworkIDValidated(player_t *player_ptr)
 					save_cash_list[player_ptr->index - 1].trigger = true;
 				}
 
-				if (gpManiGameType->IsGameType(MANI_GAME_CSS))
-				{
-					SayToPlayerColoured(player_ptr, "Saved score reloaded");
-				}
-				else
-				{	
-					SayToPlayer(player_ptr, "Saved score reloaded");
-				}
+				SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "Saved score reloaded");
+
 //MMsg("Restored player [%s] score to Kills [%i], Deaths [%i]\n", 
 //	player_ptr->name, save_scores_list[i].kills, save_scores_list[i].deaths);
 			}
@@ -195,23 +191,24 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 	int death_count = 0;
 	int	cash = 0;
 
-	// Need to save the players score
-	if (gpManiGameType->IsKillsAllowed())
-	{
-		int offset = gpManiGameType->GetKillsOffset();
+	CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
+	int index;
 
+	// Need to save the players score
+	index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
+	if (index != -2)
+	{
 		int *frags;
-		frags = ((int *)player_ptr->entity->GetUnknown() + offset);
+		frags = ((int *)pCBE + index);
 		frag_count = *frags;
 	}
 
 	// Need to save the players score
-	if (gpManiGameType->IsDeathsAllowed())
+	index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_DEATHS);
+	if (index != -2)
 	{
-		int offset = gpManiGameType->GetDeathsOffset();
-
 		int *deaths;
-		deaths = ((int *)player_ptr->entity->GetUnknown() + offset);
+		deaths = ((int *)pCBE + index);
 		death_count = *deaths;
 	}
 
@@ -259,7 +256,7 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 	if (spawn_count[player_ptr->index - 1] < 2) return;
 
 	save_cash_list[player_ptr->index - 1].trigger = false;
-	SayToPlayerColoured(player_ptr, "Cash restored to last known amount");
+	SayToPlayer(ORANGE_CHAT, player_ptr, "Cash restored to last known amount");
 	Prop_SetAccount(player_ptr->entity, save_cash_list[player_ptr->index - 1].cash); 
 }
 

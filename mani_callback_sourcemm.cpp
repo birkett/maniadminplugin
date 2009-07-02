@@ -111,6 +111,7 @@ typedef unsigned long DWORD;
 PLUGIN_EXPOSE(CSourceMMMAP, g_ManiCallback);
 CSourceMMMAP g_ManiCallback;
 char	*pReplaceEnts = NULL;
+extern int	max_players;
 
 MyListener g_Listener;
 
@@ -258,7 +259,7 @@ bool CSourceMMMAP::ClientConnect(edict_t *pEntity, const char *pszName, const ch
 
 void CSourceMMMAP::ClientCommand(edict_t *pEntity)
 {
-//	META_LOG(g_PLAPI, "ClientCommand called: pEntity=%d (commandString=%s)", pEntity ? engine->IndexOfEdict(pEntity) : 0, engine->Cmd_Args() ? engine->Cmd_Args() : "");
+//	META_LOG(g_PLAPI, "ClientCommand called: pEntity=%d (commandString=%s)", pEntity ? engine->IndexOfEdict(pEntity) : 0, gpCmd->Cmd_Args() ? gpCmd->Cmd_Args() : "");
 	int result = gpManiAdminPlugin->ClientCommand(pEntity);
 	if (result == PLUGIN_CONTINUE)
 	{
@@ -389,6 +390,8 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	MMsg("********************************************************\n");
 
+	// max players = 0 on first load, > 0 on late load
+	max_players = gpGlobals->maxClients;
 	gpManiAdminPlugin->Load();
 
 	return true;
@@ -507,8 +510,6 @@ void *MyListener::OnMetamodQuery(const char *iface, int *ret)
 
 ManiSMMHooks g_ManiSMMHooks;
 
-SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, int, bool);
-
 void	ManiSMMHooks::HookVFuncs(void)
 {
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
@@ -528,22 +529,6 @@ void	ManiSMMHooks::HookVFuncs(void)
 	{
 		SH_MANUALHOOK_RECONFIGURE(Player_ProcessUsercmds, offset, 0, 0);
 	}
-}
-
-void	ManiSMMHooks::HookProcessUsercmds(CBasePlayer *pPlayer)
-{
-	SH_ADD_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
-}
-
-void	ManiSMMHooks::ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
-{
-	gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds);
-	RETURN_META(MRES_IGNORED);
-}
-
-void	ManiSMMHooks::UnHookProcessUsercmds(CBasePlayer *pPlayer)
-{
-	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
 }
 
 bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
@@ -571,11 +556,28 @@ void	ManiSMMHooks::PlayerDecal(IRecipientFilter& filter, float delay, const Vect
 	RETURN_META(MRES_SUPERCEDE);
 }
 
+void	ManiSMMHooks::HookProcessUsercmds(CBasePlayer *pPlayer)
+{
+	SH_ADD_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
+}
+
+void	ManiSMMHooks::ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
+{
+	gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds);
+	RETURN_META(MRES_IGNORED);
+}
+
+void	ManiSMMHooks::UnHookProcessUsercmds(CBasePlayer *pPlayer)
+{
+	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
+}
+
+
 void Say_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 		
-	if (!g_ManiAdminPlugin.HookSayCommand())
+	if (!g_ManiAdminPlugin.HookSayCommand(false))
 	{
 		RETURN_META(MRES_SUPERCEDE);
 	}
@@ -587,7 +589,7 @@ void TeamSay_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 
-	if(!g_ManiAdminPlugin.HookSayCommand())
+	if(!g_ManiAdminPlugin.HookSayCommand(true))
 	{
 		RETURN_META(MRES_SUPERCEDE);
 	}

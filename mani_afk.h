@@ -41,27 +41,28 @@ public:
 	void		Unload(void);
 	void		LevelInit(void);
 	void		GameCommencing(void);
-	void		LevelShutdown(void);
-	void		ProcessUsercmds(CBasePlayer *pPlayer, CUserCmd *cmds,  int numcmds);
+	void		ProcessUsercmds(CBaseEntity *, CUserCmd *cmds, int numcmds);
 	void		GameFrame(void);
 	void		RoundEnd(void);
+	void		LevelShutdown(void);
+	void		NotAFK(int	index);
 
 private:
 
-	void		HookPlayer(CBasePlayer *pPlayer);
-	void		UnHookPlayer(CBasePlayer *pPlayer);
-	void		ResetPlayer(int index);
+	void		ResetPlayer(int index, bool check_player);
 
 	struct afk_t
 	{
 		int	round_count;
 		time_t	last_active;
-		bool hooked;
+		bool	check_player;
 		bool	idle;
+		bool	hooked;
 	};
 
 	afk_t	afk_list[MANI_MAX_PLAYERS];
 	time_t	next_check;
+	
 };
 
 extern	ManiAFK *gpManiAFK;

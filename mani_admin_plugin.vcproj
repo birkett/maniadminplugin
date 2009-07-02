@@ -25,7 +25,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm\sourcehook\;..\sourcemm\;..\sourcemm\sourcemm\"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -111,7 +111,7 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm\sourcehook\;..\sourcemm\;..\sourcemm\sourcemm\"
 				PreprocessorDefinitions="WIN32;NDEBUG;MAPBETA;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -145,6 +145,7 @@ copy..\plugin_output\Release\mani_admin_plugin.pdb .\
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib vstdlib.lib tier0.lib"
+				ShowProgress="1"
 				OutputFile="..\plugin_output\Release/mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -427,10 +428,22 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_client.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_commands.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_convar.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_crontab.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_css_betting.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_css_bounty.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_css_objectives.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_customeffects.cpp">
@@ -445,6 +458,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_effects.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_file.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_gametype.cpp">
 				</File>
 				<File
@@ -454,10 +470,13 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_globals.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_help.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_hlxinterface.cpp">
 				</File>
 				<File
-					RelativePath=".\mani_hook.cpp">
+					RelativePath=".\mani_keyvalues.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_language.cpp">
@@ -532,6 +551,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_sounds.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_sourcehook.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_spawnpoints.cpp">
 				</File>
 				<File
@@ -565,6 +587,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_voice.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_vote.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_warmuptimer.cpp">
 				</File>
 				<File
@@ -572,6 +597,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 				</File>
 				<File
 					RelativePath=".\mrecipientfilter.cpp">
+				</File>
+				<File
+					RelativePath="..\sourcemm\sourcehook\sourcehook.cpp">
 				</File>
 			</Filter>
 		</Filter>
@@ -706,10 +734,22 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_client_flags.h">
 				</File>
 				<File
+					RelativePath=".\mani_commands.h">
+				</File>
+				<File
 					RelativePath=".\mani_convar.h">
 				</File>
 				<File
 					RelativePath=".\mani_crontab.h">
+				</File>
+				<File
+					RelativePath=".\mani_css_betting.h">
+				</File>
+				<File
+					RelativePath=".\mani_css_bounty.h">
+				</File>
+				<File
+					RelativePath=".\mani_css_objectives.h">
 				</File>
 				<File
 					RelativePath=".\mani_customeffects.h">
@@ -724,6 +764,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_effects.h">
 				</File>
 				<File
+					RelativePath=".\mani_file.h">
+				</File>
+				<File
 					RelativePath=".\mani_gametype.h">
 				</File>
 				<File
@@ -733,10 +776,13 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_globals.h">
 				</File>
 				<File
+					RelativePath=".\mani_help.h">
+				</File>
+				<File
 					RelativePath=".\mani_hlxinterface.h">
 				</File>
 				<File
-					RelativePath=".\mani_hook.h">
+					RelativePath=".\mani_keyvalues.h">
 				</File>
 				<File
 					RelativePath=".\mani_language.h">
@@ -814,6 +860,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 					RelativePath=".\mani_sounds.h">
 				</File>
 				<File
+					RelativePath=".\mani_sourcehook.h">
+				</File>
+				<File
 					RelativePath=".\mani_spawnpoints.h">
 				</File>
 				<File
@@ -845,6 +894,9 @@ copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\mani_admin_plugin
 				</File>
 				<File
 					RelativePath=".\mani_voice.h">
+				</File>
+				<File
+					RelativePath=".\mani_vote.h">
 				</File>
 				<File
 					RelativePath=".\mani_warmuptimer.h">

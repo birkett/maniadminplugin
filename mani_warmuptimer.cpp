@@ -68,6 +68,7 @@ extern	bool war_mode;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
+extern  ConVar	*mp_friendlyfire; 
 
 static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString );
 
@@ -76,6 +77,7 @@ ConVar mani_warmup_timer_knives_only ("mani_warmup_timer_knives_only", "0", 0, "
 ConVar mani_warmup_timer_knives_respawn ("mani_warmup_timer_knives_respawn", "0", 0, "1 = enable respawn in knife mode, 0 = no respawn", true, 0, true, 1);
 ConVar mani_warmup_timer ("mani_warmup_timer", "0", 0, "Time in seconds at the start of a map before performing mp_restartgame (0 = off)", true, 0, true, 180, ManiWarmupTimerCVar);
 ConVar mani_warmup_timer_ignore_tk ("mani_warmup_timer_ignore_tk", "0", 0, "0 = tk punishment still allowed, 1 = no tk punishments", true, 0, true, 1);
+ConVar mani_warmup_timer_disable_ff ("mani_warmup_timer_disable_ff", "0", 0, "0 = Do not disable friendly fire during warmup, 1 = If friendly fire was turned on, the plugin will disable it during the warmup round", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only_ignore_fyi_aim_maps ("mani_warmup_timer_knives_only_ignore_fyi_aim_maps", "0", 0, "0 = knive mode still allowed on fy/aim maps, 1 = no knive mode for fy_/aim_ maps", true, 0, true, 1);
 ConVar mani_warmup_timer_unlimited_grenades ("mani_warmup_timer_unlimited_grenades", "0", 0, "1 = enable unlimited he grenades, 0 = disable unlimited he's", true, 0, true, 1);
 ConVar mani_warmup_timer_spawn_item_1 ("mani_warmup_timer_spawn_item_1", "item_assaultsuit", 0, "Item to spawn with in warmup mode");
@@ -112,6 +114,7 @@ ManiWarmupTimer::~ManiWarmupTimer()
 //---------------------------------------------------------------------------------
 void		ManiWarmupTimer::LevelInit(void)
 {
+	friendly_fire = false;
 	if (mani_warmup_timer.GetInt() == 0)
 	{
 		check_timer = false;
@@ -268,6 +271,12 @@ void		ManiWarmupTimer::GameFrame(void)
 	if (ProcessPluginPaused()) return;
 
 
+	if (mp_friendlyfire && mp_friendlyfire->GetInt() != 0 && mani_warmup_timer_disable_ff.GetInt() == 1)
+		{
+		friendly_fire = true;
+		mp_friendlyfire->SetValue(0);
+		}
+
 	if (gpGlobals->curtime > next_check)
 	{
 		if (mani_warmup_timer_show_countdown.GetInt())
@@ -277,26 +286,7 @@ void		ManiWarmupTimer::GameFrame(void)
 			bool	knives = mani_warmup_timer_knives_only.GetBool();
 			bool	he = mani_warmup_timer_unlimited_grenades.GetBool();
 
-			if ((knives || he) &&
-				time_left % 5 == 0)
-			{
-				if (knives && !he)
-				{
-					CSayToAll("Knives Only!");
-				}
-				else if (!knives && he)
-				{
-					CSayToAll("Unlimited HE Grenades!");
-				}
-				else if (knives && he)
-				{
-					CSayToAll("Knives and Unlimited HE Grenades!");
-				}
-			}
-			else 
-			{
-				CSayToAll("Warmup timer %i", time_left);
-			}
+			CSayToAll("Warmup timer %i", time_left);
 		}
 
 		next_check = gpGlobals->curtime + 1.0;
@@ -304,6 +294,11 @@ void		ManiWarmupTimer::GameFrame(void)
 		{
 			check_timer = false;
 			mani_warmup_in_progress.SetValue(0);
+			if (friendly_fire && mani_warmup_timer_disable_ff.GetInt() == 1)
+			{
+				// Reset Friendly Fire value
+				mp_friendlyfire->SetValue(1);
+			}
 		}
 
 		if (fire_restart && gpGlobals->curtime > mani_warmup_timer.GetFloat() - 1)
