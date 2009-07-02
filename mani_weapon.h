@@ -55,7 +55,8 @@ extern	void ProcessRestrictWeapon( player_t *admin, int next_index, int argv_off
 extern	bool HookAutobuyCommand(void);
 extern	bool HookRebuyCommand(void);
 extern	void PostProcessRebuyCommand(void);
-extern	void RemoveRestrictedWeapons(void);
+extern	void ResetWeaponCount(void);
+extern	void RemoveRestrictedWeapons(player_t *player_ptr);
 extern	PLUGIN_RESULT	ProcessMaShowRestrict( int index,  bool svr_command);
 extern	PLUGIN_RESULT	ProcessMaRestrictWeapon( int index,  bool svr_command,  int argc,  char *command_string,  char *weapon_name, char *limit_per_team, bool restrict);
 extern	PLUGIN_RESULT	ProcessMaKnives( int index,  bool svr_command,  char *command_string);

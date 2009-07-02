@@ -49,7 +49,7 @@
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
-extern	IServerPluginCallbacks *gpManiAdminPlugin;
+extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IEngineSound *esounds; // sound
 extern	bf_write *msg_buffer;
 extern	int	menu_message_index;
@@ -191,7 +191,7 @@ void DrawStandardMenuEscapeStyle
 		item1->SetString( "command", cmd );
 	}
 
-	helpers->CreateMessage( player->entity, DIALOG_MENU, kv, gpManiAdminPlugin );
+	helpers->CreateMessage( player->entity, DIALOG_MENU, kv, gpManiISPCCallback );
 	kv->deleteThis();
 	FreeMenu();
 
@@ -380,7 +380,7 @@ void DrawSubMenuEscapeStyle
 		}
 	}
 
-	helpers->CreateMessage( player->entity, DIALOG_MENU, kv, gpManiAdminPlugin );
+	helpers->CreateMessage( player->entity, DIALOG_MENU, kv, gpManiISPCCallback );
 	kv->deleteThis();
 
 	return;

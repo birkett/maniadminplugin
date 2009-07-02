@@ -51,7 +51,7 @@
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IPlayerInfoManager *playerinfomanager;
 extern	IServerPluginHelpers *helpers;
-extern	IServerPluginCallbacks *gpManiAdminPlugin;
+extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IFileSystem	*filesystem;
 extern	bool war_mode;
 extern	int	max_players;
@@ -1242,7 +1242,7 @@ void ClientMsgSinglePlayer
 	kv->SetColor("color", Color(255, 255, 255, 255)); // White
 	kv->SetInt("level", level);
 	kv->SetInt("time", seconds);
-	helpers->CreateMessage(pEntity, DIALOG_MSG, kv, gpManiAdminPlugin);
+	helpers->CreateMessage(pEntity, DIALOG_MSG, kv, gpManiISPCCallback);
 	kv->deleteThis();
 }
 
@@ -1293,7 +1293,7 @@ void ClientMsg
 				kv->SetColor("color", admin_only_colour); // Red
 				kv->SetInt("level", level);
 				kv->SetInt("time", seconds);
-				helpers->CreateMessage(player.entity, DIALOG_MSG, kv, gpManiAdminPlugin);
+				helpers->CreateMessage(player.entity, DIALOG_MSG, kv, gpManiISPCCallback);
 				kv->deleteThis();
 			}
 		}
@@ -1305,7 +1305,7 @@ void ClientMsg
 			kv->SetColor("color", *col); 
 			kv->SetInt("level", level);
 			kv->SetInt("time", seconds);
-			helpers->CreateMessage(player.entity, DIALOG_MSG, kv, gpManiAdminPlugin);
+			helpers->CreateMessage(player.entity, DIALOG_MSG, kv, gpManiISPCCallback);
 			kv->deleteThis();
 		}
 	}

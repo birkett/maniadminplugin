@@ -108,8 +108,6 @@ public:
 	bool		IsSetColourAllowed(void);
 	int			GetAlphaRenderMode(void);
 
-	bool		IsCashAllowed(void);
-	int			GetCashOffset(void);
 	bool		IsAMXMenuAllowed(void);
 
 	// Dod requires next 5
@@ -182,9 +180,6 @@ private:
 	int			spectator_index;
 	int			spectator_allowed;
 	char		spectator_group[32];
-
-	int			cash_allowed;
-	int			cash_offset;
 
 	int			kills_allowed;
 	int			kills_offset;

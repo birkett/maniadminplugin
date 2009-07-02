@@ -11,26 +11,37 @@
 #############################################################################
 
 # the name of the plugin binary after its compiled (_i486.so is appended to the end)
-NAME=mani_admin_plugin
+
+
+NAME=$(PROJ_NAME)
 
 # source files that should be compiled and linked into the binary
-SRC_FILES = 	mani_adverts.cpp \
-		mani_client.cpp \
-		mani_convar.cpp \
-		mani_crontab.cpp \
-		mani_customeffects.cpp \
-		mani_database.cpp \
-		mani_downloads.cpp \
-		mani_effects.cpp \
-		mani_gametype.cpp \
-		mani_ghost.cpp \
-		mani_language.cpp \
-		mani_main.cpp \
-		mani_mapadverts.cpp \
-		mani_maps.cpp \
-		mani_memory.cpp \
-		mani_menu.cpp \
-		mani_mysql.cpp \
+SRC_FILES =     cvars.cpp \
+                mani_adverts.cpp \
+                mani_autokickban.cpp \
+                mani_callback_sourcemm.cpp \
+                mani_callback_valve.cpp \
+                mani_chattrigger.cpp \
+                mani_client.cpp \
+                mani_convar.cpp \
+                mani_crontab.cpp \
+                mani_customeffects.cpp \
+                mani_database.cpp \
+                mani_downloads.cpp \
+                mani_effects.cpp \
+                mani_gametype.cpp \
+                mani_globals.cpp \
+                mani_ghost.cpp \
+                mani_hlxinterface.cpp \
+                mani_hook.cpp \
+                mani_language.cpp \
+                mani_main.cpp \
+                mani_mapadverts.cpp \
+                mani_maps.cpp \
+                mani_memory.cpp \
+                mani_menu.cpp \
+                mani_mysql.cpp \
+                mani_mysql_thread.cpp \
 		mani_netidvalid.cpp \
 		mani_output.cpp \
 		mani_panel.cpp \
@@ -38,23 +49,28 @@ SRC_FILES = 	mani_adverts.cpp \
 		mani_player.cpp \
 		mani_quake.cpp \
 		mani_replace.cpp \
+		mani_reservedslot.cpp \
 		mani_skins.cpp \
 		mani_sounds.cpp \
+		mani_spawnpoints.cpp \
+		mani_sprayremove.cpp \
 		mani_stats.cpp \
 		mani_team.cpp \
 		mani_teamkill.cpp \
 		mani_timers.cpp \
+		mani_vfuncs.cpp \
 		mani_victimstats.cpp \
 		mani_voice.cpp \
+		mani_warmuptimer.cpp \
 		mani_weapon.cpp \
 		mrecipientfilter.cpp \
 		serverplugin_convar.cpp
 
 # the location of the SDK source code
-HL2SDK_SRC_DIR=..
+HL2SDK_SRC_DIR=../sdk/
 
 # the directory the base binaries (tier0_i486.so, etc) are located
-HL2BIN_DIR=../../srcds_1/bin
+HL2BIN_DIR=../srcds_1/bin
 
 # compiler options (gcc 3.4.1 or above is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
@@ -63,13 +79,14 @@ CLINK=/usr/bin/gcc
 CPP_LIB=/usr/lib/gcc/i386-redhat-linux/3.4.3/libstdc++.a \
 	/usr/lib/gcc/i386-redhat-linux/3.4.3/libgcc_eh.a \
 	./mysql/linux_32/lib/libmysqlclient.a \
+	/usr/lib/libz.a \
 
 # put any compiler flags you want passed here
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lz -lm -ldl -s tier0_i486.so vstdlib_i486.so
-#LDFLAGS=-lm -ldl -s tier0_i486.so vstdlib_i486.so
+#LDFLAGS=-lm -ldl -lpthread tier0_i486.so vstdlib_i486.so
+LDFLAGS=-lm -ldl $(STRIP_SYM) tier0_i486.so vstdlib_i486.so
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -96,15 +113,27 @@ ARCH=i486
 ARCH_CFLAGS=-march=pentium -mmmx -O3
 
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
-BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp
+BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
+	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf \
+	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp $(SOURCE_MM) 
 SHLIBEXT=so
 SHLIBLDFLAGS=-shared
 
 CFLAGS=$(USER_CFLAGS) $(BASE_CFLAGS) $(ARCH_CFLAGS)
 #DEBUG=-g -ggdb
-#CFLAGS+= $(DEBUG)
+DEBUG=$(DEBUG_FLAGS)
+CFLAGS+= $(DEBUG)
 
-INCLUDEDIRS=-I$(PUBLIC_SRC_DIR) -I$(PUBLIC_SRC_DIR)/tier1 -I$(PUBLIC_SRC_DIR)/engine -I$(PUBLIC_SRC_DIR)/dlls  -I$(HL2SDK_SRC_DIR)/game_shared -I$(HL2SDK_SRC_DIR)/common -I$(HL2SDK_SRC_DIR)/dlls -Dstrcmpi=strcasecmp -D_alloca=alloca -I$(HL2SDK_SRC_DIR)/mani_admin_plugin/mysql/linux_32/include/
+INCLUDEDIRS=-I$(PUBLIC_SRC_DIR) \
+	-I$(PUBLIC_SRC_DIR)/tier1 \
+	-I$(PUBLIC_SRC_DIR)/engine \
+	-I$(PUBLIC_SRC_DIR)/dlls  \
+	-I$(HL2SDK_SRC_DIR)/game_shared \
+	-I$(HL2SDK_SRC_DIR)/common \
+	-I$(HL2SDK_SRC_DIR)/dlls \
+	-Dstrcmpi=strcasecmp -D_alloca=alloca \
+	-I$(HL2SDK_SRC_DIR)/../mani_admin_plugin/mysql/linux_32/include/ \
+	$(SOURCEMM_DIR)
 
 DO_CC=$(CPLUS) $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 

@@ -35,6 +35,8 @@ public:
 
 	void		LevelInit(void);
 	void		GameFrame(void);
+	bool		KnivesOnly(void);
+	bool		IgnoreTK(void);
 
 private:
 
