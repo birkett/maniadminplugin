@@ -156,7 +156,7 @@ void	ManiSaveScores::NetworkIDValidated(player_t *player_ptr)
 					save_cash_list[player_ptr->index - 1].trigger = true;
 				}
 
-				SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "Saved score reloaded");
+				SayToPlayer(LIGHT_GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3100));
 			}
 
 			save_scores_list.erase(i);
@@ -230,8 +230,15 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 
 	if (!save_cash_list[player_ptr->index - 1].trigger) return;
 	save_cash_list[player_ptr->index - 1].trigger = false;
-	SayToPlayer(ORANGE_CHAT, player_ptr, "Cash restored to last known amount");
-	Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, save_cash_list[player_ptr->index - 1].cash); 
+
+	// Set cash to highest of the two values
+	int new_cash = save_cash_list[player_ptr->index - 1].cash;
+	int current_cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT, 0);
+	if (current_cash < new_cash)
+	{
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 3101, "%i", new_cash));
+		Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, new_cash); 
+	}
 }
 
 //---------------------------------------------------------------------------------

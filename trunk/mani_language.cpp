@@ -50,7 +50,7 @@
 #include "mani_convar.h"
 
 #define MANI_MAX_TRANSLATIONS (3500)
-#define MANI_LANG_VER_REQUIRED (7)
+#define MANI_LANG_VER_REQUIRED (8)
 
 extern IFileSystem	*filesystem;
 

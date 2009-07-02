@@ -930,7 +930,7 @@ void	ManiClient::FreeClients(void)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Sets up admin flags, if you add a new flag it needs to be intialised 
+// Purpose: Sets up admin flags, if you add a new flag it needs to be initialised 
 //          here !!
 //---------------------------------------------------------------------------------
 bool IsCommandIssuedByServerAdmin( void )
@@ -4428,7 +4428,6 @@ bool ManiClient::AddFlagDesc(const char *class_name, const char *flag_name, cons
 void	ManiClient::AddBuiltInFlags(void)
 {
 	// Admin class first
-	flag_desc_list.AddFlag(ADMIN, ADMIN_GIMP, Translate(NULL, 1500));
 	flag_desc_list.AddFlag(ADMIN, ADMIN_KICK, Translate(NULL, 1501));
 	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON, Translate(NULL, 1502));
 	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON_MENU1, Translate(NULL, 1503));
@@ -4485,7 +4484,6 @@ void	ManiClient::AddBuiltInFlags(void)
 	flag_desc_list.AddFlag(ADMIN, ADMIN_SPRAY_TAG, Translate(NULL, 1554));
 	flag_desc_list.AddFlag(ADMIN, ADMIN_GRAVITY, Translate(NULL, 1555));
 
-	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_GIMP, Translate(NULL, 1700));
 	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_KICK, Translate(NULL, 1701));
 	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_SLAY, Translate(NULL, 1702));
 	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_BAN, Translate(NULL, 1703));

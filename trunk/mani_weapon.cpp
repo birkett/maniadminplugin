@@ -48,6 +48,8 @@
 #include "mani_menu.h"
 #include "mani_memory.h"
 #include "mani_output.h"
+#include "mani_callback_sourcemm.h"
+#include "mani_sourcehook.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
 #include "mani_sounds.h"
@@ -65,6 +67,7 @@
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IFileSystem	*filesystem;
+extern	IServerGameEnts *serverents;
 
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
@@ -72,6 +75,7 @@ extern	bool war_mode;
 extern	int	con_command_index;
 
 ConVar mani_weapon_restrict_refund_on_spawn ("mani_weapon_restrict_refund_on_spawn", "0", 0, "0 = Money not refunded if weapon removed at spawn, 1 = money refunded if weapon removed at spawn", true, 0, true, 1); 
+ConVar mani_weapon_restrict_prevent_pickup ("mani_weapon_restrict_prevent_pickup", "0", 0, "0 = restricted weapons can be picked up, 1 = restricted weapons cannot be picked up", true, 0, true, 1); 
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -95,7 +99,7 @@ MWeapon::MWeapon(const char *weapon_name, int translation_id, int weapon_index)
 //---------------------------------------------------------------------------------
 // Purpose: Checks if player can buy this weapon or not
 //---------------------------------------------------------------------------------
-bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
+bool	MWeapon::CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, int &ratio)
 {
 //	Msg("[%s] [%s] [%i] [%i] [%s]\n", weapon_name, display_name, team_limit, round_ratio, (restricted == true) ? "YES":"NO");
 	if (!restricted || war_mode) return true;
@@ -109,6 +113,8 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
 		{
 			if (gpManiTeam->GetTeamScore(2) - gpManiTeam->GetTeamScore(3) >= round_ratio)
 			{
+				reason = WEAPON_RATIO;
+				ratio = round_ratio;
 				return false;
 			}
 		}
@@ -116,6 +122,8 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
 		{
 			if (gpManiTeam->GetTeamScore(3) - gpManiTeam->GetTeamScore(2) >= round_ratio)
 			{
+				reason = WEAPON_RATIO;
+				ratio = round_ratio;
 				return false;
 			}
 		}
@@ -126,7 +134,11 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
 		}
 	}
 
-	if (team_limit == 0 && round_ratio == 0) return false;
+	if (team_limit == 0 && round_ratio == 0) 
+	{
+		reason = WEAPON_RESTRICT;
+		return false;
+	}
 
 	count[2] = 0;
 	count[3] = 0;
@@ -157,6 +169,8 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
 
 	if (count[player_ptr->team] >= compare)
 	{
+		reason = WEAPON_LIMIT;
+		limit = team_limit;
 		return false;
 	}
 
@@ -166,40 +180,6 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset)
 //---------------------------------------------------------------------------------
 // Purpose: Free the weapons used
 //---------------------------------------------------------------------------------
-#define SETUP_WEAPON_0(_index, _display_name) \
-	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
-	if (weapon_info != NULL) \
-{ \
-	this->weapons[_index ++] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
-}
-
-#define SETUP_WEAPON_1(_index, _display_name, _alias1) \
-	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
-	if (weapon_info != NULL) \
-{ \
-	this->weapons[_index] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
-	this->alias_list[_alias1] = this->weapons[_index ++]; \
-}
-
-#define SETUP_WEAPON_2(_index, _display_name, _alias1, _alias2) \
-	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
-	if (weapon_info != NULL) \
-{ \
-	this->weapons[_index] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
-	this->alias_list[_alias1] = this->weapons[_index]; \
-	this->alias_list[_alias2] = this->weapons[_index ++]; \
-}
-
-#define SETUP_WEAPON_3(_index, _display_name, _alias1, _alias2, _alias3) \
-	weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(_index); \
-	if (weapon_info != NULL) \
-{ \
-	this->weapons[_index] = new MWeapon(weapon_info->weapon_name, _display_name, _index); \
-	this->alias_list[_alias1] = this->weapons[_index]; \
-	this->alias_list[_alias2] = this->weapons[_index]; \
-	this->alias_list[_alias3] = this->weapons[_index ++]; \
-}
-
 ManiWeaponMgr::ManiWeaponMgr()
 {
 	for (int i = 0; i < 29; i ++)
@@ -208,6 +188,12 @@ ManiWeaponMgr::ManiWeaponMgr()
 	}
 
 	this->alias_list.clear();
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		hooked[i] = false;
+		ignore_hook[i] = false;
+	}
+
 	gpManiWeaponMgr = this;
 }
 
@@ -218,9 +204,38 @@ ManiWeaponMgr::~ManiWeaponMgr()
 
 void ManiWeaponMgr::Load()
 {
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
 	this->CleanUp();
 	this->SetupWeapons();
 	this->LoadRestrictions();
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		hooked[i] = false;
+		ignore_hook[i] = false;
+		next_message[i] = 0.0;
+	}
+
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		player_t player;
+
+		player.index = i + 1;
+		if (!FindPlayerByIndex(&player))
+		{
+			continue;
+		}
+
+		if (player.is_bot) continue;
+
+		g_ManiSMMHooks.HookWeapon_CanUse((CBasePlayer *) EdictToCBE(player.entity));
+		hooked[i] = true;
+		ignore_hook[i] = false;
+	}
+}
+
+void ManiWeaponMgr::Unload()
+{
+	this->LevelShutdown();
 }
 
 void ManiWeaponMgr::LevelInit()
@@ -228,6 +243,12 @@ void ManiWeaponMgr::LevelInit()
 	this->CleanUp();
 	this->SetupWeapons();
 	this->LoadRestrictions();
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		hooked[i] = false;
+		ignore_hook[i] = false;
+		next_message[i] = 0.0;
+	}
 }
 
 void ManiWeaponMgr::CleanUp()
@@ -245,48 +266,81 @@ void ManiWeaponMgr::CleanUp()
 	this->alias_list.clear();
 }
 
+void ManiWeaponMgr::AddWeapon(const char *search_name, int translation_id)
+{	
+	int weapon_index = this->FindWeaponIndex(search_name);
+	if (weapon_index != -1)
+	{
+		this->weapons[weapon_index] = new MWeapon(search_name, translation_id, weapon_index);
+	}
+}
 
+void ManiWeaponMgr::AddWeapon(const char *search_name, int translation_id, const char *alias1)
+{	
+	int weapon_index = this->FindWeaponIndex(search_name);
+	if (weapon_index != -1)
+	{
+		this->weapons[weapon_index] = new MWeapon(search_name, translation_id, weapon_index);
+		this->alias_list[alias1] = this->weapons[weapon_index];
+	}
+}
+
+void ManiWeaponMgr::AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2)
+{	
+	int weapon_index = this->FindWeaponIndex(search_name);
+	if (weapon_index != -1)
+	{
+		this->weapons[weapon_index] = new MWeapon(search_name, translation_id, weapon_index);
+		this->alias_list[alias1] = this->weapons[weapon_index];
+		this->alias_list[alias2] = this->weapons[weapon_index];
+	}
+}
+
+void ManiWeaponMgr::AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2, const char *alias3)
+{	
+	int weapon_index = this->FindWeaponIndex(search_name);
+	if (weapon_index != -1)
+	{
+		this->weapons[weapon_index] = new MWeapon(search_name, translation_id, weapon_index);
+		this->alias_list[alias1] = this->weapons[weapon_index];
+		this->alias_list[alias2] = this->weapons[weapon_index];
+		this->alias_list[alias3] = this->weapons[weapon_index];
+	}
+}
 
 void ManiWeaponMgr::SetupWeapons()
 {
-	CCSWeaponInfo *weapon_info;
-	int index = 0;
-	
 	this->CleanUp();
 
-	SETUP_WEAPON_2(index, 3000, "xm1014", "autoshotgun")
-	SETUP_WEAPON_2(index, 3001, "usp", "km45")
-	SETUP_WEAPON_1(index, 3002, "ump45")
-	SETUP_WEAPON_2(index, 3003, "tmp", "mp")
-	SETUP_WEAPON_2(index, 3004, "smokegrenade", "sgren")
-	SETUP_WEAPON_2(index, 3005, "sg552", "krieg552")
-	SETUP_WEAPON_2(index, 3006, "sg550", "krieg550")
-	SETUP_WEAPON_1(index, 3007, "scout")
-	SETUP_WEAPON_2(index, 3008, "p90", "c90")
-	SETUP_WEAPON_2(index, 3009, "p228", "228compact")
-	SETUP_WEAPON_3(index, 3010, "mp5navy", "mp5", "smg")
-	SETUP_WEAPON_1(index, 3011, "mac10")
-	SETUP_WEAPON_1(index, 3012, "m4a1")
-	SETUP_WEAPON_2(index, 3013, "m3", "12gauge")
-	SETUP_WEAPON_1(index, 3014, "m249")
-
-	// Knife
-	SETUP_WEAPON_0(index, 0)
-	SETUP_WEAPON_2(index, 3015, "hegrenade", "hegren")
-	SETUP_WEAPON_2(index, 3016, "glock", "9x19mm")
-	SETUP_WEAPON_2(index, 3017, "galil", "defender")
-	SETUP_WEAPON_2(index, 3018, "g3sg1", "d3au1")
-	SETUP_WEAPON_2(index, 3019, "flashbang", "flash")
-	SETUP_WEAPON_2(index, 3020, "fiveseven", "fn57")
-	SETUP_WEAPON_2(index, 3021, "famas", "clarion")
-	SETUP_WEAPON_1(index, 3022, "elite")
-	SETUP_WEAPON_2(index, 3023, "deagle", "nighthawk")
-
-	// C4
-	SETUP_WEAPON_0(index, 0)
-	SETUP_WEAPON_2(index, 3024, "awp", "magnum")
-	SETUP_WEAPON_2(index, 3025, "aug", "bullpup")
-	SETUP_WEAPON_2(index, 3026, "ak47", "cv47")
+	this->AddWeapon("weapon_xm1014", 3000, "xm1014", "autoshotgun");
+	this->AddWeapon("weapon_usp", 3001, "usp", "km45");
+	this->AddWeapon("weapon_ump45", 3002, "ump45");
+	this->AddWeapon("weapon_tmp", 3003, "tmp", "mp");
+	this->AddWeapon("weapon_smokegrenade", 3004, "smokegrenade", "sgren");
+	this->AddWeapon("weapon_sg552", 3005, "sg552", "krieg552");
+	this->AddWeapon("weapon_sg550", 3006, "sg550", "krieg550");
+	this->AddWeapon("weapon_scout", 3007, "scout");
+	this->AddWeapon("weapon_p90", 3008, "p90", "c90");
+	this->AddWeapon("weapon_p228", 3009, "p228", "228compact");
+	this->AddWeapon("weapon_mp5navy", 3010, "mp5navy", "mp5", "smg");
+	this->AddWeapon("weapon_mac10", 3011, "mac10");
+	this->AddWeapon("weapon_m4a1", 3012, "m4a1");
+	this->AddWeapon("weapon_m3", 3013, "m3", "12gauge");
+	this->AddWeapon("weapon_m249", 3014, "m249");
+	this->AddWeapon("weapon_knife", 0);
+	this->AddWeapon("weapon_hegrenade", 3015, "hegrenade", "hegren");
+	this->AddWeapon("weapon_glock", 3016, "glock", "9x19mm");
+	this->AddWeapon("weapon_galil", 3017, "galil", "defender");
+	this->AddWeapon("weapon_g3sg1", 3018, "g3sg1", "d3au1");
+	this->AddWeapon("weapon_flashbang", 3019, "flashbang", "flash");
+	this->AddWeapon("weapon_fiveseven", 3020, "fiveseven", "fn57");
+	this->AddWeapon("weapon_famas", 3021, "famas", "clarion");
+	this->AddWeapon("weapon_elite", 3022, "elite");
+	this->AddWeapon("weapon_deagle", 3023, "deagle", "nighthawk");
+	this->AddWeapon("weapon_c4", 0);
+	this->AddWeapon("weapon_awp", 3024, "awp", "magnum");
+	this->AddWeapon("weapon_aug", 3025, "aug", "bullpup");
+	this->AddWeapon("weapon_ak47", 3026, "ak47", "cv47");
 }
 
 void	ManiWeaponMgr::PlayerSpawn(player_t *player_ptr) 
@@ -301,10 +355,18 @@ void	ManiWeaponMgr::AutoBuyReBuy()
 	if (!FindPlayerByIndex(&player)) return;
 	if (player.is_bot) return;
 	this->RemoveWeapons(&player, true, false);
+	ignore_hook[player.index - 1] = false;
+}
+
+void	ManiWeaponMgr::PreAutoBuyReBuy()
+{
+	ignore_hook[con_command_index] = true;
 }
 
 void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_refund)
 {
+	int reason, limit, ratio;
+
 	if (war_mode) return;
 	CBaseEntity *pPlayer = EdictToCBE(player_ptr->entity);
 	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
@@ -316,7 +378,7 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 	for (int i = 0; i < 29; i++)
 	{
 		if (weapons[i]->GetDisplayID() == 0) continue;
-		if (!weapons[i]->CanBuy(player_ptr, 1) || 
+		if (!weapons[i]->CanBuy(player_ptr, 1, reason, limit, ratio) || 
 			knife_mode)
 		{
 			for (int j = 0; j < 40; j++)
@@ -329,20 +391,9 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 				}
 
 				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-				if (weapons[i]->GetTeamLimit() > 0)
-				{
-					OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3040, "%s%i",
-						Translate(player_ptr, weapons[i]->GetDisplayID()), 
-						weapons[i]->GetTeamLimit()));
-				}
-				else
-				{
-					OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3041, "%s",  
-						Translate(player_ptr, weapons[i]->GetDisplayID())));
-				}
-
 				if (!knife_mode)
 				{
+					ShowRestrictReason(player_ptr, weapons[i], reason, limit, ratio);
 					ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
 				}
 
@@ -405,6 +456,8 @@ void ManiWeaponMgr::RoundStart()
 
 PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name)
 {
+	int reason, limit, ratio;
+
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
 	if (war_mode) return PLUGIN_CONTINUE;
 	if (gpManiWarmupTimer->KnivesOnly()) return PLUGIN_STOP;
@@ -437,23 +490,13 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 		}
 	}
 
-	if (weapon->CanBuy(player_ptr, 0))
+	if (weapon->CanBuy(player_ptr, 0, reason, limit, ratio))
 	{
 		return PLUGIN_CONTINUE;
 	}
 
 	ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
-	if (weapon->GetTeamLimit() > 0)
-	{
-		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
-			Translate(player_ptr, 3040, "%s%i", Translate(player_ptr, weapon->GetDisplayID()), weapon->GetTeamLimit()));
-	}
-	else
-	{
-		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
-			Translate(player_ptr, 3041, "%s", Translate(player_ptr, weapon->GetDisplayID())));
-	}
-
+	ShowRestrictReason(player_ptr, weapon, reason, limit, ratio);
 	return PLUGIN_STOP;
 } 
 
@@ -1006,6 +1049,162 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaNoSnipers(player_t *player_ptr, const char
 	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3053));
 
 	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Find weapon index from search name
+//---------------------------------------------------------------------------------
+int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
+{
+	for (int i = 0; i < 29; i++)
+	{
+		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
+		if (weapon_info == NULL)
+		{
+			return -1;
+		}
+
+		if (strcmp(search_name, weapon_info->weapon_name) == 0) 
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Check if player can pickup weapon or not
+//---------------------------------------------------------------------------------
+bool	ManiWeaponMgr::CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon)
+{
+	if (war_mode) return true;
+	if (mani_weapon_restrict_prevent_pickup.GetInt() == 1) return true;
+	if (gpManiWarmupTimer->KnivesOnly()) return true;
+
+	edict_t *pEdict = serverents->BaseEntityToEdict((CBasePlayer *) pPlayer);
+	if (!pEdict) return true;
+
+	int index = engine->IndexOfEdict(pEdict);
+	if (index < 1 || index > max_players) return true;
+
+	if (ignore_hook[index - 1])
+	{
+		return true;
+	}
+
+	const char *weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+	// Find index
+	for (int i = 0; i < 29; i++)
+	{
+		if (strcmp(weapons[i]->GetWeaponName(), weapon_name) != 0) continue;
+		if (weapons[i]->GetDisplayID() == 0) continue;
+
+		player_t player;
+		player.index = index;
+
+		if (!FindPlayerByIndex(&player)) break;
+
+		int reason, limit, ratio;
+		if (!weapons[i]->CanBuy(&player, 0, reason, limit, ratio))
+		{
+			if (next_message[player.index - 1] < gpGlobals->curtime)
+			{
+				ShowRestrictReason(&player, weapons[i], reason, limit, ratio);
+				next_message[player.index - 1] = gpGlobals->curtime + 1.2;
+			}
+
+			return false;
+		}
+
+		break;
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Find weapon index from search name
+//---------------------------------------------------------------------------------
+void	ManiWeaponMgr::ShowRestrictReason(player_t *player_ptr, MWeapon *weapon, int reason, int limit, int ratio)
+{
+	switch(reason)
+	{
+	case WEAPON_RESTRICT:
+		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
+			Translate(player_ptr, 3041, "%s", Translate(player_ptr, weapon->GetDisplayID())));
+		break;
+	case WEAPON_LIMIT:
+		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
+			Translate(player_ptr, 3040, "%s%i", Translate(player_ptr, weapon->GetDisplayID()), limit));
+		break;
+	case WEAPON_RATIO:
+		OutputHelpText(GREEN_CHAT, player_ptr, "%s", 
+			Translate(player_ptr, 3043, "%s%s%i", 
+			(player_ptr->team == 3) ? "CT":"T", Translate(NULL, weapon->GetDisplayID()), 
+			ratio));
+
+	default:
+		break;
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Player active on server
+//---------------------------------------------------------------------------------
+void	ManiWeaponMgr::ClientActive(player_t *player_ptr)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_CANUSE) == -1) return;
+	if (player_ptr->is_bot) return;
+	if (!hooked[player_ptr->index - 1])
+	{
+		g_ManiSMMHooks.HookWeapon_CanUse((CBasePlayer *) EdictToCBE(player_ptr->entity));
+		hooked[player_ptr->index - 1] = true;
+		ignore_hook[player_ptr->index - 1] = false;
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Check Player on disconnect
+//---------------------------------------------------------------------------------
+void ManiWeaponMgr::ClientDisconnect(player_t	*player_ptr)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_CANUSE) == -1) return;
+	if (player_ptr->is_bot) return;
+	if (hooked[player_ptr->index - 1])
+	{
+		g_ManiSMMHooks.UnHookWeapon_CanUse((CBasePlayer *) EdictToCBE(player_ptr->entity));
+		hooked[player_ptr->index - 1] = false;
+		ignore_hook[player_ptr->index - 1] = false;
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Level Shutdown
+//---------------------------------------------------------------------------------
+void	ManiWeaponMgr::LevelShutdown(void)
+{
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		if (hooked[i])
+		{
+			player_t player;
+
+			player.index = i + 1;
+			if (FindPlayerByIndex(&player))
+			{
+				g_ManiSMMHooks.UnHookWeapon_CanUse((CBasePlayer *) EdictToCBE(player.entity));
+			}
+
+			hooked[i] = false;
+			ignore_hook[i] = false;
+			next_message[i] = 0.0;
+		}
+	}
 }
 
 SCON_COMMAND(ma_showrestrict, 2139, MaShowRestrict, false);

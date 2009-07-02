@@ -282,6 +282,9 @@ VFUNC_CALL0(MANI_VFUNC_WEAPON_GET_NAME, const char *, CBaseCombatWeapon, CBaseCo
 // virtual int CommitSuicide( void );
 VFUNC_CALL0_void(MANI_VFUNC_COMMIT_SUICIDE, CBasePlayer, CBasePlayer_CommitSuicide)
 
+// virtual bool			SetObserverTarget(CBaseEntity * target);
+VFUNC_CALL1_void(MANI_VFUNC_SET_OBSERVER_TARGET, CBasePlayer, CBasePlayer_SetObserverTarget, CBaseEntity *)
+
 datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr)
 {
 	void **this_ptr = *(void ***)&pThisPtr;
@@ -677,6 +680,8 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		CheckVFunc(type_ptr, "CBasePlayer", "Weapon_Drop", "weapon_drop", MANI_VFUNC_WEAPON_DROP);
 		CheckVFunc(type_ptr, "CBasePlayer", "ProcessUsercmds", "user_cmds", MANI_VFUNC_USER_CMDS);
 		CheckVFunc(type_ptr, "CBasePlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
+		CheckVFunc(type_ptr, "CBasePlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
+		CheckVFunc(type_ptr, "CCSPlayer", "Weapon_CanUse", "canuse_weapon", MANI_VFUNC_WEAPON_CANUSE);
 		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(type_ptr, "CDODPlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
 	}
 

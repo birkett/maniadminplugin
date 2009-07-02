@@ -27,6 +27,15 @@
 #define MANI_WEAPON_H
 
 #include <map>
+#include "cbaseentity.h"
+
+
+enum
+{
+	WEAPON_RESTRICT = 0,
+	WEAPON_LIMIT,
+	WEAPON_RATIO
+};
 
 class MWeapon
 {
@@ -39,7 +48,7 @@ public:
 	void	SetTeamLimit(int limit) {team_limit = limit;}
 	void	SetRestricted(bool enabled) {restricted = enabled;}
 	void	SetRoundRatio(int ratio) {round_ratio = ratio;}
-	bool	CanBuy(player_t *player_ptr, int offset);
+	bool	CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, int &ratio);
 	bool	IsRestricted() {return restricted;}
 	int		GetTeamLimit(){return team_limit;}
 	int		GetRoundRatio() {return round_ratio;}
@@ -63,16 +72,23 @@ public:
 	ManiWeaponMgr();
 	~ManiWeaponMgr();
 	void	Load();
+	void	Unload();
 	void	LevelInit();
 	void	PlayerSpawn(player_t *player_ptr); 
 	PLUGIN_RESULT	CanBuy(player_t *player_ptr, const char *alias_name);
 	void	AutoBuyReBuy();
+	void	PreAutoBuyReBuy();
 	void	RestrictAll();
 	void	UnRestrictAll();
 	bool	SetWeaponRestriction(const char *weapon_name, bool restricted, int team_limit = 0);
 	bool	SetWeaponRatio(const char *weapon_name, int ratio);
 	void	RemoveWeapons(player_t *player_ptr, bool refund, bool show_refund);
 	void	RoundStart();
+	bool	CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon);
+	void	ClientActive(player_t *player_ptr);
+	void	ClientDisconnect(player_t *player_ptr);
+	void	LevelShutdown(void);
+
 
 	PLUGIN_RESULT	ProcessMaShowRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
@@ -86,12 +102,21 @@ public:
 	PLUGIN_RESULT	ProcessMaRestrictRatio(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 
 private:
+	void	ShowRestrictReason(player_t *player_ptr, MWeapon *weapon, int reason, int limit, int ratio);
 	void	CleanUp();
 	void	SetupWeapons();
 	void	LoadRestrictions();
+	void	AddWeapon(const char *search_name, int translation_id);
+	void	AddWeapon(const char *search_name, int translation_id, const char *alias1);
+	void	AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2);
+	void	AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2, const char *alias3);
+	int		FindWeaponIndex(const char *search_name);
 
 	std::map <BasicStr, MWeapon *> alias_list;
 	MWeapon *weapons[29];
+	bool	hooked[MANI_MAX_PLAYERS];
+	bool	ignore_hook[MANI_MAX_PLAYERS];
+	float	next_message[MANI_MAX_PLAYERS];
 };
 
 extern	ManiWeaponMgr *gpManiWeaponMgr;

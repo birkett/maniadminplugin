@@ -50,7 +50,6 @@
 #include "mani_output.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
-#include "mani_weapon.h"
 #include "mani_gametype.h"
 #include "mani_maps.h"
 #include "mani_skins.h"

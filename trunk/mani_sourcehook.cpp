@@ -140,6 +140,7 @@ SH_DECL_HOOK3(IVoiceServer, SetClientListening, SH_NOATTRIB, 0, bool, int, int, 
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *, bool, bool);
 SH_DECL_HOOK5_void(ITempEntsSystem, PlayerDecal, SH_NOATTRIB, 0, IRecipientFilter &, float , const Vector* , int , int );
 SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, int, bool);
+SH_DECL_MANUALHOOK1(Player_Weapon_CanUse, 0, 0, 0, bool, CBaseCombatWeapon *);
 
 static	bool hooked = false;
 
@@ -170,6 +171,15 @@ void	ManiSMMHooks::HookVFuncs(void)
 	if (serverdll)
 	{
 		SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, serverdll, &g_ManiSMMHooks, &ManiSMMHooks::LevelInit, false);
+	}
+
+	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_CANUSE);
+		if (offset != -1)
+		{
+			SH_MANUALHOOK_RECONFIGURE(Player_Weapon_CanUse, offset, 0, 0);
+		}
 	}
 
 	hooked = true;
@@ -225,7 +235,7 @@ void	ManiSMMHooks::HookProcessUsercmds(CBasePlayer *pPlayer)
 
 void	ManiSMMHooks::ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused)
 {
-	PROFILE(PROCESS_USER_CMDS, gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds));
+	gpManiAFK->ProcessUsercmds(META_IFACEPTR(CBasePlayer), cmds, numcmds);
 	RETURN_META(MRES_IGNORED);
 }
 
@@ -233,4 +243,25 @@ void	ManiSMMHooks::UnHookProcessUsercmds(CBasePlayer *pPlayer)
 {
 	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_ProcessUsercmds, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::ProcessUsercmds, false);
 }
+
+void	ManiSMMHooks::HookWeapon_CanUse(CBasePlayer *pPlayer)
+{
+	SH_ADD_MANUALHOOK_MEMFUNC(Player_Weapon_CanUse, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::Weapon_CanUse, false);
+}
+
+bool	ManiSMMHooks::Weapon_CanUse(CBaseCombatWeapon *pWeapon)
+{
+	if (!gpManiWeaponMgr->CanPickUpWeapon(META_IFACEPTR(CBasePlayer), pWeapon))
+	{
+		RETURN_META_VALUE(MRES_SUPERCEDE, false);
+	}
+
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
+{
+	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_Weapon_CanUse, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::Weapon_CanUse, false);
+}
+
 #endif

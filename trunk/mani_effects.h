@@ -54,7 +54,6 @@ struct punish_mode_t
 {
 	int		drugged; // 0 = none, 1 = TK ENFORCED, 2 = ADMIN ENFORCED
 	float	next_drug_update_time;
-	int		gimped;
 	int		muted;
 	int		frozen;
 	float	next_frozen_update_time;
@@ -88,8 +87,6 @@ extern	void	ProcessFreezePlayer(player_t *player_ptr, bool admin_called);
 extern	void	ProcessUnFreezePlayer(player_t *player_ptr);
 extern	void	ProcessDrugPlayer(player_t *player, bool admin_called);
 extern	void	ProcessUnDrugPlayer(player_t *player);
-extern	void	ProcessGimpPlayer(player_t *player);
-extern	void	ProcessUnGimpPlayer(player_t *player);
 extern	void	ProcessMutePlayer(player_t *player);
 extern	void	ProcessUnMutePlayer(player_t *player);
 extern	void	ProcessTeleportPlayer(player_t *player_to_teleport, Vector *origin_ptr);

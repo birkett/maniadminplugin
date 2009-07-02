@@ -104,7 +104,6 @@ extern ConVar mani_adminfreeze_anonymous;
 extern ConVar mani_admindrug_anonymous;
 extern ConVar mani_adminburn_anonymous;
 extern ConVar mani_adminteleport_anonymous;
-extern ConVar mani_admingimp_anonymous;
 extern ConVar mani_adminvote_anonymous;
 extern ConVar mani_adminnoclip_anonymous;
 extern ConVar mani_adminmute_anonymous;
@@ -176,8 +175,6 @@ extern ConVar mani_use_amx_style_menu;
 extern ConVar mani_autobalance_teams;
 extern ConVar mani_autobalance_mode;
 extern ConVar mani_thetime_timezone;
-extern ConVar mani_gimp_transform_message;
-extern ConVar mani_gimp_untransform_message;
 
 extern ConVar mani_voting;
 extern ConVar mani_vote_allow_user_vote_map;
@@ -243,67 +240,6 @@ extern ConVar mani_player_name_change_ban_time;
 //extern ConVar mani_player_cheat_ban_time;
 
 extern ConVar mani_allow_chat_to_admin;
-
-extern ConVar mani_quake_sounds;
-extern ConVar mani_quake_autores;
-extern ConVar mani_quake_kill_streak_mode;
-
-extern ConVar mani_quake_humiliation_mode;
-extern ConVar mani_quake_humiliation_visual_mode;
-extern ConVar mani_quake_humiliation_weapon;
-
-extern ConVar mani_quake_firstblood_mode;
-extern ConVar mani_quake_firstblood_visual_mode;
-extern ConVar mani_quake_firstblood_reset_per_round;
-
-extern ConVar mani_quake_headshot_mode;
-extern ConVar mani_quake_headshot_visual_mode;
-
-extern ConVar mani_quake_prepare_to_fight_mode;
-extern ConVar mani_quake_prepare_to_fight_visual_mode;
-
-extern ConVar mani_quake_multi_kill_mode;
-extern ConVar mani_quake_multi_kill_visual_mode;
-
-extern ConVar mani_quake_monster_kill_mode;
-extern ConVar mani_quake_monster_kill_visual_mode;
-extern ConVar mani_quake_monster_kill_trigger_count;
-
-extern ConVar mani_quake_ultra_kill_mode;
-extern ConVar mani_quake_ultra_kill_visual_mode;
-extern ConVar mani_quake_ultra_kill_trigger_count;
-
-extern ConVar mani_quake_god_like_mode;
-extern ConVar mani_quake_god_like_visual_mode;
-extern ConVar mani_quake_god_like_trigger_count;
-
-extern ConVar mani_quake_unstoppable_mode;
-extern ConVar mani_quake_unstoppable_visual_mode;
-extern ConVar mani_quake_unstoppable_trigger_count;
-
-extern ConVar mani_quake_rampage_mode;
-extern ConVar mani_quake_rampage_visual_mode;
-extern ConVar mani_quake_rampage_trigger_count;
-
-extern ConVar mani_quake_ludicrous_kill_mode;
-extern ConVar mani_quake_ludicrous_kill_visual_mode;
-extern ConVar mani_quake_ludicrous_kill_trigger_count;
-
-extern ConVar mani_quake_killing_spree_mode;
-extern ConVar mani_quake_killing_spree_visual_mode;
-extern ConVar mani_quake_killing_spree_trigger_count;
-
-extern ConVar mani_quake_holy_shit_mode;
-extern ConVar mani_quake_holy_shit_visual_mode;
-extern ConVar mani_quake_holy_shit_trigger_count;
-
-extern ConVar mani_quake_dominating_mode;
-extern ConVar mani_quake_dominating_visual_mode;
-extern ConVar mani_quake_dominating_trigger_count;
-
-extern ConVar mani_quake_wicked_sick_mode;
-extern ConVar mani_quake_wicked_sick_visual_mode;
-extern ConVar mani_quake_wicked_sick_trigger_count;
 
 extern ConVar mani_filter_words_mode;
 extern ConVar mani_filter_words_warning;

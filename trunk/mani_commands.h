@@ -167,7 +167,6 @@ public:
 	COM_PROTO(MaGiveAmmo)
 	COM_PROTO(MaDrug)
 	COM_PROTO(MaDecal)
-	COM_PROTO(MaGimp)
 	COM_PROTO(MaTimeBomb)
 	COM_PROTO(MaBeacon)
 	COM_PROTO(MaFireBomb)
@@ -176,6 +175,7 @@ public:
 	COM_PROTO(MaTeleport)
 	COM_PROTO(MaPosition)
 	COM_PROTO(MaSwapTeam)
+	COM_PROTO(MaSwapTeamD)
 	COM_PROTO(MaSpec)
 	COM_PROTO(MaBalance)
 	COM_PROTO(MaDropC4)
@@ -252,6 +252,9 @@ public:
 	COM_PROTO(MaPLRanks)
 	COM_PROTO(MaHelp)
 	COM_PROTO(MaEffect)
+
+	COM_PROTO(MaObserve)
+	COM_PROTO(MaEndObserve)
 };
 
 extern	ManiCommands *gpCmd;

@@ -33,7 +33,7 @@
 class ManiTeam
 {
 public:
-
+	MENUFRIEND_DEC(SwapPlayerD);
 
 	ManiTeam();
 	~ManiTeam();
@@ -47,6 +47,7 @@ public:
 	void		Init(int edict_count);
 	void		GameFrame(void);
 	PLUGIN_RESULT	ProcessMaSwapTeam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaSwapTeamD(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaSpec(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaBalance (player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	bool			ProcessMaBalancePlayerType ( player_t	*player_ptr, bool mute_action, bool dead_only, bool dont_care);
@@ -58,6 +59,7 @@ public:
 private:
 
 	void		CleanUp(void);
+	void		ProcessDelayedSwap(void);
 
 	struct team_t
 	{
@@ -71,12 +73,14 @@ private:
 	bool		change_team;
 	float		change_team_time;
 	bool		swap_team;
-
+	bool		pending_swap[MANI_MAX_PLAYERS];
+	bool		delayed_swap;
 };
 
 extern	ManiTeam *gpManiTeam;
 
 MENUALL_DEC(SwapPlayer);
+MENUALL_DEC(SwapPlayerD);
 MENUALL_DEC(SpecPlayer);
 
 #endif

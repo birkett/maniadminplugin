@@ -98,7 +98,7 @@ void ClientInterface::AddEventListner(AdminInterfaceListner *ptr)
 	}
 	else
 	{
-		MMsg("A plugin has registered itself without providing a callback pointer, this will produce crashes if BAT gets unloaded");
+		MMsg("A plugin has registered itself without providing a callback pointer, this will produce crashes if Mani Admin Plugin gets unloaded");
 	}
 }
 

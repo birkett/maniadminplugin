@@ -95,8 +95,7 @@ bool	ProcessDeadAllTalk
 	if (war_mode) return false;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return false;
 
-	if (punish_mode_list[sender_index - 1].muted != 0||
-		punish_mode_list[sender_index - 1].gimped != 0)
+	if (punish_mode_list[sender_index - 1].muted != 0)
 	{
 		*new_listen = false;
 		return true;
