@@ -57,6 +57,7 @@ private:
 	bool		fire_restart;
 	float		next_check;
 	respawn_t	respawn_list[MANI_MAX_PLAYERS];
+	bool		friendly_fire;
 
 };
 

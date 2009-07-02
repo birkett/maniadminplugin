@@ -69,7 +69,7 @@ extern	int	tk_player_list_size;
 extern	void	InitTKPunishments (void);
 extern	void	FreeTKPunishments(void);
 extern	void	ProcessTKDisconnected (player_t *player_ptr);
-extern	void	ProcessTKSelectedPunishment(int	punishment, player_t *victim_ptr, char *attacker_user_id, char *attacker_steam_id, bool bot_calling);
+extern	void	ProcessTKSelectedPunishment(int	punishment, player_t *victim_ptr, const char *attacker_user_id, char *attacker_steam_id, bool bot_calling);
 extern	void	ProcessTKSpawnPunishment(player_t *player_ptr);
 
 extern	bool	TKBanPlayer (player_t	*attacker, int ban_index);
@@ -78,7 +78,7 @@ extern	bool	IsTKPlayerMatch( tk_player_t *tk_player, player_t *player);
 extern	bool	IsOnSameTeam(player_t *, player_t *);
 extern	bool	ProcessTKDeath( player_t *attacker_ptr, player_t *victim_ptr );
 extern	void	ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset );
-extern	PLUGIN_RESULT	ProcessMaTKList( int index,  bool svr_command);
+extern	PLUGIN_RESULT	ProcessMaTKList( player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 extern	bool	ProcessTKCmd( player_t	*player_ptr );
 
 #endif

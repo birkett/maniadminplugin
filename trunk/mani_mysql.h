@@ -49,6 +49,13 @@ public:
 	char	*GetString(int column) {return (row[column]);}
 	bool	GetBool(int column) {return ((atoi(row[column]) == 0) ? false:true);}
 	int		GetRowID(void);
+	char	*GetServerVersion(void);
+	int		GetMajor(void) {return major;}
+	int		GetMinor(void) {return minor;}
+	int		GetIssue(void) {return issue;}
+	bool	IsHigherVer(int maj, int min, int iss);
+	bool	IsHigherVer(int maj, int min);
+	bool	IsHigherVer(int maj);
 
 private:
 
@@ -59,6 +66,10 @@ private:
 	int			error_code;
 	int			timer_id;
 
+	char	sql_server_version[128];
+	int		major;
+	int		minor;
+	int		issue;
 };
 
 #endif

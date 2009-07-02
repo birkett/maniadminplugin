@@ -55,6 +55,7 @@
 #include "mani_gametype.h"
 #include "mani_netidvalid.h"
 #include "mani_trackuser.h"
+#include "mani_vote.h"
 #include "mani_afk.h"
 #include "mani_ping.h"
 #include "KeyValues.h"
@@ -281,14 +282,14 @@ void ManiNetIDValid::GameFrame(void)
 											if (admin.is_bot) continue;
 											if (!gpManiClient->IsAdmin(&admin, &admin_index)) continue;
 
-											SayToPlayer(&admin, "[MANI_ADMIN_PLUGIN] Warning !! Player %s kicked for invalid Steam ID", player.name);
+											SayToPlayer(ORANGE_CHAT, &admin, "[MANI_ADMIN_PLUGIN] Warning !! Player %s kicked for invalid Steam ID", player.name);
 										}
 									}
 
 									char kick_cmd[512];
 									Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Steam ID is invalid ! Try again\n", player.user_id);
 									LogCommand (NULL, "Kick (STEAM_ID_PENDING) [%s] [%s] %s", player.name, player.steam_id, kick_cmd);
-									engine->ServerCommand(kick_cmd);							
+									engine->ServerCommand(kick_cmd);
 									RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
 									i--;
 								}
@@ -382,7 +383,6 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 
 	gpManiSaveScores->NetworkIDValidated(player_ptr);
 	gpManiAFK->NetworkIDValidated(player_ptr);
-
 	return ;
 }
 

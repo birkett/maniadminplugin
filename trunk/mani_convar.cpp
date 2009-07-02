@@ -186,49 +186,50 @@ ConVar mani_gimp_transform_message ("mani_gimp_transform_message", "Everyone poi
 ConVar mani_gimp_untransform_message ("mani_gimp_untransform_message", "The gods are merciful, The Gimp is back to normal", 0, "The text set here is the phrase that will be used when un-gimping a player"); 
 
 ConVar mani_voting( "mani_voting", "1", 0, "This defines whether the voting system is on or off",true, 0, true, 1 );	
-ConVar mani_vote_allow_user_vote_map ("mani_vote_allow_user_vote_map", "0", 0, "0 = off, 1 = users can type votemap to vote for a map", true, 0, true, 1); 
-ConVar mani_vote_allow_user_vote_map_extend ("mani_vote_allow_user_vote_map_extend", "0", 0, "0 = off, 1 = users can extend on a vote map", true, 0, true, 1); 
-ConVar mani_vote_allow_user_vote_kick ("mani_vote_allow_user_vote_kick", "0", 0, "0 = off, 1 = users can type votekick to vote to kick a player", true, 0, true, 1); 
-ConVar mani_vote_allow_user_vote_kick_ghost ("mani_vote_allow_user_vote_kick_ghost", "1", 0, "0 = off, 1 = users sharing an ip address can kick players", true, 0, true, 1); 
+ConVar mani_vote_allow_end_of_map_vote ("mani_vote_allow_end_of_map_vote", "0", 0, "Defines whether a random map vote will be displayed towards the end of the map", true, 0, true, 1); 
+ConVar mani_vote_allow_extend ("mani_vote_allow_extend", "1", 0, "Defines the whether the a map can be extended", true, 0, true, 1); 
 ConVar mani_vote_allow_user_vote_ban("mani_vote_allow_user_vote_ban", "0", 0, "0 = off, 1 = users can type voteban to vote to ban a player", true, 0, true, 1); 
 ConVar mani_vote_allow_user_vote_ban_ghost("mani_vote_allow_user_vote_ban_ghost", "1", 0, "0 = off, 1 = users sharing an ip address can type voteban to vote to ban a player", true, 0, true, 1); 
-ConVar mani_vote_allow_end_of_map_vote ("mani_vote_allow_end_of_map_vote", "0", 0, "Defines whether a random map vote will be displayed towards the end of the map", true, 0, true, 1); 
+ConVar mani_vote_allow_user_vote_kick ("mani_vote_allow_user_vote_kick", "0", 0, "0 = off, 1 = users can type votekick to vote to kick a player", true, 0, true, 1); 
+ConVar mani_vote_allow_user_vote_kick_ghost ("mani_vote_allow_user_vote_kick_ghost", "1", 0, "0 = off, 1 = users sharing an ip address can kick players", true, 0, true, 1); 
+ConVar mani_vote_allow_user_vote_map ("mani_vote_allow_user_vote_map", "0", 0, "0 = off, 1 = users can type votemap to vote for a map", true, 0, true, 1); 
+ConVar mani_vote_allow_user_vote_map_extend ("mani_vote_allow_user_vote_map_extend", "0", 0, "0 = off, 1 = users can extend on a vote map", true, 0, true, 1); 
+ConVar mani_vote_allowed_voting_time ("mani_vote_allowed_voting_time", "45", 0, "Defines amount of time in seconds a vote will be allowed for", true, 10, true, 90); 
 
 ConVar mani_vote_dont_show_if_alive ("mani_vote_dont_show_if_alive", "0", 0, "0 = alive players will see vote menu, 1 = alive players will need to type vote to access the menu", true, 0, true, 1); 
 ConVar mani_vote_dont_show_last_maps ("mani_vote_dont_show_last_maps", "3", 0, "Defines the last number of maps played to not show in random votemap lists", true, 0, true, 20); 
-ConVar mani_vote_extend_time ("mani_vote_extend_time", "20", 0, "Defines the time in minutes a extend vote will add to the timeleft counter", true, 5, true, 99999); 
-ConVar mani_vote_extend_rounds ("mani_vote_extend_rounds", "10", 0, "Defines the number of rounds to extend mp_winlimit by", true, 2, true, 99999); 
-ConVar mani_vote_allow_extend ("mani_vote_allow_extend", "1", 0, "Defines the whether the a map can be extended", true, 0, true, 1); 
-ConVar mani_vote_max_extends ("mani_vote_max_extends", "2", 0, "Defines how many times a map can be extended via random vote, 0 = infinite", true, 0, true, 99999); 
-ConVar mani_vote_allowed_voting_time ("mani_vote_allowed_voting_time", "45", 0, "Defines amount of time in seconds a vote will be allowed for", true, 10, true, 90); 
-ConVar mani_vote_mapcycle_mode_for_random_map_vote ("mani_vote_mapcycle_mode_for_random_map_vote", "0", 0, "0 = mapcycle.txt, 1 = votemapslist.txt, 2 = maplist.txt", true, 0, true, 2); 
-ConVar mani_vote_mapcycle_mode_for_admin_map_vote ("mani_vote_mapcycle_mode_for_admin_map_vote", "0", 0, "0 = mapcycle.txt, 1 = votemapslist.txt, 2 = maplist.txt", true, 0, true, 2); 
-ConVar mani_vote_time_before_end_of_map_vote ("mani_vote_time_before_end_of_map_vote", "3", 0, "Defines how many minutes before the end of the map that a random map vote is started", true, 2, true, 99999); 
-ConVar mani_vote_rounds_before_end_of_map_vote ("mani_vote_rounds_before_end_of_map_vote", "3", 0, "Defines how rounds before mp_winlimit is hit that a random map vote is started", true, 3, true, 99999); 
-ConVar mani_vote_max_maps_for_end_of_map_vote ("mani_vote_max_maps_for_end_of_map_vote", "6", 0, "Defines how many maps can be in the end of map vote", true, 0, true, 99999); 
 ConVar mani_vote_end_of_map_percent_required ("mani_vote_end_of_map_percent_required", "60", 0, "Defines the vote percentage required to set map", true, 0, true, 100); 
-ConVar mani_vote_rcon_percent_required ("mani_vote_rcon_percent_required", "60", 0, "Defines the vote percentage required to set rcon vote", true, 0, true, 100); 
-ConVar mani_vote_question_percent_required ("mani_vote_question_percent_required", "60", 0, "Defines the vote percentage required to set question vote", true, 0, true, 100); 
-ConVar mani_vote_map_percent_required ("mani_vote_map_percent_required", "60", 0, "Defines the vote percentage required to set map vote", true, 0, true, 100); 
-ConVar mani_vote_random_map_percent_required ("mani_vote_random_map_percent_required", "60", 0, "Defines the vote percentage required to set random map vote", true, 0, true, 100); 
+ConVar mani_vote_extend_time ("mani_vote_extend_time", "20", 0, "Defines the time in minutes a extend vote will add to the timeleft counter", true, 5, true, 99999); 
 ConVar mani_vote_extend_percent_required ("mani_vote_extend_percent_required", "60", 0, "Defines the vote percentage required to set an extend map vote", true, 0, true, 100); 
+ConVar mani_vote_extend_rounds ("mani_vote_extend_rounds", "10", 0, "Defines the number of rounds to extend mp_winlimit by", true, 2, true, 99999); 
+ConVar mani_vote_map_percent_required ("mani_vote_map_percent_required", "60", 0, "Defines the vote percentage required to set map vote", true, 0, true, 100); 
+ConVar mani_vote_mapcycle_mode_for_admin_map_vote ("mani_vote_mapcycle_mode_for_admin_map_vote", "0", 0, "0 = mapcycle.txt, 1 = votemapslist.txt, 2 = maplist.txt", true, 0, true, 2); 
+ConVar mani_vote_mapcycle_mode_for_random_map_vote ("mani_vote_mapcycle_mode_for_random_map_vote", "0", 0, "0 = mapcycle.txt, 1 = votemapslist.txt, 2 = maplist.txt", true, 0, true, 2); 
+ConVar mani_vote_max_extends ("mani_vote_max_extends", "2", 0, "Defines how many times a map can be extended via random vote, 0 = infinite", true, 0, true, 99999); 
+ConVar mani_vote_max_maps_for_end_of_map_vote ("mani_vote_max_maps_for_end_of_map_vote", "6", 0, "Defines how many maps can be in the end of map vote", true, 0, true, 99999); 
+ConVar mani_vote_question_percent_required ("mani_vote_question_percent_required", "60", 0, "Defines the vote percentage required to set question vote", true, 0, true, 100); 
+ConVar mani_vote_random_map_percent_required ("mani_vote_random_map_percent_required", "60", 0, "Defines the vote percentage required to set random map vote", true, 0, true, 100); 
+ConVar mani_vote_rcon_percent_required ("mani_vote_rcon_percent_required", "60", 0, "Defines the vote percentage required to set rcon vote", true, 0, true, 100); 
+ConVar mani_vote_rounds_before_end_of_map_vote ("mani_vote_rounds_before_end_of_map_vote", "3", 0, "Defines how rounds before mp_winlimit is hit that a random map vote is started", true, 3, true, 99999); 
 ConVar mani_vote_show_vote_mode ("mani_vote_show_vote_mode", "3", 0, "0 = quiet mode, 1 = show players as they vote but not their choice, 2 = Show voted choice but not player, 3 = show player name and their choice", true, 0, true, 3); 
+ConVar mani_vote_time_before_end_of_map_vote ("mani_vote_time_before_end_of_map_vote", "3", 0, "Defines how many minutes before the end of the map that a random map vote is started", true, 2, true, 99999); 
 
-ConVar mani_vote_user_vote_map_percentage( "mani_vote_user_vote_map_percentage", "60", 0, "This defines the required percentage of players votes that are needed to change a map",true, 0, true, 100  );	
-ConVar mani_vote_user_vote_map_time_before_vote( "mani_vote_user_vote_map_time_before_vote", "60", 0, "This defines the amount of time before voting is allowed after a map change",true, 0, true, 10000   );	
-ConVar mani_vote_user_vote_map_minimum_votes( "mani_vote_user_vote_map_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to change map",true, 0, true, 64 );	
-
-ConVar mani_vote_user_vote_kick_mode ("mani_vote_user_vote_kick_mode", "0", 0, "0 = only when no admin on server, 1 = all the time", true, 0, true, 1); 
-ConVar mani_vote_user_vote_kick_percentage( "mani_vote_user_vote_kick_percentage", "60", 0, "This defines the required percentage of players votes that are needed to kick a player",true, 0, true, 100  );	
-ConVar mani_vote_user_vote_kick_time_before_vote( "mani_vote_user_vote_kick_time_before_vote", "60", 0, "This defines the amount of time before voting is allowed after a map change",true, 0, true, 10000   );	
-ConVar mani_vote_user_vote_kick_minimum_votes( "mani_vote_user_vote_kick_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to kick a player",true, 0, true, 64 );	
-
+ConVar mani_vote_user_vote_ban_minimum_votes( "mani_vote_user_vote_ban_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to ban a player",true, 0, true, 64 );	
 ConVar mani_vote_user_vote_ban_mode ("mani_vote_user_vote_ban_mode", "0", 0, "0 = only when no admin on server, 1 = all the time", true, 0, true, 1); 
 ConVar mani_vote_user_vote_ban_percentage( "mani_vote_user_vote_ban_percentage", "60", 0, "This defines the required percentage of players votes that are needed to ban a player",true, 0, true, 100  );	
 ConVar mani_vote_user_vote_ban_time_before_vote( "mani_vote_user_vote_ban_time_before_vote", "60", 0, "This defines the amount of time before voting is allowed after a map change",true, 0, true, 10000   );	
-ConVar mani_vote_user_vote_ban_minimum_votes( "mani_vote_user_vote_ban_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to ban a player",true, 0, true, 64 );	
 ConVar mani_vote_user_vote_ban_time( "mani_vote_user_vote_ban_time", "30", 0, "0 = permanent ban, > 0 in minutes",true, 0, true, 99999999);	
 ConVar mani_vote_user_vote_ban_type( "mani_vote_user_vote_ban_type", "0", 0, "0 = ban by ID, 1 = ban by IP, 2 = ban by ID and IP", true, 0, true, 2);	
+
+ConVar mani_vote_user_vote_map_minimum_votes( "mani_vote_user_vote_map_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to change map",true, 0, true, 64 );	
+ConVar mani_vote_user_vote_map_percentage( "mani_vote_user_vote_map_percentage", "60", 0, "This defines the required percentage of players votes that are needed to change a map",true, 0, true, 100  );	
+ConVar mani_vote_user_vote_map_time_before_vote( "mani_vote_user_vote_map_time_before_vote", "60", 0, "This defines the amount of time before voting is allowed after a map change",true, 0, true, 10000   );	
+
+ConVar mani_vote_user_vote_kick_minimum_votes( "mani_vote_user_vote_kick_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to kick a player",true, 0, true, 64 );	
+ConVar mani_vote_user_vote_kick_mode ("mani_vote_user_vote_kick_mode", "0", 0, "0 = only when no admin on server, 1 = all the time", true, 0, true, 1); 
+ConVar mani_vote_user_vote_kick_percentage( "mani_vote_user_vote_kick_percentage", "60", 0, "This defines the required percentage of players votes that are needed to kick a player",true, 0, true, 100  );	
+ConVar mani_vote_user_vote_kick_time_before_vote( "mani_vote_user_vote_kick_time_before_vote", "60", 0, "This defines the amount of time before voting is allowed after a map change",true, 0, true, 10000   );	
+
 
 ConVar mani_vote_allow_rock_the_vote ("mani_vote_allow_rock_the_vote", "0", 0, "0 = off, 1 = users can type rock the vote", true, 0, true, 1); 
 ConVar mani_vote_rock_the_vote_threshold_percent ("mani_vote_rock_the_vote_threshold_percent", "50", 0, "Percentage of human players required to start rock the vote", true, 0, true, 100); 
@@ -319,6 +320,7 @@ ConVar mani_player_settings_sounds ("mani_player_settings_sounds", "1", 0, "0 = 
 ConVar mani_player_settings_damage ("mani_player_settings_damage", "0", 0, "0 = player settings default to off, 1 = player settings default to mode 1, 2 = player settings to mode 2, etc up to mode 3 ", true, 0, true, 3); 
 ConVar mani_player_settings_death_beam ("mani_player_settings_death_beam", "0", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
 ConVar mani_player_settings_destructive ("mani_player_settings_destructive", "0", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
+ConVar mani_player_settings_vote_progress ("mani_player_settings_vote_progress", "1", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
 
 ConVar mani_skins_admin ("mani_skins_admin", "0", 0, "0 = disallow admin skins, 1 = allow admin skins", true, 0, true, 1); 
 ConVar mani_skins_reserved ("mani_skins_reserved", "0", 0, "0 = disallow reserved skins, 1 = allow reserved skins", true, 0, true, 1); 
@@ -327,7 +329,6 @@ ConVar mani_skins_force_public ("mani_skins_force_public", "0", 0, "0 = players 
 ConVar mani_skins_setskin_misc_only ("mani_skins_setskin_misc_only", "0", 0, "0 = the setskin command is for all models, 1 = setskin command is only for misc models", true, 0, true, 1); 
 ConVar mani_skins_force_choose_on_join ("mani_skins_force_choose_on_join", "0", 0, "0 = let user type settings to change model, 1 = ask user to choose on team change, 2 = show settings menu on team change", true, 0, true, 2); 
 ConVar mani_skins_random_bot_skins ("mani_skins_random_bot_skins", "0", 0, "0 = bots use default skin, 1 = bots choose random public skin", true, 0, true, 1); 
-ConVar mani_skins_force_cl_minmodels ("mani_skins_force_cl_minmodels", "0", 0, "0 = dont force cl_minmodels on client when joining, 1 = force cl_minmodels 1, cl_min_t = 4, cl_min_ct 4 on client join", true, 0, true, 1); 
 
 ConVar mani_show_death_beams ("mani_show_death_beams", "0", 0, "0 = Disable show beams, 1 = Enable show beams", true, 0, true, 1); 
 
@@ -359,6 +360,4 @@ ConVar mani_external_stats_log ("mani_external_stats_log", "0", 0, "1 = enable e
 ConVar mani_external_stats_log_allow_war_logs ("mani_external_stats_log_allow_war_logs", "0", 0, "1 = enable external stats logging whilst in war mode, 0 = disable stats in war mode", true, 0, true, 1);
 
 ConVar mani_hostage_follow_warning ("mani_hostage_follow_warning", "0", 0, "1 = player will be warned in console if a hostage stops following on CSS, 0 = disable warning", true, 0, true, 1);
-
-ConVar mani_afk_kicker ("mani_afk_kicker", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1);
 

@@ -34,39 +34,38 @@
 typedef void (*CONPRINTF_FUNC)(const char *, ...);
 extern CONPRINTF_FUNC MMsg;
 
-struct say_argv_t
+enum
 {
-	char	argv_string[2048];
-	int		index;
+	ORANGE_CHAT				= 0,
+	GREY_CHAT,
+	LIGHT_GREEN_CHAT,
+	GREEN_CHAT,
 };
 
-extern say_argv_t		say_argv[MAX_SAY_ARGC];
-
-extern void	AdminSayToAdmin(player_t *player,const char	*fmt, ...);
-extern void	SayToAdmin(player_t	*player,const char	*fmt, ...);
-extern void	AdminSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
+extern void	AdminSayToAdmin(const int colour, player_t *player,const char	*fmt, ...);
+extern void	SayToAdmin(const int colour, player_t	*player,const char	*fmt, ...);
+extern void	AdminSayToAll(const int colour, player_t *player,int anonymous, const char	*fmt, ...);
 extern void	AdminHSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
-extern void	AdminSayToAllColoured(player_t *player,int anonymous, const char	*fmt, ...);
 extern void	AdminCSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
 extern void CSayToAll(const char	*fmt, ...);
 extern void CSayToPlayer(player_t *player_ptr,const char	*fmt, ...);
-extern void	SayToAll(bool echo, const char	*fmt, ...);
-extern void	SayToDead(const char *fmt, ...);
-extern void	SayToPlayer(player_t *player, const char *fmt, ...);
-extern void	SayToPlayerColoured(player_t *player, const char *fmt, ...);
-extern void	SayToTeam(bool ct_side, bool t_side, bool spectator, const char *fmt, ...);
-extern void	OutputToConsole(edict_t *pEntity, bool svr_command, char *fmt, ...);
+extern void	SayToAll(const int colour, bool echo, const char	*fmt, ...);
+extern void	SayToDead(const int colour, const char *fmt, ...);
+extern void	SayToPlayer(const int colour, player_t *player, const char *fmt, ...);
+extern void	SayToTeam(const int colour, bool ct_side, bool t_side, bool spectator, const char *fmt, ...);
+extern void	OutputToConsole(player_t *player_ptr, char *fmt, ...);
 extern void	DirectLogCommand(char *fmt, ... );
 extern void ResetLogCount(void);
-extern void LogCommand(edict_t *pEntity, char *fmt, ... );
+extern void LogCommand(player_t *player_ptr, char *fmt, ... );
 extern void ClientMsg(Color	*col, const unsigned int seconds, const bool admin_only, const int level, const char* fmt, ... ) ;
 extern void ClientMsgSinglePlayer( edict_t *pEntity, const unsigned int seconds,  const int	level, const char* fmt, ... );
 extern void	PrintToClientConsole(edict_t *pEntity, char *fmt, ... );
-extern void OutputHelpText( player_t	*player_ptr, bool		to_server_console, char		*fmt, ...);
+extern void OutputHelpText(const int colour, player_t *player_ptr, char *fmt, ...);
 extern void	ParseSayString(const char *say_string, char *trimmed_string_out, int *say_argc);
 extern void UTIL_LogPrintf( char *fmt, ... );
+extern void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text);
 extern void WriteDebug ( char *fmt, ...);
-extern void SayHintMsg(MRecipientFilter *mrf_ptr, char *text_ptr);
+extern void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr);
 extern void SplitHintString(char *string, int width);
 extern bool UTIL_InterfaceMsg( void *ptr, char *interface_id, char *version);
 extern void FindConPrintf(void);

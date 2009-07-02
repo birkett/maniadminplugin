@@ -52,6 +52,8 @@
 #include "mani_client_flags.h"
 #include "mani_client.h"
 #include "mani_gametype.h"
+#include "mani_commands.h"
+#include "mani_help.h"
 #include "mani_autokickban.h"
 #include "shareddefs.h"
 
@@ -367,76 +369,26 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_autoban_name command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanName
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_name,
- char *ban_time_string,
- bool kick
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
 	autokick_name_t	autokick_name;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-
-		if (kick)
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
-		else
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 2) 
-	{
-		if (kick)
-		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <player name>\n", command_string);
-			}
-			else
-			{
-                SayToPlayer(&player, "Mani Admin Plugin: %s <player name>", command_string);
-			}
-		}
-		else
-		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <player name> <optional time in minutes>\n", command_string);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: %s <player name> <optional time in minutes>", command_string);
-			}
-		}
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	int ban_time = 0;
 
 	if (argc == 3)
 	{
-		ban_time = Q_atoi(ban_time_string);
+		ban_time = Q_atoi(gpCmd->Cmd_Argv(2));
 		if (ban_time < 0)
 		{
 			ban_time = 0;
@@ -446,144 +398,107 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanName
 	// Check if name is already in list
 	for (int i = 0; i < autokick_name_list_size; i++)
 	{
-		if (FStrEq(player_name, autokick_name_list[i].name))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_name_list[i].name))
 		{
-			if (kick)
-			{
-				autokick_name_list[i].ban = false;
-				autokick_name_list[i].ban_time = 0;
-				autokick_name_list[i].kick = true;
-			}
-			else
-			{
-				autokick_name_list[i].ban = true;
-				autokick_name_list[i].ban_time = ban_time;
-				autokick_name_list[i].kick = false;
-			}
+			autokick_name_list[i].ban = true;
+			autokick_name_list[i].ban_time = ban_time;
+			autokick_name_list[i].kick = false;
 
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Player [%s] updated\n", player_name);
-				LogCommand (NULL, "Updated player [%s] to autokick_name.txt\n", player_name);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: Player [%s] updated", player_name);
-				LogCommand (player.entity, "Updated player [%s] to autokick_name.txt\n", player_name);
-			}
-
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Player [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated player [%s] to autokick_name.txt\n", gpCmd->Cmd_Argv(1));
 			WriteNameList("autokick_name.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	Q_strcpy(autokick_name.name, player_name);
-	if (kick)
-	{
-		autokick_name.ban = false;
-		autokick_name.ban_time = 0;
-		autokick_name.kick = true;
-	}
-	else
-	{
-		autokick_name.ban = true;
-		autokick_name.ban_time = ban_time;
-		autokick_name.kick = false;
-	}
+	Q_strcpy(autokick_name.name, gpCmd->Cmd_Argv(1));
+	autokick_name.ban = true;
+	autokick_name.ban_time = ban_time;
+	autokick_name.kick = false;
 
 	AddToList((void **) &autokick_name_list, sizeof(autokick_name_t), &autokick_name_list_size);
 	autokick_name_list[autokick_name_list_size - 1] = autokick_name;
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Player [%s] added\n", player_name);
-		LogCommand (NULL, "Added player [%s] to autokick_name.txt\n", player_name);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: Player [%s] added", player_name);
-		LogCommand (player.entity, "Added player [%s] to autokick_name.txt\n", player_name);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Player [%s] added", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Added player [%s] to autokick_name.txt\n", gpCmd->Cmd_Argv(1));
 
 	WriteNameList("autokick_name.txt");
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_autoban_name command
+// Purpose: Process the ma_autokick_name command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanPName
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_pname,
- char *ban_time_string,
- bool kick
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	autokick_pname_t	autokick_pname;
-	player.entity = NULL;
+	autokick_name_t	autokick_name;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-
-		if (kick)
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
-		else
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 2) 
+	int argc = gpCmd->Cmd_Argc();
+
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+
+	// Check if name is already in list
+	for (int i = 0; i < autokick_name_list_size; i++)
 	{
-		if (kick)
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_name_list[i].name))
 		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <partial name>\n", command_string);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: %s <partial name>", command_string);
-			}
-		}
-		else
-		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <partial name> <optional time in minutes>\n", command_string);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: %s <partial name> <optional time in minutes>", command_string);
-			}
-		}
+			autokick_name_list[i].ban = false;
+			autokick_name_list[i].ban_time = 0;
+			autokick_name_list[i].kick = true;
 
-		return PLUGIN_STOP;
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Player [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated player [%s] to autokick_name.txt\n", gpCmd->Cmd_Argv(1));
+
+			WriteNameList("autokick_name.txt");
+			return PLUGIN_STOP;
+		}
 	}
 
+	Q_strcpy(autokick_name.name, gpCmd->Cmd_Argv(1));
+
+	autokick_name.ban = false;
+	autokick_name.ban_time = 0;
+	autokick_name.kick = true;
+
+	AddToList((void **) &autokick_name_list, sizeof(autokick_name_t), &autokick_name_list_size);
+	autokick_name_list[autokick_name_list_size - 1] = autokick_name;
+
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Player [%s] added", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Added player [%s] to autokick_name.txt\n", gpCmd->Cmd_Argv(1));
+
+	WriteNameList("autokick_name.txt");
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_autoban_pname command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoBanPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
+{
+	int	admin_index;
+	autokick_pname_t	autokick_pname;
+
+	if (player_ptr)
+	{
+		// Check if player is admin
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+	}
+
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	int ban_time = 0;
 
 	if (argc == 3)
 	{
-		ban_time = Q_atoi(ban_time_string);
+		ban_time = Q_atoi(gpCmd->Cmd_Argv(2));
 		if (ban_time < 0)
 		{
 			ban_time = 0;
@@ -593,66 +508,79 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanPName
 	// Check if name is already in list
 	for (int i = 0; i < autokick_pname_list_size; i++)
 	{
-		if (FStrEq(player_pname, autokick_pname_list[i].pname))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_pname_list[i].pname))
 		{
-			if (kick)
-			{
-				autokick_pname_list[i].ban = false;
-				autokick_pname_list[i].ban_time = 0;
-				autokick_pname_list[i].kick = true;
-			}
-			else
-			{
-				autokick_pname_list[i].ban = true;
-				autokick_pname_list[i].ban_time = ban_time;
-				autokick_pname_list[i].kick = false;
-			}
+			autokick_pname_list[i].ban = true;
+			autokick_pname_list[i].ban_time = ban_time;
+			autokick_pname_list[i].kick = false;
 			
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Partial name [%s] updated\n", player_pname);
-				LogCommand (NULL, "Updated name [%s] to autokick_pname.txt\n", player_pname);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: Partial name [%s] updated", player_pname);
-				LogCommand (player.entity, "Updated player [%s] to autokick_pname.txt\n", player_pname);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Partial name [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated player [%s] to autokick_pname.txt\n", gpCmd->Cmd_Argv(1));
 
 			WritePNameList("autokick_pname.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	Q_strcpy(autokick_pname.pname, player_pname);
-	if (kick)
-	{
-		autokick_pname.ban = false;
-		autokick_pname.ban_time = 0;
-		autokick_pname.kick = true;
-	}
-	else
-	{
-		autokick_pname.ban = true;
-		autokick_pname.ban_time = ban_time;
-		autokick_pname.kick = false;
-	}
-
+	Q_strcpy(autokick_pname.pname, gpCmd->Cmd_Argv(1));
+	autokick_pname.ban = true;
+	autokick_pname.ban_time = ban_time;
+	autokick_pname.kick = false;
 
 	AddToList((void **) &autokick_pname_list, sizeof(autokick_pname_t), &autokick_pname_list_size);
 	autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
 
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Partial name [%s] added", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Added player [%s] to autokick_pname.txt\n", gpCmd->Cmd_Argv(1));
 
-	if (svr_command)
+	WritePNameList("autokick_pname.txt");
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_autokick_pname command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
+{
+	int	admin_index;
+	autokick_pname_t	autokick_pname;
+
+	if (player_ptr)
 	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Partial name [%s] added\n", player_pname);
-		LogCommand (NULL, "Added player [%s] to autokick_pname.txt\n", player_pname);
+		// Check if player is admin
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
-	else
+
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+
+	// Check if name is already in list
+	for (int i = 0; i < autokick_pname_list_size; i++)
 	{
-		SayToPlayer(&player, "Mani Admin Plugin: Partial name [%s] added", player_pname);
-		LogCommand (player.entity, "Added player [%s] to autokick_pname.txt\n", player_pname);
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_pname_list[i].pname))
+		{
+			autokick_pname_list[i].ban = false;
+			autokick_pname_list[i].ban_time = 0;
+			autokick_pname_list[i].kick = true;
+			
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Partial name [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated player [%s] to autokick_pname.txt\n", gpCmd->Cmd_Argv(1));
+
+			WritePNameList("autokick_pname.txt");
+			return PLUGIN_STOP;
+		}
 	}
+
+	Q_strcpy(autokick_pname.pname, gpCmd->Cmd_Argv(1));
+	autokick_pname.ban = false;
+	autokick_pname.ban_time = 0;
+	autokick_pname.kick = true;
+
+	AddToList((void **) &autokick_pname_list, sizeof(autokick_pname_t), &autokick_pname_list_size);
+	autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
+
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Partial name [%s] added", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Added player [%s] to autokick_pname.txt\n", gpCmd->Cmd_Argv(1));
 
 	WritePNameList("autokick_pname.txt");
 	return PLUGIN_STOP;
@@ -661,86 +589,41 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanPName
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_autokick_steam command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickSteam
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_steam_id
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickSteam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
 	autokick_steam_t	autokick_steam;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <steam id>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <steam id>", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Check if steam id is already in list
 	for (int i = 0; i < autokick_steam_list_size; i++)
 	{
-		if (FStrEq(player_steam_id, autokick_steam_list[i].steam_id))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_steam_list[i].steam_id))
 		{
 			autokick_steam_list[i].kick = true;
-
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID [%s] updated\n", player_steam_id);
-				LogCommand (NULL, "Updated steam [%s] to autokick_steam.txt\n", player_steam_id);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: Steam ID [%s] updated", player_steam_id);
-				LogCommand (player.entity, "Updated steam [%s] to autokick_steam.txt\n", player_steam_id);
-			}
-
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Steam ID [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated steam [%s] to autokick_steam.txt\n", gpCmd->Cmd_Argv(1));
 			WriteSteamList("autokick_steam.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	Q_strcpy(autokick_steam.steam_id, player_steam_id);
+	Q_strcpy(autokick_steam.steam_id, gpCmd->Cmd_Argv(1));
 	autokick_steam.kick = true;
 
 	AddToList((void **) &autokick_steam_list, sizeof(autokick_steam_t), &autokick_steam_list_size);
 	autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID [%s] added\n", player_steam_id);
-		LogCommand (NULL, "Added steam id [%s] to autokick_steam.txt\n", player_steam_id);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: Steam ID [%s] added", player_steam_id);
-		LogCommand (player.entity, "Added steam id [%s] to autokick_steam.txt\n", player_steam_id);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Steam ID [%s] added", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Added steam id [%s] to autokick_steam.txt\n", gpCmd->Cmd_Argv(1));
 
 	qsort(autokick_steam_list, autokick_steam_list_size, sizeof(autokick_steam_t), sort_autokick_steam); 
 	WriteSteamList("autokick_steam.txt");
@@ -750,86 +633,43 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickSteam
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_autokick_ip command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickIP
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_ip_address
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickIP(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
 	autokick_ip_t	autokick_ip;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <ip address>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <ip address>", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Check if ip is already in list
 	for (int i = 0; i < autokick_ip_list_size; i++)
 	{
-		if (FStrEq(player_ip_address, autokick_ip_list[i].ip_address))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_ip_list[i].ip_address))
 		{
 			autokick_ip_list[i].kick = true;
 
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: IP address [%s] updated\n", player_ip_address);
-				LogCommand (NULL, "Updated ip address [%s] to autokick_ip.txt\n", player_ip_address);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: IP address [%s] updated", player_ip_address);
-				LogCommand (player.entity, "Updated ip address [%s] to autokick_ip.txt\n", player_ip_address);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: IP address [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated ip address [%s] to autokick_ip.txt\n", gpCmd->Cmd_Argv(1));
 
 			WriteIPList("autokick_ip.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	Q_strcpy(autokick_ip.ip_address, player_ip_address);
+	Q_strcpy(autokick_ip.ip_address, gpCmd->Cmd_Argv(1));
 	autokick_ip.kick = true;
 
 	AddToList((void **) &autokick_ip_list, sizeof(autokick_ip_t), &autokick_ip_list_size);
 	autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: IP address [%s] added\n", player_ip_address);
-		LogCommand (NULL, "Added ip address [%s] to autokick_ip.txt\n", player_ip_address);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: IP address [%s] added", player_ip_address);
-		LogCommand (player.entity, "Added ip address [%s] to autokick_ip.txt\n", player_ip_address);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: IP address [%s] added", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Added ip address [%s] to autokick_ip.txt\n", gpCmd->Cmd_Argv(1));
 
 	qsort(autokick_ip_list, autokick_ip_list_size, sizeof(autokick_ip_t), sort_autokick_ip); 
 
@@ -838,343 +678,153 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickIP
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_unautoban_name command
+// Purpose: Process the ma_unauto_name command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickBanName
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_name,
- bool kick
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-
-		if (kick)
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
-		else
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <player name>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <player name>", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Check if name is already in list
 	for (int i = 0; i < autokick_name_list_size; i++)
 	{
-		if (FStrEq(player_name, autokick_name_list[i].name))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_name_list[i].name))
 		{
 			autokick_name_list[i].ban = false;
 			autokick_name_list[i].ban_time = 0;
 			autokick_name_list[i].kick = false;
 
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Player [%s] updated\n", player_name);
-				LogCommand (NULL, "Updated player [%s] to autokick_name.txt\n", player_name);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: Player [%s] updated", player_name);
-				LogCommand (player.entity, "Updated player [%s] to autokick_name.txt\n", player_name);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Player [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated player [%s] to autokick_name.txt\n", gpCmd->Cmd_Argv(1));
 
 			WriteNameList("autokick_name.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Player [%s] not found\n", player_name);
-		LogCommand (NULL, "Player [%s] not found\n", player_name);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: Player [%s] not found", player_name);
-		LogCommand (player.entity, "Player [%s] not found\n", player_name);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Player [%s] not found", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Player [%s] not found\n", gpCmd->Cmd_Argv(1));
 
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_unautoban_pname command
+// Purpose: Process the ma_unauto_pname command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickBanPName
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_pname,
- bool kick
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoPName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-
-		if (kick)
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
-		else
-		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
-		}
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
-
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <player partial name>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <player partial name>", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Check if name is already in list
 	for (int i = 0; i < autokick_pname_list_size; i++)
 	{
-		if (FStrEq(player_pname, autokick_pname_list[i].pname))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_pname_list[i].pname))
 		{
 			autokick_pname_list[i].ban = false;
 			autokick_pname_list[i].ban_time = 0;
 			autokick_pname_list[i].kick = false;
 
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Partial name [%s] updated\n", player_pname);
-				LogCommand (NULL, "Updated partial name [%s] to autokick_name.txt\n", player_pname);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: Partial name [%s] updated", player_pname);
-				LogCommand (player.entity, "Updated partial name [%s] to autokick_name.txt\n", player_pname);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Partial name [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated partial name [%s] to autokick_name.txt\n", gpCmd->Cmd_Argv(1));
 
 			WritePNameList("autokick_pname.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Partial name [%s] not found\n", player_pname);
-		LogCommand (NULL, "Partial name [%s] not found\n", player_pname);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: Partial name [%s] not found", player_pname);
-		LogCommand (player.entity, "Partial name [%s] not found\n", player_pname);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Partial name [%s] not found", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Partial name [%s] not found\n", gpCmd->Cmd_Argv(1));
 
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_unautoban_steam command
+// Purpose: Process the ma_unauto_steam command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickSteam
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_steam_id
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoSteam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <steam id>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <steam id", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Check if steam id is already in list
 	for (int i = 0; i < autokick_steam_list_size; i++)
 	{
-		if (FStrEq(player_steam_id, autokick_steam_list[i].steam_id))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_steam_list[i].steam_id))
 		{
 			autokick_steam_list[i].kick = false;
 
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID updated\n", command_string);
-				LogCommand (NULL, "Updated steam id [%s] to autokick_steam.txt\n", player_steam_id);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: Steam ID updated", command_string);
-				LogCommand (player.entity, "Updated steam id [%s] to autokick_steam.txt\n", player_steam_id);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Steam ID [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated steam id [%s] to autokick_steam.txt\n", gpCmd->Cmd_Argv(1));
 
 			WriteSteamList("autokick_steam.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Steam ID [%s] not found\n", player_steam_id);
-		LogCommand (NULL, "Steam ID [%s] not found\n", player_steam_id);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: Steam ID [%s] not found", player_steam_id);
-		LogCommand (player.entity, "Steam ID [%s] not found\n", player_steam_id);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Steam ID [%s] not found", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Steam ID [%s] not found\n", gpCmd->Cmd_Argv(1));
 
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_unautoban_name command
+// Purpose: Process the ma_unauto_ip command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickIP
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_ip_address
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoIP(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <ip address>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <ip address>", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Check if ip is already in list
 	for (int i = 0; i < autokick_ip_list_size; i++)
 	{
-		if (FStrEq(player_ip_address, autokick_ip_list[i].ip_address))
+		if (FStrEq(gpCmd->Cmd_Argv(1), autokick_ip_list[i].ip_address))
 		{
 			autokick_ip_list[i].kick = false;
 
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: ip address [%s] updated\n", player_ip_address);
-				LogCommand (NULL, "Updated ip address [%s] to autokick_ip.txt\n", player_ip_address);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: ip address [%s] updated", player_ip_address);
-				LogCommand (player.entity, "Updated ip address [%s] to autokick_ip.txt\n", player_ip_address);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: ip address [%s] updated", gpCmd->Cmd_Argv(1));
+			LogCommand (player_ptr, "Updated ip address [%s] to autokick_ip.txt\n", gpCmd->Cmd_Argv(1));
 
 			WriteIPList("autokick_ip.txt");
 			return PLUGIN_STOP;
 		}
 	}
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: IP address [%s] not found\n", player_ip_address);
-		LogCommand (NULL, "IP address [%s] not found\n", player_ip_address);
-	}
-	else
-	{
-		SayToPlayer(&player, "Mani Admin Plugin: IP address [%s] not found", player_ip_address);
-		LogCommand (player.entity, "IP address [%s] not found\n", player_ip_address);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: IP address [%s] not found", gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "IP address [%s] not found\n", gpCmd->Cmd_Argv(1));
 
 	return PLUGIN_STOP;
 }
@@ -1807,28 +1457,18 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_ashow_name command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowName
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode) return PLUGIN_STOP;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowname", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current Names on the autokick/ban list\n\n");
-	OutputToConsole(player.entity, svr_command, "Name                           Kick   Ban    Ban Time\n");
+	OutputToConsole(player_ptr, "Current Names on the autokick/ban list\n\n");
+	OutputToConsole(player_ptr, "Name                           Kick   Ban    Ban Time\n");
 
 	char	name[512];
 	char	ban_time[20];
@@ -1856,7 +1496,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowName
 		}
 
 		Q_snprintf(name, sizeof(name), "\"%s\"", autokick_name_list[i].name);
-		OutputToConsole(player.entity, svr_command, "%-30s %-6s %-6s %s\n", 
+		OutputToConsole(player_ptr, "%-30s %-6s %-6s %s\n", 
 					name,
 					(autokick_name_list[i].kick) ? "YES":"NO",
 					(autokick_name_list[i].ban) ? "YES":"NO",
@@ -1870,28 +1510,18 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowName
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_ashow_pname command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowPName
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowPName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode) return PLUGIN_STOP;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowpname", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current partial names on the autokick/ban list\n\n");
-	OutputToConsole(player.entity, svr_command, "Partial Name                   Kick   Ban    Ban Time\n");
+	OutputToConsole(player_ptr, "Current partial names on the autokick/ban list\n\n");
+	OutputToConsole(player_ptr, "Partial Name                   Kick   Ban    Ban Time\n");
 
 	char	name[512];
 	char	ban_time[20];
@@ -1919,7 +1549,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowPName
 		}
 
 		Q_snprintf(name, sizeof(name), "\"%s\"", autokick_pname_list[i].pname);
-		OutputToConsole(player.entity, svr_command, "%-30s %-6s %-6s %s\n", 
+		OutputToConsole(player_ptr, "%-30s %-6s %-6s %s\n", 
 					name,
 					(autokick_pname_list[i].kick) ? "YES":"NO",
 					(autokick_pname_list[i].ban) ? "YES":"NO",
@@ -1933,28 +1563,18 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowPName
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_ashow_steam command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowSteam
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowSteam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode) return PLUGIN_STOP;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowsteam", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current steam ids on the autokick/ban list\n\n");
-	OutputToConsole(player.entity, svr_command, "Steam ID\n");
+	OutputToConsole(player_ptr, "Current steam ids on the autokick/ban list\n\n");
+	OutputToConsole(player_ptr, "Steam ID\n");
 
 	for (int i = 0; i < autokick_steam_list_size; i++)
 	{
@@ -1963,37 +1583,27 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowSteam
 			continue;
 		}
 
-		OutputToConsole(player.entity, svr_command, "%s\n", autokick_steam_list[i].steam_id);
+		OutputToConsole(player_ptr, "%s\n", autokick_steam_list[i].steam_id);
 	}
 
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_ashow_ipcommand
+// Purpose: Process the ma_ashow_ip command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowIP
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoShowIP(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode) return PLUGIN_STOP;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_ashowip", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current IP addresses on the autokick/ban list\n\n");
-	OutputToConsole(player.entity, svr_command, "IP Address\n");
+	OutputToConsole(player_ptr, "Current IP addresses on the autokick/ban list\n\n");
+	OutputToConsole(player_ptr, "IP Address\n");
 
 	for (int i = 0; i < autokick_ip_list_size; i++)
 	{
@@ -2002,7 +1612,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowIP
 			continue;
 		}
 
-		OutputToConsole(player.entity, svr_command, "%s\n", autokick_ip_list[i].ip_address);
+		OutputToConsole(player_ptr, "%s\n", autokick_ip_list[i].ip_address);
 	}
 
 	return PLUGIN_STOP;
@@ -2013,12 +1623,12 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanShowIP
 //---------------------------------------------------------------------------------
 void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 	player_t	player;
 
 	if (argc - argv_offset == 4)
 	{
-		player.user_id = Q_atoi(engine->Cmd_Argv(3 + argv_offset));
+		player.user_id = Q_atoi(gpCmd->Cmd_Argv(3 + argv_offset));
 		if (!FindPlayerByUserID(&player))
 		{
 			return;
@@ -2029,16 +1639,17 @@ void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_com
 			return;
 		}
 
-		this->ProcessMaAutoKickBanName
+		int ban_time = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
+		gpCmd->NewCmd();
+		gpCmd->AddParam("%s", player.name);
+		gpCmd->AddParam(ban_time); 
+		this->ProcessMaAutoBanName
 				(
-				admin->index, // Client index
-				false,  // Sever console command type
-				3, // Number of arguments
-				"ma_aban_name", // Command
-				player.name, // ip address
-				engine->Cmd_Argv(2 + argv_offset), // Ban time
-				false // Ban only
-				);	
+				admin,
+				"ma_aban_name",
+				0,
+				M_CCONSOLE
+				);
 
 		return;
 	}
@@ -2064,7 +1675,7 @@ void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_com
 
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%s] %i",  player.name, player.user_id);							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin %s %s %i", ban_command, engine->Cmd_Argv(2 + argv_offset), player.user_id);
+			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin %s %s %i", ban_command, gpCmd->Cmd_Argv(2 + argv_offset), player.user_id);
 			Q_strcpy (menu_list[menu_list_size - 1].sort_name, player.name);
 		}
 
@@ -2082,7 +1693,7 @@ void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_com
 			next_index = 0;                         
 		}
 
-		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, engine->Cmd_Argv(2 + argv_offset));
+		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, gpCmd->Cmd_Argv(2 + argv_offset));
 		DrawSubMenu (admin, Translate(510), Translate(511), next_index, "admin", more_ban_cmd,	true, -1);
 	}
 	
@@ -2094,12 +1705,12 @@ void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_com
 //---------------------------------------------------------------------------------
 void ManiAutoKickBan::ProcessAutoKickPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 	player_t	player;
 
 	if (argc - argv_offset == 3)
 	{
-		player.user_id = Q_atoi(engine->Cmd_Argv(2 + argv_offset));
+		player.user_id = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
 		if (!FindPlayerByUserID(&player))
 		{
 			return;
@@ -2110,40 +1721,40 @@ void ManiAutoKickBan::ProcessAutoKickPlayer( player_t *admin, const char *ban_co
 			return;
 		}
 
+		gpCmd->NewCmd();
+
 		if (FStrEq("autokicksteam", ban_command))
 		{
+			gpCmd->AddParam("%s", player.steam_id);
 			this->ProcessMaAutoKickSteam
 					(
-					admin->index, // Client index
-					false,  // Sever console command type
-					2, // Number of arguments
-					"ma_akick_steam", // Command
-					player.steam_id
-					);	
+					admin,
+					"ma_akick_steam",
+					0,
+					M_CCONSOLE
+					);
 		}
 		else if (FStrEq("autokickip", ban_command))
 		{
+			gpCmd->AddParam("%s", player.ip_address);
 			this->ProcessMaAutoKickIP
 					(
-					admin->index, // Client index
-					false,  // Sever console command type
-					2, // Number of arguments
-					"ma_akick_ip", // Command
-					player.ip_address
-					);	
+					admin,
+					"ma_akick_ip",
+					0,
+					M_CCONSOLE
+					);
 		}
 		else
 		{
-			this->ProcessMaAutoKickBanName
+			gpCmd->AddParam("%s", player.name);
+			this->ProcessMaAutoKickName
 					(
-					admin->index, // Client index
-					false,  // Sever console command type
-					2, // Number of arguments
-					"ma_akick_name", // Command
-					player.name, // name
-					0, // Fake time
-					true // Kick only
-					);	
+					admin,
+					"ma_akick_name",
+					0,
+					M_CCONSOLE
+					);
 		}
 
 		return;
@@ -2194,7 +1805,7 @@ void ManiAutoKickBan::ProcessAutoKickPlayer( player_t *admin, const char *ban_co
 			next_index = 0;                         
 		}
 
-		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, engine->Cmd_Argv(2 + argv_offset));
+		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, gpCmd->Cmd_Argv(2 + argv_offset));
 
 		if (FStrEq("autokicksteam", ban_command))
 		{
@@ -2288,235 +1899,26 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 
 //***************************************************************************************
 // Autoban using ban command
-CON_COMMAND(ma_aban_name, "Adds a user to the autoban list using name, ma_aban_name \"name\" <ban time>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					engine->Cmd_Argv(2), // Ban time
-					false // Ban only
-					);
-	return;
-}
 
-CON_COMMAND(ma_aban_pname, "Adds a user to the autoban list using partial name, ma_aban_pname \"name\" <ban time>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanPName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					engine->Cmd_Argv(2), // Ban time
-					false // Ban only
-					);
-	return;
-}
+SCON_COMMAND(ma_aban_name, 2187, MaAutoBanName, false);
+SCON_COMMAND(ma_aban_pname, 2189, MaAutoBanPName, false);
 
-// Autokick by kick
-CON_COMMAND(ma_akick_name, "Adds a user to the autokick list using name, ma_akick_name \"name\"")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					0, // Ban Time default to 0
-					true // Kick only
-					);
-	return;
-}
-
-CON_COMMAND(ma_akick_pname, "Adds a user to the autokick list using partial name, ma_akick_pname \"name\"")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanPName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					0, // Ban Time default to 0
-					true // Kick only
-					);
-	return;
-}
-
-CON_COMMAND(ma_akick_steam, "Adds a user to the autokick list using steam id, ma_akick_steam <steam_id>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickSteam
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1) // steam id
-					);
-	return;
-}
-
-CON_COMMAND(ma_akick_ip, "Adds a user to the autokick list using ip address, ma_akick_ip <ip address>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickIP
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1) // ip address
-					);
-	return;
-}
-
-//***************************************************************************************
-// UnAutoban using ban command
-CON_COMMAND(ma_unaban_name, "Removes a user from the autoban list using name, ma_unaban_name \"name\" <ban time>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaUnAutoKickBanName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					false // Ban only
-					);
-	return;
-}
-
-CON_COMMAND(ma_unaban_pname, "Removes a user from the autoban list using partial name, ma_unaban_pname \"name\" <ban time>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaUnAutoKickBanPName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					false // Ban only
-					);
-	return;
-}
-
-// Autokick by kick
-CON_COMMAND(ma_unakick_name, "Removes a user from the autokick list using name, ma_unakick_name \"name\"")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaUnAutoKickBanName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					true // Kick only
-					);
-	return;
-}
-
-CON_COMMAND(ma_unakick_pname, "Removes a user from the autokick list using partial name, ma_unakick_pname \"name\"")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaUnAutoKickBanPName
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1), // Player name
-					true // Kick only
-					);
-	return;
-}
-
-CON_COMMAND(ma_unakick_steam, "Removes a user from the autoban list using steam id, ma_unakick_steam <steam_id>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaUnAutoKickSteam
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1) // steam id
-					);
-	return;
-}
-
-CON_COMMAND(ma_unakick_ip, "Removes a user from the autoban list using ip address, ma_unakick_ip <ip address>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaUnAutoKickIP
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1) // ip address
-					);
-	return;
-}
+SCON_COMMAND(ma_akick_name, 2191, MaAutoKickName, false);
+SCON_COMMAND(ma_akick_pname, 2193, MaAutoKickPName, false);
+SCON_COMMAND(ma_akick_steam, 2195, MaAutoKickSteam, false);
+SCON_COMMAND(ma_akick_ip, 2197, MaAutoKickIP, false);
 
 
+SCON_COMMAND(ma_unauto_name, 2199, MaUnAutoName, false);
+SCON_COMMAND(ma_unauto_pname, 2201, MaUnAutoPName, false);
+SCON_COMMAND(ma_unakick_steam, 2203, MaUnAutoSteam, false);
+SCON_COMMAND(ma_unakick_ip, 2205, MaUnAutoIP, false);
 
-CON_COMMAND(ma_ashow_name, "Shows autoban/kick info for IP addresses, ma_ashow_name")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanShowName(0, true);
-	return;
-}
+SCON_COMMAND(ma_ashow_name, 2207, MaAutoShowName, false);
+SCON_COMMAND(ma_ashow_pname, 2209, MaAutoShowPName, false);
+SCON_COMMAND(ma_ashow_steam, 2211, MaAutoShowSteam, false);
+SCON_COMMAND(ma_ashow_ip, 2213, MaAutoShowIP, false);
 
-CON_COMMAND(ma_ashow_pname, "Shows autoban/kick info for partial names, ma_ashow_pname")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanShowPName(0, true);
-	return;
-}
-
-CON_COMMAND(ma_ashow_steam, "Shows autoban/kick info for steam ids, ma_ashow_steam")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanShowSteam(0, true);
-	return;
-}
-
-CON_COMMAND(ma_ashow_ip, "Shows autoban/kick info for IP addresses, ma_ashow_ip")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	g_ManiAutoKickBan.ProcessMaAutoKickBanShowIP(0, true);
-	return;
-}
 
 // Functions for autokick 
 static int sort_autokick_steam ( const void *m1,  const void *m2) 

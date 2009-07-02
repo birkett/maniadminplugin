@@ -46,6 +46,9 @@
 #include "mani_output.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
+#include "mani_vote.h"
+#include "mani_commands.h"
+#include "mani_help.h"
 #include "mani_maps.h"
 
 extern	IFileSystem	*filesystem;
@@ -57,7 +60,6 @@ extern	CGlobalVars *gpGlobals;
 extern	int	max_players;
 extern	bool war_mode;
 extern	char *mani_version;
-extern  system_vote_t system_vote;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -103,7 +105,7 @@ static void ManiNextMap ( ConVar *var, char const *pOldString )
 {
 	if (!FStrEq(pOldString, var->GetString()))
 	{
-		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 		{
 			mani_nextmap.SetValue("Map decided by vote");
 		}
@@ -479,29 +481,14 @@ void	LoadMaps(const char *map_being_loaded)
 //---------------------------------------------------------------------------------
 // Purpose: Process the listmaps command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaListMaps
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaListMaps(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
-	player.entity = NULL;
-
-	if (war_mode) return PLUGIN_STOP;
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	}
-
 	int	count;
 	char map_text[128];
 
-	OutputToConsole(player.entity, svr_command,  "\n");
-	OutputToConsole(player.entity, svr_command, "%s\n", mani_version);
-	OutputToConsole(player.entity, svr_command, "\nMaps in cycle:-\n--------------\n");
+	OutputToConsole(player_ptr,  "\n");
+	OutputToConsole(player_ptr, "%s\n", mani_version);
+	OutputToConsole(player_ptr, "\nMaps in cycle:-\n--------------\n");
 
 	for (count = 0; count < map_in_cycle_list_size; count ++)
 	{
@@ -510,7 +497,7 @@ PLUGIN_RESULT	ProcessMaListMaps
 			Q_snprintf( map_text, sizeof(map_text), "%s -> CURRENT MAP BEING PLAYED\n", map_in_cycle_list[count].map_name);
 		}
 		else if (FStrEq(map_in_cycle_list[count].map_name, next_map) && 
-			!(mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false))
+			!(mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false))
 		{
 			Q_snprintf( map_text, sizeof(map_text), "%s -> NEXT MAP\n", map_in_cycle_list[count].map_name);
 		}
@@ -518,12 +505,12 @@ PLUGIN_RESULT	ProcessMaListMaps
 		{
 			Q_snprintf( map_text, sizeof(map_text), "%s\n", map_in_cycle_list[count].map_name);
 		}
-		OutputToConsole(player.entity, svr_command, "%s", map_text);
+		OutputToConsole(player_ptr, "%s", map_text);
 	}
 
 	if (map_not_in_cycle_list_size > 0)
 	{
-		OutputToConsole(player.entity, svr_command, "\nMaps not in cycle but are on server:-\n------------------------------------\n");
+		OutputToConsole(player_ptr, "\nMaps not in cycle but are on server:-\n------------------------------------\n");
 		for (count = 0; count < map_not_in_cycle_list_size; count ++)
 		{
 			if (FStrEq(map_not_in_cycle_list[count].map_name, current_map))
@@ -535,7 +522,7 @@ PLUGIN_RESULT	ProcessMaListMaps
 				Q_snprintf( map_text, sizeof(map_text), "%s\n", map_not_in_cycle_list[count].map_name);
 			}
 
-			OutputToConsole(player.entity, svr_command, "%s", map_text);
+			OutputToConsole(player_ptr, "%s", map_text);
 		}
 	}
 
@@ -545,25 +532,11 @@ PLUGIN_RESULT	ProcessMaListMaps
 //---------------------------------------------------------------------------------
 // Purpose: Process the nextmap command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaNextMap
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaNextMap(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
-	player.entity = NULL;
 	char	map_text[128];
 
-	if (war_mode) return PLUGIN_STOP;
-	if (!svr_command)
-	{
-		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-	}
-
-	if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+	if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 	{
 		Q_strcpy(map_text, "Map decided by vote");
 	}
@@ -572,13 +545,13 @@ PLUGIN_RESULT	ProcessMaNextMap
 		Q_snprintf(map_text, sizeof (map_text), "Nextmap: %s", next_map);
 	}
 
-	OutputToConsole(player.entity, svr_command, "%s\n", map_text);
+	OutputToConsole(player_ptr, "%s\n", map_text);
 
-	if (!svr_command)
+	if (player_ptr)
 	{
 		if (mani_nextmap_player_only.GetInt() == 1)
 		{
-			ClientMsgSinglePlayer(player.entity, 10, 4, "%s", map_text);
+			ClientMsgSinglePlayer(player_ptr->entity, 10, 4, "%s", map_text);
 		}
 		else
 		{
@@ -601,48 +574,19 @@ PLUGIN_RESULT	ProcessMaNextMap
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_map command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaSetNextMap
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *map_name
-)
+PLUGIN_RESULT	ProcessMaSetNextMap(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	player.entity = NULL;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CHANGEMAP, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <map name>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <map name>", command_string);
-		}
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-		return PLUGIN_STOP;
-	}
-
+	const char *map_name = gpCmd->Cmd_Argv(1);
 
 	for( int i = 0; i < map_list_size; i++ )
 	{
@@ -652,26 +596,19 @@ PLUGIN_RESULT	ProcessMaSetNextMap
 			Q_strcpy(forced_nextmap,map_name);
 			Q_strcpy(next_map, map_name);
 			mani_nextmap.SetValue(next_map);
-			LogCommand (player.entity, "%s %s\n", command_string, map_name);
+			LogCommand (player_ptr, "%s %s\n", command_name, map_name);
 			override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
 			override_setnextmap = true;
 
 			// Make sure end of map vote doesn't try and override it
-			system_vote.map_decided = true;
-			AdminSayToAll(&player, mani_adminmap_anonymous.GetInt(), "set nextmap to %s", map_name); 
+			gpManiVote->SysSetMapDecided(true);
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmap_anonymous.GetInt(), "set nextmap to %s", map_name); 
 			return PLUGIN_STOP;
 		}
 	}
 
-	LogCommand(player.entity, "User attempted to set mapname [%s] as the nextmap\n", map_name);
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Map [%s] is not in maplist.txt file\n", map_name);
-	}
-	else
-	{
-		SayToPlayer(&player, "Map [%s] is not in maplist.txt file", map_name);
-	}
+	LogCommand(player_ptr, "User attempted to set mapname [%s] as the nextmap\n", map_name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Map [%s] is not in maplist.txt file", map_name);
 
 	return PLUGIN_STOP;
 }
@@ -679,62 +616,43 @@ PLUGIN_RESULT	ProcessMaSetNextMap
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_maplist command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaMapList
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaMapList(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode) return PLUGIN_STOP;
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_maplist", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current maps in the maplist.txt file\n\n");
+	OutputToConsole(player_ptr, "Current maps in the maplist.txt file\n\n");
 
 	for (int i = 0; i < map_list_size; i++)
 	{
-		OutputToConsole(player.entity, svr_command, "%s\n", map_list[i].map_name);
+		OutputToConsole(player_ptr, "%s\n", map_list[i].map_name);
 	}	
 
 	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_maplist command
+// Purpose: Process the ma_mapcycle command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaMapCycle
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaMapCycle(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
-
-	if (war_mode) return PLUGIN_STOP;
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_mapcycle", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current maps in the mapcycle.txt file\n\n");
+	OutputToConsole(player_ptr, "Current maps in the mapcycle.txt file\n\n");
 
 	for (int i = 0; i < map_in_cycle_list_size; i++)
 	{
-		OutputToConsole(player.entity, svr_command, "%s\n", map_in_cycle_list[i].map_name);
+		OutputToConsole(player_ptr, "%s\n", map_in_cycle_list[i].map_name);
 	}	
 
 	return PLUGIN_STOP;
@@ -743,30 +661,20 @@ PLUGIN_RESULT	ProcessMaMapCycle
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_votelist command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaVoteMapList
-(
- int index, 
- bool svr_command
-)
+PLUGIN_RESULT	ProcessMaVoteMapList(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
-
-	if (war_mode) return PLUGIN_STOP;
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_votemaplist", ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ADMIN_DONT_CARE, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Current maps in the votemaplist.txt file\n\n");
+	OutputToConsole(player_ptr, "Current maps in the votemaplist.txt file\n\n");
 
 	for (int i = 0; i < votemap_list_size; i++)
 	{
-		OutputToConsole(player.entity, svr_command, "%s\n", votemap_list[i].map_name);
+		OutputToConsole(player_ptr, "%s\n", votemap_list[i].map_name);
 	}	
 
 	return PLUGIN_STOP;
@@ -775,41 +683,19 @@ PLUGIN_RESULT	ProcessMaVoteMapList
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_map command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaMap
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *map_name
-)
+PLUGIN_RESULT	ProcessMaMap(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 2) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <map name>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <map name>", command_string);
-		}
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-		return PLUGIN_STOP;
-	}
-
+	const char *map_name = gpCmd->Cmd_Argv(1);
 	
 	// Change the map
 	char		changemap_cmd[128];
@@ -818,7 +704,7 @@ PLUGIN_RESULT	ProcessMaMap
 	if (valid_map != 0)
 	{
 		Q_snprintf( changemap_cmd, sizeof(changemap_cmd), "changelevel %s\n", map_name);
-		LogCommand (player.entity, "%s", changemap_cmd);
+		LogCommand (player_ptr, "%s", changemap_cmd);
 		override_changelevel = 0;
 		override_setnextmap = false;
 
@@ -827,16 +713,8 @@ PLUGIN_RESULT	ProcessMaMap
 		return PLUGIN_STOP;
 	}
 
-	LogCommand(player.entity, "User attempted to change to mapname [%s]\n", map_name);
-
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Map [%s] is not a valid .bsp map file\n", map_name);
-	}
-	else
-	{
-		SayToPlayer(&player, "Map [%s] is not a valid .bsp map file", map_name);
-	}
+	LogCommand(player_ptr, "User attempted to change to mapname [%s]\n", map_name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Map [%s] is not a valid .bsp map file", map_name);
 
 	return PLUGIN_STOP;
 }
@@ -844,24 +722,14 @@ PLUGIN_RESULT	ProcessMaMap
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_skipmap command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaSkipMap
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string
-)
+PLUGIN_RESULT	ProcessMaSkipMap(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CHANGEMAP, false, &admin_index)) return PLUGIN_STOP;
 	}
 
 	// Change the map
@@ -871,7 +739,7 @@ PLUGIN_RESULT	ProcessMaSkipMap
 	if (valid_map != 0)
 	{
 		Q_snprintf( changemap_cmd, sizeof(changemap_cmd), "changelevel %s\n", next_map);
-		LogCommand (player.entity, "%s", changemap_cmd);
+		LogCommand (player_ptr, "%s", changemap_cmd);
 		override_changelevel = 0;
 		override_setnextmap = false;
 
@@ -880,16 +748,8 @@ PLUGIN_RESULT	ProcessMaSkipMap
 		return PLUGIN_STOP;
 	}
 
-	LogCommand(player.entity, "User attempted to change to mapname  [%s] using ma_skipmap\n", next_map);
-
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Map [%s] is not a valid .bsp map file\n", next_map);
-	}
-	else
-	{
-		SayToPlayer(&player, "Map [%s] is not a valid .bsp map file", next_map);
-	}
+	LogCommand(player_ptr, "User attempted to change to mapname  [%s] using ma_skipmap\n", next_map);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Map [%s] is not a valid .bsp map file", next_map);
 
 	return PLUGIN_STOP;
 }
@@ -940,7 +800,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 					// End of map list so we must use the first
 					// in the list
 					Q_strcpy(next_map, map_in_cycle_list[0].map_name);
-					if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+					if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 					{
 						mani_nextmap.SetValue("Map decided by vote");
 					}
@@ -953,7 +813,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 				{
 					// Set next map
 					Q_strcpy(next_map, map_in_cycle_list[i+1].map_name);
-					if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+					if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 					{
 						mani_nextmap.SetValue("Map decided by vote");
 					}
@@ -1008,7 +868,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 			srand( (unsigned)time(NULL));
 			int map_index = rand() % select_list_size;
 			Q_strcpy(next_map, select_list[map_index].map_name);
-			if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+			if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 			{
 				mani_nextmap.SetValue("Map decided by vote");
 			}
@@ -1031,7 +891,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 			{
 				// Nope, so set this as the next map
 				Q_strcpy(next_map, proper_map_cycle_mode_list[i].map_name);
-				if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+				if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 				{
 					mani_nextmap.SetValue("Map decided by vote");
 				}
@@ -1056,7 +916,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 		{
 			// Choose first map
 			Q_strcpy(next_map, proper_map_cycle_mode_list[0].map_name);
-			if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+			if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 			{
 				mani_nextmap.SetValue("Map decided by vote");
 			}
@@ -1110,88 +970,11 @@ last_map_t	*GetLastMapsPlayed (int *number_of_maps_found, int max_number_of_maps
 // CON COMMANDS
 //*******************************************************************************
 
-CON_COMMAND(ma_map, "Changes the server to a new map, ma_map <map name>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaMap
-			(
-			0, // Client index
-			true,  // Sever console command type
-			engine->Cmd_Argc(), // Number of arguments
-			engine->Cmd_Argv(0), // Command
-			engine->Cmd_Argv(1) // map name
-			);
-
-	return;
-}
-
-CON_COMMAND(ma_skipmap, "Changes the server to the next map in the cycle, ma_map")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaSkipMap
-			(
-			0, // Client index
-			true,  // Sever console command type
-			engine->Cmd_Argc(), // Number of arguments
-			engine->Cmd_Argv(0) // Command
-			);
-
-	return;
-}
-
-CON_COMMAND(nextmap, "Prints the nextmap")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaNextMap(0, true);
-	return;
-}
-
-CON_COMMAND(listmaps, "Prints current map cycle information")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaListMaps(0, true);
-	return;
-}
-
-CON_COMMAND(ma_maplist, "Prints current maplist.txt")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaMapList(0, true);
-	return;
-}
-
-CON_COMMAND(ma_mapcycle, "Prints current mapcycle.txt")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaMapCycle(0, true);
-	return;
-}
-
-CON_COMMAND(ma_votemaplist, "Prints current votemaplist.txt")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaVoteMapList(0, true);
-	return;
-}
-
-CON_COMMAND(ma_setnextmap, "Sets the next map to be played, ma_setnextmap <map name>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaSetNextMap
-				(
-				0, // Client index
-				true,  // Sever console command type
-				engine->Cmd_Argc(), // Number of arguments
-				engine->Cmd_Argv(0), // Command
-				engine->Cmd_Argv(1) // map name
-				);
-	return;
-}
+SCON_COMMAND(ma_map, 2107, MaMap, true);
+SCON_COMMAND(ma_skipmap, 2109, MaSkipMap, false);
+SCON_COMMAND(nextmap, 2111, MaNextMap, false);
+SCON_COMMAND(listmaps, 2113, MaListMaps, true);
+SCON_COMMAND(ma_maplist, 2115, MaMapList, true);
+SCON_COMMAND(ma_mapcycle, 2117, MaMapCycle, true);
+SCON_COMMAND(ma_votemaplist, 2119, MaVoteMapList, false);
+SCON_COMMAND(ma_setnextmap, 2123, MaSetNextMap, false);

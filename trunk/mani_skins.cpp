@@ -54,6 +54,8 @@
 #include "mani_gametype.h"
 #include "mani_maps.h"
 #include "mani_skins.h"
+#include "mani_commands.h"
+#include "mani_help.h"
 #include "KeyValues.h"
 #include "mani_vfuncs.h"
 #include "cbaseentity.h"
@@ -763,9 +765,7 @@ void ForceSkinType
 						}
 
 						/* Nothing found */
-						player_settings = FindStoredPlayerSettings(player_ptr);
 						Q_strcpy(player_settings->admin_t_model, "");
-						UpdatePlayerSettings(player_ptr, player_settings);
 					}
 					else if (player_ptr->team == TEAM_B)
 					{
@@ -786,9 +786,7 @@ void ForceSkinType
 						}
 
 						/* Nothing found */
-						player_settings = FindStoredPlayerSettings(player_ptr);
 						Q_strcpy(player_settings->admin_ct_model, "");
-						UpdatePlayerSettings(player_ptr, player_settings);
 					}
 				}
 			}
@@ -828,9 +826,7 @@ void ForceSkinType
 						}
 
 						/* Nothing found */
-						player_settings = FindStoredPlayerSettings(player_ptr);
 						Q_strcpy(player_settings->immunity_t_model, "");
-						UpdatePlayerSettings(player_ptr, player_settings);
 					}
 					else if (player_ptr->team == TEAM_B)
 					{
@@ -851,9 +847,7 @@ void ForceSkinType
 						}
 
 						/* Nothing found */
-						player_settings = FindStoredPlayerSettings(player_ptr);
 						Q_strcpy(player_settings->immunity_ct_model, "");
-						UpdatePlayerSettings(player_ptr, player_settings);
 					}
 				}
 			}
@@ -893,9 +887,7 @@ void ForceSkinType
 				}
 
 				/* Nothing found */
-				player_settings = FindStoredPlayerSettings(player_ptr);
 				Q_strcpy(player_settings->t_model, "");
-				UpdatePlayerSettings(player_ptr, player_settings);
 			}
 			else if (player_ptr->team == TEAM_B)
 			{
@@ -921,9 +913,7 @@ void ForceSkinType
 				}
 
 				/* Nothing found */
-				player_settings = FindStoredPlayerSettings(player_ptr);
 				Q_strcpy(player_settings->ct_model, "");
-				UpdatePlayerSettings(player_ptr, player_settings);
 			}
 		}
 
@@ -942,7 +932,7 @@ void ProcessJoinSkinChoiceMenu
   char *menu_command 
 )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 	int	skin_type;
 
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
@@ -964,7 +954,7 @@ void ProcessJoinSkinChoiceMenu
 
 		current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
 
-		int index = Q_atoi(engine->Cmd_Argv(2 + argv_offset));
+		int index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
 
 		if (index == 0) return;
 
@@ -983,7 +973,7 @@ void ProcessJoinSkinChoiceMenu
 		{
 			// Found name to match !!!
 			player_settings_t *player_settings;
-			player_settings = FindStoredPlayerSettings(player_ptr);
+			player_settings = FindPlayerSettings(player_ptr);
 			if (player_settings)
 			{
 				if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
@@ -998,8 +988,6 @@ void ProcessJoinSkinChoiceMenu
 					Q_strcpy(player_settings->immunity_t_model, "");
 					Q_strcpy(player_settings->t_model, "");
 				}
-
-				UpdatePlayerSettings(player_ptr, player_settings);
 			}
 			
 			return;	
@@ -1013,7 +1001,7 @@ void ProcessJoinSkinChoiceMenu
 
 		// Found name to match !!!
 		player_settings_t *player_settings;
-		player_settings = FindStoredPlayerSettings(player_ptr);
+		player_settings = FindPlayerSettings(player_ptr);
 		if (player_settings)
 		{
 			switch(skin_type)
@@ -1026,8 +1014,6 @@ void ProcessJoinSkinChoiceMenu
 			case MANI_CT_SKIN: Q_strcpy(player_settings->ct_model, skin_name); break;
 			default:break;
 			}
-
-			UpdatePlayerSettings(player_ptr, player_settings);
 		}
 
 		return;
@@ -1348,7 +1334,7 @@ static void ManiSkinsAutoDownload ( ConVar *var, char const *pOldString )
 //---------------------------------------------------------------------------------
 void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 
 	if (argc - argv_offset == 3)
 	{
@@ -1361,7 +1347,7 @@ void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset )
 				continue;
 			}
 
-			if (FStrEq(skin_list[i].skin_name, engine->Cmd_Argv(2 + argv_offset)))
+			if (FStrEq(skin_list[i].skin_name, gpCmd->Cmd_Argv(2 + argv_offset)))
 			{
 				found_skin = i;
 				break;
@@ -1415,13 +1401,23 @@ void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset )
 //---------------------------------------------------------------------------------
 void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 	player_t	player;
 
 	if (argc - argv_offset == 4)
 	{
-		// Slap the player
-		ProcessMaSetSkin (admin->index, false, 3, "ma_setskin", engine->Cmd_Argv(3 + argv_offset), engine->Cmd_Argv(2 + argv_offset));
+		// Set the players skin
+		char	target_string[64];
+		char	skin_name[64];
+
+		Q_snprintf(target_string, sizeof(target_string), "%s", gpCmd->Cmd_Argv(3 + argv_offset));
+		Q_snprintf(skin_name, sizeof(skin_name), "%s", gpCmd->Cmd_Argv(2 + argv_offset));
+		gpCmd->NewCmd();
+		gpCmd->AddParam("ma_setskin");
+		gpCmd->AddParam("%s", target_string);
+		gpCmd->AddParam("%s", skin_name);
+
+		ProcessMaSetSkin(admin, "ma_setskin", 0, M_MENU);
 		return;
 	}
 	else
@@ -1450,7 +1446,7 @@ void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%s] %i", player.name, player.user_id);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin setskin \"%s\" %i", engine->Cmd_Argv(2 + argv_offset), player.user_id);
+			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin setskin \"%s\" %i", gpCmd->Cmd_Argv(2 + argv_offset), player.user_id);
 		}
 
 		if (menu_list_size == 0) return;
@@ -1463,7 +1459,7 @@ void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 		}
 
 		char more_cmd[128];
-		Q_snprintf( more_cmd, sizeof(more_cmd), "setskin \"%s\"", engine->Cmd_Argv(2 + argv_offset));
+		Q_snprintf( more_cmd, sizeof(more_cmd), "setskin \"%s\"", gpCmd->Cmd_Argv(2 + argv_offset));
 
 		// Draw menu list
 		DrawSubMenu (admin, Translate(780), Translate(781), next_index, "admin", more_cmd, true, -1);
@@ -1475,47 +1471,20 @@ void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_setskin command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ProcessMaSetSkin
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *target_string,
- char *skin_name
-)
+PLUGIN_RESULT	ProcessMaSetSkin(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
+	const char *target_string = gpCmd->Cmd_Argv(1);
+	const char *skin_name = gpCmd->Cmd_Argv(2);
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, "ma_setskin", ALLOW_SETSKINS, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_SETSKINS, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 3) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <part of user name, user id or steam id> <skin name>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <part of user name, user id or steam id> <skin name>", command_string);
-		}
+	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-		return PLUGIN_STOP;
-	}
-	
 	int found_skin = -1;
 	for (int i = 0; i < skin_list_size; i++)
 	{
@@ -1528,30 +1497,14 @@ PLUGIN_RESULT	ProcessMaSetSkin
 
 	if (found_skin == -1)
 	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: Invalid skin name [%s]\n", skin_name);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: Invalid skin name [%s]", skin_name);
-		}
-
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Invalid skin name [%s]", skin_name);
 		return PLUGIN_STOP;
 	}
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, target_string, IMMUNITY_ALLOW_SETSKIN))
+	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_ALLOW_SETSKIN))
 	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Did not find player %s\n", target_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Did not find player %s", target_string);
-		}
-
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return PLUGIN_STOP;
 	}
 
@@ -1560,15 +1513,7 @@ PLUGIN_RESULT	ProcessMaSetSkin
 	{
 		if (target_player_list[i].is_dead)
 		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
-			}
-			else
-			{
-				SayToPlayer(&player, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
-			}
-
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Player %s is dead, cannot perform command\n", target_player_list[i].name);
 			continue;
 		}
 
@@ -1576,10 +1521,10 @@ PLUGIN_RESULT	ProcessMaSetSkin
 //		CBaseEntity_SetModelIndex(pPlayer, skin_list[found_skin].model_index);
 		Prop_SetModelIndex(target_player_list[i].entity, skin_list[found_skin].model_index);
 
-		LogCommand (player.entity, "skinned user [%s] [%s] with skin %s\n", target_player_list[i].name, target_player_list[i].steam_id, skin_name);
-		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
+		LogCommand (player_ptr, "skinned user [%s] [%s] with skin %s\n", target_player_list[i].name, target_player_list[i].steam_id, skin_name);
+		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(&player, mani_adminsetskin_anonymous.GetInt(), "has set player %s to have skin %s", target_player_list[i].name, skin_name ); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminsetskin_anonymous.GetInt(), "has set player %s to have skin %s", target_player_list[i].name, skin_name ); 
 		}
 	}
 
@@ -1587,66 +1532,8 @@ PLUGIN_RESULT	ProcessMaSetSkin
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Force Skin client cvars on ClientActive
-//---------------------------------------------------------------------------------
-void	ForceSkinCExec(player_t *player_ptr)
-{
-
-	if (war_mode) return;
-
-	if (mani_skins_force_cl_minmodels.GetInt() && gpManiGameType->IsGameType(MANI_GAME_CSS))
-	{
-		engine->ClientCommand(player_ptr->entity, "cl_minmodels 1");
-		engine->ClientCommand(player_ptr->entity, "cl_min_t 4");
-		engine->ClientCommand(player_ptr->entity, "cl_min_ct 4");
-	}
-
-	return;
-}
-//---------------------------------------------------------------------------------
 // Purpose: Con command for setting skins for models
 //---------------------------------------------------------------------------------
+SCON_COMMAND(ma_setskin, 2027, MaSetSkin, false);
 
-CON_COMMAND(ma_setskin, "Changes a players skin to the requested model")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	ProcessMaSetSkin
-			(
-			0, // Client index
-			true,  // Sever console command type
-			engine->Cmd_Argc(), // Number of arguments
-			engine->Cmd_Argv(0), // Command
-			engine->Cmd_Argv(1), // player
-			engine->Cmd_Argv(2) // Model name
-			);
 
-	return;
-}
-
-/*
-CON_COMMAND( EntityList, "Liste des entites sur le serveur" )
-{   edict_t *zEntity;
-   int edictCount = engine->GetEntityCount();
-   MMsg("Nombre d'entite : %d\n",edictCount);
-   for(int i=0;i<edictCount;i++)
-   {   zEntity = engine->PEntityOfEntIndex(i);
-      if(zEntity)
-	  {
-			if (FStrEq(zEntity->GetClassName(), "cs_team_manager"))
-			{
-				CBaseEntity *pTeam = zEntity->GetUnknown()->GetBaseEntity();
-				CTeam *team_a = (CTeam *) pTeam;
-				MMsg("Team [%i] = [%s]\n", i, team_a->GetClassname());
-				MMsg("Team number [%i]\n", team_a->GetTeamNumber());
-				MMsg("Team name = [%s]\n", team_a->GetName());
-			}
-
-			if (FStrEq("cs_gamerules", zEntity->GetClassName()))
-			{
-				MMsg("Gamerules\n");
-			}
-	  }
-   }   
-
-} */

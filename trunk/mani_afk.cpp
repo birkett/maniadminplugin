@@ -43,6 +43,7 @@
 #include "networkstringtabledefs.h"
 #include "mani_main.h"
 #include "mani_callback_sourcemm.h"
+#include "mani_sourcehook.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_player.h"
@@ -53,9 +54,9 @@
 #include "mani_memory.h"
 #include "mani_output.h"
 #include "mani_gametype.h"
+#include "mani_warmuptimer.h"
 #include "mani_afk.h" 
 #include "mani_vfuncs.h"
-#include "mani_hook.h"
 #include "shareddefs.h"
 
 extern	IVEngineServer *engine;
@@ -67,11 +68,18 @@ extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	ConVar	*sv_lan;
 
+static void ManiAFKKicker ( ConVar *var, char const *pOldString );
+
+ConVar mani_afk_kicker ("mani_afk_kicker", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1, ManiAFKKicker);
 ConVar mani_afk_kicker_mode ("mani_afk_kicker_mode", "0", 0, "0 = kick to spectator first, 1 = kick straight off the server", true, 0, true, 1);
 ConVar mani_afk_kicker_alive_rounds ("mani_afk_kicker_alive_rounds", "0", 0, "0 = disabled, > 0 = number of rounds before kick/move", true, 0, true, 20);
 ConVar mani_afk_kicker_spectator_rounds ("mani_afk_kicker_spectator_rounds", "0", 0, "0 = disabled, > 0 = number of rounds before kick", true, 0, true, 20);
 ConVar mani_afk_kicker_alive_timer ("mani_afk_kicker_alive_timer", "0", 0, "0 = disabled, > 0 = number of seconds before kick/move", true, 0, true, 1200);
 ConVar mani_afk_kicker_spectator_timer ("mani_afk_kicker_spectator_timer", "0", 0, "0 = disabled, > 0 = number of seconds before kick", true, 0, true, 1200);
+ConVar mani_afk_kicker_immunity_to_spec_only ("mani_afk_kicker_immunity_to_spec_only", "0", 0, "0 = immune players are unaffected by AFK kicker, 1 = immune players are moved to spectator but not kicked", true, 0, true, 1);
+
+static
+void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from );
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -81,6 +89,11 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 ManiAFK::ManiAFK()
 {
 	gpManiAFK = this;
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		this->ResetPlayer(i, false);
+		afk_list[i].hooked = false;
+	}
 }
 
 ManiAFK::~ManiAFK()
@@ -93,13 +106,15 @@ ManiAFK::~ManiAFK()
 //---------------------------------------------------------------------------------
 void	ManiAFK::Load(void)
 {
-	for (int i = 1; i <= max_players; i++)
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS) == -1) return;
+
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		this->ResetPlayer(i);
+		this->ResetPlayer(i, false);
 
 		player_t player;
 
-		player.index = i;
+		player.index = i + 1;
 		if (!FindPlayerByIndex(&player))
 		{
 			continue;
@@ -107,9 +122,13 @@ void	ManiAFK::Load(void)
 
 		if (player.is_bot) continue;
 
-		CBaseEntity *pCBE = EdictToCBE(player.entity);
-		this->HookPlayer((CBasePlayer *) pCBE);
-		afk_list[i - 1].hooked = true;
+		if (!afk_list[i].hooked)
+		{
+			g_ManiSMMHooks.HookProcessUsercmds((CBasePlayer *) EdictToCBE(player.entity));
+			afk_list[i].hooked = true;
+		}
+
+		afk_list[i].check_player = true;
 	}
 
 	next_check = 0;
@@ -130,27 +149,11 @@ void	ManiAFK::LevelInit(void)
 {
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		this->ResetPlayer(i);
+		this->ResetPlayer(i, false);
+		afk_list[i].hooked = false;
 	}
 	
 	next_check = 0;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Game Commencing
-//---------------------------------------------------------------------------------
-void	ManiAFK::GameCommencing(void)
-{
-	time_t current_time;
-
-	time(&current_time);
-
-	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
-	{
-		afk_list[i].last_active = current_time;
-		afk_list[i].round_count = 0;
-		afk_list[i].idle = true;
-	}
 }
 
 //---------------------------------------------------------------------------------
@@ -158,15 +161,13 @@ void	ManiAFK::GameCommencing(void)
 //---------------------------------------------------------------------------------
 void	ManiAFK::NetworkIDValidated(player_t *player_ptr)
 {
-	if (war_mode) return;
-	if (mani_afk_kicker.GetInt() == 0) return;
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS) == -1) return;
 	if (player_ptr->is_bot) return;
-
-	this->ResetPlayer(player_ptr->index - 1);
-
-	CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
-	this->HookPlayer((CBasePlayer *) pCBE);
-	afk_list[player_ptr->index - 1].hooked = true;
+	this->ResetPlayer(player_ptr->index - 1, true);
+	if (!afk_list[player_ptr->index - 1].hooked)
+	{
+		g_ManiSMMHooks.HookProcessUsercmds((CBasePlayer *) EdictToCBE(player_ptr->entity));
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -174,13 +175,52 @@ void	ManiAFK::NetworkIDValidated(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 void ManiAFK::ClientDisconnect(player_t	*player_ptr)
 {
-	if (war_mode) return;
-	if (mani_afk_kicker.GetInt() == 0) return;
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS) == -1) return;
 
-	this->ResetPlayer(player_ptr->index - 1);
-	CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
-	this->UnHookPlayer((CBasePlayer *) pCBE);
-	afk_list[player_ptr->index - 1].hooked = false;
+	if (afk_list[player_ptr->index - 1].hooked)
+	{
+		g_ManiSMMHooks.UnHookProcessUsercmds((CBasePlayer *) EdictToCBE(player_ptr->entity));
+		afk_list[player_ptr->index - 1].hooked = false;
+	}
+
+	this->ResetPlayer(player_ptr->index - 1, false);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Level Shutdown
+//---------------------------------------------------------------------------------
+void	ManiAFK::LevelShutdown(void)
+{
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		if (afk_list[i].hooked)
+		{
+			player_t player;
+
+			player.index = i + 1;
+			if (FindPlayerByIndex(&player))
+			{
+				g_ManiSMMHooks.UnHookProcessUsercmds((CBasePlayer *) EdictToCBE(player.entity));
+			}
+		}
+
+		this->ResetPlayer(i, false);
+		afk_list[i].hooked = false;
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: External modules can call this to indicate a player is not AFK
+//---------------------------------------------------------------------------------
+void ManiAFK::NotAFK(int index)
+{
+	time_t current_time;
+
+	time(&current_time);
+
+	afk_list[index].idle = false;
+	afk_list[index].last_active = current_time;
+	afk_list[index].round_count = 0;
 }
 
 //---------------------------------------------------------------------------------
@@ -188,31 +228,28 @@ void ManiAFK::ClientDisconnect(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 void ManiAFK::ProcessUsercmds
 (
- CBasePlayer *pPlayer,
- CUserCmd *cmds, 
- int numcmds
+ CBaseEntity *pPlayer, CUserCmd *cmds, int numcmds
  )
 {
 	if (war_mode) return;
 	if (mani_afk_kicker.GetInt() == 0) return;
 
 	if (!pPlayer) return;
-
 	edict_t *pEdict = serverents->BaseEntityToEdict((CBasePlayer *) pPlayer);
 	if (!pEdict) return;
 
 	int index = engine->IndexOfEdict(pEdict);
-	if (index < 1) return;
+	if (index < 1 || index > max_players) return;
 
 	if (cmds && numcmds && 
 		(cmds->forwardmove || cmds->sidemove || cmds->upmove || cmds->mousedx || cmds->mousedy)) 
 	{
+		index --;
 		time_t current_time;
-
 		time(&current_time);
-		afk_list[index - 1].last_active = current_time;
-		afk_list[index - 1].idle = false;
-		afk_list[index - 1].round_count = 0;
+		afk_list[index].last_active = current_time;
+		afk_list[index].idle = false;
+		afk_list[index].round_count = 0;
 	}
 }
 
@@ -223,8 +260,8 @@ void ManiAFK::GameFrame(void)
 {
 	if (war_mode) return;
 	if (mani_afk_kicker.GetInt() == 0) return;
-	if (mani_afk_kicker_alive_timer.GetInt() == 0 &&
-		mani_afk_kicker_spectator_timer.GetInt() == 0) return;
+	if (mani_afk_kicker_alive_timer.GetInt() == 0 && mani_afk_kicker_spectator_timer.GetInt() == 0) return;
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS) == -1) return;
 
 	time_t current_time;
 
@@ -258,7 +295,7 @@ void ManiAFK::GameFrame(void)
 	// Process our list
 	for (int i = 0; i < max_players; i++)
 	{
-		if (!afk_list[i].hooked) continue;
+		if (!afk_list[i].check_player) continue;
 
 		// Faster way of discriminating hopefully without getting player data
 		// We are in game frame dont forget :)
@@ -269,10 +306,7 @@ void ManiAFK::GameFrame(void)
 		player.index = i + 1;
 		if (!FindPlayerByIndex(&player))
 		{
-			this->ResetPlayer(i);
-			CBaseEntity *pCBE = EdictToCBE(player.entity);
-			this->UnHookPlayer((CBasePlayer *) pCBE);
-			afk_list[i].hooked = false;
+			this->ResetPlayer(i, false);
 			continue;
 		}
 
@@ -291,25 +325,33 @@ void ManiAFK::GameFrame(void)
 				{
 					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
 					{
-						this->ResetPlayer(i);
-						afk_list[i].hooked = true;
+						this->ResetPlayer(i, true);
+						if (mani_afk_kicker_immunity_to_spec_only.GetInt() == 1)
+						{
+							// Shift player to spectator
+							player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
+							SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
+							LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
+							continue;
+						}
+
 						continue;
 					}
 				}
 
 				// Exceeded timeout
-				this->ResetPlayer(i);
-				afk_list[i].hooked = true;
+				this->ResetPlayer(i, true);
 				if (mani_afk_kicker_mode.GetInt() == 0)
 				{
 					// Shift player to spectator
 					player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
-					SayToPlayer(&player, "You were moved to the Spectator team for being AFK");
+					SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
+					LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
 				}
 				else
 				{
 					// Need to kick player
-					SayToPlayer(&player, "You have been kicked for being AFK");
+					SayToPlayer(GREEN_CHAT, &player, "You have been kicked for being AFK");
 					UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
 						"You were automatically kicked for being AFK", 
 						"Auto-AFK kicked");
@@ -327,73 +369,43 @@ void ManiAFK::GameFrame(void)
 				{
 					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
 					{
-						this->ResetPlayer(i);
-						afk_list[i].hooked = true;
+						this->ResetPlayer(i, true);
 						continue;
 					}
 				}
 
 				// Exceeded round count
-				this->ResetPlayer(i);
-				afk_list[i].hooked = true;
+				this->ResetPlayer(i, false);
+
 				// Need to kick player
-				SayToPlayer(&player, "You have been kicked for being AFK");
+				SayToPlayer(GREEN_CHAT, &player, "You have been kicked for being AFK");
 				UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
 					"You were automatically kicked for being AFK", 
 					"Auto-AFK kicked");
 			}
 		}
-		else
+		else if (player.team == 0 && 
+			gpManiGameType->IsTeamPlayAllowed() &&
+			mani_afk_kicker_spectator_timer.GetInt() != 0 &&
+			afk_list[i].last_active + mani_afk_kicker_spectator_timer.GetInt() <= current_time)
 		{
-			// Player is just joining
-			if (mani_afk_kicker_spectator_timer.GetInt() != 0 &&
-				afk_list[i].last_active + mani_afk_kicker_spectator_timer.GetInt() <= current_time)
+			if (gpManiClient->IsImmune(&player, &client_index))
 			{
-				if (gpManiClient->IsImmune(&player, &client_index))
+				if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
 				{
-					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
-					{
-						this->ResetPlayer(i);
-						afk_list[i].hooked = true;
-						continue;
-					}
+					this->ResetPlayer(i, true);
+					continue;
 				}
-
-				// Exceeded round count
-				this->ResetPlayer(i);
-				afk_list[i].hooked = true;
-
-				// Need to kick player
-				SayToPlayer(&player, "You have been kicked for being AFK");
-				UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
-					"You were automatically kicked for being AFK", 
-					"Auto-AFK kicked");
-			}
-		}
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Unhook players on level shutdown
-//---------------------------------------------------------------------------------
-void ManiAFK::LevelShutdown(void)
-{
-	for (int i = 0; i < max_players; i++)
-	{
-		if (afk_list[i].hooked)
-		{
-			this->ResetPlayer(i);
-
-			player_t	player;
-
-			player.index = i + 1;
-			if (!FindPlayerByIndex(&player))
-			{
-				continue;
 			}
 
-			CBaseEntity *pCBE = EdictToCBE(player.entity);
-			this->UnHookPlayer((CBasePlayer *) pCBE);
+			// Exceeded round count
+			this->ResetPlayer(i, false);
+
+			// Need to kick player
+			SayToPlayer(GREEN_CHAT, &player, "You have been kicked for being AFK");
+			UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
+				"You were automatically kicked for being AFK", 
+				"Auto-AFK kicked");
 		}
 	}
 }
@@ -407,19 +419,18 @@ void ManiAFK::RoundEnd(void)
 	if (mani_afk_kicker.GetInt() == 0) return;
 	if (mani_afk_kicker_alive_rounds.GetInt() == 0 &&
 		mani_afk_kicker_spectator_rounds.GetInt() == 0) return;
+	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS) == -1) return;
+	if (gpManiWarmupTimer->InWarmupRound()) return;
 
 	for (int i = 0; i < max_players; i++)
 	{
-		if (!afk_list[i].hooked) continue;
+		if (!afk_list[i].check_player) continue;
 		player_t player;
 
 		player.index = i + 1;
 		if (!FindPlayerByIndex(&player))
 		{
-			this->ResetPlayer(i);
-			CBaseEntity *pCBE = EdictToCBE(player.entity);
-			this->UnHookPlayer((CBasePlayer *) pCBE);
-			afk_list[i].hooked = false;
+			this->ResetPlayer(i, false);
 			continue;
 		}
 
@@ -430,6 +441,7 @@ void ManiAFK::RoundEnd(void)
 			int client_index = -1;
 
 			afk_list[i].round_count++;
+
 			if (gpManiGameType->IsValidActiveTeam(player.team) &&
 				mani_afk_kicker_alive_rounds.GetInt() != 0)
 			{
@@ -441,25 +453,33 @@ void ManiAFK::RoundEnd(void)
 					{
 						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
 						{
-							this->ResetPlayer(i);
-							afk_list[i].hooked = true;
+							this->ResetPlayer(i, true);
+							if (mani_afk_kicker_immunity_to_spec_only.GetInt() == 1)
+							{
+								// Shift player to spectator
+								player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
+								SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
+								LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
+								continue;
+							}
+
 							continue;
 						}
 					}
 
 					// Exceeded round count
-					this->ResetPlayer(i);
-					afk_list[i].hooked = true;
+					this->ResetPlayer(i, true);
 					if (mani_afk_kicker_mode.GetInt() == 0)
 					{
 						// Shift player to spectator
 						player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
-						SayToPlayer(&player, "You were moved to the Spectator team for being AFK");
+						SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
+						LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
 					}
 					else
 					{
 						// Need to kick player
-						SayToPlayer(&player, "You have been kicked for being AFK");
+						SayToPlayer(GREEN_CHAT, &player, "You have been kicked for being AFK");
 						UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
 												  "You were automatically kicked for being AFK", 
 												  "Auto-AFK kicked");
@@ -477,100 +497,90 @@ void ManiAFK::RoundEnd(void)
 					{
 						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
 						{
-							this->ResetPlayer(i);
-							afk_list[i].hooked = true;
+							this->ResetPlayer(i, true);
 							continue;
 						}
 					}
 
 					// Exceeded round count
-					this->ResetPlayer(i);
-					afk_list[i].hooked = true;
+					this->ResetPlayer(i, false);
+
 					// Need to kick player
-					SayToPlayer(&player, "You have been kicked for being AFK");
+					SayToPlayer(GREEN_CHAT, &player, "You have been kicked for being AFK");
 					UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
 											  "You were automatically kicked for being AFK", 
 											  "Auto-AFK kicked");
 				}
 			}
-			else
+			else if (player.team == 0 &&
+				gpManiGameType->IsTeamPlayAllowed() &&
+				mani_afk_kicker_spectator_rounds.GetInt() != 0 &&
+				afk_list[i].round_count > mani_afk_kicker_spectator_rounds.GetInt())
 			{
-				// Player is just joining
-				if (afk_list[i].round_count > mani_afk_kicker_spectator_rounds.GetInt() &&
-					mani_afk_kicker_spectator_rounds.GetInt() != 0)
+				if (gpManiClient->IsImmune(&player, &client_index))
 				{
-					if (gpManiClient->IsImmune(&player, &client_index))
+					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
 					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
-						{
-							this->ResetPlayer(i);
-							afk_list[i].hooked = true;
-							continue;
-						}
+						this->ResetPlayer(i, true);
+						continue;
 					}
-
-					// Exceeded round count
-					this->ResetPlayer(i);
-					afk_list[i].hooked = true;
-
-					// Need to kick player
-					SayToPlayer(&player, "You have been kicked for being AFK");
-					UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
-											  "You were automatically kicked for being AFK", 
-											  "Auto-AFK kicked");
 				}
+
+				// Exceeded round count
+				this->ResetPlayer(i, false);
+
+				// Need to kick player
+				SayToPlayer(GREEN_CHAT, &player, "You have been kicked for being AFK");
+				UTIL_KickPlayer(&player, "Auto-kicked for being AFK", 
+					"You were automatically kicked for being AFK", 
+					"Auto-AFK kicked");
 			}
 		}
+	}
+
+	for (int i = 0; i < max_players; i++)
+	{
+		if (!afk_list[i].check_player) continue;
+		afk_list[i].idle = true;
 	}
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Hook a player
-//---------------------------------------------------------------------------------
-void ManiAFK::HookPlayer(CBasePlayer *pPlayer)
-{
-	int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS);
-
-	// Not defined, forget it
-	if (offset == -1) return;
-
-#ifndef SOURCEMM
-	// Win 32 hook
-	HookProcessUsercmds(pPlayer, offset);
-#else
-	// SourceMM hook
-	g_ManiSMMHooks.HookProcessUsercmds(pPlayer);
-#endif
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Hook a player
-//---------------------------------------------------------------------------------
-void ManiAFK::UnHookPlayer(CBasePlayer *pPlayer)
-{
-	int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS);
-
-	// Not defined, forget it
-	if (offset == -1) return;
-
-#ifdef SOURCEMM
-	g_ManiSMMHooks.UnHookProcessUsercmds(pPlayer);
-#else
-	UnHookProcessUsercmds(pPlayer, offset);
-#endif
-}
-//---------------------------------------------------------------------------------
 // Purpose: Reset a player on the afk list
 //---------------------------------------------------------------------------------
-void ManiAFK::ResetPlayer(int index)
+void ManiAFK::ResetPlayer(int index, bool check_player)
 {
 	time_t current_time;
 	time(&current_time);
 
-	afk_list[index].hooked = false;
+	afk_list[index].check_player = check_player;
 	afk_list[index].idle = true;
 	afk_list[index].last_active = current_time;
 	afk_list[index].round_count = 0;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Game Commencing
+//---------------------------------------------------------------------------------
+void	ManiAFK::GameCommencing(void)
+{
+	time_t current_time;
+
+	time(&current_time);
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		afk_list[i].last_active = current_time;
+		afk_list[i].round_count = 0;
+		afk_list[i].idle = true;
+	}
+}
+
+static void ManiAFKKicker ( ConVar *var, char const *pOldString )
+{
+	if (!FStrEq(pOldString, var->GetString()))
+	{
+		gpManiAFK->Load();
+	}
 }
 
 ManiAFK	g_ManiAFK;

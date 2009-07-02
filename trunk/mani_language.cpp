@@ -48,7 +48,7 @@
 #include "mani_parser.h"
 #include "mani_convar.h"
 
-#define MANI_MAX_TRANSLATIONS (1500)
+#define MANI_MAX_TRANSLATIONS (2500)
 
 extern IFileSystem	*filesystem;
 
@@ -119,8 +119,8 @@ void LanguageGameFrame(void)
 	time(&current_time);
 	if (current_time > next_time_check)
 	{
-		SayToAll(true, "MANI-ADMIN-PLUGIN: Warning, your server plugin english.cfg file is out of date which will cause instability!"); 
-		SayToAll(true, "Please download http://www.mani-admin-plugin.com/mani_admin_plugin/language_pack/english.cfg");
+		SayToAll(LIGHT_GREEN_CHAT, true, "MANI-ADMIN-PLUGIN: Warning, your server plugin english.cfg file is out of date which will cause instability!"); 
+		SayToAll(LIGHT_GREEN_CHAT, true, "Please download http://www.mani-admin-plugin.com/mani_admin_plugin/language_pack/english.cfg");
 		MMsg("MANI-ADMIN-PLUGIN: Warning, your server plugin english.cfg file is out of date which will cause instability!\n"); 
 		MMsg("Please download http://www.mani-admin-plugin.com/mani_admin_plugin/language_pack/english.cfg\n");
 		next_time_check = current_time + 5;
@@ -152,10 +152,10 @@ static
 bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 {
 	char	base_filename[256];
-	char	raw_string[1024];
+	char	raw_string[8192];
 	char	*translated = NULL;
 	int		translation_id;
-	char	error_string[1024];
+	char	error_string[8192];
 
 
 	FileHandle_t file_handle;

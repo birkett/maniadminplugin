@@ -98,7 +98,7 @@ IGameEventListener2 *gpManiIGELCallback = NULL;
 
 int		con_command_index = 0;
 
-#ifdef SOURCEMM
+//#ifdef SOURCEMM
 #include <ISmmPlugin.h>
 #include <sourcehook/sourcehook.h>
 
@@ -108,7 +108,7 @@ SourceHook::CallClass<IVoiceServer> *voiceserver_cc = NULL;
 SourceHook::CallClass<IServerGameDLL> *serverdll_cc = NULL;
 SourceHook::CallClass<ConCommand> *rebuy_cc = NULL;
 
-#endif
+//#endif
 
 
 

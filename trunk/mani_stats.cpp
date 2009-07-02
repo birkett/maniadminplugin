@@ -52,7 +52,10 @@
 #include "mani_maps.h"
 #include "mani_output.h"
 #include "mani_gametype.h"
+#include "mani_commands.h"
+#include "mani_help.h"
 #include "mani_warmuptimer.h"
+#include "mani_keyvalues.h"
 #include "mani_stats.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -139,7 +142,7 @@ static	char	*css_weapons_nice[MANI_MAX_STATS_CSS_WEAPONS] =
 
 static	char	*weapon_short_name[MANI_MAX_STATS_CSS_WEAPONS] =
 {
-"2a","2b","2c","2d","2e","2f","2g","2h","2i","2j","2k","2l","2m","2n","2o","2p","2q","2r","2s","2t","2u","2v","2w","2x","2y","2z","3a"
+"2a","2b","2c","2d","2e","2f","2g","2h","2i","2j","2k","2l","2m","2n","2o","2p","2q","2r","2s","2t","2u","2v","2w","2x","2y","2z","3a","3b"
 };
 
 // This is a map for weapon bytes sent via events, the indexes translate into 
@@ -199,6 +202,7 @@ ConVar mani_stats_ignore_ranks_after_x_days ("mani_stats_ignore_ranks_after_x_da
 
 ConVar mani_stats_points_multiplier ("mani_stats_points_multiplier", "5.0", 0, "Multiplier used in a kill calculation", true, -100, true, 100); 
 ConVar mani_stats_points_death_multiplier ("mani_stats_points_death_multiplier", "1.0", 0, "Multiplier used against the points removed from a player if killed", true, -100, true, 100); 
+ConVar mani_stats_players_needed ("mani_stats_players_needed", "2", 0, "Players need per active team before stats can be calculated, if not team based then number of active players on server", true, 0, true, 10); 
 
 // CSS weapon weights
 ConVar mani_stats_css_weapon_ak47 ("mani_stats_css_weapon_ak47", "1", 0, "Weapon weight (1.0 default)", true, -100, true, 100); 
@@ -505,6 +509,7 @@ void	ManiStats::LoadStats(void)
 	ReBuildStatsList(false);
 	CalculateStats(true, false);
 	CalculateStats(false, false);
+
 	WriteStats(true);
 	WriteStats(false);
 
@@ -613,6 +618,7 @@ void	ManiStats::NetworkIDValidated(player_t *player_ptr)
 	{
 		hash_table[player_ptr->user_id] = player_ptr->index;
 		Q_memset(&(session[player_ptr->index - 1]),0,sizeof(session_t));
+		session[player_ptr->index - 1].start_points = rank_ptr->points;
 	}
 }
 
@@ -748,13 +754,15 @@ void ManiStats::GameFrame(void)
 	time_t	current_time;
 
 	time(&current_time);
-	if (last_stats_calculate_time + (mani_stats_calculate_frequency.GetInt() * 60) < current_time)
+	if (mani_stats_calculate_frequency.GetInt() != 0 && 
+		((last_stats_calculate_time + (mani_stats_calculate_frequency.GetInt() * 60)) < current_time))
 	{
 		time(&last_stats_calculate_time);
 		this->CalculateStats(mani_stats_by_steam_id.GetBool(), false);
 	}
 
-	if (last_stats_write_time + (mani_stats_write_frequency_to_disk.GetInt() * 60) < current_time)
+	if (mani_stats_write_frequency_to_disk.GetInt() != 0 &&
+		((last_stats_write_time + (mani_stats_write_frequency_to_disk.GetInt() * 60)) < current_time))
 	{
 		time(&last_stats_write_time);
 
@@ -1255,7 +1263,6 @@ void ManiStats::DODSPointCaptured(const char *cappers, int cappers_length)
 		player_found->user_def[DODS_POINT_CAPTURED]++;
 		session[player.index - 1].user_def[DODS_POINT_CAPTURED]++;
 		player_found->points += mani_stats_dods_capture_point.GetInt();
-		session[player.index - 1].points_acquired += mani_stats_dods_capture_point.GetInt();
 	}
 }
 
@@ -1277,7 +1284,6 @@ void ManiStats::DODSCaptureBlocked(player_t *player_ptr)
 
 	player_found->user_def[DODS_CAPTURE_BLOCKED]++;
 	session[player_ptr->index - 1].user_def[DODS_CAPTURE_BLOCKED]++;
-	session[player_ptr->index - 1].points_acquired += mani_stats_dods_block_capture.GetInt();
 	player_found->points += mani_stats_dods_block_capture.GetInt();
 }
 
@@ -1388,7 +1394,6 @@ void ManiStats::AddTeamPoints
 		player_found = active_player_list[player.index - 1].rank_ptr;
 		if (!player_found) continue;
 
-		session[player.index - 1].points_acquired += points;
 		player_found->points += points;
 	}
 }
@@ -1430,7 +1435,6 @@ void ManiStats::DODSRoundEnd(int winning_team)
 			{
 				player_found->user_def[DODS_WON_AS_ALLIES]++;
 				session[player.index - 1].user_def[DODS_WON_AS_ALLIES]++;
-				session[player.index - 1].points_acquired += mani_stats_dods_round_win_bonus.GetInt();
 				player_found->points += mani_stats_dods_round_win_bonus.GetInt();
 			}
 		}
@@ -1442,7 +1446,6 @@ void ManiStats::DODSRoundEnd(int winning_team)
 				// AXIS team won
 				player_found->user_def[DODS_WON_AS_AXIS]++;
 				session[player.index - 1].user_def[DODS_WON_AS_AXIS]++;
-				session[player.index - 1].points_acquired += mani_stats_dods_round_win_bonus.GetInt();
 				player_found->points += mani_stats_dods_round_win_bonus.GetInt();
 			}
 			else if (winning_team == 2)
@@ -1473,7 +1476,6 @@ void ManiStats::BombPlanted(player_t *player_ptr)
 	player_found->user_def[CSS_BOMB_PLANTED]++;
 	session[player_ptr->index - 1].user_def[CSS_BOMB_PLANTED]++;
 	player_found->points += mani_stats_css_bomb_planted_bonus.GetInt();
-	session[player_ptr->index - 1].points_acquired += mani_stats_css_bomb_planted_bonus.GetInt();
 
 	this->AddTeamPoints(2, mani_stats_css_t_bomb_planted_team_bonus.GetInt());
 }
@@ -1496,7 +1498,6 @@ void ManiStats::BombDefused(player_t *player_ptr)
 	player_found->user_def[CSS_BOMB_DEFUSED]++;
 	session[player_ptr->index - 1].user_def[CSS_BOMB_DEFUSED]++;
 	player_found->points += mani_stats_css_bomb_defused_bonus.GetInt();
-	session[player_ptr->index - 1].points_acquired += mani_stats_css_bomb_defused_bonus.GetInt();
 
 }
 
@@ -1535,7 +1536,6 @@ void ManiStats::HostageRescued(player_t *player_ptr)
 	player_found->user_def[CSS_HOSTAGE_RESCUED]++;
 	session[player_ptr->index - 1].user_def[CSS_HOSTAGE_RESCUED]++;
 	player_found->points += mani_stats_css_hostage_rescued_bonus.GetInt();
-	session[player_ptr->index - 1].points_acquired += mani_stats_css_hostage_rescued_bonus.GetInt();
 
 	this->AddTeamPoints(3, mani_stats_css_ct_hostage_rescued_team_bonus.GetInt());
 }
@@ -1576,7 +1576,6 @@ void ManiStats::HostageKilled(player_t *player_ptr)
 	player_found->user_def[CSS_HOSTAGE_KILLED]++;
 	session[player_ptr->index - 1].user_def[CSS_HOSTAGE_KILLED]++;
 	player_found->points += mani_stats_css_hostage_killed_bonus.GetInt();
-	session[player_ptr->index - 1].points_acquired += mani_stats_css_hostage_killed_bonus.GetInt();;
 
 	this->AddTeamPoints(3, mani_stats_css_ct_hostage_killed_team_bonus.GetInt());
 }
@@ -1641,7 +1640,6 @@ void ManiStats::VIPEscaped(player_t *player_ptr)
 	player_found->user_def[CSS_VIP_ESCAPED]++;
 	session[player_ptr->index - 1].user_def[CSS_VIP_ESCAPED]++;
 	player_found->points += mani_stats_css_vip_escape_bonus.GetInt();
-	session[player_ptr->index - 1].points_acquired += mani_stats_css_vip_escape_bonus.GetInt();
 }
 
 //---------------------------------------------------------------------------------
@@ -1662,7 +1660,6 @@ void ManiStats::VIPKilled(player_t *player_ptr)
 	player_found->user_def[CSS_VIP_KILLED]++;
 	session[player_ptr->index - 1].user_def[CSS_VIP_KILLED]++;
 	player_found->points += mani_stats_css_vip_killed_bonus.GetInt();
-	session[player_ptr->index - 1].points_acquired += mani_stats_css_vip_killed_bonus.GetInt();
 }
 
 //---------------------------------------------------------------------------------
@@ -2123,12 +2120,9 @@ void ManiStats::SetPointsDeltas
 
 	// Update players pointss
 	a_player_ptr->points += a_bonus;
-	session[a_index].points_acquired += a_bonus;
-
 	if (mani_stats_points_add_only.GetInt() == 0)
 	{
 		v_player_ptr->points -= v_bonus;
-		session[v_index].points_acquired -= v_bonus;
 	}
 }
 
@@ -2200,16 +2194,16 @@ void ManiStats::ShowRank(player_t *player_ptr)
 	{
 		if (player_ptr->is_dead)
 		{
-			SayToDead("%s", output_string);
+			SayToDead(ORANGE_CHAT, "%s", output_string);
 		}
 		else
 		{
-			SayToAll(false, "%s", output_string);
+			SayToAll(ORANGE_CHAT, false, "%s", output_string);
 		}
 	}
 	else
 	{
-		SayToPlayer(player_ptr, "%s", output_string);
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", output_string);
 	}
 
 	return;
@@ -2233,12 +2227,14 @@ void ManiStats::ShowTop(player_t *player_ptr ,int rank_start)
 	if (mani_stats.GetInt() == 0) return;
 
 	// Validate rank starting position
-	if (rank_start <= 0)
+	if (rank_start < 11)
 	{
-		rank_start = 1; 
+		rank_start = 0;
 	}
-
-	rank_start --;
+	else
+	{
+		rank_start -= 10;
+	}
 
 	if (mani_stats_by_steam_id.GetInt() == 1)
 	{
@@ -2255,9 +2251,9 @@ void ManiStats::ShowTop(player_t *player_ptr ,int rank_start)
 
 	if (rp_list_size == 0) return;
 
-	if (rank_start >= rp_list_size) 
+	if (rank_start >= rp_list_size - 10) 
 	{
-		rank_start = rp_list_size - 1;
+		rank_start = rp_list_size - 10;
 		if (rank_start < 0)
 		{
 			rank_start = 0;
@@ -2282,22 +2278,22 @@ void ManiStats::ShowTop(player_t *player_ptr ,int rank_start)
 		if (mani_stats_calculate.GetInt() == 0)
 		{
 			total_bytes += Q_snprintf(title_string, sizeof(title_string), "%s", Translate(1007, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 		else if (mani_stats_calculate.GetInt() == 1)
 		{
 			total_bytes += Q_snprintf(title_string, sizeof(title_string), "%s", Translate(1008, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 		else if (mani_stats_calculate.GetInt() == 2)
 		{
 			total_bytes += Q_snprintf(title_string, sizeof(title_string), "%s", Translate(1009, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 		else
 		{
 			total_bytes += Q_snprintf(title_string, sizeof(title_string), "%s", Translate(1010, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 
 		total_bytes += Q_snprintf(menu_string, sizeof(menu_string), "->1. %s", title_string);
@@ -2310,22 +2306,22 @@ void ManiStats::ShowTop(player_t *player_ptr ,int rank_start)
 		if (mani_stats_calculate.GetInt() == 0)
 		{
 			Q_snprintf(rank_output, sizeof(rank_output), "%s", Translate(1007, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 		else if (mani_stats_calculate.GetInt() == 1)
 		{
 			Q_snprintf(rank_output, sizeof(rank_output), "%s", Translate(1008, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 		else if (mani_stats_calculate.GetInt() == 2)
 		{
 			Q_snprintf(rank_output, sizeof(rank_output), "%s", Translate(1009, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 		else
 		{
 			Q_snprintf(rank_output, sizeof(rank_output), "%s", Translate(1010, "%i%i",
-													rank_start + 1, max_ranks));
+													rank_start + 10, max_ranks));
 		}
 	}
 
@@ -2413,14 +2409,14 @@ void ManiStats::ShowTop(player_t *player_ptr ,int rank_start)
 		{
 			menu_confirm[player_ptr->index - 1].menu_select[8].in_use = true;
 			Q_snprintf(menu_confirm[player_ptr->index - 1].menu_select[8].command, 
-				sizeof(menu_confirm[player_ptr->index - 1].menu_select[8].command), "mani_showtop %i", rank_start + 11);
+				sizeof(menu_confirm[player_ptr->index - 1].menu_select[8].command), "mani_showtop %i", rank_start + 20);
 		}
  
 		if (rank_start > 0)
 		{
 			menu_confirm[player_ptr->index - 1].menu_select[7].in_use = true;
 			Q_snprintf(menu_confirm[player_ptr->index - 1].menu_select[7].command, 
-				sizeof(menu_confirm[player_ptr->index - 1].menu_select[7].command), "mani_showtop %i", rank_start - 9);
+				sizeof(menu_confirm[player_ptr->index - 1].menu_select[7].command), "mani_showtop %i", rank_start);
 		}
 	}
 	else
@@ -2581,31 +2577,18 @@ void ManiStats::ShowTop(player_t *player_ptr ,int rank_start)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_statsme command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiStats::ProcessMaStatsMe
-(
- int index, 
- int argc, 
- char *command_string, 
- char *target_string
- )
+PLUGIN_RESULT	ManiStats::ProcessMaStatsMe(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (war_mode) return PLUGIN_CONTINUE;
 	if (mani_stats.GetInt() == 0) return PLUGIN_CONTINUE;
 
-	player_t player;
-	player.entity = NULL;
-
-	player.index = index;
-	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-
 	// Find target players to lookup.
-	if (!FindTargetPlayers(&player, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(player_ptr, gpCmd->Cmd_Argv(1), IMMUNITY_DONT_CARE))
 	{
-		SayToPlayer(&player, "Did not find player %s", target_string);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1)));
 		return PLUGIN_STOP;
 	}
 
-	this->ShowStatsMe(&(target_player_list[0]), &player);
+	this->ShowStatsMe(&(target_player_list[0]), player_ptr);
 
 	return PLUGIN_STOP;
 }
@@ -2902,31 +2885,18 @@ void ManiStats::ShowStatsMe(player_t *player_ptr, player_t *output_player_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_session command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiStats::ProcessMaSession
-(
- int index, 
- int argc, 
- char *command_string, 
- char *target_string
- )
+PLUGIN_RESULT	ManiStats::ProcessMaSession(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (war_mode) return PLUGIN_CONTINUE;
 	if (mani_stats.GetInt() == 0) return PLUGIN_CONTINUE;
 
-	player_t player;
-	player.entity = NULL;
-
-	player.index = index;
-	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-
 	// Find target players to lookup.
-	if (!FindTargetPlayers(&player, target_string, IMMUNITY_DONT_CARE))
+	if (!FindTargetPlayers(player_ptr, gpCmd->Cmd_Argv(1), IMMUNITY_DONT_CARE))
 	{
-		SayToPlayer(&player, "Did not find player %s", target_string);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1)));
 		return PLUGIN_STOP;
 	}
 
-	this->ShowSession(&(target_player_list[0]), &player);
+	this->ShowSession(&(target_player_list[0]), player_ptr);
 
 	return PLUGIN_STOP;
 }
@@ -2965,7 +2935,7 @@ void ManiStats::ShowSession(player_t *player_ptr, player_t *output_player_ptr)
 		kd_ratio = (float) ((float) session_ptr->kills / (float) session_ptr->deaths);
 	}
 
-	int points_acquired = (int) session_ptr->points_acquired;
+	int points_acquired = (int) (active_player_list[player_ptr->index - 1].rank_ptr->points - session_ptr->start_points);
 	char sign;
 
 	if (points_acquired > 0)
@@ -3704,8 +3674,7 @@ void ManiStats::WriteStats(bool use_steam_id)
 {
 	char	core_filename[256];
 	int		f_index = 0;
-	KeyValues *stats;
-	KeyValues *kv;
+	ManiKeyValues *kv;
 
 	rank_t	**rp_list;
 	int		rp_list_size;
@@ -3715,48 +3684,57 @@ void ManiStats::WriteStats(bool use_steam_id)
 	if (use_steam_id)
 	{
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/mani_stats.txt", mani_path.GetString());
-		kv = new KeyValues( "mani_stats.txt" );
+		kv = new ManiKeyValues( "mani_stats.txt" );
 		rp_list = rank_player_list;
 		rp_list_size = rank_player_list_size;
 	}
 	else
 	{
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/mani_name_stats.txt", mani_path.GetString());
-		kv = new KeyValues( "mani_name_stats.txt" );
+		kv = new ManiKeyValues( "mani_name_stats.txt" );
 		rp_list = rank_player_name_list;
 		rp_list_size = rank_player_name_list_size;
 	}
 
-	kv->SetString("version", PLUGIN_VERSION_ID2);
+	kv->SetIndent(0);
+	if (!kv->WriteStart(core_filename))
+	{
+		Msg("Failed to write to %s\n", core_filename);
+		kv->DeleteThis();
+		return;
+	}
+
+	kv->WriteKey("version", PLUGIN_VERSION_ID2);
+
 	// Loop through all clients
 	for (int i = 0; i < rp_list_size; i++)
 	{
-		stats = kv->CreateNewKey();
-		stats->SetString("na", rp_list[i]->name);
-		stats->SetString("st", rp_list[i]->steam_id);
-		stats->SetInt("ip1", rp_list[i]->ip_address[0]);
-		stats->SetInt("ip2", rp_list[i]->ip_address[1]);
-		stats->SetInt("ip3", rp_list[i]->ip_address[2]);
-		stats->SetInt("ip4", rp_list[i]->ip_address[3]);
-		stats->SetInt("lc", rp_list[i]->last_connected);
-		stats->SetInt("rk", rp_list[i]->rank);
-		stats->SetInt("de", rp_list[i]->deaths);
-		stats->SetInt("hs", rp_list[i]->headshots);
-		stats->SetFloat("kd", rp_list[i]->kd_ratio);
-		stats->SetInt("ki", rp_list[i]->kills);
-		stats->SetInt("su", rp_list[i]->suicides); 
-		stats->SetFloat("po", rp_list[i]->points);
-		stats->SetFloat("pd", rp_list[i]->points_decay);
-		stats->SetInt("tk", rp_list[i]->team_kills);
-		stats->SetInt("to", rp_list[i]->total_time_online);
-		stats->SetInt("da", rp_list[i]->damage);
+		kv->WriteNewSubKey(i + 1);
+		kv->WriteKey("na", rp_list[i]->name);
+		kv->WriteKey("st", rp_list[i]->steam_id);
+		kv->WriteKey("ip1", rp_list[i]->ip_address[0]);
+		kv->WriteKey("ip2", rp_list[i]->ip_address[1]);
+		kv->WriteKey("ip3", rp_list[i]->ip_address[2]);
+		kv->WriteKey("ip4", rp_list[i]->ip_address[3]);
+		kv->WriteKey("lc", (int) rp_list[i]->last_connected);
+		kv->WriteKey("rk", rp_list[i]->rank);
+		kv->WriteKey("de", rp_list[i]->deaths);
+		kv->WriteKey("hs", rp_list[i]->headshots);
+		kv->WriteKey("kd", rp_list[i]->kd_ratio);
+		kv->WriteKey("ki", rp_list[i]->kills);
+		kv->WriteKey("su", rp_list[i]->suicides); 
+		kv->WriteKey("po", rp_list[i]->points);
+		kv->WriteKey("pd", rp_list[i]->points_decay);
+		kv->WriteKey("tk", rp_list[i]->team_kills);
+		kv->WriteKey("to", rp_list[i]->total_time_online);
+		kv->WriteKey("da", rp_list[i]->damage);
 
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS) ||
 		   gpManiGameType->IsGameType(MANI_GAME_DOD))
 		{
 			for (int j = 0; j < MANI_MAX_STATS_HITGROUPS; j++)
 			{
-				if (rp_list[i]->hit_groups[j] != 0) stats->SetInt(hitboxes[j], rp_list[i]->hit_groups[j]);
+				if (rp_list[i]->hit_groups[j] != 0) kv->WriteKey(hitboxes[j], rp_list[i]->hit_groups[j]);
 			}
 		}
 
@@ -3764,14 +3742,14 @@ void ManiStats::WriteStats(bool use_steam_id)
 		{
 			for (int j = 0; j < MANI_MAX_STATS_CSS_WEAPONS; j++)
 			{
-				if (rp_list[i]->weapon_kills[j] != 0) stats->SetInt(weapon_short_name[j], rp_list[i]->weapon_kills[j]);
+				if (rp_list[i]->weapon_kills[j] != 0) kv->WriteKey(weapon_short_name[j], rp_list[i]->weapon_kills[j]);
 			}
 		}
 		else if (gpManiGameType->IsGameType(MANI_GAME_DOD))
 		{
 			for (int j = 0; j < MANI_MAX_STATS_DODS_WEAPONS; j++)
 			{
-				if (rp_list[i]->weapon_kills[j] != 0) stats->SetInt(weapon_short_name[j], rp_list[i]->weapon_kills[j]);
+				if (rp_list[i]->weapon_kills[j] != 0) kv->WriteKey(weapon_short_name[j], rp_list[i]->weapon_kills[j]);
 			}
 		}
 
@@ -3797,7 +3775,7 @@ void ManiStats::WriteStats(bool use_steam_id)
 			{
 				if (rp_list[i]->user_def[j] != 0) 
 				{
-					stats->SetInt(stats_user_def_name[j], rp_list[i]->user_def[j]);
+					kv->WriteKey(stats_user_def_name[j], rp_list[i]->user_def[j]);
 				}
 			}
 		}
@@ -3817,18 +3795,16 @@ void ManiStats::WriteStats(bool use_steam_id)
 			{
 				if (rp_list[i]->user_def[j] != 0) 
 				{
-					stats->SetInt(stats_user_def_name[j], rp_list[i]->user_def[j]);
+					kv->WriteKey(stats_user_def_name[j], rp_list[i]->user_def[j]);
 				}
 			}
 		}
+
+		kv->WriteEndSubKey();
 	}
 
-	if (!kv->SaveToFile( filesystem, core_filename, NULL))
-	{
-		MMsg("Failed to write %s\n", core_filename);
-	}
-
-	kv->deleteThis();
+	kv->WriteEnd();
+	kv->DeleteThis();
 
 	if (mani_stats_write_text_file.GetInt() == 0)
 	{
@@ -4152,6 +4128,9 @@ void ManiStats::WriteStats(bool use_steam_id)
 bool ManiStats::MoreThanOnePlayer(void)
 {
 	player_t player;
+	static	int players_needed;
+
+	players_needed = mani_stats_players_needed.GetInt();
 
 	if (gpManiGameType->IsTeamPlayAllowed())
 	{
@@ -4173,7 +4152,7 @@ bool ManiStats::MoreThanOnePlayer(void)
 				b_count ++;
 			}
 			
-			if (a_count > 0 && b_count > 0) return true;
+			if (a_count >= players_needed && b_count >= players_needed) return true;
 		}
 	}
 	else
@@ -4189,7 +4168,7 @@ bool ManiStats::MoreThanOnePlayer(void)
 
 			count ++;
 	
-			if (count > 1 ) return true;
+			if (count >= players_needed ) return true;
 		}
 	}
 
@@ -4294,37 +4273,51 @@ void ManiStats::ReadStats(bool use_steam_id)
 	// New version in /data/ that is stored in a more friendly format for later
 	// upgrades
 	char	core_filename[256];
-	KeyValues *base_key_ptr;
-	KeyValues *kv_ptr;
+
+	ManiKeyValues *kv_ptr;
 
 	if (use_steam_id)
 	{
-		kv_ptr = new KeyValues("mani_stats.txt");
+		kv_ptr = new ManiKeyValues("mani_stats.txt");
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/mani_stats.txt", mani_path.GetString());
 	}
 	else
 	{
-		kv_ptr = new KeyValues("mani_name_stats.txt");
+		kv_ptr = new ManiKeyValues("mani_name_stats.txt");
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/mani_name_stats.txt", mani_path.GetString());
 	}
 
-	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
+	float timer1 = engine->Time();
+
+	kv_ptr->SetKeyPairSize(3,30);
+	kv_ptr->SetKeySize(4, 100);
+	if (!kv_ptr->ReadFile(core_filename))
 	{
 		MMsg("Failed to load %s\n", core_filename);
-		kv_ptr->deleteThis();
+		kv_ptr->DeleteThis();
 		return;
 	}
 
+	MMsg("Time for read = [%f]\n", engine->Time() - timer1);
+
+	timer1 = engine->Time();
+
 	//////////////////////////////////////////////
-	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-	if (!base_key_ptr)
+	read_t *rd_ptr = kv_ptr->GetPrimaryKey();
+	if (!rd_ptr)
 	{
-		kv_ptr->deleteThis();
+		kv_ptr->DeleteThis();
+		return;
+	}
+
+	read_t *stats_ptr = kv_ptr->GetNextKey(rd_ptr);
+	if (!stats_ptr)
+	{
+		kv_ptr->DeleteThis();
 		return;
 	}
 
 	time_t	current_time;
-
 	time(&current_time);
 
 	for (;;)
@@ -4349,29 +4342,29 @@ void ManiStats::ReadStats(bool use_steam_id)
 			rank_ptr = rank_player_name_list[index];
 		}
 
-		Q_strcpy(rank_ptr->name, base_key_ptr->GetString("na","NULL"));
-		Q_strcpy(rank_ptr->steam_id, base_key_ptr->GetString("st","NULL"));
-		rank_ptr->ip_address[0] = base_key_ptr->GetInt("ip1", 0);
-		rank_ptr->ip_address[1] = base_key_ptr->GetInt("ip2", 0);
-		rank_ptr->ip_address[2] = base_key_ptr->GetInt("ip3", 0);
-		rank_ptr->ip_address[3] = base_key_ptr->GetInt("ip4", 0);
-		rank_ptr->last_connected = base_key_ptr->GetInt("lc", (int) current_time);
-		rank_ptr->rank = base_key_ptr->GetInt("rk", -1);
-		rank_ptr->deaths = base_key_ptr->GetInt("de", 0);
-		rank_ptr->headshots = base_key_ptr->GetInt("hs", 0);
-		rank_ptr->kd_ratio = base_key_ptr->GetFloat("kd", 0.0);
-		rank_ptr->kills = base_key_ptr->GetInt("ki", 0);
-		rank_ptr->suicides = base_key_ptr->GetInt("su", 0);
-		rank_ptr->points = base_key_ptr->GetFloat("po", 1000.0);
-		rank_ptr->points_decay = base_key_ptr->GetFloat("pd", 0.0);
-		rank_ptr->team_kills = base_key_ptr->GetFloat("tk", 0);
-		rank_ptr->total_time_online = base_key_ptr->GetFloat("to", 0);
-		rank_ptr->damage = base_key_ptr->GetInt("da", 0);
+		Q_strcpy(rank_ptr->name, kv_ptr->GetString("na","NULL"));
+		Q_strcpy(rank_ptr->steam_id, kv_ptr->GetString("st","NULL"));
+		rank_ptr->ip_address[0] = kv_ptr->GetInt("ip1", 0);
+		rank_ptr->ip_address[1] = kv_ptr->GetInt("ip2", 0);
+		rank_ptr->ip_address[2] = kv_ptr->GetInt("ip3", 0);
+		rank_ptr->ip_address[3] = kv_ptr->GetInt("ip4", 0);
+		rank_ptr->last_connected = kv_ptr->GetInt("lc", (int) current_time);
+		rank_ptr->rank = kv_ptr->GetInt("rk", -1);
+		rank_ptr->deaths = kv_ptr->GetInt("de", 0);
+		rank_ptr->headshots = kv_ptr->GetInt("hs", 0);
+		rank_ptr->kd_ratio = kv_ptr->GetFloat("kd", 0.0);
+		rank_ptr->kills = kv_ptr->GetInt("ki", 0);
+		rank_ptr->suicides = kv_ptr->GetInt("su", 0);
+		rank_ptr->points = kv_ptr->GetFloat("po", 1000.0);
+		rank_ptr->points_decay = kv_ptr->GetFloat("pd", 0.0);
+		rank_ptr->team_kills = kv_ptr->GetFloat("tk", 0);
+		rank_ptr->total_time_online = kv_ptr->GetFloat("to", 0);
+		rank_ptr->damage = kv_ptr->GetInt("da", 0);
 
 		// Get hit group information if available
 		for (int i = 0; i < MANI_MAX_STATS_HITGROUPS; i ++)
 		{
-			rank_ptr->hit_groups[i] = base_key_ptr->GetInt(hitboxes[i],0);
+			rank_ptr->hit_groups[i] = kv_ptr->GetInt(hitboxes[i],0);
 		}
 
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
@@ -4379,12 +4372,12 @@ void ManiStats::ReadStats(bool use_steam_id)
 			// CSS specific stuff
 			for (int i = 0; i < MANI_MAX_USER_DEF; i++)
 			{
-				rank_ptr->user_def[i] = base_key_ptr->GetInt(stats_user_def_name[i], 0);
+				rank_ptr->user_def[i] = kv_ptr->GetInt(stats_user_def_name[i], 0);
 			}
 
 			for (int i = 0; i < MANI_MAX_STATS_CSS_WEAPONS; i ++)
 			{
-				rank_ptr->weapon_kills[i] = base_key_ptr->GetInt(weapon_short_name[i], 0);
+				rank_ptr->weapon_kills[i] = kv_ptr->GetInt(weapon_short_name[i], 0);
 			}
 		}	
 		else if (gpManiGameType->IsGameType(MANI_GAME_DOD))
@@ -4392,22 +4385,24 @@ void ManiStats::ReadStats(bool use_steam_id)
 			// DODS specific stuff
 			for (int i = 0; i < MANI_MAX_DODS_USER_DEF; i++)
 			{
-				rank_ptr->user_def[i] = base_key_ptr->GetInt(stats_user_def_name[i], 0);
+				rank_ptr->user_def[i] = kv_ptr->GetInt(stats_user_def_name[i], 0);
 			}
 
 			for (int i = 0; i < MANI_MAX_STATS_DODS_WEAPONS; i ++)
 			{
-				rank_ptr->weapon_kills[i] = base_key_ptr->GetInt(weapon_short_name[i], 0);
+				rank_ptr->weapon_kills[i] = kv_ptr->GetInt(weapon_short_name[i], 0);
 			}
 		}
-		base_key_ptr = base_key_ptr->GetNextKey();
-		if (!base_key_ptr)
+
+		stats_ptr = kv_ptr->GetNextKey(rd_ptr);
+		if (!stats_ptr)
 		{
 			break;
 		}
 	}
 
-	kv_ptr->deleteThis();
+    kv_ptr->DeleteThis();
+	MMsg("Time for load into structure = [%f]\n", engine->Time() - timer1);
 
 	if (use_steam_id)
 	{
@@ -4426,33 +4421,16 @@ void ManiStats::ReadStats(bool use_steam_id)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_ranks command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiStats::ProcessMaRanks
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *start_rank,
- char *end_rank
-)
+PLUGIN_RESULT	ManiStats::ProcessMaRanks(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
 	int	start_index;
 	int	end_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	int players_ranked = 0;
@@ -4473,32 +4451,32 @@ PLUGIN_RESULT	ManiStats::ProcessMaRanks
 			percent_ranked = 100.0 *  ((float) players_ranked / (float) rank_player_list_size);
 		}
 
-		if (argc == 1)
+		if (gpCmd->Cmd_Argc() == 1)
 		{
 			start_index = 0;
 			end_index = rank_player_list_size;
 		}
-		else if (argc == 2)
+		else if (gpCmd->Cmd_Argc() == 2)
 		{
 			start_index = 0;
-			end_index = Q_atoi(start_rank);
+			end_index = Q_atoi(gpCmd->Cmd_Argv(1));
 		}
 		else
 		{
-			start_index = Q_atoi(start_rank) - 1;
-			end_index = Q_atoi(end_rank);
+			start_index = Q_atoi(gpCmd->Cmd_Argv(1)) - 1;
+			end_index = Q_atoi(gpCmd->Cmd_Argv(2));
 		}
 
 		if (start_index < 0) start_index = 0;
 		if (end_index > rank_player_list_size) end_index = rank_player_list_size;
 
-		OutputToConsole(player.entity, svr_command, "Currently %i Players in rank list (Steam Mode)\n", rank_player_list_size);
-		OutputToConsole(player.entity, svr_command, "Out of those players %.2f percent are ranked\n\n", percent_ranked);
-		OutputToConsole(player.entity, svr_command, "Name                      Steam ID             Rank   Kills  Deaths Days\n");
+		OutputToConsole(player_ptr, "Currently %i Players in rank list (Steam Mode)\n", rank_player_list_size);
+		OutputToConsole(player_ptr, "Out of those players %.2f percent are ranked\n\n", percent_ranked);
+		OutputToConsole(player_ptr, "Name                      Steam ID             Rank   Kills  Deaths Days\n");
 
 		for (int i = start_index; i < end_index; i++)
 		{
-			OutputToConsole(player.entity, svr_command, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
+			OutputToConsole(player_ptr, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
 						rank_player_list[i]->name,
 						rank_player_list[i]->steam_id,
 						rank_player_list[i]->rank,
@@ -4522,32 +4500,32 @@ PLUGIN_RESULT	ManiStats::ProcessMaRanks
 			percent_ranked = 100.0 * ((float) players_ranked / (float) rank_player_name_list_size);
 		}
 
-		if (argc == 1)
+		if (gpCmd->Cmd_Argc() == 1)
 		{
 			start_index = 0;
 			end_index = rank_player_name_list_size;
 		}
-		else if (argc == 2)
+		else if (gpCmd->Cmd_Argc() == 2)
 		{
 			start_index = 0;
-			end_index = Q_atoi(start_rank);
+			end_index = Q_atoi(gpCmd->Cmd_Argv(1));
 		}
 		else
 		{
-			start_index = Q_atoi(start_rank) - 1;
-			end_index = Q_atoi(end_rank);
+			start_index = Q_atoi(gpCmd->Cmd_Argv(1)) - 1;
+			end_index = Q_atoi(gpCmd->Cmd_Argv(2));
 		}
 
 		if (start_index < 0) start_index = 0;
 		if (end_index > rank_player_name_list_size) end_index = rank_player_name_list_size;
 
-		OutputToConsole(player.entity, svr_command, "Currently %i Players in rank list (Name mode)\n\n", rank_player_name_list_size);
-		OutputToConsole(player.entity, svr_command, "Out of those players %.2f percent are ranked\n\n", percent_ranked);
-		OutputToConsole(player.entity, svr_command, "Name                      Steam ID             Rank   Kills  Deaths Days\n");
+		OutputToConsole(player_ptr, "Currently %i Players in rank list (Name mode)\n\n", rank_player_name_list_size);
+		OutputToConsole(player_ptr, "Out of those players %.2f percent are ranked\n\n", percent_ranked);
+		OutputToConsole(player_ptr, "Name                      Steam ID             Rank   Kills  Deaths Days\n");
 
 		for (int i = start_index; i < end_index; i++)
 		{
-			OutputToConsole(player.entity, svr_command, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
+			OutputToConsole(player_ptr, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
 						rank_player_name_list[i]->name,
 						"N/A",
 						rank_player_name_list[i]->rank,
@@ -4564,33 +4542,16 @@ PLUGIN_RESULT	ManiStats::ProcessMaRanks
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_ranks command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiStats::ProcessMaPLRanks
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *start_rank,
- char *end_rank
- )
+PLUGIN_RESULT	ManiStats::ProcessMaPLRanks(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
 	int start_index;
 	int end_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_STOP;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
 	time_t	current_time;
@@ -4598,31 +4559,31 @@ PLUGIN_RESULT	ManiStats::ProcessMaPLRanks
 
 	if (mani_stats_by_steam_id.GetInt() == 1)
 	{
-		if (argc == 1)
+		if (gpCmd->Cmd_Argc() == 1)
 		{
 			start_index = 0;
 			end_index = rank_list_size;
 		}
-		else if (argc == 2)
+		else if (gpCmd->Cmd_Argc() == 2)
 		{
 			start_index = 0;
-			end_index = Q_atoi(start_rank);
+			end_index = Q_atoi(gpCmd->Cmd_Argv(1));
 		}
 		else
 		{
-			start_index = Q_atoi(start_rank) - 1;
-			end_index = Q_atoi(end_rank);
+			start_index = Q_atoi(gpCmd->Cmd_Argv(1)) - 1;
+			end_index = Q_atoi(gpCmd->Cmd_Argv(2));
 		}
 
 		if (start_index < 0) start_index = 0;
 		if (end_index > rank_list_size) end_index = rank_list_size;
 
-		OutputToConsole(player.entity, svr_command, "Currently %i Ranked Players list (Steam Mode)\n\n", rank_list_size);
-		OutputToConsole(player.entity, svr_command, "Name                      Steam ID             Rank   Kills  Deaths  Days\n");
+		OutputToConsole(player_ptr, "Currently %i Ranked Players list (Steam Mode)\n\n", rank_list_size);
+		OutputToConsole(player_ptr, "Name                      Steam ID             Rank   Kills  Deaths  Days\n");
 
 		for (int i = 0; i < end_index; i++)
 		{
-			OutputToConsole(player.entity, svr_command, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
+			OutputToConsole(player_ptr, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
 						rank_list[i]->name,
 						rank_list[i]->steam_id,
 						rank_list[i]->rank,
@@ -4634,31 +4595,31 @@ PLUGIN_RESULT	ManiStats::ProcessMaPLRanks
 	}
 	else
 	{
-		if (argc == 1)
+		if (gpCmd->Cmd_Argc() == 1)
 		{
 			start_index = 0;
 			end_index = rank_name_list_size;
 		}
-		else if (argc == 2)
+		else if (gpCmd->Cmd_Argc() == 2)
 		{
 			start_index = 0;
-			end_index = Q_atoi(start_rank);
+			end_index = Q_atoi(gpCmd->Cmd_Argv(1));
 		}
 		else
 		{
-			start_index = Q_atoi(start_rank) - 1;
-			end_index = Q_atoi(end_rank);
+			start_index = Q_atoi(gpCmd->Cmd_Argv(1)) - 1;
+			end_index = Q_atoi(gpCmd->Cmd_Argv(2));
 		}
 
 		if (start_index < 0) start_index = 0;
 		if (end_index > rank_name_list_size) end_index = rank_name_list_size;
 
-		OutputToConsole(player.entity, svr_command, "Currently %i Ranked Players list (Steam Mode)\n\n", rank_name_list_size);
-		OutputToConsole(player.entity, svr_command, "Name                      Steam ID             Rank   Kills  Deaths Days\n");
+		OutputToConsole(player_ptr, "Currently %i Ranked Players list (Steam Mode)\n\n", rank_name_list_size);
+		OutputToConsole(player_ptr, "Name                      Steam ID             Rank   Kills  Deaths Days\n");
 
 		for (int i = 0; i < end_index; i++)
 		{
-			OutputToConsole(player.entity, svr_command, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
+			OutputToConsole(player_ptr, "%-25s %-20s %-6i %-6i %-6i  %.2f\n", 
 						rank_name_list[i]->name,
 						"N/A",
 						rank_name_list[i]->rank,
@@ -4675,72 +4636,28 @@ PLUGIN_RESULT	ManiStats::ProcessMaPLRanks
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_resetrank command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiStats::ProcessMaResetPlayerRank
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *player_steam_id
-)
+PLUGIN_RESULT	ManiStats::ProcessMaResetRank(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	player_t player;
 	int	admin_index;
 	rank_t	rank_key;
 	rank_t	*rank_key_address;
 	rank_t	*player_found = NULL;
-	player.entity = NULL;
 	rank_t	**player_found_address = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	player.entity = NULL;
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 2) 
-	{
-		if (mani_stats_by_steam_id.GetInt() == 1)
-		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <player steam id>\n", command_string);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: %s <player steam id>", command_string);
-			}
-		}
-		else
-		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <player name>\n", command_string);
-			}
-			else
-			{
-				SayToPlayer(&player, "Mani Admin Plugin: %s <player name>", command_string);
-			}
-		}
-
-		return PLUGIN_STOP;
-	}
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	rank_key_address = &rank_key;
 
 	if (mani_stats_by_steam_id.GetInt() == 1)
 	{
 		// Do BSearch for steam ID in ranked player list
-		Q_strcpy(rank_key.steam_id, player_steam_id);
+		Q_strcpy(rank_key.steam_id, gpCmd->Cmd_Argv(1));
 
 		player_found_address = (rank_t **) bsearch
 							(
@@ -4754,7 +4671,7 @@ PLUGIN_RESULT	ManiStats::ProcessMaResetPlayerRank
 	else
 	{
 		// Do BSearch for name in ranked player name list
-		Q_strcpy(rank_key.name, player_steam_id);
+		Q_strcpy(rank_key.name, gpCmd->Cmd_Argv(1));
 
 		player_found_address = (rank_t **) bsearch
 							(
@@ -4771,26 +4688,12 @@ PLUGIN_RESULT	ManiStats::ProcessMaResetPlayerRank
 		if (mani_stats_by_steam_id.GetInt() == 1)
 		{
 			// Did not find player
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Did not find steam id [%s]\n", player_steam_id);
-			}
-			else
-			{
-				SayToPlayer(&player, "Did not find steam id [%s]", player_steam_id);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1))); 
 		}
 		else
 		{
 			// Did not find player
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Did not find name [%s]\n", player_steam_id);
-			}
-			else
-			{
-                SayToPlayer(&player, "Did not find name [%s]", player_steam_id);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", gpCmd->Cmd_Argv(1))); 
 		}
 
 		return PLUGIN_STOP;
@@ -4820,16 +4723,8 @@ PLUGIN_RESULT	ManiStats::ProcessMaResetPlayerRank
 		player_found->user_def[i] = 0;
 	}
 
-	if (svr_command)
-	{
-		OutputToConsole(player.entity, svr_command, "Reset rank of player [%s] steam id [%s]\n", player_found->name, player_steam_id);
-		LogCommand (NULL, "Reset rank of player [%s] steam id [%s]\n", player_found->name, player_steam_id);
-	}
-	else
-	{
-		SayToPlayer(&player, "Reset rank of player [%s] steam id [%s]", player_found->name, player_steam_id);
-		LogCommand (player.entity, "Reset rank of player [%s] steam id [%s]\n", player_found->name, player_steam_id);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Reset rank of player [%s] steam id [%s]", player_found->name, gpCmd->Cmd_Argv(1));
+	LogCommand (player_ptr, "Reset rank of player [%s] steam id [%s]\n", player_found->name, gpCmd->Cmd_Argv(1));
 
 	return PLUGIN_STOP;
 }
@@ -5086,36 +4981,9 @@ static int sort_by_kills_weapon ( const void *m1,  const void *m2)
 	return strcmp(mi1->weapon_name, mi2->weapon_name);
 }
 
-CON_COMMAND(ma_ranks, "Prints all players held in ranks list (whether they are ranked or not)")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiStats->ProcessMaRanks(0,	true, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2));
-	return;
-}
-
-CON_COMMAND(ma_plranks, "Prints players who actually have a real rank")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiStats->ProcessMaPLRanks(0,true, engine->Cmd_Argc(), engine->Cmd_Argv(0), engine->Cmd_Argv(1), engine->Cmd_Argv(2));
-	return;
-}
-
-CON_COMMAND(ma_resetrank, "Resets a players rank, ma_resetrank <steam_id>")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiStats->ProcessMaResetPlayerRank
-					(
-					0, // Client index
-					true,  // Sever console command type
-					engine->Cmd_Argc(), // Number of arguments
-					engine->Cmd_Argv(0), // Command
-					engine->Cmd_Argv(1) // steam id
-					);
-	return;
-}
+SCON_COMMAND(ma_ranks, 2215, MaRanks, false);
+SCON_COMMAND(ma_plranks, 2217, MaPLRanks, false);
+SCON_COMMAND(ma_resetrank, 2105, MaResetRank, false);
 
 //---------------------------------------------------------------------------------
 // Purpose: Number of days before decay period kicks in

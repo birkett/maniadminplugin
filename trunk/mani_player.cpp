@@ -50,6 +50,8 @@
 #include "mani_gametype.h"
 #include "mani_reservedslot.h"
 #include "mani_skins.h"
+#include "mani_keyvalues.h"
+#include "mani_commands.h"
 #include "mani_trackuser.h"
 
 extern IFileSystem	*filesystem;
@@ -76,7 +78,7 @@ player_settings_t	**player_settings_name_list = NULL;
 player_settings_t	**player_settings_waiting_list = NULL;
 player_settings_t	**player_settings_name_waiting_list = NULL;
 
-player_settings_t	active_player_settings[MANI_MAX_PLAYERS];
+active_settings_t	active_player_settings[MANI_MAX_PLAYERS];
 
 int	player_settings_list_size = 0;
 int	player_settings_name_list_size = 0;
@@ -123,7 +125,7 @@ bool ProcessPluginPaused(void)
 //---------------------------------------------------------------------------------
 // Purpose: FindTargetPlayers using a search string
 //---------------------------------------------------------------------------------
-bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	immunity_flag)
+bool FindTargetPlayers(player_t *requesting_player, const char *target_string, int	immunity_flag)
 {
 	player_t player;
 	player_t *temp_player_list = NULL;
@@ -303,7 +305,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 		player.user_id = target_user_id;
 		if (FindPlayerByUserID(&player))
 		{
-			if (requesting_player->entity && requesting_player->index == player.index)	immunity_flag = -1;
+			if (requesting_player && requesting_player->entity && requesting_player->index == player.index)	immunity_flag = -1;
 
 			if (immunity_flag == IMMUNITY_DONT_CARE || player.is_bot)
 			{
@@ -336,7 +338,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 			Q_strcpy(player.steam_id, target_string);
 			if (FindPlayerBySteamID(&player))
 			{
-				if (requesting_player->entity && requesting_player->index == player.index)	immunity_flag = -1;
+				if (requesting_player && requesting_player->entity && requesting_player->index == player.index)	immunity_flag = -1;
 
 				if (immunity_flag == IMMUNITY_DONT_CARE || player.is_bot)
 				{
@@ -386,7 +388,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 			continue;
 		}
 
-		if (requesting_player->entity && requesting_player->index == temp_player_list[i].index)	immunity_flag = -1;
+		if (requesting_player && requesting_player->entity && requesting_player->index == temp_player_list[i].index)	immunity_flag = -1;
 
 		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
 		{
@@ -417,7 +419,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 
 		int	temp_immunity = immunity_flag;
 
-		if (requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
+		if (requesting_player && requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
 
 		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
 		{
@@ -448,7 +450,7 @@ bool FindTargetPlayers(player_t *requesting_player, char *target_string, int	imm
 
 		int	temp_immunity = immunity_flag;
 
-		if (requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
+		if (requesting_player && requesting_player->entity && requesting_player->index == temp_player_list[i].index)	temp_immunity = -1;
 
 		if (immunity_flag != IMMUNITY_DONT_CARE && !player.is_bot)
 		{
@@ -499,7 +501,7 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 					player_ptr->entity = pEntity;
 					player_ptr->user_id = playerinfo->GetUserID();
 					player_ptr->health = playerinfo->GetHealth();
-					player_ptr->is_dead = playerinfo->IsDead();
+					player_ptr->is_dead = playerinfo->IsObserver() | playerinfo->IsDead();
 
 					if (FStrEq(player_ptr->steam_id,"BOT"))
 					{
@@ -600,7 +602,7 @@ bool FindPlayerByEntity(player_t *player_ptr)
 			player_ptr->user_id = playerinfo->GetUserID();
 			player_ptr->team = playerinfo->GetTeamIndex();
 			player_ptr->health = playerinfo->GetHealth();
-			player_ptr->is_dead = playerinfo->IsDead();
+			player_ptr->is_dead = playerinfo->IsObserver() | playerinfo->IsDead();
 			Q_strcpy(player_ptr->name, playerinfo->GetName());
 			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
 
@@ -646,7 +648,7 @@ bool FindPlayerByIndex(player_t *player_ptr)
 			Q_strcpy(player_ptr->name, playerinfo->GetName());
 			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
 			player_ptr->health = playerinfo->GetHealth();
-			player_ptr->is_dead = playerinfo->IsDead();
+			player_ptr->is_dead = playerinfo->IsObserver() | playerinfo->IsDead();
 			player_ptr->entity = pEntity;
 
 			if (FStrEq(player_ptr->steam_id,"BOT"))
@@ -734,7 +736,7 @@ void	PlayerJoinedInitSettings(player_t *player)
 
 	time(&current_time);
 	player_settings->last_connected = current_time;
-	active_player_settings[player->index - 1] = *player_settings;
+	active_player_settings[player->index - 1].ptr = player_settings;
 	active_player_settings[player->index - 1].active = true;
 	return;
 }
@@ -824,6 +826,7 @@ player_settings_t *FindStoredPlayerSettings (player_t *player)
 	add_player.quake_sounds = mani_player_settings_quake.GetInt();
 	add_player.server_sounds = mani_player_settings_sounds.GetInt();
 	add_player.show_death_beam = mani_player_settings_death_beam.GetInt();
+	add_player.show_vote_results_progress = mani_player_settings_vote_progress.GetInt();
 	add_player.teleport_coords_list = NULL;
 	add_player.teleport_coords_list_size = 0;
 	add_player.last_connected = current_time;
@@ -888,11 +891,11 @@ player_settings_t *FindPlayerSettings (player_t *player)
 		if (!temp_player_settings) return NULL;
 
 		// update active list
-		active_player_settings[player->index - 1] = *temp_player_settings;
+		active_player_settings[player->index - 1].ptr = temp_player_settings;
 		active_player_settings[player->index - 1].active = true;	
 	}
 
-	return &(active_player_settings[player->index - 1]);
+	return active_player_settings[player->index - 1].ptr;
 }
 
 //---------------------------------------------------------------------------------
@@ -937,14 +940,6 @@ void	SetPlayerFlag (player_settings_t *player_settings_ptr, int flag_index, bool
 		player_settings_ptr->bit_array[int_index] &= (0xffffffff - (0x01 << bit_index));
 	}
 }
-//---------------------------------------------------------------------------------
-// Purpose: Update a players settings
-//---------------------------------------------------------------------------------
-void UpdatePlayerSettings (player_t *player, player_settings_t *new_player_settings)
-{
-	active_player_settings[player->index - 1] = *new_player_settings;
-	active_player_settings[player->index - 1].active = true;
-}
 
 //---------------------------------------------------------------------------------
 // Purpose: Player disconnects from server, set their index to false
@@ -952,6 +947,7 @@ void UpdatePlayerSettings (player_t *player, player_settings_t *new_player_setti
 void PlayerSettingsDisconnect (player_t *player)
 {
 	active_player_settings[player->index - 1].active = false;
+	active_player_settings[player->index - 1].ptr = NULL;
 }
 
 //---------------------------------------------------------------------------------
@@ -1000,6 +996,7 @@ void	ResetActivePlayers(void)
 	{
 		player_t player;
 		active_player_settings[i].active = false;
+		active_player_settings[i].ptr = NULL;
 
 		player.index = i + 1;
 		if (!FindPlayerByIndex(&player)) continue;
@@ -1008,7 +1005,7 @@ void	ResetActivePlayers(void)
 		player_settings_t *player_settings = FindPlayerSettings (&player);
 		if (player_settings)
 		{
-			active_player_settings[i] = *player_settings;
+			active_player_settings[i].ptr = player_settings;
 			active_player_settings[i].active = true;
 		}
 	}
@@ -1054,8 +1051,7 @@ static
 void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *filename, bool use_steam_id)
 {
 	char	base_filename[512];
-	KeyValues *settings;
-	KeyValues *kv;
+	ManiKeyValues *settings;
 
 	//Write stats to disk
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/data/%s", mani_path.GetString(), filename);
@@ -1070,68 +1066,78 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 		}
 	}
 
-	kv = new KeyValues( filename );
-	kv->SetString("version", PLUGIN_VERSION_ID2);
+	settings = new ManiKeyValues( filename );
+
+	settings->SetIndent(0);
+	if (!settings->WriteStart(base_filename))
+	{
+		MMsg("Failed to open %s\n", base_filename);
+		return;
+	}
+
+	settings->WriteKey("version", PLUGIN_VERSION_ID2);
 
 	// Write Player setttings
 	for (int i = 0; i < ps_list_size; i ++)
 	{
-		settings = kv->CreateNewKey();
-		settings->SetString("na", ps_list[i]->name);
-		settings->SetString("st", ps_list[i]->steam_id);
+		settings->WriteNewSubKey(i + 1);
+		settings->WriteKey("na", ps_list[i]->name);
+		settings->WriteKey("st", ps_list[i]->steam_id);
 
-		if (ps_list[i]->damage_stats != 0) settings->SetInt("ds", ps_list[i]->damage_stats);
-		if (ps_list[i]->damage_stats_timeout != 0) settings->SetInt("dt", ps_list[i]->damage_stats_timeout);
-		if (ps_list[i]->show_destruction != 0) settings->SetInt("de", ps_list[i]->show_destruction);
-		if (ps_list[i]->quake_sounds != 0) settings->SetInt("qs", ps_list[i]->quake_sounds);
-		if (ps_list[i]->server_sounds != 0) settings->SetInt("ss", ps_list[i]->server_sounds);
-		if (ps_list[i]->show_death_beam != 0) settings->SetInt("sd", ps_list[i]->show_death_beam);
+		if (ps_list[i]->damage_stats != 0) settings->WriteKey("ds", ps_list[i]->damage_stats);
+		if (ps_list[i]->damage_stats_timeout != 0) settings->WriteKey("dt", ps_list[i]->damage_stats_timeout);
+		if (ps_list[i]->show_destruction != 0) settings->WriteKey("de", ps_list[i]->show_destruction);
+		if (ps_list[i]->quake_sounds != 0) settings->WriteKey("qs", ps_list[i]->quake_sounds);
+		if (ps_list[i]->server_sounds != 0) settings->WriteKey("ss", ps_list[i]->server_sounds);
+		if (ps_list[i]->show_death_beam != 0) settings->WriteKey("sd", ps_list[i]->show_death_beam);
+		if (ps_list[i]->show_vote_results_progress != 0) settings->WriteKey("sv", ps_list[i]->show_vote_results_progress);
 
-		settings->SetInt("lc", ps_list[i]->last_connected);
+		settings->WriteKey("lc", (int) ps_list[i]->last_connected);
 
 		// Only output if needed, saves disk space
-		if (ps_list[i]->admin_t_model && !FStrEq(ps_list[i]->admin_t_model,"")) settings->SetString("at", ps_list[i]->admin_t_model);
-		if (ps_list[i]->admin_ct_model && !FStrEq(ps_list[i]->admin_ct_model,"")) settings->SetString("ac", ps_list[i]->admin_ct_model);
-		if (ps_list[i]->immunity_t_model && !FStrEq(ps_list[i]->immunity_t_model,"")) settings->SetString("it", ps_list[i]->immunity_t_model);
-		if (ps_list[i]->immunity_ct_model && !FStrEq(ps_list[i]->immunity_ct_model,"")) settings->SetString("ic", ps_list[i]->immunity_ct_model);
-		if (ps_list[i]->t_model && !FStrEq(ps_list[i]->t_model,"")) settings->SetString("nt", ps_list[i]->t_model);
-		if (ps_list[i]->ct_model && !FStrEq(ps_list[i]->ct_model,"")) settings->SetString("nc", ps_list[i]->ct_model);
+		if (ps_list[i]->admin_t_model && !FStrEq(ps_list[i]->admin_t_model,"")) settings->WriteKey("at", ps_list[i]->admin_t_model);
+		if (ps_list[i]->admin_ct_model && !FStrEq(ps_list[i]->admin_ct_model,"")) settings->WriteKey("ac", ps_list[i]->admin_ct_model);
+		if (ps_list[i]->immunity_t_model && !FStrEq(ps_list[i]->immunity_t_model,"")) settings->WriteKey("it", ps_list[i]->immunity_t_model);
+		if (ps_list[i]->immunity_ct_model && !FStrEq(ps_list[i]->immunity_ct_model,"")) settings->WriteKey("ic", ps_list[i]->immunity_ct_model);
+		if (ps_list[i]->t_model && !FStrEq(ps_list[i]->t_model,"")) settings->WriteKey("nt", ps_list[i]->t_model);
+		if (ps_list[i]->ct_model && !FStrEq(ps_list[i]->ct_model,"")) settings->WriteKey("nc", ps_list[i]->ct_model);
 
-		if (ps_list[i]->language && !FStrEq(ps_list[i]->language,"")) settings->SetString("la", ps_list[i]->language);
+		if (ps_list[i]->language && !FStrEq(ps_list[i]->language,"")) settings->WriteKey("la", ps_list[i]->language);
 
 		// Handle bit array
-		if (ps_list[i]->bit_array[0] != 0) settings->SetInt("b0", ps_list[i]->bit_array[0]);
-		if (ps_list[i]->bit_array[1] != 0) settings->SetInt("b1", ps_list[i]->bit_array[1]);
-		if (ps_list[i]->bit_array[2] != 0) settings->SetInt("b2", ps_list[i]->bit_array[2]);
-		if (ps_list[i]->bit_array[3] != 0) settings->SetInt("b3", ps_list[i]->bit_array[3]);
-		if (ps_list[i]->bit_array[4] != 0) settings->SetInt("b4", ps_list[i]->bit_array[4]);
-		if (ps_list[i]->bit_array[5] != 0) settings->SetInt("b5", ps_list[i]->bit_array[5]);
-		if (ps_list[i]->bit_array[6] != 0) settings->SetInt("b6", ps_list[i]->bit_array[6]);
-		if (ps_list[i]->bit_array[7] != 0) settings->SetInt("b7", ps_list[i]->bit_array[7]);
+		if (ps_list[i]->bit_array[0] != 0) settings->WriteKey("b0", ps_list[i]->bit_array[0]);
+		if (ps_list[i]->bit_array[1] != 0) settings->WriteKey("b1", ps_list[i]->bit_array[1]);
+		if (ps_list[i]->bit_array[2] != 0) settings->WriteKey("b2", ps_list[i]->bit_array[2]);
+		if (ps_list[i]->bit_array[3] != 0) settings->WriteKey("b3", ps_list[i]->bit_array[3]);
+		if (ps_list[i]->bit_array[4] != 0) settings->WriteKey("b4", ps_list[i]->bit_array[4]);
+		if (ps_list[i]->bit_array[5] != 0) settings->WriteKey("b5", ps_list[i]->bit_array[5]);
+		if (ps_list[i]->bit_array[6] != 0) settings->WriteKey("b6", ps_list[i]->bit_array[6]);
+		if (ps_list[i]->bit_array[7] != 0) settings->WriteKey("b7", ps_list[i]->bit_array[7]);
 
 		// Do teleport coords if needed
 		if (ps_list[i]->teleport_coords_list_size != 0)
 		{
 			// Write sub key
-			KeyValues *teleport = settings->FindKey("teleport", true);
+			settings->WriteNewSubKey("teleport");
 
 			for (int j = 0; j < ps_list[i]->teleport_coords_list_size; j++)
 			{
 				// Add map subkey
-				KeyValues *map_teleport = teleport->FindKey(ps_list[i]->teleport_coords_list[j].map_name, true);
-				map_teleport->SetFloat("x", ps_list[i]->teleport_coords_list[j].coords.x);
-				map_teleport->SetFloat("y", ps_list[i]->teleport_coords_list[j].coords.y);
-				map_teleport->SetFloat("z", ps_list[i]->teleport_coords_list[j].coords.z);
+				settings->WriteNewSubKey(ps_list[i]->teleport_coords_list[j].map_name);
+				settings->WriteKey("x", ps_list[i]->teleport_coords_list[j].coords.x);
+				settings->WriteKey("y", ps_list[i]->teleport_coords_list[j].coords.y);
+				settings->WriteKey("z", ps_list[i]->teleport_coords_list[j].coords.z);
+				settings->WriteEndSubKey();
 			}
+
+			settings->WriteEndSubKey();
 		}
+
+		settings->WriteEndSubKey();
 	}
 
-	if (!kv->SaveToFile( filesystem, base_filename, NULL))
-	{
-		MMsg("Failed to write %s\n", base_filename);
-	}
-
-	kv->deleteThis();
+	settings->WriteEnd();
+	delete settings;
 }
 
 //---------------------------------------------------------------------------------
@@ -1468,25 +1474,34 @@ void	ReadPlayerSettings(void)
 		{
 			// Do KeyValues system for reading player settings in
 			char	core_filename[256];
-			KeyValues *base_key_ptr;
-			KeyValues *kv_ptr;
+			ManiKeyValues *kv_ptr;
 
 			Q_strcpy(ps_filename, "mani_player_settings.txt");
 
-			kv_ptr = new KeyValues("mani_player_settings.txt");
+			kv_ptr = new ManiKeyValues("mani_player_settings.txt");
 			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
 
-			if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
+			kv_ptr->SetKeyPairSize(5,20);
+			kv_ptr->SetKeySize(5, 500);
+
+			if (!kv_ptr->ReadFile(core_filename))
 			{
 				MMsg("Failed to load %s\n", core_filename);
-				kv_ptr->deleteThis();
+				kv_ptr->DeleteThis();
 				return;
 			}
 
-			base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-			if (!base_key_ptr)
+			read_t *rd_ptr = kv_ptr->GetPrimaryKey();
+			if (!rd_ptr)
 			{
-				kv_ptr->deleteThis();
+				kv_ptr->DeleteThis();
+				return;
+			}
+
+			read_t *ply_ptr = kv_ptr->GetNextKey(rd_ptr);
+			if (!ply_ptr)
+			{
+				kv_ptr->DeleteThis();
 				return;
 			}
 
@@ -1496,41 +1511,41 @@ void	ReadPlayerSettings(void)
 			{
 				Q_memset(&ps, 0, sizeof(player_settings_t));
 
-				Q_strcpy(ps.name, base_key_ptr->GetString("na","NULL"));
-				Q_strcpy(ps.steam_id, base_key_ptr->GetString("st","NULL"));
+				Q_strcpy(ps.name, kv_ptr->GetString("na","NULL"));
+				Q_strcpy(ps.steam_id, kv_ptr->GetString("st","NULL"));
 
-				ps.damage_stats = base_key_ptr->GetInt("ds", 0);
-				ps.damage_stats_timeout = base_key_ptr->GetInt("dt", 15);
-				ps.show_destruction = base_key_ptr->GetInt("de", 0);
-				ps.quake_sounds = base_key_ptr->GetInt("qs", 0);
-				ps.server_sounds = base_key_ptr->GetInt("ss", 0);
-				ps.show_death_beam = base_key_ptr->GetInt("sd", 0);
-				ps.last_connected = base_key_ptr->GetInt("lc", 0);
+				ps.damage_stats = kv_ptr->GetInt("ds", 0);
+				ps.damage_stats_timeout = kv_ptr->GetInt("dt", 15);
+				ps.show_destruction = kv_ptr->GetInt("de", 0);
+				ps.quake_sounds = kv_ptr->GetInt("qs", 0);
+				ps.server_sounds = kv_ptr->GetInt("ss", 0);
+				ps.show_death_beam = kv_ptr->GetInt("sd", 0);
+				ps.show_vote_results_progress = kv_ptr->GetInt("sv", 0);
+				ps.last_connected = kv_ptr->GetInt("lc", 0);
 
-				Q_strcpy(ps.admin_t_model,base_key_ptr->GetString("at", ""));
-				Q_strcpy(ps.admin_ct_model,base_key_ptr->GetString("ac", ""));
-				Q_strcpy(ps.immunity_t_model,base_key_ptr->GetString("it", ""));
-				Q_strcpy(ps.immunity_ct_model,base_key_ptr->GetString("ic", ""));
-				Q_strcpy(ps.t_model, base_key_ptr->GetString("nt", ""));
-				Q_strcpy(ps.ct_model,base_key_ptr->GetString("nc", ""));
-				Q_strcpy(ps.language,base_key_ptr->GetString("la", ""));
+				Q_strcpy(ps.admin_t_model,kv_ptr->GetString("at", ""));
+				Q_strcpy(ps.admin_ct_model,kv_ptr->GetString("ac", ""));
+				Q_strcpy(ps.immunity_t_model,kv_ptr->GetString("it", ""));
+				Q_strcpy(ps.immunity_ct_model,kv_ptr->GetString("ic", ""));
+				Q_strcpy(ps.t_model, kv_ptr->GetString("nt", ""));
+				Q_strcpy(ps.ct_model,kv_ptr->GetString("nc", ""));
+				Q_strcpy(ps.language,kv_ptr->GetString("la", ""));
 
 				// Bit array loading 
-				ps.bit_array[0] = base_key_ptr->GetInt("b0", 0);
-				ps.bit_array[1] = base_key_ptr->GetInt("b1", 0);
-				ps.bit_array[2] = base_key_ptr->GetInt("b2", 0);
-				ps.bit_array[3] = base_key_ptr->GetInt("b3", 0);
-				ps.bit_array[4] = base_key_ptr->GetInt("b4", 0);
-				ps.bit_array[5] = base_key_ptr->GetInt("b5", 0);
-				ps.bit_array[6] = base_key_ptr->GetInt("b6", 0);
-				ps.bit_array[7] = base_key_ptr->GetInt("b7", 0);
+				ps.bit_array[0] = (unsigned int) kv_ptr->GetInt("b0", 0);
+				ps.bit_array[1] = (unsigned int) kv_ptr->GetInt("b1", 0);
+				ps.bit_array[2] = (unsigned int) kv_ptr->GetInt("b2", 0);
+				ps.bit_array[3] = (unsigned int) kv_ptr->GetInt("b3", 0);
+				ps.bit_array[4] = (unsigned int) kv_ptr->GetInt("b4", 0);
+				ps.bit_array[5] = (unsigned int) kv_ptr->GetInt("b5", 0);
+				ps.bit_array[6] = (unsigned int) kv_ptr->GetInt("b6", 0);
+				ps.bit_array[7] = (unsigned int) kv_ptr->GetInt("b7", 0);
 
-				
-				KeyValues *t_key_ptr = base_key_ptr->GetFirstTrueSubKey();
-				if (t_key_ptr && FStrEq(t_key_ptr->GetName(), "teleport"))
+				read_t *t_key_ptr = kv_ptr->GetNextKey(ply_ptr);
+				if (t_key_ptr && FStrEq(t_key_ptr->sub_key_name, "teleport"))
 				{
 					// Found teleport sub key so start getting coord lists
-					KeyValues *tm_key_ptr = t_key_ptr->GetFirstTrueSubKey();
+					read_t *tm_key_ptr = kv_ptr->GetNextKey(t_key_ptr);
 
 					if (tm_key_ptr)
 					{
@@ -1538,17 +1553,17 @@ void	ReadPlayerSettings(void)
 						{
 							teleport_coords_t tc;
 
-							Q_strcpy(tc.map_name, tm_key_ptr->GetName());
-							tc.coords.x = tm_key_ptr->GetFloat("x", 0);
-							tc.coords.y = tm_key_ptr->GetFloat("y", 0);
-							tc.coords.z = tm_key_ptr->GetFloat("z", 0);
+							Q_strcpy(tc.map_name, tm_key_ptr->sub_key_name);
+							tc.coords.x = kv_ptr->GetFloat("x", 0);
+							tc.coords.y = kv_ptr->GetFloat("y", 0);
+							tc.coords.z = kv_ptr->GetFloat("z", 0);
 
 							// Need	to add a new map to	the	list
 							AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 							ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
 
 							// Find next map
-							tm_key_ptr = tm_key_ptr->GetNextKey();
+							tm_key_ptr = kv_ptr->GetNextKey(t_key_ptr);
 							if (!tm_key_ptr)
 							{
 								break;
@@ -1561,14 +1576,14 @@ void	ReadPlayerSettings(void)
 				player_settings_list[player_settings_list_size - 1]	= (player_settings_t *)	malloc (sizeof(player_settings_t));
 				*(player_settings_list[player_settings_list_size - 1]) = ps;
 
-				base_key_ptr = base_key_ptr->GetNextKey();
-				if (!base_key_ptr)
+				ply_ptr = kv_ptr->GetNextKey(rd_ptr);
+				if (!ply_ptr)
 				{
 					break;
 				}
 			}
 
-			kv_ptr->deleteThis();
+			kv_ptr->DeleteThis();
 			qsort(player_settings_list, player_settings_list_size, sizeof(player_settings_t *), sort_settings_by_steam_id); 
 
 		}
@@ -1890,25 +1905,34 @@ void	ReadPlayerSettings(void)
 		{
 			// Do KeyValues system for reading player settings in
 			char	core_filename[256];
-			KeyValues *base_key_ptr;
-			KeyValues *kv_ptr;
+			ManiKeyValues *kv_ptr;
 
 			Q_strcpy(ps_filename, "mani_player_name_settings.txt");
 
-			kv_ptr = new KeyValues("mani_player_settings.txt");
+			kv_ptr = new ManiKeyValues("mani_player_name_settings.txt");
 			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/%s", mani_path.GetString(), ps_filename);
 
-			if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
+			kv_ptr->SetKeyPairSize(5,20);
+			kv_ptr->SetKeySize(5, 500);
+
+			if (!kv_ptr->ReadFile(core_filename))
 			{
 				MMsg("Failed to load %s\n", core_filename);
-				kv_ptr->deleteThis();
+				kv_ptr->DeleteThis();
 				return;
 			}
 
-			base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-			if (!base_key_ptr)
+			read_t *rd_ptr = kv_ptr->GetPrimaryKey();
+			if (!rd_ptr)
 			{
-				kv_ptr->deleteThis();
+				kv_ptr->DeleteThis();
+				return;
+			}
+
+			read_t *ply_ptr = kv_ptr->GetNextKey(rd_ptr);
+			if (!ply_ptr)
+			{
+				kv_ptr->DeleteThis();
 				return;
 			}
 
@@ -1918,41 +1942,42 @@ void	ReadPlayerSettings(void)
 			{
 				Q_memset(&ps, 0, sizeof(player_settings_t));
 
-				Q_strcpy(ps.name, base_key_ptr->GetString("na","NULL"));
-				Q_strcpy(ps.steam_id, base_key_ptr->GetString("st","NULL"));
+				Q_strcpy(ps.name, kv_ptr->GetString("na","NULL"));
+				Q_strcpy(ps.steam_id, kv_ptr->GetString("st","NULL"));
 
-				ps.damage_stats = base_key_ptr->GetInt("ds", 0);
-				ps.damage_stats_timeout = base_key_ptr->GetInt("dt", 15);
-				ps.show_destruction = base_key_ptr->GetInt("de", 0);
-				ps.quake_sounds = base_key_ptr->GetInt("qs", 0);
-				ps.server_sounds = base_key_ptr->GetInt("ss", 0);
-				ps.show_death_beam = base_key_ptr->GetInt("sd", 0);
-				ps.last_connected = base_key_ptr->GetInt("lc", 0);
+				ps.damage_stats = kv_ptr->GetInt("ds", 0);
+				ps.damage_stats_timeout = kv_ptr->GetInt("dt", 15);
+				ps.show_destruction = kv_ptr->GetInt("de", 0);
+				ps.quake_sounds = kv_ptr->GetInt("qs", 0);
+				ps.server_sounds = kv_ptr->GetInt("ss", 0);
+				ps.show_death_beam = kv_ptr->GetInt("sd", 0);
+				ps.show_vote_results_progress = kv_ptr->GetInt("sv", 0);
+				ps.last_connected = kv_ptr->GetInt("lc", 0);
 
-				Q_strcpy(ps.admin_t_model,base_key_ptr->GetString("at", ""));
-				Q_strcpy(ps.admin_ct_model,base_key_ptr->GetString("ac", ""));
-				Q_strcpy(ps.immunity_t_model,base_key_ptr->GetString("it", ""));
-				Q_strcpy(ps.immunity_ct_model,base_key_ptr->GetString("ic", ""));
-				Q_strcpy(ps.t_model, base_key_ptr->GetString("nt", ""));
-				Q_strcpy(ps.ct_model,base_key_ptr->GetString("nc", ""));
-				Q_strcpy(ps.language,base_key_ptr->GetString("la", ""));
+				Q_strcpy(ps.admin_t_model,kv_ptr->GetString("at", ""));
+				Q_strcpy(ps.admin_ct_model,kv_ptr->GetString("ac", ""));
+				Q_strcpy(ps.immunity_t_model,kv_ptr->GetString("it", ""));
+				Q_strcpy(ps.immunity_ct_model,kv_ptr->GetString("ic", ""));
+				Q_strcpy(ps.t_model, kv_ptr->GetString("nt", ""));
+				Q_strcpy(ps.ct_model,kv_ptr->GetString("nc", ""));
+				Q_strcpy(ps.language,kv_ptr->GetString("la", ""));
 
 				// Bit array loading
-				ps.bit_array[0] = base_key_ptr->GetInt("b0", 0);
-				ps.bit_array[1] = base_key_ptr->GetInt("b1", 0);
-				ps.bit_array[2] = base_key_ptr->GetInt("b2", 0);
-				ps.bit_array[3] = base_key_ptr->GetInt("b3", 0);
-				ps.bit_array[4] = base_key_ptr->GetInt("b4", 0);
-				ps.bit_array[5] = base_key_ptr->GetInt("b5", 0);
-				ps.bit_array[6] = base_key_ptr->GetInt("b6", 0);
-				ps.bit_array[7] = base_key_ptr->GetInt("b7", 0);
+				ps.bit_array[0] = (unsigned int) kv_ptr->GetInt("b0", 0);
+				ps.bit_array[1] = (unsigned int) kv_ptr->GetInt("b1", 0);
+				ps.bit_array[2] = (unsigned int) kv_ptr->GetInt("b2", 0);
+				ps.bit_array[3] = (unsigned int) kv_ptr->GetInt("b3", 0);
+				ps.bit_array[4] = (unsigned int) kv_ptr->GetInt("b4", 0);
+				ps.bit_array[5] = (unsigned int) kv_ptr->GetInt("b5", 0);
+				ps.bit_array[6] = (unsigned int) kv_ptr->GetInt("b6", 0);
+				ps.bit_array[7] = (unsigned int) kv_ptr->GetInt("b7", 0);
 
 				
-				KeyValues *t_key_ptr = base_key_ptr->GetFirstTrueSubKey();
-				if (t_key_ptr && FStrEq(t_key_ptr->GetName(), "teleport"))
+				read_t *t_key_ptr = kv_ptr->GetNextKey(ply_ptr);
+				if (t_key_ptr && FStrEq(t_key_ptr->sub_key_name, "teleport"))
 				{
 					// Found teleport sub key so start getting coord lists
-					KeyValues *tm_key_ptr = t_key_ptr->GetFirstTrueSubKey();
+					read_t *tm_key_ptr = kv_ptr->GetNextKey(t_key_ptr);
 
 					if (tm_key_ptr)
 					{
@@ -1960,17 +1985,17 @@ void	ReadPlayerSettings(void)
 						{
 							teleport_coords_t tc;
 
-							Q_strcpy(tc.map_name, tm_key_ptr->GetName());
-							tc.coords.x = tm_key_ptr->GetFloat("x", 0);
-							tc.coords.y = tm_key_ptr->GetFloat("y", 0);
-							tc.coords.z = tm_key_ptr->GetFloat("z", 0);
+							Q_strcpy(tc.map_name, tm_key_ptr->sub_key_name);
+							tc.coords.x = kv_ptr->GetFloat("x", 0);
+							tc.coords.y = kv_ptr->GetFloat("y", 0);
+							tc.coords.z = kv_ptr->GetFloat("z", 0);
 
 							// Need	to add a new map to	the	list
 							AddToList((void	**)	&(ps.teleport_coords_list),	sizeof(teleport_coords_t), &(ps.teleport_coords_list_size));
 							ps.teleport_coords_list[ps.teleport_coords_list_size - 1] =	tc;
 
 							// Find next map
-							tm_key_ptr = tm_key_ptr->GetNextKey();
+							tm_key_ptr = kv_ptr->GetNextKey(t_key_ptr);
 							if (!tm_key_ptr)
 							{
 								break;
@@ -1983,14 +2008,14 @@ void	ReadPlayerSettings(void)
 				player_settings_name_list[player_settings_name_list_size - 1]	= (player_settings_t *)	malloc (sizeof(player_settings_t));
 				*(player_settings_name_list[player_settings_name_list_size - 1]) = ps;
 
-				base_key_ptr = base_key_ptr->GetNextKey();
-				if (!base_key_ptr)
+				ply_ptr = kv_ptr->GetNextKey(rd_ptr);
+				if (!ply_ptr)
 				{
 					break;
 				}
 			}
 
-			kv_ptr->deleteThis();
+			kv_ptr->DeleteThis();
 			qsort(player_settings_name_list, player_settings_name_list_size, sizeof(player_settings_t *), sort_settings_by_name); 
 
 		}
@@ -2186,14 +2211,15 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 	if (mani_show_victim_stats.GetInt() != 0)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size);
-		if (player_settings->damage_stats == 0) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : Off");
-		else if (player_settings->damage_stats == 1) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : Partial text");
-		else if (player_settings->damage_stats == 3) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : GUI Based");
-		else Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Damage Settings : Full text");
+		if (player_settings->damage_stats == 0) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1372));
+		else if (player_settings->damage_stats == 1) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1373));
+		else if (player_settings->damage_stats == 3) Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1374));
+		else Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1375));
 
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings damagetype");
 
-		if (gpManiGameType->IsAMXMenuAllowed())
+		// Only show victim stats timer if AMX menu allowed and in GUI stats mode
+		if (gpManiGameType->IsAMXMenuAllowed() && player_settings->damage_stats == 3)
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size);
 
@@ -2202,7 +2228,7 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, 
 						sizeof(menu_list[menu_list_size - 1].menu_text), 
-						"Damage Stats GUI Timer : %s", (player_settings->damage_stats_timeout == 0) ? "No Timer":seconds);
+						"Damage Stats GUI Timer : %s", (player_settings->damage_stats_timeout == 0) ? Translate(1376):seconds);
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings damagetimeout");
 		}
 	}
@@ -2214,16 +2240,16 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 //		if (player_settings->show_death_beam == 0) Q_snprintf(beam_mode, sizeof(beam_mode), "Off");
 //		else if (player_settings->show_death_beam
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Most Destructive : %s",
-											(player_settings->show_destruction == 0) ? "Off":"On");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text),   "%s", Translate(1377, "%s",
+											(player_settings->show_destruction == 0) ? Translate(M_OFF):Translate(M_ON)));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings destruction");
 	}
 
 	if (mani_quake_sounds.GetInt() != 0)
 	{
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Quake Sounds : %s",
-											(player_settings->quake_sounds == 0) ? "Off":"On");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text),   "%s", Translate(1378, "%s",
+											(player_settings->quake_sounds == 0) ? Translate(M_OFF):Translate(M_ON)));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings quake");
 	}
 
@@ -2234,15 +2260,23 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 //		if (player_settings->show_death_beam == 0) Q_snprintf(beam_mode, sizeof(beam_mode), "Off");
 //		else if (player_settings->show_death_beam
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Death Beam : %s",
-											(player_settings->show_death_beam == 0) ? "Off":"On");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text),  "%s", Translate(1379, "%s",
+											(player_settings->show_death_beam == 0) ? Translate(M_OFF):Translate(M_ON)));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings deathbeam");
 	}
 
 	AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "System Sounds : %s",
-											(player_settings->server_sounds == 0) ? "Off":"On");
+	Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1380, "%s",
+											(player_settings->server_sounds == 0) ? Translate(M_OFF):Translate(M_ON)));
 	Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings sounds");
+
+	if (mani_voting.GetInt() == 1)
+	{
+		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1381, "%s",
+											(player_settings->show_vote_results_progress == 0) ? Translate(M_OFF):Translate(M_ON)));
+		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings voteprogress");
+	}
 
 	if (mani_skins_admin.GetInt() != 0)
 	{
@@ -2253,17 +2287,17 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 			{
 				team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
 				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Admin %s Model : %s",
+				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1382, "%s%s",
 					Translate(gpManiGameType->GetTeamShortTranslation(team_index)),
-					(!FStrEq(player_settings->admin_t_model,"")) ? player_settings->admin_t_model:"None");
+					(!FStrEq(player_settings->admin_t_model,"")) ? player_settings->admin_t_model:Translate(M_NONE)));
 				Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings admin_t");
 
 				if (gpManiGameType->IsTeamPlayAllowed())
 				{
 					AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Admin %s Model : %s",
+					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1382, "%s%s",
 						Translate(gpManiGameType->GetTeamShortTranslation(TEAM_B)),
-						(!FStrEq(player_settings->admin_ct_model,"")) ? player_settings->admin_ct_model:"None");
+						(!FStrEq(player_settings->admin_ct_model,"")) ? player_settings->admin_ct_model:Translate(M_NONE)));
 					Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings admin_ct");
 				}
 			}
@@ -2279,17 +2313,17 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 			{
 				team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
 				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Reserved %s Model : %s",
+				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1383, "%s%s",
 					Translate(gpManiGameType->GetTeamShortTranslation(team_index)),
-					(!FStrEq(player_settings->immunity_t_model,"")) ? player_settings->immunity_t_model:"None");
+					(!FStrEq(player_settings->immunity_t_model,"")) ? player_settings->immunity_t_model:Translate(M_NONE)));
 				Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings immunity_t");
 
 				if (gpManiGameType->IsTeamPlayAllowed())
 				{
 					AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Reserved %s Model : %s",
+					Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1383, "%s%s",
 						Translate(gpManiGameType->GetTeamShortTranslation(TEAM_B)),
-						(!FStrEq(player_settings->immunity_ct_model,"")) ? player_settings->immunity_ct_model:"None");
+						(!FStrEq(player_settings->immunity_ct_model,"")) ? player_settings->immunity_ct_model:Translate(M_NONE)));
 					Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings immunity_ct");
 				}
 			}
@@ -2301,17 +2335,17 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 		team_index = (gpManiGameType->IsTeamPlayAllowed() ? TEAM_A:0);
 
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s Model : %s",
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1384, "%s%s",
 				Translate(gpManiGameType->GetTeamShortTranslation(team_index)),
-				(!FStrEq(player_settings->t_model,"")) ? player_settings->t_model:"None");
+				(!FStrEq(player_settings->t_model,"")) ? player_settings->t_model:"None"));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings public_t");
 
 		if (gpManiGameType->IsTeamPlayAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s Model : %s",
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1384, "%s%s",
 						Translate(gpManiGameType->GetTeamShortTranslation(TEAM_B)),
-						(!FStrEq(player_settings->ct_model,"")) ? player_settings->ct_model:"None");
+						(!FStrEq(player_settings->ct_model,"")) ? player_settings->ct_model:Translate(M_NONE)));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings public_ct");
 		}
 	}
@@ -2325,7 +2359,7 @@ void	ShowSettingsPrimaryMenu(player_t *player, int next_index)
 		next_index = 0;
 	}
 
-	DrawSubMenu (player, "Press Esc to alter settings", "Configure your settings", next_index, "manisettings", "manisettings", false, -1);
+	DrawSubMenu (player, Translate(1371), Translate(1372), next_index, "manisettings", "manisettings", false, -1);
 
 	return;
 }
@@ -2343,27 +2377,27 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		return PLUGIN_STOP;
 	}
 
-	if (1 == engine->Cmd_Argc())
+	if (1 == gpCmd->Cmd_Argc())
 	{
 		// User typed manisettings at console
 		ShowSettingsPrimaryMenu(&player, 0);
 		return PLUGIN_STOP;
 	}
 
-	if (engine->Cmd_Argc() > 1) 
+	if (gpCmd->Cmd_Argc() > 1) 
 	{
-		const char *temp_command = engine->Cmd_Argv(1);
+		const char *temp_command = gpCmd->Cmd_Argv(1);
 		int next_index = 0;
 		int argv_offset = 0;
 
 		if (FStrEq (temp_command, "more"))
 		{
 			// Get next index for menu
-			next_index = Q_atoi(engine->Cmd_Argv(2));
+			next_index = Q_atoi(gpCmd->Cmd_Argv(2));
 			argv_offset = 2; 
 		}
 
-		char *menu_command = engine->Cmd_Argv(1 + argv_offset);
+		char *menu_command = (char *) gpCmd->Cmd_Argv(1 + argv_offset);
 
 		if (FStrEq (menu_command, "manisettings"))
 		{
@@ -2406,6 +2440,12 @@ PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity)
 		else if (FStrEq (menu_command, "destruction"))
 		{
 			ProcessMaDestruction (player.index);
+			ShowSettingsPrimaryMenu(&player, 0);
+			return PLUGIN_STOP;
+		}
+		else if (FStrEq (menu_command, "voteprogress"))
+		{
+			ProcessMaVoteProgress (player.index);
 			ShowSettingsPrimaryMenu(&player, 0);
 			return PLUGIN_STOP;
 		}
@@ -2515,12 +2555,12 @@ bool ProcessSkinChoiceMenu
   char *menu_command 
 )
 {
-	const int argc = engine->Cmd_Argc();
+	const int argc = gpCmd->Cmd_Argc();
 
 	if (argc - argv_offset == 3)
 	{
 		char	skin_name[20];
-		int index = Q_atoi(engine->Cmd_Argv(2 + argv_offset));
+		int index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
 
 		if (index == 0) return true;
 		if (index > skin_list_size && index != 999) return true;
@@ -2539,7 +2579,7 @@ bool ProcessSkinChoiceMenu
 
 			// Found name to match !!!
 			player_settings_t *player_settings;
-			player_settings = FindStoredPlayerSettings(player_ptr);
+			player_settings = FindPlayerSettings(player_ptr);
 			if (player_settings)
 			{
 				switch(skin_type)
@@ -2553,7 +2593,6 @@ bool ProcessSkinChoiceMenu
 				default:break;
 				}
 
-				UpdatePlayerSettings(player_ptr, player_settings);
 				current_skin_list[player_ptr->index - 1].team_id = player_ptr->team;
 			}
 		}
@@ -2570,7 +2609,7 @@ bool ProcessSkinChoiceMenu
 			|| skin_type == MANI_RESERVE_T_SKIN || skin_type == MANI_RESERVE_CT_SKIN)
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "None");							
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_NONE));							
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "manisettings %s 999", menu_command);
 		}
 
@@ -2596,7 +2635,7 @@ bool ProcessSkinChoiceMenu
 		}
 
 		// Draw menu list
-		DrawSubMenu (player_ptr, "Press Esc to choose skin", "Choose your skin", next_index, "manisettings", menu_command, true, -1);
+		DrawSubMenu (player_ptr, Translate(1385), Translate(1386), next_index, "manisettings", menu_command, true, -1);
 	}
 
 
@@ -2622,41 +2661,38 @@ PLUGIN_RESULT	ProcessMaDamage
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 
-	player_settings = FindStoredPlayerSettings(&player);
+	player_settings = FindPlayerSettings(&player);
 	if (player_settings)
 	{
 		// Found player settings
 		if (player_settings->damage_stats == 0)
 		{
-			SayToPlayer(&player, "Partial round based stats will be shown on your screen when you die or at the end of a round");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1387));
 			player_settings->damage_stats = 1;
 		}
 		else if (player_settings->damage_stats == 1)
 		{
-			SayToPlayer(&player, "Full round based stats with hit groups are now enabled");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1388));
 			player_settings->damage_stats = 2;
 		}
 		else if (player_settings->damage_stats == 2)
 		{
 			if (gpManiGameType->IsAMXMenuAllowed())
 			{
-				SayToPlayer(&player, "Round based stats will be shown on your screen in a GUI when you die or at the end of a round");
+				SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1389));
 				player_settings->damage_stats = 3;
 			}
 			else
 			{
-				SayToPlayer(&player, "Round based stats have been turned off");
+				SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1390));
 				player_settings->damage_stats = 0;
 			}
 		}
 		else
 		{
-			SayToPlayer(&player, "Round based stats have been turned off");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1390));
 			player_settings->damage_stats = 0;
 		}
-
-
-		UpdatePlayerSettings(&player, player_settings);
 	}
 
 	return PLUGIN_STOP;
@@ -2683,7 +2719,7 @@ PLUGIN_RESULT	ProcessMaDamageTimeout
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 
-	player_settings = FindStoredPlayerSettings(&player);
+	player_settings = FindPlayerSettings(&player);
 	if (player_settings)
 	{
 		// Found player settings
@@ -2692,8 +2728,6 @@ PLUGIN_RESULT	ProcessMaDamageTimeout
 		{
 			player_settings->damage_stats_timeout = 0;
 		}
-
-		UpdatePlayerSettings(&player, player_settings);
 	}
 
 	return PLUGIN_STOP;
@@ -2717,22 +2751,57 @@ PLUGIN_RESULT	ProcessMaSounds
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 
-	player_settings = FindStoredPlayerSettings(&player);
+	player_settings = FindPlayerSettings(&player);
 	if (player_settings)
 	{
 		// Found player settings
 		if (!player_settings->server_sounds)
 		{
-			SayToPlayer(&player, "You will now be able to hear plugin triggered sounds, type 'sounds' again to turn them off");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1391));
 			player_settings->server_sounds = 1;
 		}
 		else
 		{
-			SayToPlayer(&player, "You will not be able to hear plugin triggered sounds, type 'sounds' again to turn them on");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1392));
 			player_settings->server_sounds = 0;
 		}
+	}
 
-		UpdatePlayerSettings(&player, player_settings);
+	return PLUGIN_STOP;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the vote progress command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ProcessMaVoteProgress
+(
+ int index
+)
+{
+	player_t player;
+	player_settings_t *player_settings;
+	player.entity = NULL;
+
+	if (war_mode) return PLUGIN_STOP;
+
+	// Get player details
+	player.index = index;
+	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
+
+	player_settings = FindPlayerSettings(&player);
+	if (player_settings)
+	{
+		// Found player settings
+		if (!player_settings->show_vote_results_progress)
+		{
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1393));
+			player_settings->show_vote_results_progress = 1;
+		}
+		else
+		{
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1394));
+			player_settings->show_vote_results_progress = 0;
+		}
 	}
 
 	return PLUGIN_STOP;
@@ -2758,22 +2827,20 @@ PLUGIN_RESULT	ProcessMaDeathBeam
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 
-	player_settings = FindStoredPlayerSettings(&player);
+	player_settings = FindPlayerSettings(&player);
 	if (player_settings)
 	{
 		// Found player settings
 		if (!player_settings->show_death_beam)
 		{
-			SayToPlayer(&player, "You will now be able to see the point of origin of your death");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1395));
 			player_settings->show_death_beam = 1;
 		}
 		else
 		{
-			SayToPlayer(&player, "You will not be able to see the point of origin of your death");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1396));
 			player_settings->show_death_beam = 0;
 		}
-
-		UpdatePlayerSettings(&player, player_settings);
 	}
 
 	return PLUGIN_STOP;
@@ -2799,22 +2866,20 @@ PLUGIN_RESULT	ProcessMaDestruction
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 
-	player_settings = FindStoredPlayerSettings(&player);
+	player_settings = FindPlayerSettings(&player);
 	if (player_settings)
 	{
 		// Found player settings
 		if (!player_settings->show_destruction)
 		{
-			SayToPlayer(&player, "You will now be able to see most the destructive player information at the end of a round");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1397));
 			player_settings->show_destruction = 1;
 		}
 		else
 		{
-			SayToPlayer(&player, "You will not be able to see the most destructive player information at the end of a round");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1398));
 			player_settings->show_destruction = 0;
 		}
-
-		UpdatePlayerSettings(&player, player_settings);
 	}
 
 	return PLUGIN_STOP;
@@ -2840,22 +2905,20 @@ PLUGIN_RESULT	ProcessMaQuake
 	player.index = index;
 	if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 
-	player_settings = FindStoredPlayerSettings(&player);
+	player_settings = FindPlayerSettings(&player);
 	if (player_settings)
 	{
 		// Found player settings
 		if (!player_settings->quake_sounds)
 		{
-			SayToPlayer(&player, "Quake style sounds enabled, type 'quake' again to turn them off");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1399));
 			player_settings->quake_sounds = 1;
 		}
 		else
 		{
-			SayToPlayer(&player, "Quake style sounds disabled, type 'quake' again to turn them on");
+			SayToPlayer(ORANGE_CHAT, &player, "%s", Translate(1400));
 			player_settings->quake_sounds = 0;
 		}
-
-		UpdatePlayerSettings(&player, player_settings);
 	}
 
 	return PLUGIN_STOP;
@@ -2915,13 +2978,13 @@ void UTIL_KickPlayer
 		j++;
 
 		Q_snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(player_ptr->name[j]));
-		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, kick_cmd);
+		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] bot_kick \"%s\"\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, &(player_ptr->name[j]));
 		engine->ServerCommand(kick_cmd);
 		return;
 	}
 
 	PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
 	Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
-	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, kick_cmd);
+	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, short_reason);
 	engine->ServerCommand(kick_cmd);				
 }

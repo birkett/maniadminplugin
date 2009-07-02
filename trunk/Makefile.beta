@@ -30,11 +30,13 @@ SRC_FILES =     cvars.cpp \
                 mani_database.cpp \
                 mani_downloads.cpp \
                 mani_effects.cpp \
+                mani_file.cpp \
                 mani_gametype.cpp \
                 mani_globals.cpp \
                 mani_ghost.cpp \
                 mani_hlxinterface.cpp \
                 mani_hook.cpp \
+                mani_kevalues.cpp \
                 mani_language.cpp \
 		mani_log_css_stats.cpp \
 		mani_log_dods_stats.cpp \

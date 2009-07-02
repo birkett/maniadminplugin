@@ -55,6 +55,7 @@
 #include "mani_gametype.h"
 #include "mani_customeffects.h"
 #include "mani_downloads.h"
+#include "mani_commands.h"
 #include "mani_trackuser.h"
 #include "cbaseentity.h"
 #include "beam_flags.h"
@@ -239,22 +240,22 @@ void ManiCustomEffects::Init(void)
 void ManiCustomEffects::ProcessMaEffect(void)
 {
 	// Come from server console
-	argc = engine->Cmd_Argc();
-	command_string = engine->Cmd_Argv(0);
+	argc = gpCmd->Cmd_Argc();
+	command_string = gpCmd->Cmd_Argv(0);
 
 	if (!effects)
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s, unable to use effects system\n", command_string);
+		OutputToConsole(NULL, "Mani Admin Plugin: %s, unable to use effects system\n", command_string);
 		return;
 	}
 
 	if (argc < 3)
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s, not enough arguments\n", command_string);
+		OutputToConsole(NULL, "Mani Admin Plugin: %s, not enough arguments\n", command_string);
 		return;
 	}
 
-	arg_type = Q_atoi(engine->Cmd_Argv(1));
+	arg_type = Q_atoi(gpCmd->Cmd_Argv(1));
 	argv_index = 2;
 
 	switch (arg_type)
@@ -283,7 +284,7 @@ void ManiCustomEffects::ProcessMaEffect(void)
 		case MANI_C_TE_PROJECT_DECAL : TEProjectDecal(); break;
 		case MANI_C_TE_BSP_DECAL : TEBSPDecal(); break;
 		case MANI_C_TE_WORLD_DECAL : TEWorldDecal(); break;
-		default : OutputToConsole(NULL, true, "Mani Admin Plugin: %s, unknown effect type [%i]\n", command_string, arg_type);
+		default : OutputToConsole(NULL, "Mani Admin Plugin: %s, unknown effect type [%i]\n", command_string, arg_type);
 					break;
 	}
 }
@@ -1143,7 +1144,7 @@ bool	ManiCustomEffects::EffectAllowed (void)
 {
 	if (!gpManiGameType->GetAdvancedEffectsAllowed())
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s, Advanced effect [%i] not allowed on this system\n", command_string, arg_type);		
+		OutputToConsole(NULL, "Mani Admin Plugin: %s, Advanced effect [%i] not allowed on this system\n", command_string, arg_type);		
 		return false;
 	}
 
@@ -1155,9 +1156,9 @@ bool	ManiCustomEffects::EffectAllowed (void)
 //---------------------------------------------------------------------------------
 void	ManiCustomEffects::GetXYZ (Vector *vec)
 {
-	vec->x = Q_atof(engine->Cmd_Argv(argv_index++));
-	vec->y = Q_atof(engine->Cmd_Argv(argv_index++));
-	vec->z = Q_atof(engine->Cmd_Argv(argv_index++));
+	vec->x = Q_atof(gpCmd->Cmd_Argv(argv_index++));
+	vec->y = Q_atof(gpCmd->Cmd_Argv(argv_index++));
+	vec->z = Q_atof(gpCmd->Cmd_Argv(argv_index++));
 }
 
 //---------------------------------------------------------------------------------
@@ -1165,9 +1166,9 @@ void	ManiCustomEffects::GetXYZ (Vector *vec)
 //---------------------------------------------------------------------------------
 void	ManiCustomEffects::GetAngles (QAngle *angle)
 {
-	angle->x = Q_atof(engine->Cmd_Argv(argv_index++));
-	angle->y = Q_atof(engine->Cmd_Argv(argv_index++));
-	angle->z = Q_atof(engine->Cmd_Argv(argv_index++));
+	angle->x = Q_atof(gpCmd->Cmd_Argv(argv_index++));
+	angle->y = Q_atof(gpCmd->Cmd_Argv(argv_index++));
+	angle->z = Q_atof(gpCmd->Cmd_Argv(argv_index++));
 }
 
 //---------------------------------------------------------------------------------
@@ -1175,7 +1176,7 @@ void	ManiCustomEffects::GetAngles (QAngle *angle)
 //---------------------------------------------------------------------------------
 float	ManiCustomEffects::GetFloat(void)
 {
-	return (Q_atof(engine->Cmd_Argv(argv_index++)));
+	return (Q_atof(gpCmd->Cmd_Argv(argv_index++)));
 }
 
 //---------------------------------------------------------------------------------
@@ -1183,7 +1184,7 @@ float	ManiCustomEffects::GetFloat(void)
 //---------------------------------------------------------------------------------
 int	ManiCustomEffects::GetInt(void)
 {
-	return (Q_atoi(engine->Cmd_Argv(argv_index++)));
+	return (Q_atoi(gpCmd->Cmd_Argv(argv_index++)));
 }
 
 //---------------------------------------------------------------------------------
@@ -1191,7 +1192,7 @@ int	ManiCustomEffects::GetInt(void)
 //---------------------------------------------------------------------------------
 unsigned char	ManiCustomEffects::GetChar(void)
 {
-	return ((unsigned char) Q_atoi(engine->Cmd_Argv(argv_index++)));
+	return ((unsigned char) Q_atoi(gpCmd->Cmd_Argv(argv_index++)));
 }
 
 //---------------------------------------------------------------------------------
@@ -1202,7 +1203,7 @@ int	ManiCustomEffects::GetModel(void)
 	texture_info_t	texture_key;
 	texture_info_t	*found_texture;
 
-	char	*texture_name = engine->Cmd_Argv(argv_index ++);
+	const char	*texture_name = gpCmd->Cmd_Argv(argv_index ++);
 
 	// Do BSearch for model
 	Q_strcpy(texture_key.texture_name, texture_name);
@@ -1232,7 +1233,7 @@ int	ManiCustomEffects::GetDecal(void)
 	texture_info_t	texture_key;
 	texture_info_t	*found_texture;
 
-	char	*texture_name = engine->Cmd_Argv(argv_index ++);
+	const char	*texture_name = gpCmd->Cmd_Argv(argv_index ++);
 
 	// Do BSearch for model
 	Q_strcpy(texture_key.texture_name, texture_name);
@@ -1287,9 +1288,9 @@ int	ManiCustomEffects::GetDecal(char *name)
 //---------------------------------------------------------------------------------
 bool	ManiCustomEffects::EnoughParams(int	min_params)
 {
-	if (engine->Cmd_Argc() < min_params)
+	if (gpCmd->Cmd_Argc() < min_params)
 	{
-		OutputToConsole(NULL, true, "Mani Admin Plugin: %s, not enough arguments, need %i minimum\n", command_string, min_params);
+		OutputToConsole(NULL, "Mani Admin Plugin: %s, not enough arguments, need %i minimum\n", command_string, min_params);
 		return false;
 	}
 
@@ -1303,7 +1304,7 @@ void	ManiCustomEffects::SetupFilter (MRecipientFilter *filter)
 {
 	bool	player_list[MANI_MAX_PLAYERS];
 
-	char	*filter_string = engine->Cmd_Argv(argv_index ++);
+	const char	*filter_string = gpCmd->Cmd_Argv(argv_index ++);
 	int		string_length;
 	bool	add_all, add_team_a, add_team_b, add_spec, add_dead, exclude_dead;
 	bool	spec_allowed = gpManiGameType->IsSpectatorAllowed();

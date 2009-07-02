@@ -39,18 +39,20 @@ public:
 	void		ClientDisconnect(player_t *player_ptr);
 	void		ProcessChangeName(player_t *player, const char *new_name, char *old_name);
 
-	PLUGIN_RESULT	ProcessMaAutoKickBanName( int index,  bool svr_command,  int argc,  char *command_string,  char *player_name, char *ban_time_string, bool kick);
-	PLUGIN_RESULT	ProcessMaAutoKickBanPName( int index,  bool svr_command,  int argc,  char *command_string,  char *player_pname, char *ban_time_string, bool kick);
-	PLUGIN_RESULT	ProcessMaAutoKickSteam( int index,  bool svr_command,  int argc,  char *command_string,  char *player_steam_id);
-	PLUGIN_RESULT	ProcessMaAutoKickIP( int index,  bool svr_command,  int argc,  char *command_string,  char *player_ip_address);
-	PLUGIN_RESULT	ProcessMaUnAutoKickBanName( int index,  bool svr_command,  int argc,  char *command_string,  char *player_name, bool kick);
-	PLUGIN_RESULT	ProcessMaUnAutoKickBanPName( int index,  bool svr_command,  int argc,  char *command_string,  char *player_pname, bool kick);
-	PLUGIN_RESULT	ProcessMaUnAutoKickSteam( int index,  bool svr_command,  int argc,  char *command_string,  char *player_steam_id);
-	PLUGIN_RESULT	ProcessMaUnAutoKickIP( int index,  bool svr_command,  int argc,  char *command_string,  char *player_ip_address);
-	PLUGIN_RESULT	ProcessMaAutoKickBanShowName( int index,  bool svr_command);
-	PLUGIN_RESULT	ProcessMaAutoKickBanShowPName( int index,  bool svr_command);
-	PLUGIN_RESULT	ProcessMaAutoKickBanShowSteam( int index,  bool svr_command);
-	PLUGIN_RESULT	ProcessMaAutoKickBanShowIP( int index,  bool svr_command);
+	PLUGIN_RESULT	ProcessMaAutoBanName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoKickName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoBanPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoKickPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoKickSteam(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoKickIP(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaUnAutoName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaUnAutoPName(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaUnAutoSteam(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaUnAutoIP(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoShowName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoShowPName(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoShowSteam(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	PLUGIN_RESULT	ProcessMaAutoShowIP(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 	void			ProcessAutoBanPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset );
 	void			ProcessAutoKickPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset );
 

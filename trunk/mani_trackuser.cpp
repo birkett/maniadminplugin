@@ -99,7 +99,7 @@ void	ManiTrackUser::Load(void)
 
 	for (int i = 1; i <= max_players; i++)
 	{
-		player_t player;
+		player_t player; 
 
 		player.index = i;
 		if (!FindPlayerByIndex(&player)) continue;

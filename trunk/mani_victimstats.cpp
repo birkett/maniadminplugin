@@ -438,7 +438,7 @@ void ManiVictimStats::ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr
 				hit_groups
 				));
 
-			SayToPlayer(victim_ptr, "%s", attacker_string);
+			SayToPlayer(GREEN_CHAT, victim_ptr, "%s", attacker_string);
 		}
 	}
 
@@ -482,7 +482,7 @@ void ManiVictimStats::ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr
 			(damage_list[victim_index][i].shots_inflicted == 1) ? Translate(M_VSTATS_HIT_SINGLE):Translate(M_VSTATS_HIT_PLURAL),
 			hit_groups));
 
-		SayToPlayer(victim_ptr, "%s", victim_string);
+		SayToPlayer(GREEN_CHAT, victim_ptr, "%s", victim_string);
 	}
 
 	for (int i = 0; i < max_players; i++)
@@ -530,14 +530,14 @@ void ManiVictimStats::ShowChatStats(player_t *victim_ptr, player_t *attacker_ptr
 			hit_groups
 			));
 
-		SayToPlayer(victim_ptr, "%s", victim_string);
+		SayToPlayer(GREEN_CHAT, victim_ptr, "%s", victim_string);
 	}
 
 	if (attacker_ptr == NULL) return;
 	if (attacker_ptr->user_id <= 0) return;
 	if (attacker_ptr->user_id == victim_ptr->user_id) return;
 	// Show attacker health left
-	SayToPlayer(victim_ptr, "%s", Translate(1112, "%s%i", attacker_ptr->name, attacker_ptr->health));
+	SayToPlayer(GREEN_CHAT, victim_ptr, "%s", Translate(1112, "%s%i", attacker_ptr->name, attacker_ptr->health));
 }
 
 //---------------------------------------------------------------------------------

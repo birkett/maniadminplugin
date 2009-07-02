@@ -38,7 +38,7 @@ public:
 	void		ClientDisconnect(player_t *player_ptr);
 	bool		SprayFired(const Vector *pos, int	index);
 	void		ManiSprayRemove::ProcessMaSprayMenu( player_t *admin_ptr, int admin_index, int next_index, int argv_offset, const char *menu_command);
-	PLUGIN_RESULT	ManiSprayRemove::ProcessMaSpray( int index,  bool svr_command);
+	PLUGIN_RESULT	ManiSprayRemove::ProcessMaSpray(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 
 private:
 

@@ -318,6 +318,7 @@ extern ConVar mani_player_settings_sounds;
 extern ConVar mani_player_settings_damage;
 extern ConVar mani_player_settings_death_beam;
 extern ConVar mani_player_settings_destructive;
+extern ConVar mani_player_settings_vote_progress;
 
 extern ConVar mani_mute_con_command_spam;
 
@@ -328,7 +329,6 @@ extern ConVar mani_skins_force_public;
 extern ConVar mani_skins_setskin_misc_only;
 extern ConVar mani_skins_force_choose_on_join;
 extern ConVar mani_skins_random_bot_skins;
-extern ConVar mani_skins_force_cl_minmodels;
 
 extern ConVar mani_show_death_beams;
 extern ConVar mani_sort_menus;

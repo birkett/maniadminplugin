@@ -167,11 +167,11 @@ bool	CheckForReplacement
 					Q_strstr(rcon_cmd, "ma_givehealth") ||
 					Q_strstr(rcon_cmd, "ma_givehealthp"))
 				{
-					SayToPlayer(player,"The command [%s] should be used as a 'C' type command only");
+					SayToPlayer(ORANGE_CHAT, player,"The command [%s] should be used as a 'C' type command only");
 					return false;
 				}
 
-				LogCommand(player->entity, "%s => %s\n", command_string, command_list[i].command_string);
+				LogCommand(player, "%s => %s\n", command_string, command_list[i].command_string);
 				engine->ServerCommand(rcon_cmd);
 				return false;
 			}

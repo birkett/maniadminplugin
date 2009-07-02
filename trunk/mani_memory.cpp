@@ -39,14 +39,14 @@ bool AddToList(void **list_ptr, size_t size_of_structure, int *list_size_ptr)
 	// Is list empty ?
 	if (*list_ptr == NULL)
 	{
-		*list_ptr = (void *) malloc (size_of_structure);
+		*list_ptr = (void *) malloc (size_of_structure * (*list_size_ptr + 1));
 		if (*list_ptr == NULL)
 		{
 			Msg("Run out of memory running malloc !\n");
 			return false;
 		}
 
-		*list_size_ptr = 1;
+		*list_size_ptr = *list_size_ptr + 1;
 		return true;
 	}
 	

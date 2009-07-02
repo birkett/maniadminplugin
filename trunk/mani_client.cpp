@@ -44,6 +44,10 @@
 #include "mani_main.h"
 #include "mani_mysql.h"
 #include "mani_database.h"
+#include "mani_language.h"
+#include "mani_keyvalues.h"
+#include "mani_commands.h"
+#include "mani_help.h"
 #include "mani_client.h"
 
 extern IFileSystem	*filesystem;
@@ -2392,16 +2396,24 @@ void		ManiClient::WriteClients(void)
 	char temp_string2[1024];
 
 	char	core_filename[256];
-	KeyValues *client;
+	ManiKeyValues *client;
 	bool	found_flag;
 
 //	MMsg("*********** Writing clients.txt ************\n");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
 
-	KeyValues *kv = new KeyValues( "clients.txt" );
+	client = new ManiKeyValues( "clients.txt" );
 
-	KeyValues *players = kv->FindKey("players", true);
+	if (!client->WriteStart(core_filename))
+	{
+		MMsg("Failed to write %s\n", core_filename);
+		delete client;
+		return;
+	}
+
+	client->WriteComment("This key group lists all your client players");
+	client->WriteNewSubKey("players");
 
 //	MMsg("Writing %i client(s)\n",  client_list_size);
 	// Loop through all clients
@@ -2428,52 +2440,70 @@ void		ManiClient::WriteClients(void)
 			Q_snprintf(temp_string, sizeof(temp_string), "%s", client_list[i].name);
 		}
 
-		client = players->FindKey(temp_string, true);
+		client->WriteComment("This must be a unique client name");
+		client->WriteNewSubKey(temp_string);
 
-		if (client_list[i].email_address) client->SetString("email", client_list[i].email_address);
-		if (client_list[i].admin_level_id != -1) client->SetInt("admin_level", client_list[i].admin_level_id);
-		if (client_list[i].immunity_level_id != -1) client->SetInt("immunity_level", client_list[i].immunity_level_id);
-		if (client_list[i].name) client->SetString("name", client_list[i].name);
-		if (client_list[i].password) client->SetString("password", client_list[i].password);
-		if (client_list[i].notes) client->SetString("notes", client_list[i].notes);
-		if (client_list[i].steam_list_size == 1) client->SetString("steam", client_list[i].steam_list[0].steam_id);
-		if (client_list[i].ip_address_list_size == 1) client->SetString("ip", client_list[i].ip_address_list[0].ip_address);
-		if (client_list[i].nick_list_size == 1) client->SetString("nick", client_list[i].nick_list[0].nick);
+		if (client_list[i].email_address) client->WriteKey("email", client_list[i].email_address);
+		if (client_list[i].admin_level_id != -1) client->WriteKey("admin_level", client_list[i].admin_level_id);
+		if (client_list[i].immunity_level_id != -1) client->WriteKey("immunity_level", client_list[i].immunity_level_id);
+		if (client_list[i].name)
+		{
+			client->WriteComment("Client real name");
+			client->WriteKey("name", client_list[i].name);
+		}
+		if (client_list[i].password) client->WriteKey("password", client_list[i].password);
+		if (client_list[i].notes) client->WriteKey("notes", client_list[i].notes);
+		if (client_list[i].steam_list_size == 1) 
+		{
+			client->WriteComment("Steam ID for client");
+			client->WriteKey("steam", client_list[i].steam_list[0].steam_id);
+		}
+		if (client_list[i].ip_address_list_size == 1) client->WriteKey("ip", client_list[i].ip_address_list[0].ip_address);
+		if (client_list[i].nick_list_size == 1) client->WriteKey("nick", client_list[i].nick_list[0].nick);
 
 		// Write Steam IDs if needed.
 		if (client_list[i].steam_list_size > 1)
 		{
-			KeyValues *steam = client->FindKey("steam", true);
+			client->WriteComment("This sub key is for multiple steam ids");
+			client->WriteNewSubKey("steam");
 
 			for (int j = 0; j < client_list[i].steam_list_size; j++)
 			{
 				Q_snprintf(temp_string, sizeof(temp_string), "steam%i", j + 1);
-				steam->SetString(temp_string, client_list[i].steam_list[j].steam_id);
+				client->WriteKey(temp_string, client_list[i].steam_list[j].steam_id);
 			}
+
+			client->WriteEndSubKey();
 		}
 
 		// Write IP Addresses if needed.
 		if (client_list[i].ip_address_list_size > 1)
 		{
-			KeyValues *ip = client->FindKey("ip", true);
+			client->WriteComment("This sub key is for multiple ip addresses");
+			client->WriteNewSubKey("ip");
 
 			for (int j = 0; j < client_list[i].steam_list_size; j++)
 			{
 				Q_snprintf(temp_string, sizeof(temp_string), "IP%i", j + 1);
-				ip->SetString(temp_string, client_list[i].ip_address_list[j].ip_address);
+				client->WriteKey(temp_string, client_list[i].ip_address_list[j].ip_address);
 			}
+
+			client->WriteEndSubKey();
 		}
 
 		// Write Player Nicknames if needed.
 		if (client_list[i].nick_list_size > 1)
 		{
-			KeyValues *nick = client->FindKey("nick", true);
+			client->WriteComment("This sub key is for multiple player nick names");
+			client->WriteNewSubKey("nick");
 
 			for (int j = 0; j < client_list[i].nick_list_size; j++)
 			{
 				Q_snprintf(temp_string, sizeof(temp_string), "nick%i", j + 1);
-				nick->SetString(temp_string, client_list[i].nick_list[j].nick);
+				client->WriteKey(temp_string, client_list[i].nick_list[j].nick);
 			}
+
+			client->WriteEndSubKey();
 		}
 
 		// Write Admin flags if needed.
@@ -2489,7 +2519,8 @@ void		ManiClient::WriteClients(void)
 
 		if (found_flag)
 		{
-			KeyValues *flags = client->FindKey("adminflags", true);
+			client->WriteComment("These are personal admin flags for a client");
+			client->WriteNewSubKey("adminflags");
 
 			int flags_number = 1;
 			Q_strcpy(temp_string, "");
@@ -2506,7 +2537,7 @@ void		ManiClient::WriteClients(void)
 					{
 						Q_snprintf(temp_string2, sizeof(temp_string2), "flags%i", flags_number ++);
 						temp_string[Q_strlen(temp_string) - 1] = '\0';
-						flags->SetString(temp_string2, temp_string);
+						client->WriteKey(temp_string2, temp_string);
 						Q_strcpy(temp_string, "");
 					}
 				}
@@ -2519,23 +2550,32 @@ void		ManiClient::WriteClients(void)
 				{
 					temp_string[Q_strlen(temp_string) - 1] = '\0';
 				}
-				flags->SetString(temp_string2, temp_string);
+				client->WriteKey(temp_string2, temp_string);
 				Q_strcpy(temp_string, "");
 			}
+
+			client->WriteEndSubKey();
 		}
 
-		if (client_list[i].admin_group_list_size == 1) client->SetString("admingroups", client_list[i].admin_group_list[0].group_id);
+		if (client_list[i].admin_group_list_size == 1) 
+		{
+			client->WriteComment("This is the admin group the client is subscribed to");
+			client->WriteKey("admingroups", client_list[i].admin_group_list[0].group_id);
+		}
 
 		// Write Admin Groups if needed
 		if (client_list[i].admin_group_list_size > 1)
 		{
-			KeyValues *admingroup = client->FindKey("admingroups", true);
+			client->WriteComment("These are the admin groups this client is subscribed to");
+			client->WriteNewSubKey("admingroups");
 
 			for (int j = 0; j < client_list[i].admin_group_list_size; j++)
 			{
 				Q_snprintf(temp_string, sizeof(temp_string), "group%i", j + 1);
-				admingroup->SetString(temp_string, client_list[i].admin_group_list[j].group_id);
+				client->WriteKey(temp_string, client_list[i].admin_group_list[j].group_id);
 			}
+
+			client->WriteEndSubKey();
 		}
 
 		// Write immunity flags if needed.
@@ -2551,7 +2591,8 @@ void		ManiClient::WriteClients(void)
 
 		if (found_flag)
 		{
-			KeyValues *flags = client->FindKey("immunityflags", true);
+			client->WriteComment("These are personal immunity flags for a client");
+			client->WriteNewSubKey("immunityflags");
 
 			int flags_number = 1;
 			Q_strcpy(temp_string, "");
@@ -2568,7 +2609,7 @@ void		ManiClient::WriteClients(void)
 					{
 						Q_snprintf(temp_string2, sizeof(temp_string2), "flags%i", flags_number ++);
 						temp_string[Q_strlen(temp_string) - 1] = '\0';
-						flags->SetString(temp_string2, temp_string);
+						client->WriteKey(temp_string2, temp_string);
 						Q_strcpy(temp_string, "");
 					}
 				}
@@ -2581,29 +2622,43 @@ void		ManiClient::WriteClients(void)
 				{
 					temp_string[Q_strlen(temp_string) - 1] = '\0';
 				}
-				flags->SetString(temp_string2, temp_string);
+				client->WriteKey(temp_string2, temp_string);
 				Q_strcpy(temp_string, "");
 			}
+
+			client->WriteEndSubKey();
 		}
 		
-		if (client_list[i].immunity_group_list_size == 1) client->SetString("immunitygroups", client_list[i].immunity_group_list[0].group_id);
+		if (client_list[i].immunity_group_list_size == 1) 
+		{
+			client->WriteComment("This is the immunity group the client is subscribed to");
+			client->WriteKey("immunitygroups", client_list[i].immunity_group_list[0].group_id);
+		}
 
 		// Write Immunity Groups if needed
 		if (client_list[i].immunity_group_list_size > 1)
 		{
-			KeyValues *immunitygroup = client->FindKey("immunitygroups", true);
+			client->WriteNewSubKey("immunitygroups");
 
 			for (int j = 0; j < client_list[i].immunity_group_list_size; j++)
 			{
 				Q_snprintf(temp_string, sizeof(temp_string), "group%i", j + 1);
-				immunitygroup->SetString(temp_string, client_list[i].immunity_group_list[j].group_id);
+				client->WriteKey(temp_string, client_list[i].immunity_group_list[j].group_id);
 			}
+
+			client->WriteEndSubKey();
 		}
+
+		client->WriteEndSubKey();
 	}
+
+	// End Players
+	client->WriteEndSubKey();
 
 	if (admin_group_list_size != 0)
 	{
-		KeyValues *flags = kv->FindKey("admingroups", true);
+		client->WriteComment("These are the admins groups a client can subscribed to");
+		client->WriteNewSubKey("admingroups");
 
 		for (int i = 0; i < admin_group_list_size; i ++)
 		{
@@ -2623,13 +2678,16 @@ void		ManiClient::WriteClients(void)
 			{
 				temp_string[Q_strlen(temp_string) - 1] = '\0';
 			}
-			flags->SetString(admin_group_list[i].group_id, temp_string);
+			client->WriteKey(admin_group_list[i].group_id, temp_string);
 		}
+
+		client->WriteEndSubKey();
 	}
 
 	if (immunity_group_list_size != 0)
 	{
-		KeyValues *flags = kv->FindKey("immunitygroups", true);
+		client->WriteComment("These are the immunity groups a client can subscribed to");
+		client->WriteNewSubKey("immunitygroups");
 
 		for (int i = 0; i < immunity_group_list_size; i ++)
 		{
@@ -2649,13 +2707,16 @@ void		ManiClient::WriteClients(void)
 			{
 				temp_string[Q_strlen(temp_string) - 1] = '\0';
 			}
-			flags->SetString(immunity_group_list[i].group_id, temp_string);
+			client->WriteKey(immunity_group_list[i].group_id, temp_string);
 		}
+
+		client->WriteEndSubKey();
 	}
 
 	if (admin_level_list_size != 0)
 	{
-		KeyValues *flags = kv->FindKey("adminlevels", true);
+		client->WriteComment("These are the admin level flag definitions that a client can subscribed to");
+		client->WriteNewSubKey("adminlevels");
 
 		for (int i = 0; i < admin_level_list_size; i ++)
 		{
@@ -2676,13 +2737,16 @@ void		ManiClient::WriteClients(void)
 				temp_string[Q_strlen(temp_string) - 1] = '\0';
 			}
 			Q_snprintf(temp_string2, sizeof(temp_string2), "%i", admin_level_list[i].level_id);
-			flags->SetString(temp_string2, temp_string);
+			client->WriteKey(temp_string2, temp_string);
 		}
+
+		client->WriteEndSubKey();
 	}
 
 	if (immunity_level_list_size != 0)
 	{
-		KeyValues *flags = kv->FindKey("immunitylevels", true);
+		client->WriteComment("These are the immunity level flag definitions that a client can subscribed to");
+		client->WriteNewSubKey("immunitylevels");
 
 		for (int i = 0; i < immunity_level_list_size; i ++)
 		{
@@ -2703,16 +2767,15 @@ void		ManiClient::WriteClients(void)
 				temp_string[Q_strlen(temp_string) - 1] = '\0';
 			}
 			Q_snprintf(temp_string2, sizeof(temp_string2), "%i", immunity_level_list[i].level_id);
-			flags->SetString(temp_string2, temp_string);
+			client->WriteKey(temp_string2, temp_string);
 		}
+
+		client->WriteEndSubKey();
 	}
 
-	if (!kv->SaveToFile( filesystem, core_filename, NULL))
-	{
-		MMsg("Failed to write clients.txt\n");
-	}
+	client->WriteEnd();
 
-	kv->deleteThis();
+	delete client;
 	return;
 }
 
@@ -2780,19 +2843,19 @@ void	ManiClient::FreeClients(void)
 // Purpose: Checks if admin is elligible to run the command
 //---------------------------------------------------------------------------------
 
-bool	ManiClient::IsAdminAllowed(player_t *player, char *command, int admin_flag, bool check_war, int *admin_index)
+bool	ManiClient::IsAdminAllowed(player_t *player, const char *command, int admin_flag, bool check_war, int *admin_index)
 {
 	*admin_index = -1;
 
 	if (check_war)
 	{
-		SayToPlayer(player, "Mani Admin Plugin: Command %s is disabled in war mode", command);
+		OutputHelpText(ORANGE_CHAT, player, "Mani Admin Plugin: Command %s is disabled in war mode", command);
 		return false;
 	}
 
 	if (!IsAdmin(player, admin_index) || check_war)
 	{
-		SayToPlayer(player, "Mani Admin Plugin: You are not an admin");
+		OutputHelpText(ORANGE_CHAT, player, "Mani Admin Plugin: You are not an admin");
 		return false;
 	}
 
@@ -2800,7 +2863,7 @@ bool	ManiClient::IsAdminAllowed(player_t *player, char *command, int admin_flag,
 	{
 		if (!client_list[*admin_index].admin_flags[admin_flag])
 		{
-			SayToPlayer(player, "Mani Admin Plugin: You are not authorised to run %s", command);
+			OutputHelpText(ORANGE_CHAT, player, "Mani Admin Plugin: You are not authorised to run %s", command);
 			return false;
 		}
 	}
@@ -2901,7 +2964,7 @@ bool ManiClient::CreateDBTables(void)
 	if (!mani_mysql->ExecuteQuery(
 		"CREATE TABLE IF NOT EXISTS %sflag ( "
 		"flag_id varchar(20) BINARY NOT NULL default '', "
-		"type varchar(1) NOT NULL default '', "
+		"type varchar(32) NOT NULL default '', "
 		"description varchar(128) NOT NULL default '', "
 		"PRIMARY KEY (flag_id, type) "
 		") TYPE=MyISAM"
@@ -2920,6 +2983,7 @@ bool ManiClient::CreateDBTables(void)
 		"port mediumint(8) NOT NULL default '0', "
 		"mod_name varchar(64) NOT NULL default '', "
 		"rcon_password varchar(64) default '', "
+		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (server_id), "
 		"UNIQUE KEY (name) "
 		") TYPE=MyISAM"
@@ -2935,7 +2999,7 @@ bool ManiClient::CreateDBTables(void)
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"group_id varchar(32) NOT NULL default '', "
 		"flag_string text, "
-		"type varchar(1) NOT NULL default '', "
+		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (group_id, type, server_group_id) "
 		") TYPE=MyISAM"
@@ -2951,7 +3015,7 @@ bool ManiClient::CreateDBTables(void)
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"group_id varchar(32) NOT NULL default '', "
-		"type varchar(1) NOT NULL default '', "
+		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, group_id, type, server_group_id) "
 		") TYPE=MyISAM",
@@ -2967,7 +3031,7 @@ bool ManiClient::CreateDBTables(void)
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"flag_string text, "
-		"type varchar(1) NOT NULL default '', "
+		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, type, server_group_id) "
 		") TYPE=MyISAM"
@@ -2983,7 +3047,7 @@ bool ManiClient::CreateDBTables(void)
 		"CREATE TABLE IF NOT EXISTS %s%s( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"level_id mediumint(8) NOT NULL default '-1', "
-		"type varchar(1) NOT NULL default '', "
+		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, level_id, type, server_group_id) "
 		") TYPE=MyISAM"
@@ -2998,7 +3062,7 @@ bool ManiClient::CreateDBTables(void)
 	if (!mani_mysql->ExecuteQuery(
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"level_id mediumint(8) NOT NULL default '-1', "
-		"type varchar(1) NOT NULL default '', "
+		"type varchar(32) NOT NULL default '', "
 		"flag_string text, "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (level_id, type, server_group_id) "
@@ -3201,7 +3265,7 @@ bool ManiClient::ExportDataToDB(void)
 	MMsg("Deleted existing DB data for this server....\n");
 
 	// Do server details
-	if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s', '%s', %i, '%s', '%s')",
+	if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s', '%s', %i, '%s', '%s', '%s')",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBServer(),
 		gpManiDatabase->GetServerID(),
@@ -3209,7 +3273,8 @@ bool ManiClient::ExportDataToDB(void)
 		gpManiDatabase->GetServerIPAddress(),
 		gpManiDatabase->GetServerPort(),
 		gpManiDatabase->GetModName(),
-		gpManiDatabase->GetRCONPassword()
+		gpManiDatabase->GetRCONPassword(),
+		gpManiDatabase->GetServerGroupID()
 		))
 	{
 		delete mani_mysql;
@@ -3353,7 +3418,7 @@ bool ManiClient::ExportDataToDB(void)
 			return false;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			if (!mani_mysql->FetchRow())
 			{
@@ -3611,6 +3676,22 @@ bool ManiClient::GetClientsFromDatabase(void)
 		return false;
 	}
 
+	if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET server_group_id = '%s' WHERE server_id = %i",
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBServer(),
+		gpManiDatabase->GetServerGroupID(),
+		gpManiDatabase->GetServerID()))
+	{
+		delete mani_mysql;
+		mani_mysql = new ManiMySQL();
+		if (!mani_mysql->Init())
+		{
+			delete mani_mysql;
+			return false;
+		}
+	}
+
+
 	// Get admin groups
 	if (!mani_mysql->ExecuteQuery(&row_count, 
 		"SELECT g.group_id, g.flag_string, g.type "
@@ -3624,7 +3705,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 		return false;
 	}
 
-	if (row_count)
+	if (row_count != 0)
 	{
 		// Found rows
 		while (mani_mysql->FetchRow())
@@ -3697,7 +3778,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 		return false;
 	}
 
-	if (row_count)
+	if (row_count != 0)
 	{
 
 		// Found rows
@@ -3762,36 +3843,75 @@ bool ManiClient::GetClientsFromDatabase(void)
 	// is faster than doing all the seperate selects per client
 	// to do the same thing :(
 
+	Msg("SQL server version [%s]\n", mani_mysql->GetServerVersion());
+	Msg("Major [%i] Minor [%i] Issue [%i]\n", mani_mysql->GetMajor(), mani_mysql->GetMinor(), mani_mysql->GetIssue());
 
-	if (!mani_mysql->ExecuteQuery(&row_count, 
-		"select c.user_id, c.name, c.password, c.email, c.notes, "
-		"cf.type, cf.flag_string, "
-		"s.steam_id, n.nick, i.ip_address, "
-		"cg.type, cg.group_id, "
-		"cl.type, cl.level_id "
-		"from (%s%s c, %s%s cs) "
-		"LEFT JOIN (%s%s s) ON (s.user_id = c.user_id) "
-		"LEFT JOIN (%s%s cf) ON (cf.user_id = c.user_id) "
-		"LEFT JOIN (%s%s n) ON (n.user_id = c.user_id) "
-		"LEFT JOIN (%s%s i) ON (i.user_id = c.user_id) "
-		"LEFT JOIN (%s%s cg) ON (cg.user_id = c.user_id AND cg.server_group_id = cs.server_group_id) "
-		"LEFT JOIN (%s%s cl) ON (cl.user_id = c.user_id AND cl.server_group_id = cs.server_group_id) "
-		"where c.user_id = cs.user_id "
-		"and cs.server_group_id = '%s' "
-		"order by c.user_id, cf.type, s.steam_id, n.nick, i.ip_address, cg.type,  "
-		"cg.group_id, cl.type, cl.level_id ",
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(),
-		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(),
-		gpManiDatabase->GetServerGroupID()))
+	if (mani_mysql->IsHigherVer(5,0,11))
 	{
-		delete mani_mysql;
-		return false;
+		// Post 5.0.11
+		if (!mani_mysql->ExecuteQuery(&row_count, 
+			"select c.user_id, c.name, c.password, c.email, c.notes, "
+			"cf.type, cf.flag_string, "
+			"s.steam_id, n.nick, i.ip_address, "
+			"cg.type, cg.group_id, "
+			"cl.type, cl.level_id "
+			"from (%s%s c, %s%s cs) "
+			"LEFT JOIN (%s%s s) ON (s.user_id = c.user_id) "
+			"LEFT JOIN (%s%s cf) ON (cf.user_id = c.user_id) "
+			"LEFT JOIN (%s%s n) ON (n.user_id = c.user_id) "
+			"LEFT JOIN (%s%s i) ON (i.user_id = c.user_id) "
+			"LEFT JOIN (%s%s cg) ON (cg.user_id = c.user_id AND cg.server_group_id = cs.server_group_id) "
+			"LEFT JOIN (%s%s cl) ON (cl.user_id = c.user_id AND cl.server_group_id = cs.server_group_id) "
+			"where c.user_id = cs.user_id "
+			"and cs.server_group_id = '%s' "
+			"order by c.user_id, cf.type, s.steam_id, n.nick, i.ip_address, cg.type,  "
+			"cg.group_id, cl.type, cl.level_id ",
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(),
+			gpManiDatabase->GetServerGroupID()))
+		{
+			delete mani_mysql;
+			return false;
+		}
+	}
+	else
+	{
+		if (!mani_mysql->ExecuteQuery(&row_count, 
+			"select c.user_id, c.name, c.password, c.email, c.notes, "
+			"cf.type, cf.flag_string, "
+			"s.steam_id, n.nick, i.ip_address, "
+			"cg.type, cg.group_id, "
+			"cl.type, cl.level_id "
+			"from %s%s c, %s%s cs "
+			"LEFT JOIN %s%s s ON (s.user_id = c.user_id) "
+			"LEFT JOIN %s%s cf ON (cf.user_id = c.user_id) "
+			"LEFT JOIN %s%s n ON (n.user_id = c.user_id) "
+			"LEFT JOIN %s%s i ON (i.user_id = c.user_id) "
+			"LEFT JOIN %s%s cg ON (cg.user_id = c.user_id AND cg.server_group_id = cs.server_group_id) "
+			"LEFT JOIN %s%s cl ON (cl.user_id = c.user_id AND cl.server_group_id = cs.server_group_id) "
+			"where c.user_id = cs.user_id "
+			"and cs.server_group_id = '%s' "
+			"order by c.user_id, cf.type, s.steam_id, n.nick, i.ip_address, cg.type,  "
+			"cg.group_id, cl.type, cl.level_id ",
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(),
+			gpManiDatabase->GetServerGroupID()))
+		{
+			delete mani_mysql;
+			return false;
+		}
 	}
 
 	// Declare 'last' vars to keep track of changing data
@@ -3801,7 +3921,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 	bool done_alevel = false;
 	bool done_ilevel = false;
 
-	if (row_count)
+	if (row_count != 0)
 	{
 		client_t	*client_ptr;
 		// Found rows
@@ -4012,69 +4132,36 @@ bool ManiClient::GetClientsFromDatabase(void)
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_setadminflag command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiClient::ProcessMaSetAdminFlag
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string, 
- char *target_string,
- char *flags
- )
+PLUGIN_RESULT	ManiClient::ProcessMaSetAdminFlag(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	admin_index;
-	player.entity = NULL;
 
-	if (war_mode)
-	{
-		return PLUGIN_CONTINUE;
-	}
-
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_setadminflag", ALLOW_SETADMINFLAG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_SETADMINFLAG, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 
-	if (argc < 3) 
-	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Mani Admin Plugin: %s <user name, user id or steam id> <flag list>\n", command_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Mani Admin Plugin: %s <user name, user id or steam id> <flag list>", command_string);
-		}
-
-		return PLUGIN_STOP;
-	}
+	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Whoever issued the commmand is authorised to do it.
+	char *target_string = (char *) gpCmd->Cmd_Argv(1);
 
 	admin_index = FindClientIndex(target_string, true, false);
 	if (admin_index != -1)
 	{
-		if (svr_command)
-		{
-			OutputToConsole(player.entity, svr_command, "Did not find admin %s\n", target_string);
-		}
-		else
-		{
-			SayToPlayer(&player, "Did not find admin %s", target_string);
-		}
-
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", target_string));
 		return PLUGIN_STOP;
 	}
 
 	// Found an admin to update in memory via admin_index
 	// Loop through flags to set them
 
+	char *flags = (char *) gpCmd->Cmd_Argv(2);
+	int	length = Q_strlen(flags);
+
 	bool add_flag;
-	for (int i = 0; i < Q_strlen(flags); i ++)
+	for (int i = 0; i < length; i ++)
 	{
 		if (flags[i] == '+') 
 		{
@@ -4103,18 +4190,11 @@ PLUGIN_RESULT	ManiClient::ProcessMaSetAdminFlag
 
 		if (!found_flag)
 		{
-			if (svr_command)
-			{
-				OutputToConsole(player.entity, svr_command, "Flag %s is invalid\n", flags[i]);
-			}
-			else
-			{
-				SayToPlayer(&player, "Flag %s is invalid", flags[i]);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Flag %s is invalid", flags[i]);
 		}
 	}
 
-	LogCommand (player.entity, "ma_setadminflag [%s] [%s]\n", target_string, flags);
+	LogCommand (player_ptr, "%s [%s] [%s]\n", command_name, target_string, flags);
 
 	return PLUGIN_STOP;
 }
@@ -4224,235 +4304,138 @@ int		ManiClient::FindClientIndex
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Handle ma_client help 
-//---------------------------------------------------------------------------------
-void	ManiClient::ProcessMaClientHelp
-(
- player_t *player_ptr,
- bool svr_command
- )
-{
-	OutputHelpText(player_ptr, svr_command, "Mani Admin Plugin: ma_client <sub command> <param 1> <param 2>");
-	OutputHelpText(player_ptr, svr_command, "Note that if a parameter has spaces then it must be enclosed in quotes");
-	OutputHelpText(player_ptr, svr_command, "<ID> Represents the user id of a player in game, or their client name,");
-	OutputHelpText(player_ptr, svr_command, "Steam ID, Nickname, IP Address");
-	OutputHelpText(player_ptr, svr_command, "For adding flags, using \"+#\" will add all flags, \"-#\" will remove all flags");
-	OutputHelpText(player_ptr, svr_command, " ");
-	OutputHelpText(player_ptr, svr_command, "Sub commands :->");
-	OutputHelpText(player_ptr, svr_command, "    Status (Lists all client names for the server)");
-	OutputHelpText(player_ptr, svr_command, "    Status <Name> (Shows details of specified client)");
-	OutputHelpText(player_ptr, svr_command, "    aflag (Shows all admin flags)");
-	OutputHelpText(player_ptr, svr_command, "    aflag <flag name> (Describes the admin flag)");
-	OutputHelpText(player_ptr, svr_command, "    iflag (Shows all immunity flags)");
-	OutputHelpText(player_ptr, svr_command, "    iflag <flag name> (Describes the immunity flag)");
-	OutputHelpText(player_ptr, svr_command, "    Status <Name> (Shows details of specified client)");
-	OutputHelpText(player_ptr, svr_command, "  ");
-	OutputHelpText(player_ptr, svr_command, "    AddClient <Name> (Must be unique)");
-	OutputHelpText(player_ptr, svr_command, "    AddSteam <ID> \"Steam ID\"");
-	OutputHelpText(player_ptr, svr_command, "    AddNick <ID> \"Player Nickname\" (Used in conjunction with password)");
-	OutputHelpText(player_ptr, svr_command, "    AddIP <ID> \"IP Address\"");
-	OutputHelpText(player_ptr, svr_command, "    SetName <ID> \"New Name\" (Update a client with a new name, this must be unqiue !!)");
-	OutputHelpText(player_ptr, svr_command, "    SetPassword <ID> \"Password\" (Password to be used in conjuction with nicknames. NOT STEAM ACCOUNT PASSWORD !)");
-	OutputHelpText(player_ptr, svr_command, "    SetEmail <ID> \"Email Address\"");
-	OutputHelpText(player_ptr, svr_command, "    SetNotes <ID> \"Client Notes\"");
-	OutputHelpText(player_ptr, svr_command, "    AddIGroup <ID> \"Immunity Group\"");
-	OutputHelpText(player_ptr, svr_command, "    AddAGroup <ID> \"Admin Group\"");
-	OutputHelpText(player_ptr, svr_command, "    SetILevel <ID> <Immunity Level ID>");
-	OutputHelpText(player_ptr, svr_command, "    SetALevel <ID> <Admin Level ID>");
-	OutputHelpText(player_ptr, svr_command, "    SetIFlag <ID> \"Immunity flags\" (+ to add, - to remove)");
-	OutputHelpText(player_ptr, svr_command, "    SetAFlag <ID> \"Admin flags\" (+ to add, - to remove)");
-	OutputHelpText(player_ptr, svr_command, " ");
-	OutputHelpText(player_ptr, svr_command, "    RemoveClient <Name> (Removes client for this server)");
-	OutputHelpText(player_ptr, svr_command, "    RemoveSteam <ID> \"Steam ID\"");
-	OutputHelpText(player_ptr, svr_command, "    RemoveIP <ID> \"IP Address\"");
-	OutputHelpText(player_ptr, svr_command, "    RemoveNick <ID> \"Player Nickname\"");
-	OutputHelpText(player_ptr, svr_command, "    RemoveIGroup <ID> \"Immunity Group\"");
-	OutputHelpText(player_ptr, svr_command, "    RemoveAGroup <ID> \"Admin Group\"");
-	OutputHelpText(player_ptr, svr_command, " ");
-	OutputHelpText(player_ptr, svr_command, "Database sub commands :->");
-	OutputHelpText(player_ptr, svr_command, "    Upload (Used to create and upload clients to a database)");
-	OutputHelpText(player_ptr, svr_command, "    Download (Used to download the clients from the database to the server and write clients.txt)");
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Handle ma_clientgroup help 
-//---------------------------------------------------------------------------------
-void	ManiClient::ProcessMaClientGroupHelp
-(
- player_t *player_ptr,
- bool svr_command
- )
-{
-	OutputHelpText(player_ptr, svr_command, "Mani Admin Plugin: ma_clientgroup <sub command> <param 1> <param 2>");
-	OutputHelpText(player_ptr, svr_command, "Note that if a parameter has spaces then it must be enclosed in quotes");
-	OutputHelpText(player_ptr, svr_command, "For adding flags, using \"+#\" will add all flags, \"-#\" will remove all flags");
-	OutputHelpText(player_ptr, svr_command, " ");
-	OutputHelpText(player_ptr, svr_command, "Sub Commands :->");
-	OutputHelpText(player_ptr, svr_command, "    Status agroup (Shows all admin groups and their flags)");
-	OutputHelpText(player_ptr, svr_command, "    Status igroup (Shows all immunity groups and their flags)");
-	OutputHelpText(player_ptr, svr_command, "    Status alevel (Shows all admin levels and their flags)");
-	OutputHelpText(player_ptr, svr_command, "    Status ilevel (Shows all immunity levels and their flags)");
-	OutputHelpText(player_ptr, svr_command, " ");
-	OutputHelpText(player_ptr, svr_command, "    addagroup \"Admin Group Name\" \"Flags (+ to add, - to remove)\" (Add/Update Admin group)");
-	OutputHelpText(player_ptr, svr_command, "    addigroup \"Immunity Group Name\" \"Flags (+ to add, - to remove)\" (Add/Update immunity group)");
-	OutputHelpText(player_ptr, svr_command, "    addalevel <Admin Level ID (must be number)> \"Flags (+ to add, - to remove)\" (Add/Update Admin Level)");
-	OutputHelpText(player_ptr, svr_command, "    addilevel <Immunity Level ID (must be number)> \"Flags (+ to add, - to remove)\" (Add/Update Immunity Level)");
-	OutputHelpText(player_ptr, svr_command, " ");
-	OutputHelpText(player_ptr, svr_command, "    removeagroup \"Admin Group Name\"");
-	OutputHelpText(player_ptr, svr_command, "    removeigroup \"Immunity Group Name\"");
-	OutputHelpText(player_ptr, svr_command, "    removealevel <Admin Level ID (must be number)>");
-	OutputHelpText(player_ptr, svr_command, "    removeilevel <Immunity Level ID (must be number)>");
-
-	return;
-}
-
-
-//---------------------------------------------------------------------------------
 // Purpose: Handle ma_client command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT		ManiClient::ProcessMaClient
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string,
- char *sub_command,
- char *param1,
- char *param2
- )
+PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	client_index;
-	player.entity = NULL;
 	bool	invalid_args = false;
 
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_client", ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
+		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
 	}
 
 	// Cover only command and subcommand being passed in
-	if (argc < 2) 
-	{
-		ProcessMaClientHelp(&player, svr_command);
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
+
+	if (argc < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+
+	char *sub_command = (char *) gpCmd->Cmd_Argv(1);
+	char *param1 = (char *) gpCmd->Cmd_Argv(2);
+	char *param2 = (char *) gpCmd->Cmd_Argv(3);
 
 	// Parse sub command
 	if (FStrEq(sub_command, "addclient"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessAddClient(&player, svr_command, param1);
+		else ProcessAddClient(player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "addsteam"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddSteam(&player, svr_command, param1, param2);
+		else ProcessAddSteam(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addip"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddIP(&player, svr_command, param1, param2);
+		else ProcessAddIP(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addnick"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddNick(&player, svr_command, param1, param2);
+		else ProcessAddNick(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setname"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetName(&player, svr_command, param1, param2);
+		else ProcessSetName(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setpassword"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetPassword(&player, svr_command, param1, param2);
+		else ProcessSetPassword(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setemail"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetEmail(&player, svr_command, param1, param2);
+		else ProcessSetEmail(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setnotes"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetNotes(&player, svr_command, param1, param2);
+		else ProcessSetNotes(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setalevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetLevel(MANI_ADMIN_TYPE, &player, svr_command, param1, param2);
+		else ProcessSetLevel(MANI_ADMIN_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setilevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetLevel(MANI_IMMUNITY_TYPE, &player, svr_command, param1, param2);
+		else ProcessSetLevel(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addagroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroup(MANI_ADMIN_TYPE, &player, svr_command, param1, param2);
+		else ProcessAddGroup(MANI_ADMIN_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addigroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroup(MANI_IMMUNITY_TYPE, &player, svr_command, param1, param2);
+		else ProcessAddGroup(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setaflag"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetFlag(MANI_ADMIN_TYPE, &player, svr_command, param1, param2);
+		else ProcessSetFlag(MANI_ADMIN_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setiflag"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetFlag(MANI_IMMUNITY_TYPE, &player, svr_command, param1, param2);
+		else ProcessSetFlag(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removeclient"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveClient(&player, svr_command, param1);
+		else ProcessRemoveClient(player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removesteam"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveSteam(&player, svr_command, param1, param2);
+		else ProcessRemoveSteam(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removeip"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveIP(&player, svr_command, param1, param2);
+		else ProcessRemoveIP(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removenick"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveNick(&player, svr_command, param1, param2);
+		else ProcessRemoveNick(player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removeagroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveGroup(MANI_ADMIN_TYPE, &player, svr_command, param1, param2);
+		else ProcessRemoveGroup(MANI_ADMIN_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removeigroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveGroup(MANI_IMMUNITY_TYPE, &player, svr_command, param1, param2);
+		else ProcessRemoveGroup(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "status"))
 	{
 		if (argc == 3)
 		{
-			ProcessClientStatus(&player, svr_command, param1);
+			ProcessClientStatus(player_ptr, param1);
 		}
 		else if (argc == 2)
 		{
-			ProcessAllClientStatus(&player, svr_command);
+			ProcessAllClientStatus(player_ptr);
 		}
 		else
 		{	
@@ -4463,11 +4446,11 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 	{
 		if (argc == 3)
 		{
-			ProcessClientFlagDesc(MANI_ADMIN_TYPE, &player, svr_command, param1);
+			ProcessClientFlagDesc(MANI_ADMIN_TYPE, player_ptr, param1);
 		}
 		else if (argc == 2)
 		{
-			ProcessAllClientFlagDesc(MANI_ADMIN_TYPE, &player, svr_command);
+			ProcessAllClientFlagDesc(MANI_ADMIN_TYPE, player_ptr);
 		}
 		else
 		{	
@@ -4478,11 +4461,11 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 	{
 		if (argc == 3)
 		{
-			ProcessClientFlagDesc(MANI_IMMUNITY_TYPE, &player, svr_command, param1);
+			ProcessClientFlagDesc(MANI_IMMUNITY_TYPE, player_ptr, param1);
 		}
 		else if (argc == 2)
 		{
-			ProcessAllClientFlagDesc(MANI_IMMUNITY_TYPE, &player, svr_command);
+			ProcessAllClientFlagDesc(MANI_IMMUNITY_TYPE, player_ptr);
 		}
 		else
 		{	
@@ -4492,12 +4475,12 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 	else if (FStrEq(sub_command, "upload"))
 	{
 		if (argc != 2) invalid_args = true;
-		else ProcessClientUpload(&player, svr_command);
+		else ProcessClientUpload(player_ptr);
 	}
 	else if (FStrEq(sub_command, "download"))
 	{
 		if (argc != 2) invalid_args = true;
-		else ProcessClientDownload(&player, svr_command);
+		else ProcessClientDownload(player_ptr);
 	}
 	else
 	{
@@ -4506,8 +4489,7 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 
 	if (invalid_args)
 	{
-		ProcessMaClientHelp(&player, svr_command);
-		return PLUGIN_STOP;
+		gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 	}
 
 	return PLUGIN_STOP;
@@ -4519,7 +4501,6 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 void		ManiClient::ProcessAddClient
 (
  player_t *player_ptr, 
- bool svr_command, 
  char *param1
  )
 {
@@ -4530,7 +4511,7 @@ void		ManiClient::ProcessAddClient
 		if (FStrEq(client_list[i].name, param1))
 		{
 			// Bad, client already exists 
-			OutputHelpText(player_ptr, svr_command, "ERROR: This client name already exists !!");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "ERROR: This client name already exists !!");
 			return;
 		}
 	}
@@ -4584,7 +4565,7 @@ void		ManiClient::ProcessAddClient
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Client %s has been added", client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has been added", client_ptr->name);
 }
 
 //---------------------------------------------------------------------------------
@@ -4592,8 +4573,7 @@ void		ManiClient::ProcessAddClient
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAddSteam
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -4604,7 +4584,7 @@ void		ManiClient::ProcessAddSteam
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -4642,7 +4622,7 @@ void		ManiClient::ProcessAddSteam
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -4661,7 +4641,7 @@ void		ManiClient::ProcessAddSteam
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Added Steam ID [%s] for client [%s]", param2, client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Added Steam ID [%s] for client [%s]", param2, client_ptr->name);
 	return;
 
 }
@@ -4671,8 +4651,7 @@ void		ManiClient::ProcessAddSteam
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAddIP
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -4683,7 +4662,7 @@ void		ManiClient::ProcessAddIP
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -4721,7 +4700,7 @@ void		ManiClient::ProcessAddIP
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -4740,7 +4719,7 @@ void		ManiClient::ProcessAddIP
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Added IP Address [%s] for client [%s]", param2, client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Added IP Address [%s] for client [%s]", param2, client_ptr->name);
 	return;
 
 }
@@ -4750,8 +4729,7 @@ void		ManiClient::ProcessAddIP
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAddNick
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -4762,7 +4740,7 @@ void		ManiClient::ProcessAddNick
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -4800,7 +4778,7 @@ void		ManiClient::ProcessAddNick
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -4819,7 +4797,7 @@ void		ManiClient::ProcessAddNick
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Added Nickname [%s] for client [%s]", param2, client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Added Nickname [%s] for client [%s]", param2, client_ptr->name);
 	return;
 
 }
@@ -4829,8 +4807,7 @@ void		ManiClient::ProcessAddNick
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessSetName
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -4841,14 +4818,14 @@ void		ManiClient::ProcessSetName
 
 	if (param2 == NULL || FStrEq(param2, ""))
 	{
-		OutputHelpText(player_ptr, svr_command, "You cannot set a client name to be blank !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "You cannot set a client name to be blank !!");
 		return;
 	}
 
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -4856,7 +4833,7 @@ void		ManiClient::ProcessSetName
 
 	if (FStrEq(client_ptr->name, param2))
 	{
-		OutputHelpText(player_ptr, svr_command, "Both names [%s] and [%s] are the same !!", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Both names [%s] and [%s] are the same !!", client_ptr->name, param2);
 		return;
 	}
 
@@ -4871,7 +4848,7 @@ void		ManiClient::ProcessSetName
 
 		if (FStrEq(client_list[i].name, param2))
 		{
-			OutputHelpText(player_ptr, svr_command, "A Client already exists with this name !!");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "A Client already exists with this name !!");
 			return;
 		}
 	}
@@ -4909,7 +4886,7 @@ void		ManiClient::ProcessSetName
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -4928,7 +4905,7 @@ void		ManiClient::ProcessSetName
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Set client [%s] with new name of [%s]", old_name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new name of [%s]", old_name, param2);
 	return;
 
 }
@@ -4938,7 +4915,6 @@ void		ManiClient::ProcessSetName
 void		ManiClient::ProcessSetPassword
 (
  player_t *player_ptr, 
- bool svr_command, 
  char *param1,
  char *param2
  )
@@ -4949,7 +4925,7 @@ void		ManiClient::ProcessSetPassword
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -4986,7 +4962,7 @@ void		ManiClient::ProcessSetPassword
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -5005,7 +4981,7 @@ void		ManiClient::ProcessSetPassword
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Set client [%s] with new password of [%s]", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new password of [%s]", client_ptr->name, param2);
 	return;
 
 }
@@ -5015,8 +4991,7 @@ void		ManiClient::ProcessSetPassword
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessSetEmail
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -5027,7 +5002,7 @@ void		ManiClient::ProcessSetEmail
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -5064,7 +5039,7 @@ void		ManiClient::ProcessSetEmail
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -5083,7 +5058,7 @@ void		ManiClient::ProcessSetEmail
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Set client [%s] with new email address of [%s]", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new email address of [%s]", client_ptr->name, param2);
 	return;
 
 }
@@ -5093,8 +5068,7 @@ void		ManiClient::ProcessSetEmail
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessSetNotes
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -5105,7 +5079,7 @@ void		ManiClient::ProcessSetNotes
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -5142,7 +5116,7 @@ void		ManiClient::ProcessSetNotes
 			return;
 		}
 
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 
@@ -5161,7 +5135,7 @@ void		ManiClient::ProcessSetNotes
 		delete mani_mysql;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Set client [%s] with new notes of [%s]", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new notes of [%s]", client_ptr->name, param2);
 	return;
 
 }
@@ -5172,8 +5146,7 @@ void		ManiClient::ProcessSetNotes
 void		ManiClient::ProcessSetLevel
 (
  int	type,
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -5182,12 +5155,12 @@ void		ManiClient::ProcessSetLevel
 	client_t	*client_ptr;
 	int	level_id;
 	bool	found_level = false;
-	char	flag_type[2];
+	char	flag_type[32];
 
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -5251,7 +5224,7 @@ void		ManiClient::ProcessSetLevel
 		}
 
 		// Get User ID
-		if (row_count)
+		if (row_count != 0)
 		{
 			mani_mysql->FetchRow();
 			client_ptr->user_id = mani_mysql->GetInt(0);
@@ -5293,11 +5266,11 @@ void		ManiClient::ProcessSetLevel
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		OutputHelpText(player_ptr, svr_command, "Updated client [%s] with new admin level id [%s]", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Updated client [%s] with new admin level id [%s]", client_ptr->name, param2);
 	}
 	else
 	{
-		OutputHelpText(player_ptr, svr_command, "Updated client [%s] with new immunity level id [%s]", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Updated client [%s] with new immunity level id [%s]", client_ptr->name, param2);
 	}
 
 	return;
@@ -5310,8 +5283,7 @@ void		ManiClient::ProcessSetLevel
 void		ManiClient::ProcessAddGroup
 (
  int	type,
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -5319,12 +5291,12 @@ void		ManiClient::ProcessAddGroup
 	int	client_index;
 	client_t	*client_ptr;
 	bool	found_group = false;
-	char	flag_type[2];
+	char	flag_type[32];
 
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -5364,7 +5336,7 @@ void		ManiClient::ProcessAddGroup
 
 	if (!found_group)
 	{
-		OutputHelpText(player_ptr, svr_command, "Group ID [%s] is invalid !!", param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Group ID [%s] is invalid !!", param2);
 		return;
 	}
 
@@ -5395,7 +5367,7 @@ void		ManiClient::ProcessAddGroup
 
 	if (found_group)
 	{
-		OutputHelpText(player_ptr, svr_command, "Group ID [%s] is already setup for this user", param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Group ID [%s] is already setup for this user", param2);
 		return;
 	}
 
@@ -5447,7 +5419,7 @@ void		ManiClient::ProcessAddGroup
 			}
 
 			// Get User ID
-			if (row_count)
+			if (row_count != 0)
 			{
 				mani_mysql->FetchRow();
 				client_ptr->user_id = mani_mysql->GetInt(0);
@@ -5455,7 +5427,7 @@ void		ManiClient::ProcessAddGroup
 				// Check if group actually exists
 				if (!mani_mysql->ExecuteQuery(&row_count,
 					"SELECT 1 "
-					"FROM %s%s"
+					"FROM %s%s "
 					"WHERE group_id = '%s' "
 					"AND server_group_id = '%s' "
 					"AND type = '%s'",
@@ -5471,7 +5443,7 @@ void		ManiClient::ProcessAddGroup
 
 				if (row_count == 0)
 				{
-					OutputHelpText(player_ptr, svr_command, "Group ID [%s] is invalid !!", param2);
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Group ID [%s] is invalid !!", param2);
 					delete mani_mysql;
 					break;
 				}
@@ -5515,12 +5487,12 @@ void		ManiClient::ProcessAddGroup
 	if (MANI_ADMIN_TYPE == type)
 	{
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command, "Client [%s] now has admin group [%s] access", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Client [%s] now has admin group [%s] access", client_ptr->name, param2);
 	}
 	else
 	{
 		ComputeImmunityLevels();
-		OutputHelpText(player_ptr, svr_command, "Client [%s] now has immunity group [%s] access", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Client [%s] now has immunity group [%s] access", client_ptr->name, param2);
 	}
 
 	return;
@@ -5533,14 +5505,13 @@ void		ManiClient::ProcessAddGroup
 void		ManiClient::ProcessAddGroupType
 (
  int	type,
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
 	int		group_index = -1;
-	char	flag_type[2];
+	char	flag_type[32];
 	bool	insert_required = false;
 
 	if (MANI_ADMIN_TYPE == type)
@@ -5776,12 +5747,12 @@ void		ManiClient::ProcessAddGroupType
 	if (MANI_ADMIN_TYPE == type)
 	{
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command, "Admin group [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin group [%s] updated", param1);
 	}
 	else
 	{
 		ComputeImmunityLevels();
-		OutputHelpText(player_ptr, svr_command, "Immunity group [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity group [%s] updated", param1);
 	}
 
 	return;
@@ -5795,12 +5766,11 @@ void		ManiClient::ProcessRemoveGroupType
 (
  int	type,
  player_t *player_ptr, 
- bool svr_command, 
  char *param1
  )
 {
 	int		group_index = -1;
-	char	flag_type[2];
+	char	flag_type[32];
 	bool	insert_required = false;
 	char	group_id[128]="";
 
@@ -5841,7 +5811,7 @@ void		ManiClient::ProcessRemoveGroupType
 
 	if (group_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Group [%s] does not exist !!", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Group [%s] does not exist !!", param1);
 		return;
 	}
 
@@ -5931,12 +5901,12 @@ void		ManiClient::ProcessRemoveGroupType
 	if (MANI_ADMIN_TYPE == type)
 	{
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command, "Admin group [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin group [%s] updated", param1);
 	}
 	else
 	{
 		ComputeImmunityLevels();
-		OutputHelpText(player_ptr, svr_command, "Immunity group [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity group [%s] updated", param1);
 	}
 
 	return;
@@ -5949,15 +5919,14 @@ void		ManiClient::ProcessRemoveGroupType
 void		ManiClient::ProcessAddLevelType
 (
  int	type,
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
 	int		level_index = -1;
 	int		level_id = 0;
-	char	flag_type[2];
+	char	flag_type[32];
 	bool	insert_required = false;
 
 	level_id = Q_atoi(param1);
@@ -6196,13 +6165,13 @@ void		ManiClient::ProcessAddLevelType
 	{
 		qsort(admin_level_list, admin_level_list_size, sizeof(admin_level_t), sort_admin_level); 
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command, "Admin level [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin level [%s] updated", param1);
 	}
 	else
 	{
 		qsort(immunity_level_list, immunity_level_list_size, sizeof(immunity_level_t), sort_immunity_level);
 		ComputeImmunityLevels();
-		OutputHelpText(player_ptr, svr_command, "Immunity level [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity level [%s] updated", param1);
 	}
 
 	return;
@@ -6215,13 +6184,12 @@ void		ManiClient::ProcessAddLevelType
 void		ManiClient::ProcessRemoveLevelType
 (
  int	type,
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1
  )
 {
 	int		level_index = -1;
-	char	flag_type[2];
+	char	flag_type[32];
 	bool	insert_required = false;
 	int		level_id = 0;
 
@@ -6266,7 +6234,7 @@ void		ManiClient::ProcessRemoveLevelType
 
 	if (level_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Level [%s] does not exist !!", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Level [%s] does not exist !!", param1);
 		return;
 	}
 
@@ -6329,12 +6297,12 @@ void		ManiClient::ProcessRemoveLevelType
 	if (MANI_ADMIN_TYPE == type)
 	{
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command, "Admin level [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin level [%s] updated", param1);
 	}
 	else
 	{
 		ComputeImmunityLevels();
-		OutputHelpText(player_ptr, svr_command, "Immunity level [%s] updated", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity level [%s] updated", param1);
 	}
 
 	return;
@@ -6348,7 +6316,6 @@ void		ManiClient::ProcessSetFlag
 (
  int	type,
  player_t *player_ptr, 
- bool svr_command, 
  char *param1,
  char *param2
  )
@@ -6356,7 +6323,7 @@ void		ManiClient::ProcessSetFlag
 	int	client_index;
 	client_t	*client_ptr;
 	bool	found_group	= false;
-	char	flag_type[2];
+	char	flag_type[32];
 	int	param2_index = 0;
 	ManiMySQL *mani_mysql =	NULL;
 
@@ -6364,7 +6331,7 @@ void		ManiClient::ProcessSetFlag
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index ==	-1)
 	{
-		OutputHelpText(player_ptr, svr_command,	"Unable	to find	target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable	to find	target [%s]", param1);
 		return;
 	}
 
@@ -6572,11 +6539,11 @@ void		ManiClient::ProcessSetFlag
 	if (MANI_ADMIN_TYPE	== type) 
 	{
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command,	"Processed admin flags to client [%s]",	client_ptr->name);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Processed admin flags to client [%s]",	client_ptr->name);
 	}
 	else
 	{
-		OutputHelpText(player_ptr, svr_command,	"Processed immunity flags to client [%s]", client_ptr->name);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Processed immunity flags to client [%s]", client_ptr->name);
 		ComputeImmunityLevels();
 	}
 
@@ -6589,8 +6556,7 @@ void		ManiClient::ProcessSetFlag
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessRemoveClient
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1
  )
 {
@@ -6601,7 +6567,7 @@ void		ManiClient::ProcessRemoveClient
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -6769,7 +6735,7 @@ void		ManiClient::ProcessRemoveClient
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
 
-	OutputHelpText(player_ptr, svr_command, "Client %s has been removed !!", param1);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has been removed !!", param1);
 }
 
 //---------------------------------------------------------------------------------
@@ -6778,7 +6744,6 @@ void		ManiClient::ProcessRemoveClient
 void		ManiClient::ProcessRemoveSteam
 (
  player_t *player_ptr, 
- bool svr_command, 
  char *param1,
  char *param2
  )
@@ -6790,7 +6755,7 @@ void		ManiClient::ProcessRemoveSteam
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -6863,7 +6828,7 @@ void		ManiClient::ProcessRemoveSteam
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
 
-	OutputHelpText(player_ptr, svr_command, "Client %s has had steam id [%s] removed", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had steam id [%s] removed", client_ptr->name, param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -6871,8 +6836,7 @@ void		ManiClient::ProcessRemoveSteam
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessRemoveIP
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -6884,7 +6848,7 @@ void		ManiClient::ProcessRemoveIP
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -6957,7 +6921,7 @@ void		ManiClient::ProcessRemoveIP
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
 
-	OutputHelpText(player_ptr, svr_command, "Client %s has had IP Address [%s] removed", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had IP Address [%s] removed", client_ptr->name, param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -6965,8 +6929,7 @@ void		ManiClient::ProcessRemoveIP
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessRemoveNick
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -6978,7 +6941,7 @@ void		ManiClient::ProcessRemoveNick
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -7051,7 +7014,7 @@ void		ManiClient::ProcessRemoveNick
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
 
-	OutputHelpText(player_ptr, svr_command, "Client %s has had nickname [%s] removed", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had nickname [%s] removed", client_ptr->name, param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -7060,8 +7023,7 @@ void		ManiClient::ProcessRemoveNick
 void		ManiClient::ProcessRemoveGroup
 (
  int type,
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1,
  char *param2
  )
@@ -7069,13 +7031,13 @@ void		ManiClient::ProcessRemoveGroup
 	int	client_index;
 	client_t	*client_ptr;
 	bool	found_group = false;
-	char	flag_type[2];
+	char	flag_type[32];
 	ManiMySQL *mani_mysql = NULL;
 
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
@@ -7184,11 +7146,11 @@ void		ManiClient::ProcessRemoveGroup
 	if (MANI_ADMIN_TYPE == type)
 	{
 		ComputeAdminLevels();
-		OutputHelpText(player_ptr, svr_command, "Removed client [%s] from admin flag group [%s]", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Removed client [%s] from admin flag group [%s]", client_ptr->name, param2);
 	}
 	else
 	{
-		OutputHelpText(player_ptr, svr_command, "Removed client [%s] from immunity flag group [%s]", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Removed client [%s] from immunity flag group [%s]", client_ptr->name, param2);
 		ComputeImmunityLevels();
 	}
 }
@@ -7199,22 +7161,21 @@ void		ManiClient::ProcessRemoveGroup
 void		ManiClient::ProcessAllClientFlagDesc
 (
  int	type,
- player_t *player_ptr, 
- bool svr_command
+ player_t *player_ptr
  )
 {
 	if (type == MANI_ADMIN_TYPE)
 	{
 		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
 		{
-			OutputHelpText(player_ptr, svr_command, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
 		}
 	}
 	else
 	{
 		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
 		{
-			OutputHelpText(player_ptr, svr_command, "%-20s %s", immunity_flag_list[i].flag, immunity_flag_list[i].flag_desc);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", immunity_flag_list[i].flag, immunity_flag_list[i].flag_desc);
 		}
 	}
 }
@@ -7226,7 +7187,6 @@ void		ManiClient::ProcessClientFlagDesc
 (
  int	type,
  player_t *player_ptr, 
- bool svr_command,
  char *param1
  )
 {
@@ -7236,13 +7196,13 @@ void		ManiClient::ProcessClientFlagDesc
 		{
 			if (FStruEq(admin_flag_list[i].flag, param1))
 			{
-				OutputHelpText(player_ptr, svr_command, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
+				OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
 				return;
 			}
 
 		}
 
-		OutputHelpText(player_ptr, svr_command, "Admin flag [%s] does not exist !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin flag [%s] does not exist !!", param1);
 	}
 	else
 	{
@@ -7250,12 +7210,12 @@ void		ManiClient::ProcessClientFlagDesc
 		{
 			if (FStruEq(immunity_flag_list[i].flag, param1))
 			{
-				OutputHelpText(player_ptr, svr_command, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
+				OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
 				return;
 			}
 		}
 
-		OutputHelpText(player_ptr, svr_command, "Immunity flag [%s] does not exist !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity flag [%s] does not exist !!", param1);
 	}
 
 }
@@ -7265,20 +7225,19 @@ void		ManiClient::ProcessClientFlagDesc
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAllClientStatus
 (
- player_t *player_ptr, 
- bool svr_command
+ player_t *player_ptr
  )
 {
 	if (client_list_size == 0)
 	{
-		OutputHelpText(player_ptr, svr_command, "No clients setup yet !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "No clients setup yet !!");
 		return;
 	}
 
-	OutputHelpText(player_ptr, svr_command, "List of clients, use ma_client status <name> for detailed info on a client");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "List of clients, use ma_client status <name> for detailed info on a client");
 	for (int i = 0; i < client_list_size; i++)
 	{
-		OutputHelpText(player_ptr, svr_command, "%s", client_list[i].name);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", client_list[i].name);
 	}	
 }
 //---------------------------------------------------------------------------------
@@ -7286,8 +7245,7 @@ void		ManiClient::ProcessAllClientStatus
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessClientStatus
 (
- player_t *player_ptr, 
- bool svr_command, 
+ player_t *player_ptr,  
  char *param1 // player
  )
 {
@@ -7300,24 +7258,24 @@ void		ManiClient::ProcessClientStatus
 	client_index = FindClientIndex(param1, false, false);
 	if (client_index == -1)
 	{
-		OutputHelpText(player_ptr, svr_command, "Unable to find target [%s]", param1);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
 	client_ptr = &(client_list[client_index]);
 
-	OutputHelpText(player_ptr, svr_command, "Name              : %s", client_ptr->name);
-	OutputHelpText(player_ptr, svr_command, "Email             : %s", client_ptr->email_address);
-	OutputHelpText(player_ptr, svr_command, "Notes             : %s", client_ptr->notes);
-	OutputHelpText(player_ptr, svr_command, "Password          : %s", client_ptr->password);
-	if (client_ptr->admin_level_id > -1) OutputHelpText(player_ptr, svr_command, "Admin Level ID    : %i", client_ptr->admin_level_id);
-	if (client_ptr->immunity_level_id > -1) OutputHelpText(player_ptr, svr_command, "Immunity Level ID : %i", client_ptr->immunity_level_id);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Name              : %s", client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Email             : %s", client_ptr->email_address);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Notes             : %s", client_ptr->notes);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Password          : %s", client_ptr->password);
+	if (client_ptr->admin_level_id > -1) OutputHelpText(ORANGE_CHAT, player_ptr, "Admin Level ID    : %i", client_ptr->admin_level_id);
+	if (client_ptr->immunity_level_id > -1) OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity Level ID : %i", client_ptr->immunity_level_id);
 
 	if (client_ptr->steam_list_size != 0)
 	{
 		if (client_ptr->steam_list_size == 1)
 		{
-			OutputHelpText(player_ptr, svr_command, "Steam ID : %s", client_ptr->steam_list[0].steam_id);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Steam ID : %s", client_ptr->steam_list[0].steam_id);
 		}
 		else
 		{
@@ -7328,7 +7286,7 @@ void		ManiClient::ProcessClientStatus
 				Q_strcat(temp_string, temp_string2);
 			}
 
-			OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 		}
 	}
 
@@ -7336,7 +7294,7 @@ void		ManiClient::ProcessClientStatus
 	{
 		if (client_ptr->ip_address_list_size == 1)
 		{
-			OutputHelpText(player_ptr, svr_command, "IP Address : %s", client_ptr->ip_address_list[0].ip_address);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "IP Address : %s", client_ptr->ip_address_list[0].ip_address);
 		}
 		else
 		{
@@ -7347,7 +7305,7 @@ void		ManiClient::ProcessClientStatus
 				Q_strcat(temp_string, temp_string2);
 			}
 
-			OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 		}
 	}
 
@@ -7355,7 +7313,7 @@ void		ManiClient::ProcessClientStatus
 	{
 		if (client_ptr->nick_list_size == 1)
 		{
-			OutputHelpText(player_ptr, svr_command, "Nickname : %s", client_ptr->nick_list[0].nick);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Nickname : %s", client_ptr->nick_list[0].nick);
 		}
 		else
 		{
@@ -7366,7 +7324,7 @@ void		ManiClient::ProcessClientStatus
 				Q_strcat(temp_string, temp_string2);
 			}
 
-			OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 		}
 	}
 
@@ -7374,7 +7332,7 @@ void		ManiClient::ProcessClientStatus
 	{
 		if (client_ptr->admin_group_list_size == 1)
 		{
-			OutputHelpText(player_ptr, svr_command, "Admin Group : %s", client_ptr->admin_group_list[0].group_id);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Admin Group : %s", client_ptr->admin_group_list[0].group_id);
 		}
 		else
 		{
@@ -7385,7 +7343,7 @@ void		ManiClient::ProcessClientStatus
 				Q_strcat(temp_string, temp_string2);
 			}
 
-			OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 		}
 	}
 
@@ -7393,7 +7351,7 @@ void		ManiClient::ProcessClientStatus
 	{
 		if (client_ptr->immunity_group_list_size == 1)
 		{
-			OutputHelpText(player_ptr, svr_command, "Immunity Group : %s", client_ptr->immunity_group_list[0].group_id);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity Group : %s", client_ptr->immunity_group_list[0].group_id);
 		}
 		else
 		{
@@ -7404,7 +7362,7 @@ void		ManiClient::ProcessClientStatus
 				Q_strcat(temp_string, temp_string2);
 			}
 
-			OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 		}
 	}
 
@@ -7423,7 +7381,7 @@ void		ManiClient::ProcessClientStatus
 
 	if (found_flag)
 	{
-		OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 
 	found_flag = false;
@@ -7440,7 +7398,7 @@ void		ManiClient::ProcessClientStatus
 
 	if (found_flag)
 	{
-		OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 
 	Q_strcpy(temp_string, "Active Admin Flags : ");
@@ -7456,7 +7414,7 @@ void		ManiClient::ProcessClientStatus
 
 	if (found_flag)
 	{
-		OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 
 	found_flag = false;
@@ -7473,7 +7431,7 @@ void		ManiClient::ProcessClientStatus
 
 	if (found_flag)
 	{
-		OutputHelpText(player_ptr, svr_command, "%s", temp_string);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 }
 
@@ -7483,7 +7441,6 @@ void		ManiClient::ProcessClientStatus
 void		ManiClient::ProcessClientGroupStatus
 (
  player_t *player_ptr, 
- bool svr_command, 
  char *param1 // type
  )
 {
@@ -7493,7 +7450,7 @@ void		ManiClient::ProcessClientGroupStatus
 	{
 		if (admin_group_list_size == 0)
 		{
-			OutputHelpText(player_ptr, svr_command, "No Admin Groups setup");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "No Admin Groups setup");
 		}
 		else 
 		{
@@ -7511,7 +7468,7 @@ void		ManiClient::ProcessClientGroupStatus
 					}
 				}
 
-				OutputHelpText(player_ptr, svr_command, "[%s]   %s", admin_group_list[i].group_id, flags_string);
+				OutputHelpText(ORANGE_CHAT, player_ptr, "[%s]   %s", admin_group_list[i].group_id, flags_string);
 			}
 		}
 	}
@@ -7519,7 +7476,7 @@ void		ManiClient::ProcessClientGroupStatus
 	{
 		if (immunity_group_list_size == 0)
 		{
-			OutputHelpText(player_ptr, svr_command, "No Immunity Groups setup");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "No Immunity Groups setup");
 		}
 		else
 		{
@@ -7536,7 +7493,7 @@ void		ManiClient::ProcessClientGroupStatus
 					}
 				}
 
-				OutputHelpText(player_ptr, svr_command, "[%s]   %s", immunity_group_list[i].group_id, flags_string);
+				OutputHelpText(ORANGE_CHAT, player_ptr, "[%s]   %s", immunity_group_list[i].group_id, flags_string);
 			}
 		}
 	}
@@ -7544,7 +7501,7 @@ void		ManiClient::ProcessClientGroupStatus
 	{
 		if (admin_level_list_size == 0)
 		{
-			OutputHelpText(player_ptr, svr_command, "No Admin Levels setup");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "No Admin Levels setup");
 		}
 		else
 		{
@@ -7561,7 +7518,7 @@ void		ManiClient::ProcessClientGroupStatus
 					}
 				}
 
-				OutputHelpText(player_ptr, svr_command, "[%i]   %s", admin_level_list[i].level_id, flags_string);
+				OutputHelpText(ORANGE_CHAT, player_ptr, "[%i]   %s", admin_level_list[i].level_id, flags_string);
 			}
 		}
 	}
@@ -7569,7 +7526,7 @@ void		ManiClient::ProcessClientGroupStatus
 	{
 		if (immunity_level_list_size == 0)
 		{
-			OutputHelpText(player_ptr, svr_command, "No Immunity Levels setup");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "No Immunity Levels setup");
 		}
 		else
 		{
@@ -7586,13 +7543,13 @@ void		ManiClient::ProcessClientGroupStatus
 					}
 				}
 
-				OutputHelpText(player_ptr, svr_command, "[%i]   %s", immunity_level_list[i].level_id, flags_string);
+				OutputHelpText(ORANGE_CHAT, player_ptr, "[%i]   %s", immunity_level_list[i].level_id, flags_string);
 			}
 		}	
 	}
 	else
 	{
-		ProcessMaClientGroupHelp(player_ptr, svr_command);
+		gpManiHelp->ShowHelp(player_ptr, "ma_clientgroup", 2223, M_CCONSOLE);
 	}
 }
 
@@ -7601,31 +7558,30 @@ void		ManiClient::ProcessClientGroupStatus
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessClientUpload
 (
- player_t *player_ptr, 
- bool svr_command
+ player_t *player_ptr
  )
 {
 
 	if (!gpManiDatabase->GetDBEnabled())
 	{
-		OutputHelpText(player_ptr, svr_command, "Cannot upload as database functionality not enabled, see database.txt");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Cannot upload as database functionality not enabled, see database.txt");
 		return;
 	}
 
 	// Upload to the database
 
-	OutputHelpText(player_ptr, svr_command, "Uploading data.....");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Uploading data.....");
 	if (this->CreateDBTables())
 	{
 		if (this->CreateDBFlags())
 		{
 			this->ExportDataToDB();
-			OutputHelpText(player_ptr, svr_command, "Upload suceeded");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Upload suceeded");
 			return;
 		}
 	}
 
-	OutputHelpText(player_ptr, svr_command, "Upload failed !!");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Upload failed !!");
 
 }
 
@@ -7634,14 +7590,13 @@ void		ManiClient::ProcessClientUpload
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessClientDownload
 (
- player_t *player_ptr, 
- bool svr_command
+ player_t *player_ptr
  )
 {
 
 	if (!gpManiDatabase->GetDBEnabled())
 	{
-		OutputHelpText(player_ptr, svr_command, "Cannot download as database functionality not enabled, see database.txt");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Cannot download as database functionality not enabled, see database.txt");
 		return;
 	}
 
@@ -7649,16 +7604,16 @@ void		ManiClient::ProcessClientDownload
 
 	FreeClients();
 
-	OutputHelpText(player_ptr, svr_command, "Downloading data.....");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Downloading data.....");
 	if (!this->GetClientsFromDatabase())
 	{
-		OutputHelpText(player_ptr, svr_command, "Download failed, using existing clients.txt file instead");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Download failed, using existing clients.txt file instead");
 		FreeClients();
 		LoadClients();
 	}
 	else
 	{
-		OutputHelpText(player_ptr, svr_command, "Download succeeded, updating clients.txt");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Download succeeded, updating clients.txt");
 		WriteClients();
 	}
 }
@@ -7695,7 +7650,7 @@ void		ManiClient::UpgradeDB1( void )
 		return;
 	}
 
-	if (row_count)
+	if (row_count != 0)
 	{
 		// Found rows
 		while (mani_mysql->FetchRow())
@@ -7738,25 +7693,51 @@ void		ManiClient::UpgradeDB1( void )
 
 	MMsg("Updating database from pre V%s to new format\n", version_string);
 
-	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBGroup())) {delete mani_mysql; return;}
-	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientGroup())) {delete mani_mysql; return;}
-	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientFlag())) {delete mani_mysql; return;}
-	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientLevel())) {delete mani_mysql; return;}
-	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBLevel())) {delete mani_mysql; return;}
-	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientServer())) {delete mani_mysql; return;}
+	bool column_exists;
 
-	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientFlag())) {delete mani_mysql; return;}
-	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientGroup())) {delete mani_mysql; return;}
-	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientLevel())) {delete mani_mysql; return;}
-	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBGroup())) {delete mani_mysql; return;}
-	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBLevel())) {delete mani_mysql; return;}
-	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBFlag())) {delete mani_mysql; return;}
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBGroup(),"server_id", &column_exists)){delete mani_mysql; return;}
+	if (column_exists) if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBGroup())) {delete mani_mysql; return;}
+
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBClientGroup(),"server_id", &column_exists)){delete mani_mysql; return;}
+	if (column_exists) if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientGroup())) {delete mani_mysql; return;}
+	
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBClientFlag(),"server_id", &column_exists)){delete mani_mysql; return;}
+	if (column_exists) if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientFlag())) {delete mani_mysql; return;}
+	
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBClientLevel(),"server_id", &column_exists)){delete mani_mysql; return;}
+	if (column_exists) if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientLevel())) {delete mani_mysql; return;}
+	
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBLevel(),"server_id", &column_exists)){delete mani_mysql; return;}
+	if (column_exists) if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBLevel())) {delete mani_mysql; return;}
+
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBClientServer(),"server_id", &column_exists)){delete mani_mysql; return;}
+	if (column_exists) if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientServer())) {delete mani_mysql; return;}
+
+	bool column_matches;
+
+	if (!this->TestColumnType(mani_mysql, gpManiDatabase->GetDBTBClientFlag(), "type", "char(1)", &column_matches)) {delete mani_mysql;return;}
+	if (column_matches) if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientFlag())) {delete mani_mysql; return;}
+	if (!this->TestColumnType(mani_mysql, gpManiDatabase->GetDBTBClientGroup(), "type", "char(1)", &column_matches)) {delete mani_mysql;return;}
+	if (column_matches) if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientGroup())) {delete mani_mysql; return;}
+	if (!this->TestColumnType(mani_mysql, gpManiDatabase->GetDBTBClientLevel(), "type", "char(1)", &column_matches)) {delete mani_mysql;return;}
+	if (column_matches) if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientLevel())) {delete mani_mysql; return;}
+	if (!this->TestColumnType(mani_mysql, gpManiDatabase->GetDBTBGroup(), "type", "char(1)", &column_matches)) {delete mani_mysql;return;}
+	if (column_matches) if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBGroup())) {delete mani_mysql; return;}
+	if (!this->TestColumnType(mani_mysql, gpManiDatabase->GetDBTBLevel(), "type", "char(1)", &column_matches)) {delete mani_mysql;return;}
+	if (column_matches) if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBLevel())) {delete mani_mysql; return;}
+	if (!this->TestColumnType(mani_mysql, gpManiDatabase->GetDBTBFlag(), "type", "char(1)", &column_matches)) {delete mani_mysql;return;}
+	if (column_matches) if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBFlag())) {delete mani_mysql; return;}
 
 	MMsg("Updating table %s%s to have column 'server_group_id'....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
-	if (!mani_mysql->ExecuteQuery("ALTER TABLE %s%s ADD server_group_id varchar(32) NOT NULL default ''", 
-		gpManiDatabase->GetDBTablePrefix(),	gpManiDatabase->GetDBTBServer()))
+	if (!this->TestColumnExists(mani_mysql, gpManiDatabase->GetDBTBServer(),"server_group_id", &column_exists)){delete mani_mysql; return;}
+	if (!column_exists)
 	{
-		return ;
+		MMsg("Updating table %s%s to have column 'server_group_id'....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
+		if (!mani_mysql->ExecuteQuery("ALTER TABLE %s%s ADD server_group_id varchar(32) NOT NULL default ''", 
+			gpManiDatabase->GetDBTablePrefix(),	gpManiDatabase->GetDBTBServer()))
+		{
+			return ;
+		}
 	}
 
 	MMsg("Updating table %s%s to have 'Default' for server group id....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
@@ -7808,6 +7789,67 @@ bool		ManiClient::UpgradeServerIDToServerGroupID
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Test a column exists
+//---------------------------------------------------------------------------------
+bool		ManiClient::TestColumnExists(ManiMySQL *mani_mysql_ptr, char *table_name, char *column_name, bool *found_column)
+{
+	int row_count;
+
+	MMsg("Testing column '%s' exists on table '%s%s'....\n", column_name, gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery(&row_count, "SHOW COLUMNS FROM %s%s LIKE '%s'", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name, column_name))
+	{
+		*found_column = false;
+		return false;
+	}
+
+	if (row_count != 0)
+	{
+		MMsg("Column exists\n");
+		*found_column = true;
+	}
+	else
+	{
+		MMsg("Column does not exist\n");
+		*found_column = false;
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Test a column type matches our one
+//---------------------------------------------------------------------------------
+bool		ManiClient::TestColumnType(ManiMySQL *mani_mysql_ptr, char *table_name, char *column_name, char *column_type, bool *column_matches)
+{
+	int row_count;
+
+	MMsg("Testing column type '%s' matches column '%s' on table '%s%s'....\n", column_type, column_name, gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery(&row_count, "SHOW COLUMNS FROM %s%s LIKE '%s'", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name, column_name))
+	{
+		*column_matches = false;
+		return false;
+	}
+
+	if (row_count == 0)
+	{
+		return false;
+	}
+
+	mani_mysql_ptr->FetchRow();
+	if (FStrEq(mani_mysql_ptr->GetString(1), column_type))
+	{
+		*column_matches = true;
+		return true;
+	}
+
+	*column_matches = true;
+	return true;
+}
+
+
+//---------------------------------------------------------------------------------
 // Purpose: Handle upgrade from versions prior to V1.2BetaM
 //---------------------------------------------------------------------------------
 bool		ManiClient::UpgradeClassTypes
@@ -7843,111 +7885,77 @@ bool		ManiClient::UpgradeClassTypes
 // Purpose: Con command for setting admin flags
 //---------------------------------------------------------------------------------
 
-CON_COMMAND(ma_client, "Handles control of creating and administrating clients with admin rights and immunity rights")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiClient->ProcessMaClient
-		(
-		0, // Client index
-		true,  // Sever console command type
-		engine->Cmd_Argc(), // Number of arguments
-		engine->Cmd_Argv(0), // Command argument
-		engine->Cmd_Argv(1), // sub command
-		engine->Cmd_Argv(2), // usually the id of the player
-		engine->Cmd_Argv(3) // sub sub command 
-		);
-	return;
-}
-
+SCON_COMMAND(ma_client, 2221, MaClient, true);
 
 //---------------------------------------------------------------------------------
 // Purpose: Handle ma_clientgroup command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT		ManiClient::ProcessMaClientGroup
-(
- int index, 
- bool svr_command, 
- int argc, 
- char *command_string,
- char *sub_command,
- char *param1,
- char *param2
- )
+PLUGIN_RESULT	ManiClient::ProcessMaClientGroup(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	player_t player;
 	int	client_index;
-	player.entity = NULL;
 	bool	invalid_args = false;
 
-	if (!svr_command)
+	if (player_ptr)
 	{
 		// Check if player is admin
-		player.index = index;
-		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!IsAdminAllowed(&player, "ma_client", ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
+		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
 	}
 
-	// Cover only command and subcommand being passed in
-	if (argc < 3) 
-	{
-		ProcessMaClientGroupHelp(&player, svr_command);
-		return PLUGIN_STOP;
-	}
+	int argc = gpCmd->Cmd_Argc();
 
 	// Cover only command and subcommand being passed in
-	if (argc < 2) 
-	{
-		ProcessMaClientHelp(&player, svr_command);
-		return PLUGIN_STOP;
-	}
+	if (argc < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+
+	char *sub_command = (char *) gpCmd->Cmd_Argv(1);
+	char *param1 = (char *) gpCmd->Cmd_Argv(2);
+	char *param2 = (char *) gpCmd->Cmd_Argv(3);
 
 	// Parse sub command
 	if (FStrEq(sub_command, "addagroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroupType(MANI_ADMIN_TYPE, &player, svr_command, param1, param2);
+		else ProcessAddGroupType(MANI_ADMIN_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addigroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroupType(MANI_IMMUNITY_TYPE, &player, svr_command, param1, param2);
+		else ProcessAddGroupType(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addalevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddLevelType(MANI_ADMIN_TYPE, &player, svr_command, param1, param2);
+		else ProcessAddLevelType(MANI_ADMIN_TYPE, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addilevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddLevelType(MANI_IMMUNITY_TYPE, &player, svr_command, param1, param2);
+		else ProcessAddLevelType(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
 	}	
 	else if (FStrEq(sub_command, "removeagroup"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveGroupType(MANI_ADMIN_TYPE, &player, svr_command, param1);
+		else ProcessRemoveGroupType(MANI_ADMIN_TYPE, player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removeigroup"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveGroupType(MANI_IMMUNITY_TYPE, &player, svr_command, param1);
+		else ProcessRemoveGroupType(MANI_IMMUNITY_TYPE, player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removealevel"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveLevelType(MANI_ADMIN_TYPE, &player, svr_command, param1);
+		else ProcessRemoveLevelType(MANI_ADMIN_TYPE, player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removeilevel"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveLevelType(MANI_IMMUNITY_TYPE, &player, svr_command, param1);
+		else ProcessRemoveLevelType(MANI_IMMUNITY_TYPE, player_ptr, param1);
 	}	
 	else if (FStrEq(sub_command, "status"))
 	{
 		if (argc == 3)
 		{
-			ProcessClientGroupStatus(&player, svr_command, param1);
+			ProcessClientGroupStatus(player_ptr, param1);
 		}
 		else
 		{	
@@ -7961,8 +7969,7 @@ PLUGIN_RESULT		ManiClient::ProcessMaClientGroup
 
 	if (invalid_args)
 	{
-		ProcessMaClientGroupHelp(&player, svr_command);
-		return PLUGIN_STOP;
+		gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 	}
 	return PLUGIN_STOP;
 }
@@ -7970,55 +7977,35 @@ PLUGIN_RESULT		ManiClient::ProcessMaClientGroup
 //---------------------------------------------------------------------------------
 // Purpose: Con command for setting admin flags
 //---------------------------------------------------------------------------------
-
-CON_COMMAND(ma_clientgroup, "Handles control of creating and administrating clients group accesses")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiClient->ProcessMaClientGroup
-		(
-		0, // Client index
-		true,  // Sever console command type
-		engine->Cmd_Argc(), // Number of arguments
-		engine->Cmd_Argv(0), // Command argument
-		engine->Cmd_Argv(1), // sub command
-		engine->Cmd_Argv(2), // usually the group id/level id
-		engine->Cmd_Argv(3) // flags to set for the group
-		);
-	return;
-}
-
+SCON_COMMAND(ma_clientgroup, 2223, MaClientGroup, true);
 
 //---------------------------------------------------------------------------------
 // Purpose: Con command for setting admin flags
 //---------------------------------------------------------------------------------
+SCON_COMMAND(ma_setadminflag, 0, MaSetAdminFlag, true);
 
-CON_COMMAND(ma_setadminflag, "Changes an admins flags using +a -a to affect them")
+//---------------------------------------------------------------------------------
+// Purpose: Handle ma_clientgroup command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	ManiClient::ProcessMaReloadClients(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiClient->ProcessMaSetAdminFlag
-		(
-		0, // Client index
-		true,  // Sever console command type
-		engine->Cmd_Argc(), // Number of arguments
-		engine->Cmd_Argv(0), // Command argument
-		engine->Cmd_Argv(1), // admin name
-		engine->Cmd_Argv(2) // flag list
-		);
-	return;
+	int	client_index;
+	bool	invalid_args = false;
+
+	if (player_ptr)
+	{
+		// Check if player is admin
+		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
+	}
+
+	this->Init();
+	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Con command for re loading admin lists
 //---------------------------------------------------------------------------------
-CON_COMMAND(ma_reloadadmin, "Forces the plugin to reload the admin lists")
-{
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
-	gpManiClient->Init();
-	return;
-}
+SCON_COMMAND(ma_reloadclients, 2167, MaReloadClients, true);
 
 //---------------------------------------------------------------------------------
 // Purpose: Sets up immunity flags, if you add a new flag it needs to be intialised 

@@ -169,11 +169,11 @@ static void ManiDeadAllTalk ( ConVar *var, char const *pOldString )
 	{
 		if (atoi(var->GetString()) == 0)
 		{
-			SayToAll(true, "DeadAllTalk mode off");
+			SayToAll(ORANGE_CHAT, true, "DeadAllTalk mode off");
 		}
 		else
 		{
-			SayToAll(true, "DeadAllTalk mode on");
+			SayToAll(ORANGE_CHAT, true, "DeadAllTalk mode on");
 		}
 	}
 }
