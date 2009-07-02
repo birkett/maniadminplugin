@@ -370,8 +370,8 @@
 #define	IMMUNITY_ALLOW_GRAVITY_FLAG ("grav")		
 #define	IMMUNITY_ALLOW_GRAVITY_DESC ("Gravity")
 
-#define	IMMUNITY_ALLOW_FRICTION (27)			//immunity flag
-#define	IMMUNITY_ALLOW_FRICTION_FLAG ("friction")		
-#define	IMMUNITY_ALLOW_FRICTION_DESC ("Friction")
+#define	IMMUNITY_ALLOW_AUTOJOIN (27)			//immunity flag
+#define	IMMUNITY_ALLOW_AUTOJOIN_FLAG ("autojoin")		
+#define	IMMUNITY_ALLOW_AUTOJOIN_DESC ("Autojoin")
 
 #endif

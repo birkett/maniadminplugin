@@ -228,16 +228,7 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 	// Grab some memory
 	int memory_to_get = sizeof(char) * (test_length + current_length + 100);
 
-	*pReplaceEnts = (char *) malloc(memory_to_get);
-	if (*pReplaceEnts == NULL)
-	{
-		Msg("Could not allocate %i bytes !!\n", memory_to_get);
-		return false;
-	}
-
-	char	*easy_ptr = *pReplaceEnts;
-
-	Q_strcpy(easy_ptr, pMapEntities);
+	Q_strcpy(replacement_entities, pMapEntities);
 
 	for (int i = 0; i < 10; i++)
 	{
@@ -255,12 +246,14 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 				spawn_team[i].spawn_list[j].az,
 				gpManiGameType->GetTeamSpawnPointClassName(i));
 			
-				Q_strcat (easy_ptr, temp_string);
+				Q_strcat (replacement_entities, temp_string);
 			}
 
-			Msg("Added %i spawnpoints for class %s\n", spawn_team[i].spawn_list_size, gpManiGameType->GetTeamSpawnPointClassName(i));
+//			Msg("Added %i spawnpoints for class %s\n", spawn_team[i].spawn_list_size, gpManiGameType->GetTeamSpawnPointClassName(i));
 		}
 	}
+
+	*pReplaceEnts = replacement_entities;
 
 	return true;
 }
@@ -303,7 +296,7 @@ bool		ManiSpawnPoints::IsToClose(player_t *player_ptr)
 		if (target_player.is_dead) continue;
 
 		Vector	v = player_ptr->player_info->GetAbsOrigin() - target_player.player_info->GetAbsOrigin();
-		if (v.Length() < mani_spawnpoints_radius_limit.GetFloat())
+		if (v.Length() < 120.0)
 		{
 			// Found a player too close !!!!
 			return true;
@@ -320,14 +313,14 @@ void ManiSpawnPoints::LoadData(char *map_name)
 {
 	char	core_filename[256];
 
-	Msg("*********** Loading spawnpoints.txt ************\n");
+//	Msg("*********** Loading spawnpoints.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("spawnpoints.txt");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/spawnpoints.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-		Msg("Failed to load spawnpoints.txt\n");
+//		Msg("Failed to load spawnpoints.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -339,7 +332,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -352,7 +345,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		if (FStrEq(base_key_ptr->GetName(), current_map))
 		{
 			found_match = true;
-			Msg("Found record for %s\n", current_map);
+//			Msg("Found record for %s\n", current_map);
 			break;
 		}
 
@@ -367,7 +360,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	if (!found_match)
 	{
 		kv_ptr->deleteThis();
-		Msg("Map entry %s not found\n", current_map);
+//		Msg("Map entry %s not found\n", current_map);
 		return;
 	}
 
@@ -376,7 +369,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	kv_map_ptr = base_key_ptr->GetFirstTrueSubKey();
 	if (!kv_map_ptr)
 	{
-		Msg("No team number name found\n");
+//		Msg("No team number name found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -388,7 +381,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		team_number = Q_atoi(kv_map_ptr->GetName());
 		if (team_number == 0 || !gpManiGameType->IsValidActiveTeam(team_number))
 		{
-			Msg("Team number [%s] is invalid !!\n", kv_map_ptr->GetName());
+//			Msg("Team number [%s] is invalid !!\n", kv_map_ptr->GetName());
 			// No decal of that name found
 			kv_map_ptr = kv_map_ptr->GetNextKey();
 			if (!kv_map_ptr)
@@ -398,7 +391,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		}
 		else
 		{
-			Msg("Team number [%i]\n", team_number);
+//			Msg("Team number [%i]\n", team_number);
 			GetCoordList(kv_map_ptr, team_number);
 		}
 
@@ -411,7 +404,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 
 	kv_ptr->deleteThis();
 
-	Msg("*********** spawnpoints.txt loaded ************\n");
+//	Msg("*********** spawnpoints.txt loaded ************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -435,7 +428,7 @@ void ManiSpawnPoints::GetCoordList(KeyValues *kv_ptr, int team_number)
 		char *input_string = (char *) kv_xyz_ptr->GetString(NULL, NULL);
 		if (!input_string)
 		{
-			Msg("Failed to get part of spawnpoints.txt\n");
+//			Msg("Failed to get part of spawnpoints.txt\n");
 		}
 		else
 		{
@@ -476,7 +469,7 @@ bool ManiSpawnPoints::DecodeString(char *input_string, spawn_vector_t *coord, in
 			// Check we got enough parameters
 			if (number_count != 6)
 			{
-				Msg("Not enough parameters for number %i\n", coord_index);
+//				Msg("Not enough parameters for number %i\n", coord_index);
 				return false;
 			}
 			else

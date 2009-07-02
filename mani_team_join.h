@@ -23,12 +23,39 @@
 
 
 
-#ifndef MANI_MEMORY_H
-#define MANI_MEMORY_H
+#ifndef MANI_TEAM_JOIN_H
+#define MANI_TEAM_JOIN_H
 
-extern	bool AddToList(void **list_ptr, size_t size_of_structure, int *list_size_ptr);
-extern	bool RemoveIndexFromList(void **list_ptr, size_t size_of_structure, int *list_size_ptr, int index,  void *index_ptr, void *end_ptr);
-extern	bool CreateList(void **list_ptr, size_t size_of_structure, int size_required, int *list_size_ptr);
-extern	void FreeList(void **list_ptr, int *list_size_ptr);
+struct saved_team_t
+{
+	char	steam_id[64];
+	int		team_id;
+};
+
+class ManiTeamJoin
+{
+
+public:
+	ManiTeamJoin();
+	~ManiTeamJoin();
+
+	void		PlayerTeamEvent(player_t *player_ptr);
+	PLUGIN_RESULT	PlayerJoin(edict_t *pEntity, char *team_id);
+	void		Load(void);
+	void		Unload(void);
+	void		LevelInit(void);
+
+private:
+
+	bool ManiTeamJoin::IsPlayerInTeamJoinList(player_t *player_ptr, saved_team_t **saved_team_record);
+
+	saved_team_t	*saved_team_list;
+	int				saved_team_list_size;
+
+	void	ResetTeamList(void);
+
+};
+
+extern	ManiTeamJoin *gpManiTeamJoin;
 
 #endif

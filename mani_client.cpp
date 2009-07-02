@@ -1269,7 +1269,7 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Old style admingroups.txt file does not exist, using V1.2+ style\n");
+//		Msg ("Old style admingroups.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
@@ -1297,7 +1297,7 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Old style immunitygroups.txt file does not exist, using V1.2+ style\n");
+//		Msg ("Old style immunitygroups.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
@@ -1325,7 +1325,7 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Old style adminlist.txt file does not exist, using V1.2+ style\n");
+//		Msg ("Old style adminlist.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
@@ -1358,7 +1358,7 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Old style immunitylist.txt file does not exist, using V1.2+ style\n");
+//		Msg ("Old style immunitylist.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
@@ -1629,7 +1629,7 @@ void	ManiClient::LoadClients(void)
 	bool found_match;
 	KeyValues *base_key_ptr;
 
-	Msg("*********** Loading admin section of clients.txt ************\n");
+//	Msg("*********** Loading admin section of clients.txt ************\n");
 	// Read the clients.txt file
 
 	KeyValues *kv_ptr = new KeyValues("clients.txt");
@@ -1646,7 +1646,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1679,7 +1679,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1712,7 +1712,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1745,7 +1745,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1778,7 +1778,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1851,7 +1851,7 @@ void	ManiClient::GetAdminGroups(KeyValues *ptr)
 
 			AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
 			admin_group_list[admin_group_list_size - 1] = admin_group;
-			Msg("Admin Group [%s]\n", admin_group.group_id);
+//			Msg("Admin Group [%s]\n", admin_group.group_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -1902,7 +1902,7 @@ void	ManiClient::GetImmunityGroups(KeyValues *ptr)
 
 			AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
 			immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-			Msg("Immunity Group [%s]\n", immunity_group.group_id);
+//			Msg("Immunity Group [%s]\n", immunity_group.group_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -1951,7 +1951,7 @@ void	ManiClient::GetAdminLevels(KeyValues *ptr)
 
 			AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
 			admin_level_list[admin_level_list_size - 1] = admin_level;
-			Msg("Admin Level [%i]\n", admin_level.level_id);
+//			Msg("Admin Level [%i]\n", admin_level.level_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -2007,7 +2007,7 @@ void	ManiClient::GetImmunityLevels(KeyValues *ptr)
 
 			AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
 			immunity_level_list[immunity_level_list_size - 1] = immunity_level;
-			Msg("Immunity Level [%i]\n", immunity_level.level_id);
+//			Msg("Immunity Level [%i]\n", immunity_level.level_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -2101,7 +2101,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 		{
 			AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
 			Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_string);
-			Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+//			Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
 		}
 
 		/* Handle single immunity group */
@@ -2110,7 +2110,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 		{
 			AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
 			Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_string);
-			Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+//			Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
 		}
 
 		// Steam IDs
@@ -2124,7 +2124,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
 					Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, temp_ptr->GetString());
-					Msg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
+//					Msg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2145,7 +2145,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
 					Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, temp_ptr->GetString());
-					Msg("IP Address [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
+//					Msg("IP Address [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2166,7 +2166,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
 					Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, temp_ptr->GetString());
-					Msg("Nick Name [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
+//					Msg("Nick Name [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2187,7 +2187,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
 					Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_ptr->GetString());
-					Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+//					Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2208,7 +2208,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
 					Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_ptr->GetString());
-					Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+//					Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2309,7 +2309,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
 
-	DumpClientsToConsole();
+//	DumpClientsToConsole();
 }
 
 //---------------------------------------------------------------------------------
@@ -2360,7 +2360,7 @@ int		ManiClient::GetNextFlag(char *flags_ptr, int *index, int type)
 		}
 	}
 
-	Msg("Flag [%s] is invalid !!\n", flag_name);
+//	Msg("Flag [%s] is invalid !!\n", flag_name);
 	return -1;
 }
 
@@ -2395,7 +2395,7 @@ void		ManiClient::WriteClients(void)
 	KeyValues *client;
 	bool	found_flag;
 
-	Msg("*********** Writing clients.txt ************\n");
+//	Msg("*********** Writing clients.txt ************\n");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
 
@@ -2403,7 +2403,7 @@ void		ManiClient::WriteClients(void)
 
 	KeyValues *players = kv->FindKey("players", true);
 
-	Msg("Writing %i client(s)\n",  client_list_size);
+//	Msg("Writing %i client(s)\n",  client_list_size);
 	// Loop through all clients
 	for (int i = 0; i < client_list_size; i ++)
 	{
@@ -3614,7 +3614,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
 				admin_group_list[admin_group_list_size - 1] = admin_group;
-				Msg("Admin Group [%s]\n", admin_group.group_id);
+//				Msg("Admin Group [%s]\n", admin_group.group_id);
 			}
 			else
 			{
@@ -3638,7 +3638,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
 				immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-				Msg("Immunity Group [%s]\n", immunity_group.group_id);
+//				Msg("Immunity Group [%s]\n", immunity_group.group_id);
 			}
 		}
 	}
@@ -3687,7 +3687,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
 				admin_level_list[admin_level_list_size - 1] = admin_level;
-				Msg("Admin Level ID [%i]\n", admin_level.level_id);
+//				Msg("Admin Level ID [%i]\n", admin_level.level_id);
 			}
 			else
 			{
@@ -3712,7 +3712,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
 				immunity_level_list[immunity_level_list_size - 1] = immunity_level;
-				Msg("Immunity Level [%s]\n", immunity_level.level_id);
+//				Msg("Immunity Level [%s]\n", immunity_level.level_id);
 			}	
 		}
 	}
@@ -3861,7 +3861,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 					// Add steam ID to client
 					AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
 					Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, mani_mysql->GetString(7));
-					Msg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
+//					Msg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
 				}
 			}
 
@@ -3884,7 +3884,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 					// Add nickname to client
 					AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
 					Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, mani_mysql->GetString(8));
-					Msg("Nick [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
+//					Msg("Nick [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
 				}
 			}
 
@@ -3907,7 +3907,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 					// Add IP Address to client
 					AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
 					Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, mani_mysql->GetString(9));
-					Msg("Nick [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
+//					Msg("Nick [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
 				}
 			}
 
@@ -3929,7 +3929,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 				{
 					AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
 					Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, mani_mysql->GetString(11));
-					Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+//					Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
 				}
 			}
 
@@ -3950,7 +3950,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 				{
 					AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
 					Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, mani_mysql->GetString(11));
-					Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+//					Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
 				}
 			}
 		}
@@ -3966,7 +3966,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
 
-	DumpClientsToConsole();
+//	DumpClientsToConsole();
 	return true;
 }
 
@@ -5766,7 +5766,7 @@ void		ManiClient::ProcessRemoveGroupType
 			if (FStrEq(admin_group_list[i].group_id, param1))
 			{
 				group_index = i;
-				RemoveIndexFromList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size, i);
+				RemoveIndexFromList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size, i, (void *) &(admin_group_list[i]), (void *) &(admin_group_list[admin_group_list_size - 1]));
 				break;
 			}
 		}
@@ -5778,7 +5778,7 @@ void		ManiClient::ProcessRemoveGroupType
 			if (FStrEq(immunity_group_list[i].group_id, param1))
 			{
 				group_index = i;
-				RemoveIndexFromList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size, i);
+				RemoveIndexFromList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size, i, (void *) &(immunity_group_list[i]), (void *) &(immunity_group_list[immunity_group_list_size - 1]));
 				break;
 			}
 		}
@@ -5798,7 +5798,8 @@ void		ManiClient::ProcessRemoveGroupType
 			{
 				if (FStrEq(client_list[i].admin_group_list[j].group_id, param1))
 				{
-					RemoveIndexFromList((void **) &(client_list[i].admin_group_list), sizeof(group_t), &(client_list[i].admin_group_list_size), j);
+					RemoveIndexFromList((void **) &(client_list[i].admin_group_list), sizeof(group_t), &(client_list[i].admin_group_list_size), j,
+						(void *) &(client_list[i].admin_group_list[j]), (void *) &(client_list[i].admin_group_list[client_list[i].admin_group_list_size - 1]));
 				}
 			}
 		}
@@ -5808,7 +5809,9 @@ void		ManiClient::ProcessRemoveGroupType
 			{
 				if (FStrEq(client_list[i].immunity_group_list[j].group_id, param1))
 				{
-					RemoveIndexFromList((void **) &(client_list[i].immunity_group_list), sizeof(group_t), &(client_list[i].immunity_group_list_size), j);
+					RemoveIndexFromList((void **) &(client_list[i].immunity_group_list), sizeof(group_t), &(client_list[i].immunity_group_list_size), j,
+												(void *) &(client_list[i].immunity_group_list[j]), (void *) &(client_list[i].immunity_group_list[client_list[i].immunity_group_list_size - 1]));
+
 				}
 			}
 		}
@@ -6182,7 +6185,8 @@ void		ManiClient::ProcessRemoveLevelType
 			if (admin_level_list[i].level_id == level_id)
 			{
 				level_index = i;
-				RemoveIndexFromList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size, i);
+				RemoveIndexFromList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size, i,
+					(void *) &(admin_level_list[i]), (void *) &(admin_level_list[admin_level_list_size - 1]));
 				break;
 			}
 		}
@@ -6194,7 +6198,8 @@ void		ManiClient::ProcessRemoveLevelType
 			if (immunity_level_list[i].level_id == level_id)
 			{
 				level_index = i;
-				RemoveIndexFromList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size, i);
+				RemoveIndexFromList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size, i,
+					(void *) &(immunity_level_list[i]), (void *) &(immunity_level_list[immunity_level_list_size - 1]));
 				break;
 			}
 		}
@@ -6686,7 +6691,8 @@ void		ManiClient::ProcessRemoveClient
 
 
 	FreeClient(client_ptr);
-	RemoveIndexFromList((void **) &client_list, sizeof(client_t), &client_list_size, client_index);
+	RemoveIndexFromList((void **) &client_list, sizeof(client_t), &client_list_size, client_index,
+		(void *) &(client_list[client_index]), (void *) &(client_list[client_list_size - 1]));
 	WriteClients();
 	ComputeAdminLevels();
 	ComputeImmunityLevels();
@@ -6722,7 +6728,8 @@ void		ManiClient::ProcessRemoveSteam
 	{
 		if (FStrEq(client_ptr->steam_list[i].steam_id, param2))
 		{
-			RemoveIndexFromList((void **) &(client_ptr->steam_list), sizeof(steam_t), &client_ptr->steam_list_size, i);
+			RemoveIndexFromList((void **) &(client_ptr->steam_list), sizeof(steam_t), &client_ptr->steam_list_size, i,
+				(void *) &(client_ptr->steam_list[i]), (void *) &(client_ptr->steam_list[client_ptr->steam_list_size - 1]));
 			break;
 		}
 	}
@@ -6814,7 +6821,8 @@ void		ManiClient::ProcessRemoveIP
 	{
 		if (FStrEq(client_ptr->ip_address_list[i].ip_address, param2))
 		{
-			RemoveIndexFromList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &client_ptr->ip_address_list_size, i);
+			RemoveIndexFromList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &client_ptr->ip_address_list_size, i,
+				(void *) &(client_ptr->ip_address_list[i]), &(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1]));
 			break;
 		}
 	}
@@ -6906,7 +6914,8 @@ void		ManiClient::ProcessRemoveNick
 	{
 		if (FStrEq(client_ptr->nick_list[i].nick, param2))
 		{
-			RemoveIndexFromList((void **) &(client_ptr->nick_list), sizeof(nick_t), &client_ptr->nick_list_size, i);
+			RemoveIndexFromList((void **) &(client_ptr->nick_list), sizeof(nick_t), &client_ptr->nick_list_size, i,
+				(void *) &(client_ptr->nick_list[i]), (void *) &(client_ptr->nick_list[client_ptr->nick_list_size - 1]));
 			break;
 		}
 	}
@@ -7012,7 +7021,8 @@ void		ManiClient::ProcessRemoveGroup
 		{
 			if (FStrEq(client_ptr->admin_group_list[i].group_id, param2))
 			{
-				RemoveIndexFromList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &client_ptr->admin_group_list_size, i);
+				RemoveIndexFromList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &client_ptr->admin_group_list_size, i,
+					(void *) &(client_ptr->admin_group_list[i]), (void *) &(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1]));
 				break;
 			}
 		}
@@ -7023,7 +7033,8 @@ void		ManiClient::ProcessRemoveGroup
 		{
 			if (FStrEq(client_ptr->immunity_group_list[i].group_id, param2))
 			{
-				RemoveIndexFromList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &client_ptr->immunity_group_list_size, i);
+				RemoveIndexFromList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &client_ptr->immunity_group_list_size, i,
+					(void *) &(client_ptr->immunity_group_list[i]), (void *) &(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1]));
 				break;
 			}
 		}
@@ -7843,6 +7854,9 @@ void	ManiClient::InitImmunityFlags(void)
 
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag, IMMUNITY_ALLOW_GRAVITY_FLAG);
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag_desc,IMMUNITY_ALLOW_GRAVITY_DESC);
+
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AUTOJOIN].flag, IMMUNITY_ALLOW_AUTOJOIN_FLAG);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AUTOJOIN].flag_desc,IMMUNITY_ALLOW_AUTOJOIN_DESC);
 }
 
 

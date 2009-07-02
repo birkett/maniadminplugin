@@ -692,7 +692,8 @@ bool	GetTKPunishSayString
 		Q_strcpy(log_string,"");
 		switch (punishment)
 		{
-		case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s will be slapped for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s will be slayed for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_SLAP: Q_snprintf(output_string, 512, "Player %s will be slapped for team killing %s", attacker_ptr->name, victim_ptr->name); break;
 		case MANI_TK_BLIND: Q_snprintf(output_string, 512, "Player %s will be blinded for team killing %s", attacker_ptr->name, victim_ptr->name); break;
 		case MANI_TK_FREEZE: Q_snprintf(output_string, 512, "Player %s will be frozen for team killing %s", attacker_ptr->name, victim_ptr->name); break;
 		case MANI_TK_CASH: return false; // No future tense needed
@@ -710,8 +711,12 @@ bool	GetTKPunishSayString
 	{
 		switch (punishment)
 		{
-		case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s has been slapped for team killing %s", attacker_ptr->name, victim_ptr->name);
+		case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s has been slayed for team killing %s", attacker_ptr->name, victim_ptr->name);
 							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection slayed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+							break;
+
+		case MANI_TK_SLAP: Q_snprintf(output_string, 512, "Player %s has been slapped for team killing %s", attacker_ptr->name, victim_ptr->name);
+							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection slapped user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
 		case MANI_TK_BLIND: Q_snprintf(output_string, 512, "Player %s has been blinded for team killing %s", attacker_ptr->name, victim_ptr->name);
@@ -776,8 +781,12 @@ bool	GetTKAutoPunishSayString
 
 	switch (punishment)
 	{
-	case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s has been slapped for a previous team killing violation", attacker_ptr->name);
+	case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s has been slayed for a previous team killing violation", attacker_ptr->name);
 						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto slayed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+						break;
+
+	case MANI_TK_SLAP: Q_snprintf(output_string, 512, "Player %s has been slapped for a previous team killing violation", attacker_ptr->name);
+						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto slapped user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
 	case MANI_TK_BLIND: Q_snprintf(output_string, 512, "Player %s has been blinded for a previous team killing violation", attacker_ptr->name);

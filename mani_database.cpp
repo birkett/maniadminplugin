@@ -110,7 +110,7 @@ bool ManiDatabase::LoadDatabaseFile(void)
 	Q_strcpy(mod_name,"");
 	Q_strcpy(rcon_password,"");
 
-	Msg("*********** Loading database.txt ************\n");
+//	Msg("*********** Loading database.txt ************\n");
 	// Read the database.txt file
 
 	KeyValues *kv_ptr = new KeyValues("database.txt");
@@ -118,7 +118,7 @@ bool ManiDatabase::LoadDatabaseFile(void)
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/database.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-		Msg("Failed to load database.txt, no database usage possible\n");
+//		Msg("Failed to load database.txt, no database usage possible\n");
 		kv_ptr->deleteThis();
 		return false;
 	}
@@ -147,10 +147,10 @@ bool ManiDatabase::LoadDatabaseFile(void)
 
 	if (db_enabled)
 	{
-		Msg("Using database connection for administration\n");
+//		Msg("Using database connection for administration\n");
 	}
 
-	Msg("*********** database.txt loaded ************\n");
+//	Msg("*********** database.txt loaded ************\n");
 
 	return true;
 }

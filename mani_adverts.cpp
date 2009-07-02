@@ -76,12 +76,12 @@ void	LoadAdverts(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load adverts.txt\n");
+//		Msg ("Failed to load adverts.txt\n");
 		mani_adverts.SetValue( 0 );
 	}
 	else
 	{
-		Msg("Advert list\n");
+//		Msg("Advert list\n");
 		while (filesystem->ReadLine (ad_text, sizeof(ad_text), file_handle) != NULL)
 		{
 			if (!ParseLine(ad_text, false))
@@ -92,7 +92,7 @@ void	LoadAdverts(void)
 
 			AddToList((void **) &advert_list, sizeof(advert_t), &advert_list_size);
 			Q_strcpy(advert_list[advert_list_size - 1].advert_text, ad_text);
-			Msg("[%s]\n", ad_text);
+//			Msg("[%s]\n", ad_text);
 		}
 
 		if (advert_list_size == 0)

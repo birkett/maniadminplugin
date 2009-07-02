@@ -106,7 +106,7 @@ void	LoadWeapons(const char *pMapName)
 	char	restrict_filename[256];
 	char	base_filename[256];
 
-	Msg("**** LOADING WEAPON INFO ****\n");
+//	Msg("**** LOADING WEAPON INFO ****\n");
 
 	FreeWeapons();
 
@@ -156,11 +156,11 @@ void	LoadWeapons(const char *pMapName)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg("No default weapons restrictions found, weapon restrict menu will be empty\n");
+//		Msg("No default weapons restrictions found, weapon restrict menu will be empty\n");
 	}
 	else
 	{
-		Msg("Weapon Restrictions\n");
+//		Msg("Weapon Restrictions\n");
 		while (filesystem->ReadLine (weapon_line, sizeof(weapon_line), file_handle) != NULL)
 		{
 			if (!ParseLine(weapon_line, true))
@@ -181,7 +181,7 @@ void	LoadWeapons(const char *pMapName)
 
 			if (index == -1)
 			{
-				Msg("Failed to bind primary weapon [%s]\n", primary_weapon[i].name);
+//				Msg("Failed to bind primary weapon [%s]\n", primary_weapon[i].name);
 				continue;
 			}
 
@@ -195,7 +195,7 @@ void	LoadWeapons(const char *pMapName)
 
 			if (index == -1)
 			{
-				Msg("Failed to bind secondary weapon [%s]\n", secondary_weapon[i].name);
+//				Msg("Failed to bind secondary weapon [%s]\n", secondary_weapon[i].name);
 				continue;
 			}
 
@@ -208,11 +208,11 @@ void	LoadWeapons(const char *pMapName)
 	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg("No default weapons restrictions found for this map\n");
+//		Msg("No default weapons restrictions found for this map\n");
 	}
 	else
 	{
-		Msg("Weapon Restriction List for map\n");
+//		Msg("Weapon Restriction List for map\n");
 		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
 		{
 			if (!ParseLine(weapon_name, true))
@@ -233,7 +233,7 @@ void	LoadWeapons(const char *pMapName)
 					break;
 				}
 			}
-			Msg("[%s] is restricted\n", weapon_name);
+//			Msg("[%s] is restricted\n", weapon_name);
 		}
 
 		filesystem->Close(file_handle);
@@ -244,11 +244,11 @@ void	LoadWeapons(const char *pMapName)
 	file_handle = filesystem->Open (restrict_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg("No default weapons restrictions found.\n");
+//		Msg("No default weapons restrictions found.\n");
 	}
 	else
 	{
-		Msg("Weapon Restriction List for all maps\n");
+//		Msg("Weapon Restriction List for all maps\n");
 		while (filesystem->ReadLine (weapon_name, sizeof(weapon_name), file_handle) != NULL)
 		{
 			if (!ParseLine(weapon_name, true))
@@ -269,14 +269,14 @@ void	LoadWeapons(const char *pMapName)
 					break;
 				}
 			}
-			Msg("[%s] is restricted\n", weapon_name);
+//			Msg("[%s] is restricted\n", weapon_name);
 		}
 
 		filesystem->Close(file_handle);
 	}
 
 
-	Msg("**** WEAPON INFO LOADED ****\n");
+//	Msg("**** WEAPON INFO LOADED ****\n");
 
 }
 
@@ -323,12 +323,12 @@ void AddWeapon(char *weapon_line)
 			}
 
 			weapon_list[weapon_list_size - 1] = weapon;
-			Msg ("Weapon Name [%s] Weapon Aliases ", weapon.weapon_name);
+//			Msg ("Weapon Name [%s] Weapon Aliases ", weapon.weapon_name);
 			for (i = 0; i < weapon.number_of_weapons; i++)
 			{
-				Msg ("[%s] ", weapon.weapon_alias[i]);
+//				Msg ("[%s] ", weapon.weapon_alias[i]);
 			}
-			Msg ("\n");
+//			Msg ("\n");
 			return;
 		}
 
@@ -602,7 +602,7 @@ bool HookAutobuyCommand(void)
 	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
-		Msg("Did not find player\n");
+//		Msg("Did not find player\n");
 		return true;
 	}
 
@@ -669,7 +669,7 @@ bool HookRebuyCommand(void)
 	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
-		Msg("Did not find player\n");
+//		Msg("Did not find player\n");
 		return true;
 	}
 
@@ -802,7 +802,7 @@ void PostProcessRebuyCommand(void)
 	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
-		Msg("Did not find player\n");
+//		Msg("Did not find player\n");
 		return;
 	}
 
@@ -965,7 +965,7 @@ void PostProcessRebuyCommand(void)
 //---------------------------------------------------------------------------------
 void ResetWeaponCount(void)
 {
-Msg("Resetting weapon count\n");
+// Msg("Resetting weapon count\n");
 	// Reset all weapons count
 	for (int i = 0; i < weapon_list_size; i ++)
 	{
@@ -986,7 +986,7 @@ void RemoveRestrictedWeapons(player_t *player_ptr)
 	}
 
 	if (player_ptr->is_bot) return;
-	Msg("Checking weapon count for player %s\n", player_ptr->name);
+//	Msg("Checking weapon count for player %s\n", player_ptr->name);
 
 	CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
 	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
@@ -994,17 +994,26 @@ void RemoveRestrictedWeapons(player_t *player_ptr)
 
 	if (gpManiWarmupTimer->KnivesOnly())
 	{
-			CBaseCombatWeapon *pWeapon1 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
-			CBaseCombatWeapon *pWeapon2 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+			CBaseCombatWeapon *pWeapon;
+			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+
 			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-			if (pWeapon1)
+			if (pWeapon)
 			{
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon1);
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
 			}
 
-			if (pWeapon2)
+			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+			if (pWeapon)
 			{
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon2);
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+			}
+
+			// Change to knife (stops weird animation problems for models holding no weapon)
+			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+			if (pWeapon)
+			{
+				CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
 			}
 
 			return;

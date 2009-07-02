@@ -338,7 +338,6 @@ extern ConVar mani_map_adverts;
 extern ConVar mani_map_adverts_in_war;
 
 extern ConVar mani_spawnpoints_mode;
-extern ConVar mani_spawnpoints_radius_limit;
 
 extern ConVar mani_spray_tag;
 extern ConVar mani_spray_tag_block_mode;
@@ -352,5 +351,10 @@ extern ConVar mani_spray_tag_kick_message;
 extern ConVar mani_spray_tag_ban_message;
 extern ConVar mani_spray_tag_perm_ban_message;
 extern ConVar mani_spray_tag_slap_damage;
+
+extern ConVar mani_external_stats_log;
+extern ConVar mani_external_stats_log_allow_war_logs;
+
+extern ConVar mani_hostage_follow_warning;
 
 #endif

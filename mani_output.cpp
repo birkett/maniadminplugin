@@ -647,6 +647,33 @@ const char	*fmt,
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Say string to single player in center of screen
+//---------------------------------------------------------------------------------
+void CSayToPlayer
+(
+player_t *player_ptr,
+const char	*fmt, 
+...
+)
+{
+	va_list		argptr;
+	char		tempString[1024];
+
+	va_start ( argptr, fmt );
+	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	va_end   ( argptr );
+
+	MRecipientFilter mrf;
+	mrf.MakeReliable();
+	mrf.AddPlayer(player_ptr->index);
+
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+	msg_buffer->WriteByte(4); // Center area
+	msg_buffer->WriteString(tempString);
+	engine->MessageEnd();
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Say to all
 //---------------------------------------------------------------------------------
 void SayToAll(bool echo, const char	*fmt, ...)
@@ -1458,4 +1485,18 @@ void	ParseSayString
 	}
 
 	return;
+}
+
+// Log to srcds core log
+void UTIL_LogPrintf( char *fmt, ... )
+{
+	va_list		argptr;
+	char		tempString[1024];
+	
+	va_start ( argptr, fmt );
+	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	va_end   ( argptr );
+
+	// Print to server console
+	engine->LogPrint( tempString );
 }

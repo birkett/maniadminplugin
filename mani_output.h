@@ -44,6 +44,7 @@ extern void	AdminSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
 extern void	AdminSayToAllColoured(player_t *player,int anonymous, const char	*fmt, ...);
 extern void	AdminCSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
 extern void CSayToAll(const char	*fmt, ...);
+extern void CSayToPlayer(player_t *player_ptr,const char	*fmt, ...);
 extern void	SayToAll(bool echo, const char	*fmt, ...);
 extern void	SayToDead(const char *fmt, ...);
 extern void	SayToPlayer(player_t *player, const char *fmt, ...);
@@ -58,6 +59,7 @@ extern void ClientMsgSinglePlayer( edict_t *pEntity, const unsigned int seconds,
 extern void	PrintToClientConsole(edict_t *pEntity, char *fmt, ... );
 extern void OutputHelpText( player_t	*player_ptr, bool		to_server_console, char		*fmt, ...);
 extern void	ParseSayString(const char *say_string, char *trimmed_string_out, int *say_argc);
+extern void UTIL_LogPrintf( char *fmt, ... );
 
 
 

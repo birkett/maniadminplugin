@@ -97,13 +97,20 @@ ConVar  *host_map = NULL;
 static void ManiMapCycleMode ( ConVar *var, char const *pOldString );
 static void ManiNextMap ( ConVar *var, char const *pOldString );
 ConVar mani_mapcycle_mode ("mani_mapcycle_mode", "0", 0, "0 = standard map cycle is followed, 1 = custom cycle is selected, 2 = random map cycle, 3 = Maps are not skipped after voting", true, 0, true, 3, ManiMapCycleMode); 
-ConVar mani_nextmap ("mani_nextmap", "Unknown", FCVAR_REPLICATED | FCVAR_NOTIFY, "Nextmap information", ManiNextMap);
+ConVar mani_nextmap ("mani_nextmap", "Unknown", FCVAR_REPLICATED | FCVAR_NOTIFY, "Nextmap information");
 
 static void ManiNextMap ( ConVar *var, char const *pOldString )
 {
 	if (!FStrEq(pOldString, var->GetString()))
 	{
-		mani_nextmap.SetValue(next_map);
+		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+		{
+			mani_nextmap.SetValue("Map decided by vote");
+		}
+		else
+		{
+			mani_nextmap.SetValue(next_map);
+		}
 	}
 }
 
@@ -164,10 +171,10 @@ void	LoadMaps(const char *map_being_loaded)
 
 	FindMapCVars();
 
-	Msg("************ LOADING MAP LISTS *************\n");
+//	Msg("************ LOADING MAP LISTS *************\n");
 	override_changelevel = 0;
 
-	Msg("Loading Map [%s]\n", map_being_loaded);
+//	Msg("Loading Map [%s]\n", map_being_loaded);
 	Q_strcpy(current_map, map_being_loaded);
 
 	// Update last maps list
@@ -189,7 +196,7 @@ void	LoadMaps(const char *map_being_loaded)
 	file_handle = filesystem->Open (mapcyclefile->GetString(),"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load %s\n", mapcyclefile->GetString());
+//		Msg ("Failed to load %s\n", mapcyclefile->GetString());
 		Q_strcpy(next_map, map_being_loaded);
 		mani_nextmap.SetValue(next_map);
 		AddToList((void **) &map_in_cycle_list, sizeof(map_t), &map_in_cycle_list_size);
@@ -197,7 +204,7 @@ void	LoadMaps(const char *map_being_loaded)
 	}
 	else
 	{
-		Msg("Mapcycle list [%s]\n", mapcyclefile->GetString());
+//		Msg("Mapcycle list [%s]\n", mapcyclefile->GetString());
 
 		while (filesystem->ReadLine (map_name, sizeof(map_name), file_handle) != NULL)
 		{
@@ -208,7 +215,7 @@ void	LoadMaps(const char *map_being_loaded)
 
 			if (engine->IsMapValid(map_name) == 0) 
 			{
-				Msg("\n*** Map [%s] is not a valid map !!! *****\n");
+//				Msg("\n*** Map [%s] is not a valid map !!! *****\n");
 				continue;
 			}
 
@@ -216,10 +223,10 @@ void	LoadMaps(const char *map_being_loaded)
 			Q_strcpy(map_in_cycle_list[map_in_cycle_list_size - 1].map_name, map_name);
 			map_in_cycle_list[map_in_cycle_list_size - 1].selected_for_vote = false;
 
-			Msg("[%s] ", map_name);
+//			Msg("[%s] ", map_name);
 		}
 
-		Msg("\n");
+//		Msg("\n");
 		filesystem->Close(file_handle);
 	}
 	
@@ -277,11 +284,11 @@ void	LoadMaps(const char *map_being_loaded)
 	file_handle = filesystem->Open ("maplist.txt","rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load maplist.txt YOU MUST HAVE A MAPLIST.TXT FILE !!!!!!!\n");
+		Msg ("Failed to load maplist.txt YOU MUST HAVE A MAPLIST.TXT FILE!\n");
 	}
 	else
 	{
-		Msg("Map list\n");
+//		Msg("Map list\n");
 
 		while (filesystem->ReadLine (map_name, 128, file_handle) != NULL)
 		{
@@ -304,15 +311,15 @@ void	LoadMaps(const char *map_being_loaded)
 				AddToList((void **) &map_list, sizeof(map_t), &map_list_size);
 				Q_strcpy(map_list[map_list_size-1].map_name, map_name);
 				map_list[map_list_size - 1].selected_for_vote = false;
-				Msg("[%s] ", map_name);
+//				Msg("[%s] ", map_name);
 			}
 		}
 
-		Msg("\n");
+//		Msg("\n");
 		filesystem->Close(file_handle);
 	}
 
-	Msg("Maps not in [%s]\n", mapcyclefile->GetString());
+//	Msg("Maps not in [%s]\n", mapcyclefile->GetString());
 	// Calculate maps not in mapcycle
 
 	for (int i = 0; i < map_list_size; i ++)
@@ -331,11 +338,11 @@ void	LoadMaps(const char *map_being_loaded)
 		{
 			AddToList((void **) &map_not_in_cycle_list, sizeof(map_t), &map_not_in_cycle_list_size);
 			Q_strcpy(map_not_in_cycle_list[map_not_in_cycle_list_size - 1].map_name, map_list[i].map_name);
-			Msg("[%s] ", map_not_in_cycle_list[map_not_in_cycle_list_size - 1].map_name);
+//			Msg("[%s] ", map_not_in_cycle_list[map_not_in_cycle_list_size - 1].map_name);
 		}
 	}			
 
-	Msg("\n");
+//	Msg("\n");
 
 	// Check if votemaplist.txt exists, create a new one if it doesn't
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/votemaplist.txt", mani_path.GetString());
@@ -348,7 +355,7 @@ void	LoadMaps(const char *map_being_loaded)
 		file_handle = filesystem->Open(base_filename,"wt",NULL);
 		if (file_handle == NULL)
 		{
-			Msg ("Failed to open votemaplist.txt for writing\n");
+//			Msg ("Failed to open votemaplist.txt for writing\n");
 		}
 		else
 		{
@@ -379,11 +386,11 @@ void	LoadMaps(const char *map_being_loaded)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load votemaplist.txt\n");
+//		Msg ("Failed to load votemaplist.txt\n");
 	}
 	else
 	{
-		Msg("Votemap list\n");
+//		Msg("Votemap list\n");
 		while (filesystem->ReadLine (map_name, sizeof(map_name), file_handle) != NULL)
 		{
 			if (!ParseLine(map_name, true))
@@ -401,10 +408,10 @@ void	LoadMaps(const char *map_being_loaded)
 			AddToList((void **) &votemap_list, sizeof(map_t), &votemap_list_size);
 			Q_strcpy(votemap_list[votemap_list_size - 1].map_name, map_name);
 			votemap_list[votemap_list_size - 1].selected_for_vote = false;
-			Msg("[%s] ", map_name);
+//			Msg("[%s] ", map_name);
 		}
 
-		Msg("\n");
+//		Msg("\n");
 		filesystem->Close(file_handle);
 	}
 
@@ -447,7 +454,7 @@ void	LoadMaps(const char *map_being_loaded)
 		}
 	}
 
-	Msg("Persistant Map Cycle\n");
+//	Msg("Persistant Map Cycle\n");
 	for (int i = 0; i < proper_map_cycle_mode_list_size; i++)
 	{
 		if (FStrEq(proper_map_cycle_mode_list[i].map_name, current_map))
@@ -457,16 +464,16 @@ void	LoadMaps(const char *map_being_loaded)
 
 		if (proper_map_cycle_mode_list[i].played)
 		{
-			Msg("*[%s] ", proper_map_cycle_mode_list[i].map_name);
+//			Msg("*[%s] ", proper_map_cycle_mode_list[i].map_name);
 		}
 		else
 		{
-			Msg("[%s] ", proper_map_cycle_mode_list[i].map_name);
+//			Msg("[%s] ", proper_map_cycle_mode_list[i].map_name);
 		}
 	}
 
-	Msg("\n");
-	Msg("************ MAP LISTS LOADED *************\n");
+//	Msg("\n");
+//	Msg("************ MAP LISTS LOADED *************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -502,7 +509,8 @@ PLUGIN_RESULT	ProcessMaListMaps
 		{
 			Q_snprintf( map_text, sizeof(map_text), "%s -> CURRENT MAP BEING PLAYED\n", map_in_cycle_list[count].map_name);
 		}
-		else if (FStrEq(map_in_cycle_list[count].map_name, next_map))
+		else if (FStrEq(map_in_cycle_list[count].map_name, next_map) && 
+			!(mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false))
 		{
 			Q_snprintf( map_text, sizeof(map_text), "%s -> NEXT MAP\n", map_in_cycle_list[count].map_name);
 		}
@@ -545,6 +553,7 @@ PLUGIN_RESULT	ProcessMaNextMap
 {
 	player_t player;
 	player.entity = NULL;
+	char	map_text[128];
 
 	if (war_mode) return PLUGIN_STOP;
 	if (!svr_command)
@@ -554,25 +563,35 @@ PLUGIN_RESULT	ProcessMaNextMap
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
 	}
 
-	OutputToConsole(player.entity, svr_command, "Nextmap is : %s\n", next_map);
+	if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+	{
+		Q_strcpy(map_text, "Map decided by vote");
+	}
+	else
+	{
+		Q_snprintf(map_text, sizeof (map_text), "Nextmap: %s", next_map);
+	}
+
+	OutputToConsole(player.entity, svr_command, "%s\n", map_text);
+
 	if (!svr_command)
 	{
 		if (mani_nextmap_player_only.GetInt() == 1)
 		{
-			ClientMsgSinglePlayer(player.entity, 10, 4, "Nextmap: %s", next_map);
+			ClientMsgSinglePlayer(player.entity, 10, 4, "%s", map_text);
 		}
 		else
 		{
 			Color	white(255,255,255,255);
 
-			ClientMsg(&white, 10, false, 4, "Nextmap: %s", next_map);
+			ClientMsg(&white, 10, false, 4, "%s", map_text);
 		}
 	}
 	else
 	{
 		Color	white(255,255,255,255);
 
-		ClientMsg(&white, 10, false, 1, "Nextmap: %s", next_map);
+		ClientMsg(&white, 10, false, 1, "%s", map_text);
 	}
 
 
@@ -921,20 +940,34 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 					// End of map list so we must use the first
 					// in the list
 					Q_strcpy(next_map, map_in_cycle_list[0].map_name);
-					mani_nextmap.SetValue(next_map);
+					if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+					{
+						mani_nextmap.SetValue("Map decided by vote");
+					}
+					else
+					{
+						mani_nextmap.SetValue(next_map);
+					}
 				}
 				else
 				{
 					// Set next map
 					Q_strcpy(next_map, map_in_cycle_list[i+1].map_name);
-					mani_nextmap.SetValue(next_map);
+					if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+					{
+						mani_nextmap.SetValue("Map decided by vote");
+					}
+					else
+					{
+						mani_nextmap.SetValue(next_map);
+					}
 				}
 
 				break;
 			}
 		}
 
-		Msg("Setting nextmap to [%s]\n", next_map); 
+//		Msg("Setting nextmap to [%s]\n", next_map); 
 		Q_strcpy(forced_nextmap, next_map);
 		override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
 	}
@@ -975,10 +1008,17 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 			srand( (unsigned)time(NULL));
 			int map_index = rand() % select_list_size;
 			Q_strcpy(next_map, select_list[map_index].map_name);
-			mani_nextmap.SetValue(next_map);
+			if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+			{
+				mani_nextmap.SetValue("Map decided by vote");
+			}
+			else
+			{
+				mani_nextmap.SetValue(next_map);
+			}
 			Q_strcpy(forced_nextmap, next_map);
 			override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
-			Msg("Setting nextmap to [%s]\n", select_list[map_index].map_name); 
+//			Msg("Setting nextmap to [%s]\n", select_list[map_index].map_name); 
 			FreeList((void **) &select_list, &select_list_size);
 		}
 	}
@@ -991,10 +1031,17 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 			{
 				// Nope, so set this as the next map
 				Q_strcpy(next_map, proper_map_cycle_mode_list[i].map_name);
-				mani_nextmap.SetValue(next_map);
+				if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+				{
+					mani_nextmap.SetValue("Map decided by vote");
+				}
+				else
+				{
+					mani_nextmap.SetValue(next_map);
+				}
 				Q_strcpy(forced_nextmap, next_map);
 				override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
-				Msg("Setting nextmap to [%s]\n", proper_map_cycle_mode_list[i].map_name); 
+//				Msg("Setting nextmap to [%s]\n", proper_map_cycle_mode_list[i].map_name); 
 				return;
 			}
 		}
@@ -1009,10 +1056,17 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 		{
 			// Choose first map
 			Q_strcpy(next_map, proper_map_cycle_mode_list[0].map_name);
-			mani_nextmap.SetValue(next_map);
+			if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+			{
+				mani_nextmap.SetValue("Map decided by vote");
+			}
+			else
+			{
+				mani_nextmap.SetValue(next_map);
+			}
 			Q_strcpy(forced_nextmap, next_map);
 			override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
-			Msg("Setting nextmap to [%s]\n", proper_map_cycle_mode_list[0].map_name); 
+//			Msg("Setting nextmap to [%s]\n", proper_map_cycle_mode_list[0].map_name); 
 		}
 		else
 		{

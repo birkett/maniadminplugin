@@ -41,9 +41,13 @@
 //#define TEAM_SPEC (1)
 
 // Version information
-#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaI (Gadget Special), www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaI"
-#define PLUGIN_VERSION_ID "V1.2BetaI\n"
+#define PLUGIN_VERSION "Mani Admin Plugin 2005 V1.2BetaK, www.mani-admin-plugin.com"
+#ifdef SOURCEMM
+#define PLUGIN_CORE_VERSION "1.2BetaK SMM"
+#else
+#define PLUGIN_CORE_VERSION "1.2BetaK"
+#endif
+#define PLUGIN_VERSION_ID "V1.2BetaK\n"
 
 // Define vote types
 #define VOTE_RANDOM_END_OF_MAP (0)

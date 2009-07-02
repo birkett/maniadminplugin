@@ -72,6 +72,7 @@ ConVar mani_warmup_timer_show_countdown ("mani_warmup_timer_show_countdown", "1"
 ConVar mani_warmup_timer_knives_only ("mani_warmup_timer_knives_only", "0", 0, "1 = enable knives only mode, 0 = all weapons allowed", true, 0, true, 1);
 ConVar mani_warmup_timer ("mani_warmup_timer", "0", 0, "Time in seconds at the start of a map before performing mp_restartgame (0 = off)", true, 0, true, 180, ManiWarmupTimerCVar);
 ConVar mani_warmup_timer_ignore_tk ("mani_warmup_timer_ignore_tk", "0", 0, "0 = tk punishment still allowed, 1 = no tk punishments", true, 0, true, 1);
+ConVar mani_warmup_timer_knives_only_ignore_fyi_aim_maps ("mani_warmup_timer_knives_only_ignore_fyi_aim_maps", "0", 0, "0 = knive mode still allowed on fy/aim maps, 1 = no knive mode for fy_/aim_ maps", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -154,8 +155,41 @@ bool		ManiWarmupTimer::KnivesOnly(void)
 {
 	if (!check_timer) return false;
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if (mani_warmup_timer_knives_only.GetInt() == 0) return false;
 
-	return ((mani_warmup_timer_knives_only.GetInt() == 0) ? false:true);
+	// Knife mode enabled, check if we need to see what type of map this
+	// is
+
+	if (mani_warmup_timer_knives_only_ignore_fyi_aim_maps.GetInt() == 1)
+	{
+		// Dont care about map type
+		return true;
+	}
+
+	int	length = Q_strlen(current_map);
+
+	if (length > 2)
+	{
+		if (current_map[2] == '_' &&
+			(current_map[1] == 'y' || current_map[1] == 'Y') &&
+			(current_map[0] == 'f' || current_map[0] == 'F'))
+		{
+			return false;
+		}
+	}
+	
+	if (length > 3)
+	{
+		if (current_map[3] == '_' &&
+			(current_map[2] == 'm' || current_map[2] == 'M') &&
+			(current_map[1] == 'i' || current_map[1] == 'i') &&
+			(current_map[0] == 'a' || current_map[0] == 'a'))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------

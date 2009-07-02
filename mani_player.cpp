@@ -947,7 +947,7 @@ void AddWaitingPlayerSettings(void)
 
 	if (player_settings_waiting_list_size != 0)
 	{
-		Msg("Added %i new players to the main player settings list\n", player_settings_waiting_list_size);
+//		Msg("Added %i new players to the main player settings list\n", player_settings_waiting_list_size);
 		// Re-sort the list
 		qsort(player_settings_list, player_settings_list_size, sizeof(player_settings_t *), sort_settings_by_steam_id); 
 		FreeList((void **) &player_settings_waiting_list, &player_settings_waiting_list_size);
@@ -962,7 +962,7 @@ void AddWaitingPlayerSettings(void)
 
 	if (player_settings_name_waiting_list_size != 0)
 	{
-		Msg("Added %i new players to the main player name settings list\n", player_settings_name_waiting_list_size);
+//		Msg("Added %i new players to the main player name settings list\n", player_settings_name_waiting_list_size);
 		// Re-sort the list
 		qsort(player_settings_name_list, player_settings_name_list_size, sizeof(player_settings_t *), sort_settings_by_name); 
 		FreeList((void **) &player_settings_name_waiting_list, &player_settings_name_waiting_list_size);
@@ -1019,18 +1019,18 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File %s exists, preparing to delete then write new updated stats\n", filename);
+//		Msg("File %s exists, preparing to delete then write new updated stats\n", filename);
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete %s\n", filename);
+//			Msg("Failed to delete %s\n", filename);
 		}
 	}
 
 	file_handle = filesystem->Open (base_filename,"wb", NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open %s for writing\n", filename);
+//		Msg ("Failed to open %s for writing\n", filename);
 		return;
 	}
 
@@ -1039,7 +1039,7 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write version info to %s\n", filename);
+//		Msg ("Failed to write version info to %s\n", filename);
 		filesystem->Close(file_handle);
 		return;
 	}
@@ -1082,7 +1082,7 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 		}
 	}
 
-	Msg("Wrote %i player settings to %s\n", ps_list_size, filename);
+//	Msg("Wrote %i player settings to %s\n", ps_list_size, filename);
 	filesystem->Close(file_handle);
 }
 
@@ -1105,32 +1105,32 @@ void	ReadPlayerSettings(void)
 		{
 			Q_strcpy(ps_filename, "mani_player_settings.dat");
 
-			Msg("Attempting to read %s file\n", ps_filename);
+//			Msg("Attempting to read %s file\n", ps_filename);
 
 			//Get settings into memory
 			Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
 			file_handle = filesystem->Open (base_filename,"rb",NULL);
 			if (file_handle == NULL)
 			{
-				Msg ("Failed to load %s, did not find file\n", ps_filename);
+//				Msg ("Failed to load %s, did not find file\n", ps_filename);
 				break;
 			}
 
 			if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
 			{
-				Msg("Failed to get version string for %s!!\n", ps_filename);
+//				Msg("Failed to get version string for %s!!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
 			if (!ParseLine(stats_version, true))
 			{
-				Msg("Failed to get version string for %s, top line empty !!\n", ps_filename);
+//				Msg("Failed to get version string for %s, top line empty !!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
-			Msg("%s version [%s]\n", ps_filename, stats_version);
+//			Msg("%s version [%s]\n", ps_filename, stats_version);
 
 			player_settings_t ps;
 
@@ -1392,7 +1392,7 @@ void	ReadPlayerSettings(void)
 			default : break;
 			}
 
-			Msg("Read %i player settings into memory from file %s\n", player_settings_list_size, ps_filename);
+//			Msg("Read %i player settings into memory from file %s\n", player_settings_list_size, ps_filename);
 			filesystem->Close(file_handle);
 			break;
 		}
@@ -1404,32 +1404,32 @@ void	ReadPlayerSettings(void)
 
 		for (;;)
 		{
-			Msg("Attempting to read %s file\n", ps_filename);
+//			Msg("Attempting to read %s file\n", ps_filename);
 
 			//Get settings into memory
 			Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), ps_filename);
 			file_handle = filesystem->Open (base_filename,"rb",NULL);
 			if (file_handle == NULL)
 			{
-				Msg ("Failed to load %s, did not find file\n", ps_filename);
+//				Msg ("Failed to load %s, did not find file\n", ps_filename);
 				break;
 			}
 
 			if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
 			{
-				Msg("Failed to get version string for %s!!\n", ps_filename);
+//				Msg("Failed to get version string for %s!!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
 			if (!ParseLine(stats_version, true))
 			{
-				Msg("Failed to get version string for %s, top line empty !!\n", ps_filename);
+//				Msg("Failed to get version string for %s, top line empty !!\n", ps_filename);
 				filesystem->Close(file_handle);
 				break;
 			}
 
-			Msg("%s version [%s]\n", ps_filename, stats_version);
+//			Msg("%s version [%s]\n", ps_filename, stats_version);
 
 			player_settings_t ps;
 			Q_memset(&ps, 0, sizeof(player_settings_t));
@@ -1691,7 +1691,7 @@ void	ReadPlayerSettings(void)
 			default : break;
 			}
 
-			Msg("Read %i player name settings into memory from file %s\n", player_settings_name_list_size, ps_filename);
+//			Msg("Read %i player name settings into memory from file %s\n", player_settings_name_list_size, ps_filename);
 			filesystem->Close(file_handle);
 			break;
 		}

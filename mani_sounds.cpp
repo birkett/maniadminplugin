@@ -118,11 +118,11 @@ void	LoadSounds(void)
 	file_handle = filesystem->Open (base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load soundlist.txt\n");
+//		Msg ("Failed to load soundlist.txt\n");
 	}
 	else
 	{
-		Msg("Sound list\n");
+//		Msg("Sound list\n");
 		while (filesystem->ReadLine (sound_id, 512, file_handle) != NULL)
 		{
 			if (!ParseAliasLine(sound_id, alias_command, true))
@@ -137,13 +137,11 @@ void	LoadSounds(void)
 			Q_snprintf(exists_string, sizeof(exists_string), "./sound/%s", sound_id);
 			if (!filesystem->FileExists(exists_string)) continue;
 
-
-
 			AddToList((void **) &sound_list, sizeof(sound_t), &sound_list_size);
 			Q_strcpy(sound_list[sound_list_size-1].sound_name, sound_id);
 			Q_strcpy(sound_list[sound_list_size-1].alias, alias_command);
 
-			Msg("Alias [%s] Sound File [%s]\n", alias_command, sound_id); 
+//			Msg("Alias [%s] Sound File [%s]\n", alias_command, sound_id); 
 		}
 
 		filesystem->Close(file_handle);
@@ -163,11 +161,11 @@ void	LoadSounds(void)
 	file_handle = filesystem->Open(base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load actionsoundlist.txt\n");
+//		Msg ("Failed to load actionsoundlist.txt\n");
 	}
 	else
 	{
-		Msg("Action Sound list\n");
+//		Msg("Action Sound list\n");
 		while (filesystem->ReadLine (sound_id, sizeof(sound_id), file_handle) != NULL)
 		{
 			if (!ParseAliasLine(sound_id, sound_name, true))
@@ -198,15 +196,15 @@ void	LoadSounds(void)
 
 			if (!found_id)
 			{
-				Msg("WARNING Action Sound Name [%s] for sound file [%s] is not valid !!\n",
-								sound_name,
-								sound_id);
+//				Msg("WARNING Action Sound Name [%s] for sound file [%s] is not valid !!\n",
+//								sound_name,
+//								sound_id);
 			}
 			else
 			{
-				Msg("Loaded Action Sound Name [%s] for file [%s]\n", 
-								sound_name,
-								sound_id);
+//				Msg("Loaded Action Sound Name [%s] for file [%s]\n", 
+//								sound_name,
+//								sound_id);
 			}
 		}
 

@@ -23,53 +23,69 @@
 
 
 
-#ifndef MANI_VICTIMSTATS_H
-#define MANI_VICTIMSTATS_H
+#ifndef MANI_LOG_CSS_STATS_H
+#define MANI_LOG_CSS_STATS_H
 
-#define MANI_MAX_HITGROUPS (11)
+const int MANI_MAX_CSS_HITGROUPS = 11;
+const int MANI_MAX_CSS_WEAPONS = 28;
 
-class ManiVictimStats
+class ManiLogCSSStats
 {
 
 public:
-	ManiVictimStats();
-	~ManiVictimStats();
+	ManiLogCSSStats();
+	~ManiLogCSSStats();
 
 	void		ClientActive(player_t *player_ptr);
 	void		ClientDisconnect(player_t *player_ptr);
+	void		NetworkIDValidated(player_t *player_ptr);
+	void		Load(void);
+	void		LevelInit(void);
 	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists, bool headshot,  char *weapon_name );
 	void		PlayerHurt( player_t *victim_ptr,  player_t *attacker_ptr,  IGameEvent * event);
 	void		PlayerSpawn(player_t *player_ptr);
-	void		RoundStart(void);
+	void		PlayerFired(int index, char *weapon_name, bool is_bot);
 	void		RoundEnd(void);
 
 private:
 
-	struct damage_t
+	struct weapon_stats_t
 	{
-		int	armor_taken;
-		int	health_taken;
-		int shots_taken;
-		int	armor_inflicted;
-		int	health_inflicted;
-		int shots_inflicted;
-		bool killed;
+		bool dump;
 		char weapon_name[128];
-		bool headshot;
-		char name[128];
-		float	last_hit_time;
-		bool shown_stats;
-		float	distance;
-		int	hit_groups_taken[MANI_MAX_HITGROUPS];
-		int	hit_groups_inflicted[MANI_MAX_HITGROUPS];
+		int	total_shots_fired;
+		int total_shots_hit;
+		int	total_kills;
+		int total_headshots;
+		int total_team_kills;
+		int total_damage;
+		int total_deaths;
+		float last_hit_time;
+		int	hit_groups[MANI_MAX_CSS_HITGROUPS];
 	};
 
-	damage_t		damage_list[MANI_MAX_PLAYERS][MANI_MAX_PLAYERS];
+	struct player_info_t
+	{
+		char name[128];
+		char steam_id[128];
+		int	 user_id;
+		int	 team;
+		weapon_stats_t weapon_stats_list[MANI_MAX_CSS_WEAPONS];
+	};
 
+	player_info_t	player_stats_list[MANI_MAX_PLAYERS];
+	bool	level_ended;
+
+	void	ResetPlayerStats(int index);
+	void	ResetStats(void);
+	void	UpdatePlayerIDInfo(player_t *player_ptr, bool reset_stats);
+	void	DumpPlayerStats(int index);
+
+	int		FindWeapon(char *weapon_string);
 	void	AddHitGroup(int hits, char *final_string, char *bodypart);
-	void	ShowStats(player_t *victim_ptr);
+	void	InitStats(void);
 };
 
-extern	ManiVictimStats *gpManiVictimStats;
+extern	ManiLogCSSStats *gpManiLogCSSStats;
 
 #endif

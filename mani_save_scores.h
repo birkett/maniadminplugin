@@ -23,49 +23,49 @@
 
 
 
-#ifndef MANI_SPAWNPOINTS_H
-#define MANI_SPAWNPOINTS_H
+#ifndef MANI_SAVE_SCORES_H
+#define MANI_SAVE_SCORES_H
 
-class ManiSpawnPoints
+class ManiSaveScores
 {
 
 public:
-	ManiSpawnPoints();
-	~ManiSpawnPoints();
+	ManiSaveScores();
+	~ManiSaveScores();
 
-	void		Spawn(player_t *player_ptr);
-	void		Load(char	*map_name);
-	void		LevelInit(char	*map_name);
-	bool		AddSpawnPoints(char **pReplaceEnts, const char *pMapEntities);
+	void		ClientDisconnect(player_t *player_ptr);
+	void		NetworkIDValidated(player_t *player_ptr);
+	void		PlayerSpawn(player_t *player_ptr);
+	void		Load(void);
+	void		Unload(void);
+	void		LevelInit(void);
 
 private:
 
-	struct		spawn_vector_t
+	struct save_scores_t
 	{
-		float	vx,vy,vz;
-		float	ax,ay,az;
+		char	steam_id[64];
+		int		kills;
+		int		deaths;
+		int		cash;
+		int		disconnection_time;
 	};
 
-	struct		spawn_team_t
+	struct save_cash_t
 	{
-		spawn_vector_t	*spawn_list;
-		int				spawn_list_size;
-		int				last_spawn_index;
+		int		cash;
+		bool	trigger;
 	};
 
-	void		CleanUp(void);
-	void		LoadData(char	*map_name);
-	void		GetCoordList(KeyValues *kv_ptr, int team_number);
-	bool		IsToClose(player_t *player_ptr);
-	bool		DecodeString(char *input_string, spawn_vector_t *coord, int coord_index);
+	save_scores_t	*save_scores_list;
+	int				save_scores_list_size;
 
-	// Handle up to 10 teams
-	spawn_team_t	spawn_team[10];
+	save_cash_t	 save_cash_list[MANI_MAX_PLAYERS];
+	int			 spawn_count[MANI_MAX_PLAYERS];
 
-	char		replacement_entities[65536 * 4];
-
+	void	ResetScores(void);
 };
 
-extern	ManiSpawnPoints *gpManiSpawnPoints;
+extern	ManiSaveScores *gpManiSaveScores;
 
 #endif

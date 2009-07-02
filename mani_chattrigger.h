@@ -54,7 +54,6 @@ private:
 	bool		ProcessIgnore(player_t *player_ptr, const char *chat_string, bool teamonly, bool from_event);
 	void		ProcessLoadIgnore(KeyValues *kv_parent_ptr);
 	bool		FindString(const char *chat_string, chat_trigger_t **chat_trigger_ptr);
-	void		UTIL_LogPrintf( char *fmt, ... );
 	void		DumpTriggerData( player_t *player_ptr,  bool svr_command,  chat_trigger_t *chat_trigger_ptr );
 
 	chat_trigger_t	*chat_trigger_list;

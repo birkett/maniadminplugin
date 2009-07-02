@@ -53,6 +53,7 @@ extern int  CBaseCombatWeapon_GetSecondaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern const char *CBaseCombatWeapon_GetName(CBaseCombatWeapon *pThisPtr);
 
 extern CBaseCombatWeapon *CBaseCombatCharacter_Weapon_GetSlot(CBaseCombatCharacter *pThisPtr, int slot);
+extern void CBaseCombatCharacter_Weapon_Switch(CBaseCombatCharacter *pThisPtr, CBaseCombatWeapon * pCombat, int slot);
 extern void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int amount, int ammo_index, bool suppress_noise);
 
 // Prop manager calls

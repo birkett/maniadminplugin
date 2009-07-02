@@ -168,7 +168,8 @@ CBaseCombatCharacter *CBaseEntity_MyCombatCharacterPointer(CBaseEntity *pThisPtr
 			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
 #endif
 
-	return (CBaseCombatCharacter *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();}
+	return (CBaseCombatCharacter *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)();
+}
 
 void CBaseEntity_SetGravity(CBaseEntity *pThisPtr, float newGravity)
 {
@@ -266,6 +267,22 @@ CBaseCombatWeapon *CBaseCombatCharacter_Weapon_GetSlot(CBaseCombatCharacter *pTh
 #endif
 
 	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(slot);
+}
+
+void CBaseCombatCharacter_Weapon_Switch(CBaseCombatCharacter *pThisPtr, CBaseCombatWeapon *pCombat, int slot)
+{
+	void **this_ptr = *(void ***)&pThisPtr;
+	void **vtable = *(void ***)pThisPtr;
+	void *func = vtable[gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_SWITCH)]; 
+
+	union {void (ManiEmptyClass::*mfpnew)(CBaseCombatWeapon *, int);
+#ifndef __linux__
+        void *addr;	} u; 	u.addr = func;
+#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+	(void) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(pCombat, slot);
 }
 
 void CBaseCombatCharacter_GiveAmmo(CBaseCombatCharacter *pThisPtr, int amount, int ammo_index, bool suppress_noise)
@@ -988,6 +1005,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 		CheckVFunc(type_ptr, "CBasePlayer", "RemovePlayerItem", "remove_player_item");
 		CheckVFunc(type_ptr, "CBaseCombatCharacter", "Weapon_GetSlot", "get_weapon_slot");
+		CheckVFunc(type_ptr, "CCSPlayer", "Weapon_Switch", "get_weapon_slot");
 		CheckVFunc(type_ptr, "CBaseCombatCharacter", "GiveAmmo", "give_ammo");
 	}
 

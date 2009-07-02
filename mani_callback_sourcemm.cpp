@@ -107,6 +107,7 @@ typedef unsigned long DWORD;
 
 PLUGIN_EXPOSE(CSourceMMMAP, g_ManiCallback);
 CSourceMMMAP g_ManiCallback;
+char	*pReplaceEnts = NULL;
 
 MyListener g_Listener;
 
@@ -170,21 +171,13 @@ bool CSourceMMMAP::LevelInit(const char *pMapName, const char *pMapEntities, con
 	}
 
 	// Do the spawnpoints hook control if on SourceMM
-	char	*pReplaceEnts = NULL;
 	// Copy the map entities
 	if (!gpManiSpawnPoints->AddSpawnPoints(&pReplaceEnts, pMapEntities))
 	{
 		RETURN_META_VALUE(MRES_IGNORED, true);
 	}
 
-	bool orig = SH_CALL(serverdll_cc, &IServerGameDLL::LevelInit)(pMapName, pReplaceEnts, pOldLevel, pLandmarkName, loadGame, background);
-
-	if (pReplaceEnts)
-	{
-		free(pReplaceEnts);
-	}
-
-	RETURN_META_VALUE(MRES_IGNORED, orig);
+	RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, true, &IServerGameDLL::LevelInit, (pMapName, pReplaceEnts, pOldLevel, pLandmarkName, loadGame, background));
 }
 
 void CSourceMMMAP::OnLevelShutdown()
@@ -326,7 +319,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	//SH_ADD_HOOK_MEMFUNC means "SourceHook, Add Hook, Member Function".
 
 	//Hook LevelInit to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, serverdll, &g_ManiCallback, &CSourceMMMAP::LevelInit, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, serverdll, &g_ManiCallback, &CSourceMMMAP::LevelInit, false);
 	//Hook ServerActivate to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, serverdll, &g_ManiCallback, &CSourceMMMAP::ServerActivate, true);
 	//Hook GameFrame to our function
@@ -336,7 +329,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	//Hook ClientActivate to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientActive, true);
 	//Hook ClientDisconnect to our function
-	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientDisconnect, true);
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientDisconnect, false);
 	//Hook ClientPutInServer to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientPutInServer, true);
 	//Hook SetCommandClient to our function
@@ -488,13 +481,13 @@ void	ManiSMMHooks::HookVFuncs(void)
 {
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
 	{
-		Msg("Hooking voiceserver\n");
+		//Msg("Hooking voiceserver\n");
 		SH_ADD_HOOK_MEMFUNC(IVoiceServer, SetClientListening, voiceserver, &g_ManiSMMHooks, &ManiSMMHooks::SetClientListening, true);
 	}
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
 	{
-		Msg("Hooking decals\n");
+		//Msg("Hooking decals\n");
 		SH_ADD_HOOK_MEMFUNC(ITempEntsSystem, PlayerDecal, temp_ents, &g_ManiSMMHooks, &ManiSMMHooks::PlayerDecal, true);
 	}
 

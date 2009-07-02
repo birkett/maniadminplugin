@@ -152,6 +152,7 @@ void ManiVictimStats::PlayerDeath
 (
  player_t *victim_ptr, 
  player_t *attacker_ptr, 
+ bool attacker_exists,
  bool headshot, 
  char *weapon_name
  )
@@ -168,7 +169,7 @@ void ManiVictimStats::PlayerDeath
 	}
 	else
 	{
-		if (!FindPlayerByUserID(attacker_ptr))
+		if (!attacker_exists)
 		{
 			return;
 		}

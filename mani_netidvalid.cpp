@@ -47,8 +47,12 @@
 #include "mani_player.h"
 #include "mani_stats.h"
 #include "mani_client.h"
+#include "mani_output.h"
 #include "mani_reservedslot.h"
 #include "mani_autokickban.h"
+#include "mani_log_css_stats.h"
+#include "mani_save_scores.h"
+#include "mani_gametype.h"
 #include "mani_netidvalid.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
@@ -59,6 +63,10 @@ extern	IPlayerInfoManager *playerinfomanager;
 
 extern	CGlobalVars *gpGlobals;
 extern	int	max_players;
+extern	ConVar	*sv_lan;
+
+ConVar mani_steam_id_pending_timeout ("mani_steam_id_pending_timeout", "0", 0, "0 = disabled, > 0 = number of seconds before player is kicked for having STEAM_ID_PENDING steam id", true, 0, true, 90);
+ConVar mani_steam_id_pending_show_admin ("mani_steam_id_pending_show_admin", "0", 0, "0 = disabled, 1 = show admins when a player was kicked", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -131,6 +139,8 @@ void ManiNetIDValid::Load(void)
 					// Add to list for pending search during game frame
 					AddToList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size);
 					net_id_list[net_id_list_size - 1].player_index = i;
+					time(&net_id_list[net_id_list_size - 1].timer);
+					net_id_list[net_id_list_size - 1].timer += mani_steam_id_pending_timeout.GetInt();
 					continue;
 				}
 
@@ -193,6 +203,8 @@ void ManiNetIDValid::ClientActive(edict_t *pEntity)
 				// Add to list for pending search during game frame
 				AddToList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size);
 				net_id_list[net_id_list_size - 1].player_index = player.index;
+				time(&net_id_list[net_id_list_size - 1].timer);
+				net_id_list[net_id_list_size - 1].timer += mani_steam_id_pending_timeout.GetInt();
 				return;
 			}
 
@@ -243,6 +255,42 @@ void ManiNetIDValid::GameFrame(void)
 						if (FStrEq(player.steam_id, "BOT")) continue;
 						if (FStrEq(player.steam_id, MANI_STEAM_PENDING))
 						{
+							// Do we need to kick anyone ?
+							if (sv_lan->GetInt() == 0 && 
+								mani_steam_id_pending_timeout.GetInt() > 0)
+							{
+								time_t current_time;
+								time(&current_time);
+								if (net_id_list[i].timer <= current_time)
+								{
+									// Kick player
+
+									if (mani_steam_id_pending_show_admin.GetInt() != 0)
+									{
+										// Show to admins
+										for (int j = 1; j <= max_players; j++)
+										{
+											player_t	admin;
+											int			admin_index;
+
+											admin.index = j;
+											if (!FindPlayerByIndex(&admin)) continue;
+											if (admin.is_bot) continue;
+											if (!gpManiClient->IsAdmin(&admin, &admin_index)) continue;
+
+											SayToPlayer(&admin, "[MANI_ADMIN_PLUGIN] Warning !! Player %s kicked for invalid Steam ID", player.name);
+										}
+									}
+
+									char kick_cmd[512];
+									Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Steam ID is invalid ! Try again\n", player.user_id);
+									LogCommand (NULL, "Kick (STEAM_ID_PENDING) [%s] [%s] %s", player.name, player.steam_id, kick_cmd);
+									engine->ServerCommand(kick_cmd);							
+									RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
+									i--;
+								}
+							}
+
 							continue;
 						}
 
@@ -260,16 +308,19 @@ void ManiNetIDValid::GameFrame(void)
 
 						// Call our own callback function instead of Valve's
 						this->NetworkIDValidated(&player);
-						RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i);
+						RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
+						i--;
 					}
 					else
 					{
-						RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i);
+						RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
+						i--;
 					}
 				}
 				else
 				{
-					RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i);
+					RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
+					i--;
 				}
 			}
 		}
@@ -287,7 +338,7 @@ void ManiNetIDValid::ClientDisconnect(player_t *player_ptr)
 	{
 		if (net_id_list[i].player_index == player_ptr->index)
 		{
-			RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i);
+			RemoveIndexFromList((void **) &net_id_list, sizeof(net_id_t), &net_id_list_size, i, (void *) &(net_id_list[i]), (void *) &(net_id_list[net_id_list_size - 1]));
 		}
 	}
 
@@ -299,7 +350,7 @@ void ManiNetIDValid::ClientDisconnect(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 {
-	Msg("Mani -> Network ID [%s] Validated\n", player_ptr->steam_id);
+//	Msg("Mani -> Network ID [%s] Validated\n", player_ptr->steam_id);
 
 	if (ProcessPluginPaused()) return ;
 
@@ -330,6 +381,13 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 			AddPlayerNameToRankList(player_ptr); 
 		}
 	}
+
+	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		gpManiLogCSSStats->NetworkIDValidated(player_ptr);
+	}
+
+	gpManiSaveScores->NetworkIDValidated(player_ptr);
 
 	return ;
 }

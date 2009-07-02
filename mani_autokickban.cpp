@@ -138,11 +138,11 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Did not load autokick_ip.txt\n");
+//		Msg ("Did not load autokick_ip.txt\n");
 	}
 	else
 	{
-		Msg("autokickban IP list\n");
+//		Msg("autokickban IP list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
 			if (!ParseLine(autokickban_id, false)) continue;
@@ -157,11 +157,11 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Did not load autokick_steam.txt\n");
+//		Msg ("Did not load autokick_steam.txt\n");
 	}
 	else
 	{
-		Msg("autokickban Steam list\n");
+//		Msg("autokickban Steam list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
 			if (!ParseLine(autokickban_id, false)) continue;
@@ -176,11 +176,11 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Did not load autokick_name.txt\n");
+//		Msg ("Did not load autokick_name.txt\n");
 	}
 	else
 	{
-		Msg("autokickban Name list\n");
+//		Msg("autokickban Name list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
 			if (!ParseLine(autokickban_id, false)) continue;
@@ -194,11 +194,11 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Did not load autokick_pname.txt\n");
+//		Msg ("Did not load autokick_pname.txt\n");
 	}
 	else
 	{
-		Msg("autokickban PName list\n");
+//		Msg("autokickban PName list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
 			if (!ParseLine(autokickban_id, false)) continue;
@@ -397,7 +397,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanName
 
 		if (kick)
 		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
@@ -542,7 +542,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickBanPName
 
 		if (kick)
 		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
@@ -685,7 +685,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickSteam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -774,7 +774,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaAutoKickIP
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -867,7 +867,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickBanName
 
 		if (kick)
 		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
@@ -958,7 +958,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickBanPName
 
 		if (kick)
 		{
-			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+			if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 		}
 		else
 		{
@@ -1045,7 +1045,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickSteam
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -1125,7 +1125,7 @@ PLUGIN_RESULT	ManiAutoKickBan::ProcessMaUnAutoKickIP
 		// Check if player is admin
 		player.index = index;
 		if (!FindPlayerByIndex(&player)) return PLUGIN_STOP;
-		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_KICK, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->IsAdminAllowed(&player, command_string, ALLOW_BAN, war_mode, &admin_index)) return PLUGIN_STOP;
 	}
 	
 	if (argc < 2) 
@@ -1405,7 +1405,7 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 			Q_strcpy(autokick_ip.ip_address, ip_address);
 			autokick_ip.kick = true;
 			autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
-			Msg("%s Kick\n", ip_address);
+			//Msg("%s Kick\n", ip_address);
 			return;
 		}
 
@@ -1424,7 +1424,7 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 
 	Q_strcpy(autokick_ip.ip_address, ip_address);
 
-	Msg("%s ", ip_address);
+	//Msg("%s ", ip_address);
 
 	i++;
 
@@ -1446,10 +1446,10 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 
 	if (autokick_ip.kick)
 	{
-		Msg("Kick");
+		//Msg("Kick");
 	}
 
-	Msg("\n");
+	//Msg("\n");
 
 	autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
 }
@@ -1485,7 +1485,7 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 			Q_strcpy(autokick_steam.steam_id, steam_id);
 			autokick_steam.kick = true;
 			autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
-			Msg("%s Kick\n", steam_id);
+			//Msg("%s Kick\n", steam_id);
 			return;
 		}
 
@@ -1504,7 +1504,7 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 
 	Q_strcpy(autokick_steam.steam_id, steam_id);
 
-	Msg("%s ", steam_id);
+	//Msg("%s ", steam_id);
 
 	i++;
 
@@ -1526,10 +1526,10 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 
 	if (autokick_steam.kick)
 	{
-		Msg("Kick");
+		//Msg("Kick");
 	}
 
-	Msg("\n");
+	//Msg("\n");
 
 	autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
 }
@@ -1580,7 +1580,7 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 			Q_strcpy(autokick_name.name, name);
 			autokick_name.kick = true;
 			autokick_name_list[autokick_name_list_size - 1] = autokick_name;
-			Msg("%s Kick\n", name);
+			//Msg("%s Kick\n", name);
 			return;
 		}
 
@@ -1598,7 +1598,7 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 
 	Q_strcpy(autokick_name.name, name);
 
-	Msg("%s ", name);
+	//Msg("%s ", name);
 
 	i++;
 
@@ -1652,19 +1652,19 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 	{
 		if (autokick_name.ban_time == 0)
 		{
-			Msg("Ban permanent");
+			//Msg("Ban permanent");
 		}
 		else
 		{
-			Msg("Ban %i minutes", autokick_name.ban_time);
+			//Msg("Ban %i minutes", autokick_name.ban_time);
 		}
 	}
 	else
 	{
-		Msg("Kick");
+		//Msg("Kick");
 	}
 
-	Msg("\n");
+	//Msg("\n");
 
 	autokick_name_list[autokick_name_list_size - 1] = autokick_name;
 }
@@ -1715,7 +1715,7 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 			Q_strcpy(autokick_pname.pname, name);
 			autokick_pname.kick = true;
 			autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
-			Msg("%s Kick\n", name);
+			//Msg("%s Kick\n", name);
 			return;
 		}
 
@@ -1733,7 +1733,7 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 
 	Q_strcpy(autokick_pname.pname, name);
 
-	Msg("%s ", name);
+	//Msg("%s ", name);
 
 	i++;
 
@@ -1787,19 +1787,19 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 	{
 		if (autokick_pname.ban_time == 0)
 		{
-			Msg("Ban permanent");
+			//Msg("Ban permanent");
 		}
 		else
 		{
-			Msg("Ban %i minutes", autokick_pname.ban_time);
+			//Msg("Ban %i minutes", autokick_pname.ban_time);
 		}
 	}
 	else
 	{
-		Msg("Kick");
+		//Msg("Kick");
 	}
 
-	Msg("\n");
+	//Msg("\n");
 
 	autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
 }

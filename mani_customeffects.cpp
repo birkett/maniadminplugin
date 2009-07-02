@@ -110,7 +110,7 @@ void ManiCustomEffects::Init(void)
 	FreeList((void **) &decal_list, &decal_list_size);
 
 	// Read the decallist.txt file
-	Msg("*********** Loading decallist.txt ************\n");
+//	Msg("*********** Loading decallist.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("decallist.txt");
 
@@ -119,7 +119,7 @@ void ManiCustomEffects::Init(void)
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/decallist.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
-			Msg("Failed to load decallist.txt\n");
+//			Msg("Failed to load decallist.txt\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -129,7 +129,7 @@ void ManiCustomEffects::Init(void)
 		base_key_ptr = kv_ptr->GetFirstSubKey();
 		if (!base_key_ptr)
 		{
-			Msg("Nothing found\n");
+//			Msg("Nothing found\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -152,7 +152,7 @@ void ManiCustomEffects::Init(void)
 					texture_info.texture_index = engine->PrecacheDecal(texture_info.filename);
 					AddToList((void **) &decal_list, sizeof(texture_info_t), &decal_list_size);
 					decal_list[decal_list_size - 1] = texture_info;
-					Msg("Added [%s => %s] using decal index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
+//					Msg("Added [%s => %s] using decal index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
 				}
 			}
 
@@ -166,12 +166,12 @@ void ManiCustomEffects::Init(void)
 		kv_ptr->deleteThis();
 
 		qsort(decal_list, decal_list_size, sizeof(texture_info_t), sort_texture_list_by_name); 
-		Msg("*********** decallist.txt loaded ************\n");
+//		Msg("*********** decallist.txt loaded ************\n");
 		break;
 	}
 
 	// Read the texturelist.txt file
-	Msg("*********** Loading texturelist.txt ************\n");
+//	Msg("*********** Loading texturelist.txt ************\n");
 
 	kv_ptr = new KeyValues("texturelist.txt");
 
@@ -180,7 +180,7 @@ void ManiCustomEffects::Init(void)
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/texturelist.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
-			Msg("Failed to load texturelist.txt\n");
+//			Msg("Failed to load texturelist.txt\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -190,7 +190,7 @@ void ManiCustomEffects::Init(void)
 		base_key_ptr = kv_ptr->GetFirstSubKey();
 		if (!base_key_ptr)
 		{
-			Msg("Nothing found\n");
+//			Msg("Nothing found\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -213,7 +213,7 @@ void ManiCustomEffects::Init(void)
 					texture_info.texture_index = engine->PrecacheModel(texture_info.filename, true);
 					AddToList((void **) &texture_list, sizeof(texture_info_t), &texture_list_size);
 					texture_list[texture_list_size - 1] = texture_info;
-					Msg("Added [%s => %s] using model index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
+//					Msg("Added [%s => %s] using model index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
 				}
 			}
 
@@ -227,7 +227,7 @@ void ManiCustomEffects::Init(void)
 		kv_ptr->deleteThis();
 
 		qsort(texture_list, texture_list_size, sizeof(texture_info_t), sort_texture_list_by_name); 
-		Msg("*********** texturelist.txt loaded ************\n");
+//		Msg("*********** texturelist.txt loaded ************\n");
 		break;
 	}
 }
