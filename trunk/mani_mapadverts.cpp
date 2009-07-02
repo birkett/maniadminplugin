@@ -247,7 +247,7 @@ void ManiMapAdverts::GetCoordList(KeyValues *kv_ptr, char *decal_name)
 	{
 		failed = false;
 
-		coord.x = kv_xyz_ptr->GetFloat(NULL, 0);
+		coord.x = kv_xyz_ptr->GetFloat();
 		kv_xyz_ptr = kv_xyz_ptr->GetNextValue();
 		if (!kv_xyz_ptr)
 		{
@@ -255,7 +255,7 @@ void ManiMapAdverts::GetCoordList(KeyValues *kv_ptr, char *decal_name)
 			break;
 		}
 
-		coord.y = kv_xyz_ptr->GetFloat(NULL, 0);
+		coord.y = kv_xyz_ptr->GetFloat();
 		kv_xyz_ptr = kv_xyz_ptr->GetNextValue();
 		if (!kv_xyz_ptr)
 		{
@@ -263,7 +263,7 @@ void ManiMapAdverts::GetCoordList(KeyValues *kv_ptr, char *decal_name)
 			break;
 		}
 
-		coord.z = kv_xyz_ptr->GetFloat(NULL, 0);
+		coord.z = kv_xyz_ptr->GetFloat();
 		kv_xyz_ptr = kv_xyz_ptr->GetNextValue();
 
 		if (first_run)

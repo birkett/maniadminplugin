@@ -63,7 +63,6 @@ private:
 	std::vector<save_scores_t> save_scores_list;
 
 	save_cash_t	 save_cash_list[MANI_MAX_PLAYERS];
-	int			 spawn_count[MANI_MAX_PLAYERS];
 
 	void	ResetScores(void);
 };

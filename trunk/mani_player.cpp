@@ -2798,10 +2798,7 @@ int GetNumberOfActivePlayers(void)
 		{
 			if (!player.is_bot)
 			{
-				if (!disconnected_player_list[i - 1].in_use)
-				{
-					number_of_players ++;
-				}
+				number_of_players ++;
 			}
 		}
 	}

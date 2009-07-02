@@ -35,7 +35,7 @@ public:
 
 	void		Init(void);
 	void		AddDownloadsKeyValues(KeyValues *kv_ptr);
-	void		AddToDownloads(char *filename);
+	void		AddToDownloads(const char *filename);
 
 };
 

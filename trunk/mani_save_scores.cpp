@@ -172,7 +172,6 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 {
 	save_cash_list[player_ptr->index - 1].trigger = false;
 	save_cash_list[player_ptr->index - 1].cash = 0;
-	spawn_count[player_ptr->index - 1] = 0;
 
 	if (war_mode) return;
 	if (mani_save_scores.GetInt() == 0) return;
@@ -226,13 +225,10 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 	if (mani_save_scores.GetInt() == 0 || mani_save_scores_css_cash.GetInt() == 0) return;
 	if (IsLAN()) return;
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
 	if (player_ptr->is_bot) return;
 
-	spawn_count[player_ptr->index - 1] ++;
-
 	if (!save_cash_list[player_ptr->index - 1].trigger) return;
-	if (spawn_count[player_ptr->index - 1] < 2) return;
-
 	save_cash_list[player_ptr->index - 1].trigger = false;
 	SayToPlayer(ORANGE_CHAT, player_ptr, "Cash restored to last known amount");
 	Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, save_cash_list[player_ptr->index - 1].cash); 
@@ -248,7 +244,6 @@ void ManiSaveScores::ResetScores(void)
 	{
 		save_cash_list[i].cash = 0;
 		save_cash_list[i].trigger = false;
-		spawn_count[i] = 0;
 	}
 }
 

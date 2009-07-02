@@ -455,7 +455,7 @@ void ManiSpawnPoints::GetCoordList(KeyValues *kv_ptr, int team_number)
 	for (;;)
 	{
 		// Get 6 parameter string
-		char *input_string = (char *) kv_xyz_ptr->GetString(NULL, NULL);
+		char *input_string = (char *) kv_xyz_ptr->GetString();
 		if (!input_string)
 		{
 //			MMsg("Failed to get part of spawnpoints.txt\n");

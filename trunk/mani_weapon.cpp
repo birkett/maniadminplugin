@@ -316,7 +316,6 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 	for (int i = 0; i < 29; i++)
 	{
 		if (weapons[i]->GetDisplayID() == 0) continue;
-
 		if (!weapons[i]->CanBuy(player_ptr, 1) || 
 			knife_mode)
 		{
@@ -324,7 +323,6 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 			{
 				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
 				if (!pWeapon) continue;
-
 				if (strcmp(CBaseCombatWeapon_GetName(pWeapon), weapons[i]->GetWeaponName()) != 0)
 				{
 					continue;
@@ -768,9 +766,17 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrict
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
+	int limit = 0;
 	if (gpCmd->Cmd_Argc() == 3)
 	{
-		if (!this->SetWeaponRestriction(gpCmd->Cmd_Argv(1), true, atoi(gpCmd->Cmd_Argv(2))))
+		// Validate negative
+		limit = atoi(gpCmd->Cmd_Argv(2));
+		if (limit < 0)
+		{
+			return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+		}
+
+		if (!this->SetWeaponRestriction(gpCmd->Cmd_Argv(1), true, limit))
 		{
 			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 3044, "%s", gpCmd->Cmd_Argv(1)));
 			return PLUGIN_STOP;
@@ -792,7 +798,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrict
 	}
 	else
 	{
-		SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 3046, "%s%s", gpCmd->Cmd_Argv(1), gpCmd->Cmd_Argv(2)));
+		SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 3040, "%s%i", gpCmd->Cmd_Argv(1), limit));
 	}
 
 	return PLUGIN_STOP;

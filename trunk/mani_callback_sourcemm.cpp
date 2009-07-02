@@ -141,11 +141,8 @@ ConCommand *pChangeLevelCmd = NULL;
 ConCommand *pAutoBuyCmd = NULL;
 ConCommand *pReBuyCmd = NULL;
 ConCommand *pRespawnEntities = NULL;
-ConVar *pMPRestartGame = NULL;
-FnChangeCallback pMPRestartGameCallback = NULL;
 
 static int offset1 = -1;
-void mp_restart_game_callback (ConVar *var, char const *pOldString );
 
 //---------------------------------------------------------------------------------
 // Purpose: constructor/destructor
@@ -473,11 +470,6 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 		SH_RELEASE_CALLCLASS(rebuy_cc);
 	}
 
-	if (pMPRestartGame && pMPRestartGameCallback)
-	{
-		pMPRestartGame->m_fnChangeCallback = pMPRestartGameCallback;
-	}
-
 	if (gpManiGameType->GetAdvancedEffectsAllowed())
 	{
 		SH_RELEASE_CALLCLASS(temp_ents_cc);
@@ -521,11 +513,6 @@ void CSourceMMMAP::HookConCommands()
 			else if (strcmp(pCmd->GetName(), "respawn_entities") == 0)
 				pRespawnEntities = static_cast<ConCommand *>(pCmd);
 		}
-		else
-		{
-			if (strcmp(pCmd->GetName(), "mp_restartgame") == 0)
-				pMPRestartGame = static_cast<ConVar *>(pCmd);
-		}
 
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
 	}
@@ -546,15 +533,6 @@ void CSourceMMMAP::HookConCommands()
 		rebuy_cc = SH_GET_CALLCLASS(pReBuyCmd);
 	}
 
-	if (pMPRestartGame)
-	{
-		if (pMPRestartGame->m_fnChangeCallback)
-		{
-			pMPRestartGameCallback = pMPRestartGame->m_fnChangeCallback;
-		}
-
-		pMPRestartGame->m_fnChangeCallback = mp_restart_game_callback;
-	}
 }
 
 void *MyListener::OnMetamodQuery(const char *iface, int *ret)
@@ -700,15 +678,6 @@ void ReBuy_handler()
 	gpManiWeaponMgr->AutoBuyReBuy();
 	RETURN_META(MRES_SUPERCEDE);
 } 
-
-void mp_restart_game_callback (ConVar *var, char const *pOldString )
-{
-	Msg("mp_restartgame %s\n", var->GetString());
-	if (pMPRestartGameCallback)
-	{
-		pMPRestartGameCallback(var, pOldString);
-	}
-}
 
 #endif
 

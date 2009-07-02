@@ -199,7 +199,7 @@ PLUGIN_RESULT	ManiMessageMode::ProcessMaPMess(player_t *player_ptr, const char *
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	for (int argc = 1; argc < gpCmd->Cmd_Argc() - 1; argc++)
+	for (int argc = 1; argc < gpCmd->Cmd_Argc(); argc++)
 	{
 		const char *target_string = gpCmd->Cmd_Argv(argc);
 

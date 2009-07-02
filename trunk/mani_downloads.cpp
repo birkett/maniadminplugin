@@ -141,7 +141,6 @@ void ManiDownloads::Init(void)
 void ManiDownloads::AddDownloadsKeyValues(KeyValues *kv_ptr)
 {
 	KeyValues *kv_downloads_ptr;
-	char	download_name[512];
 
 	kv_downloads_ptr = kv_ptr->GetFirstValue();
 	if (!kv_downloads_ptr)
@@ -151,8 +150,8 @@ void ManiDownloads::AddDownloadsKeyValues(KeyValues *kv_ptr)
 
 	for (;;)
 	{
-		Q_strcpy(download_name, kv_downloads_ptr->GetString(NULL, "NULL"));
-		if (!FStrEq("NULL", download_name))
+		const char *download_name =  kv_downloads_ptr->GetString();
+		if (download_name)
 		{
 //			MMsg("Adding %s to download list.... ", download_name);
 			AddToDownloads(download_name);
@@ -171,7 +170,7 @@ void ManiDownloads::AddDownloadsKeyValues(KeyValues *kv_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Add downloads to source engine
 //---------------------------------------------------------------------------------
-void ManiDownloads::AddToDownloads(char *filename)
+void ManiDownloads::AddToDownloads(const char *filename)
 {
 	INetworkStringTable *pDownloadablesTable = networkstringtable->FindTable("downloadables");
 	bool save = engine->LockNetworkStringTables(false);
