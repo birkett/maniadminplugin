@@ -270,6 +270,8 @@ ConVar	*cs_stacking_num_levels = NULL;
 ConVar  *phy_pushscale = NULL; 
 ConVar	*vip_version = NULL; 
 ConVar	*mp_dynamicpricing = NULL;
+ConVar	*tv_name = NULL;
+ConVar	*mp_allowspectators = NULL;
 
 //RenderMode_t mani_render_mode = kRenderNormal;
 
@@ -603,6 +605,8 @@ bool CAdminPlugin::Load(void)
 	hostname = cvar->FindVar( "hostname");
 	phy_pushscale = cvar->FindVar( "phys_pushscale");
 	vip_version = cvar->FindVar("vip_version");
+	tv_name = cvar->FindVar("tv_name");
+	mp_allowspectators = cvar->FindVar("mp_allowspectators");
 
 	last_cheat_check_time = 0;
 	last_slapped_player = -1;
@@ -966,6 +970,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	hostname = cvar->FindVar( "hostname");
 	phy_pushscale = cvar->FindVar( "phys_pushscale");
 	vip_version = cvar->FindVar("vip_version");
+	tv_name = cvar->FindVar("tv_name");
+	mp_allowspectators = cvar->FindVar("mp_allowspectators");
 
 	next_ping_check = 0.0;
 	last_cheat_check_time = 0;
@@ -4214,7 +4220,6 @@ bool ConfigOptionsPage::PopulateMenuPage(player_t *player_ptr)
 void CAdminPlugin::FireGameEvent( IGameEvent * event )
 {
 	if (ProcessPluginPaused()) return;
-
 	if (!war_mode && 
 		mani_show_events.GetInt() != 0)
 	{
@@ -8486,7 +8491,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 	bool	last_round = false;
 
 // DEBUG to trace timeleft error
-	LogCommand(player_ptr, "timeleft triggered\n");
+	if (gpManiGameType->IsGameType(MANI_GAME_DOD))
+	{
+		LogCommand(player_ptr, "timeleft triggered\n");
+	}
 
 	if (mp_timelimit)
 	{

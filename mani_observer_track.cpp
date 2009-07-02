@@ -277,6 +277,11 @@ PLUGIN_RESULT	ManiObserverTrack::ProcessMaObserve
 	// Found a player to observe
 	for (int i = 0; i < target_player_list_size; i++)
 	{
+		if (target_player_list[i].player_info->IsFakeClient())
+		{
+			continue;
+		}
+
 		observer_id[player_ptr->index - 1] = target_player_list[i].index;
 		strcpy(observer_steam[player_ptr->index - 1], "");
 
@@ -408,6 +413,10 @@ bool ObservePlayerPage::PopulateMenuPage(player_t *player_ptr)
 		player_t player;
 		player.index = i;
 		if (!FindPlayerByIndex(&player)) continue;
+		if (player.player_info->IsFakeClient())
+		{
+			continue;
+		}
 
 		ptr = new ObservePlayerItem;
 

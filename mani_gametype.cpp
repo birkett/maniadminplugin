@@ -62,6 +62,7 @@ extern	IFileSystem	*filesystem;
 extern	IServerGameDLL	*serverdll;
 
 extern	CGlobalVars *gpGlobals;
+extern	ConVar *mp_allowspectators;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -140,7 +141,7 @@ void ManiGameType::Init(void)
 	MMsg("Searching for game type [%s]\n", game_type);
 
 	if (FStrEq(MANI_GAME_CSS_STR, game_type)) game_type_index = MANI_GAME_CSS;
-	else if (FStrEq(MANI_GAME_DM_STR, game_type)) game_type_index = MANI_GAME_DM;
+	else if (FStrEq(MANI_GAME_DM_STR, game_type) || FStrEq(MANI_GAME_DM1_STR, game_type)) game_type_index = MANI_GAME_DM;
 	else if (FStrEq(MANI_GAME_TEAM_DM_STR, game_type)) game_type_index = MANI_GAME_TEAM_DM;
 	else if (FStrEq(MANI_GAME_CTF_STR, game_type)) game_type_index = MANI_GAME_CTF;
 	else if (FStrEq(MANI_GAME_HIDDEN_STR, game_type)) game_type_index = MANI_GAME_HIDDEN;
@@ -645,7 +646,7 @@ bool	ManiGameType::IsTeamPlayAllowed(void)
 //---------------------------------------------------------------------------------
 bool	ManiGameType::IsSpectatorAllowed(void)
 {
-	return ((spectator_allowed == 0) ? false:true);
+	return ((spectator_allowed == 1 && mp_allowspectators && mp_allowspectators->GetInt() == 1) ? true:false);
 }
 
 //---------------------------------------------------------------------------------

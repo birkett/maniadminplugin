@@ -104,6 +104,7 @@ void ManiAntiRejoin::ClientDisconnect(player_t	*player_ptr)
 	for (int i = 0; i < max_players; i++)
 	{
 		player_t player;
+		player.index = i + 1;
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.team == 2) 
 		{
