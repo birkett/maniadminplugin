@@ -147,4 +147,6 @@ inline bool DeProtect(void* pMemory, unsigned int uiLen, bool bLock = false)
 	HDEFVFUNC(funcname, returntype, proto); \
 	DEFVFUNC(funcname, returntype, proto)
 
+extern	void	HookVFuncs(void);
+
 #endif // _VFNHOOK_H

@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="mani_admin_plugin"
 	ProjectGUID="{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}"
+	RootNamespace="mani_admin_plugin"
 	SccProjectName="&quot;$/Src/utils/serverplugin_empty&quot;, SCQCAAAA"
 	SccAuxPath=""
 	SccLocalPath="."
@@ -24,8 +25,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\public,..\public\tier0,..\public\tier1,..\dlls,..\game_shared,.\mysql\win_32\include\"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql\win_32\include\"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY;"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				RuntimeTypeInfo="TRUE"
@@ -43,22 +44,22 @@
 				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll
 copy &quot;$(TargetPath)&quot; ..\bin\
 copy &quot;$(TargetPath)&quot; ..\base\common\
-copy &quot;$(TargetPath)&quot; C:\csserver\cstrike\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hl2mp\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\dod\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hl2ctf\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\dystopia\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\gmod\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\cstrike\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2mp\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dod\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\
 "
 				Outputs="..\bin\mani_admin_plugin.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib  vstdlib.lib tier0.lib"
 				OutputFile="..\plugin_output\Debug/mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\lib\public,..\lib\common,.\mysql\win_32\lib"
+				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql\win_32\lib"
 				IgnoreDefaultLibraryNames="LIBCMT"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\plugin_output\Debug/mani_admin_plugin.pdb"
@@ -108,13 +109,13 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\public,..\public\tier0,..\public\tier1,..\dlls,..\game_shared,.\mysql\win_32\include\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile="..\plugin_output\Release/mani_admin_plugin.pch"
 				AssemblerListingLocation="..\plugin_output\Release/"
 				ObjectFile="..\plugin_output\Release/"
@@ -128,22 +129,23 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll
 copy &quot;$(TargetPath)&quot; ..\bin\
 copy &quot;$(TargetPath)&quot; ..\base\common\
-copy &quot;$(TargetPath)&quot; C:\csserver\cstrike\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hl2mp\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\dod\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hl2ctf\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\dystopia\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\gmod\addons\
-copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\cstrike\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2mp\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dod\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\
+copy..\plugin_output\Release\mani_admin_plugin.pdb .\
 "
 				Outputs="..\bin\mani_admin_plugin.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib vstdlib.lib tier0.lib"
 				OutputFile="..\plugin_output\Release/mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\lib\public,..\lib\common,.\mysql\win_32\lib"
+				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql5.1\win_32\lib"
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames="LIBC"
 				GenerateDebugInformation="TRUE"
@@ -182,6 +184,178 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="SourceMM Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql\win_32\include\;..\sourcemm\sourcemm;..\sourcemm"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				RuntimeTypeInfo="TRUE"
+				UsePrecompiledHeader="0"
+				PrecompiledHeaderFile="..\plugin_output\ReleaseMM/mani_admin_plugin_mm.pch"
+				AssemblerListingLocation="..\plugin_output\ReleaseMM/"
+				ObjectFile="..\plugin_output\ReleaseMM/"
+				ProgramDataBaseFileName="..\plugin_output\ReleaseMM/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine="attrib -r ..\bin\mani_admin_plugin_mm.dll
+copy &quot;$(TargetPath)&quot; ..\bin\
+copy &quot;$(TargetPath)&quot; ..\base\common\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\cstrike\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2mp\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dod\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\bin\
+copy..\plugin_output\ReleaseMM\mani_admin_plugin_mm.pdb .\
+
+"
+				Outputs="..\bin\mani_admin_plugin_mm.dll"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib vstdlib.lib tier0.lib"
+				OutputFile="..\plugin_output\ReleaseMM/mani_admin_plugin_mm.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql\win_32\lib"
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="LIBC"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\plugin_output\ReleaseMM/mani_admin_plugin_mm.pdb"
+				GenerateMapFile="TRUE"
+				MapFileName="..\plugin_output\ReleaseMM/mani_admin_plugin_mm.map"
+				SubSystem="2"
+				ImportLibrary="..\plugin_output\ReleaseMM/mani_admin_plugin_mm.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/serverplugin_empty.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="SourceMM Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql\win_32\include\;..\sourcemm\sourcemm;..\sourcemm"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				RuntimeTypeInfo="TRUE"
+				PrecompiledHeaderFile="..\plugin_output\DebugMM/mani_admin_plugin_mm.pch"
+				AssemblerListingLocation="..\plugin_output\DebugMM/"
+				ObjectFile="..\plugin_output\DebugMM/"
+				ProgramDataBaseFileName="..\plugin_output\DebugMM/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine="attrib -r ..\bin\mani_admin_plugin_mm.dll
+copy &quot;$(TargetPath)&quot; ..\bin\
+copy &quot;$(TargetPath)&quot; ..\base\common\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\cstrike\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2mp\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dod\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\mani_admin_plugin\bin\
+copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\mani_admin_plugin\bin\
+
+"
+				Outputs="..\bin\mani_admin_plugin_mm.dll"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib  vstdlib.lib tier0.lib"
+				OutputFile="..\plugin_output\DebugMM/mani_admin_plugin_mm.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql\win_32\lib"
+				IgnoreDefaultLibraryNames="LIBCMT"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\plugin_output\DebugMM/mani_admin_plugin_mm.pdb"
+				GenerateMapFile="TRUE"
+				MapFileName="..\plugin_output\DebugMM/mani_admin_plugin_mm.map"
+				SubSystem="2"
+				ImportLibrary="..\plugin_output\DebugMM/mani_admin_plugin_mm.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/serverplugin_empty.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -193,38 +367,47 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				Name="SDK"
 				Filter="">
 				<File
-					RelativePath="..\tier1\bitbuf.cpp">
+					RelativePath="..\sdk\tier1\bitbuf.cpp">
 				</File>
 				<File
-					RelativePath="..\tier1\convar.cpp">
+					RelativePath="..\sdk\tier1\convar.cpp">
 				</File>
 				<File
-					RelativePath="..\tier1\interface.cpp">
+					RelativePath="..\sdk\tier1\interface.cpp">
 				</File>
 				<File
-					RelativePath="..\tier1\KeyValues.cpp">
+					RelativePath="..\sdk\tier1\KeyValues.cpp">
 				</File>
 				<File
-					RelativePath="..\public\mathlib.cpp">
+					RelativePath="..\sdk\public\mathlib.cpp">
 				</File>
 				<File
-					RelativePath="..\public\tier0\memoverride.cpp">
+					RelativePath="..\sdk\public\tier0\memoverride.cpp">
 				</File>
 				<File
-					RelativePath=".\serverplugin_convar.cpp">
+					RelativePath="..\sdk\utils\serverplugin_sample\serverplugin_convar.cpp">
 				</File>
 				<File
-					RelativePath="..\tier1\utlbuffer.cpp">
+					RelativePath="..\sdk\tier1\utlbuffer.cpp">
 				</File>
 			</Filter>
 			<Filter
 				Name="ManiAdminPlugin"
 				Filter="">
 				<File
+					RelativePath=".\cvars.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_adverts.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_autokickban.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_callback_sourcemm.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_callback_valve.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_chattrigger.cpp">
@@ -257,7 +440,13 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_ghost.cpp">
 				</File>
 				<File
+					RelativePath=".\mani_globals.cpp">
+				</File>
+				<File
 					RelativePath=".\mani_hlxinterface.cpp">
+				</File>
+				<File
+					RelativePath=".\mani_hook.cpp">
 				</File>
 				<File
 					RelativePath=".\mani_language.cpp">
@@ -358,94 +547,97 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				Name="SDK"
 				Filter="">
 				<File
-					RelativePath="..\game_shared\base_playeranimstate.h">
+					RelativePath="..\sdk\game_shared\base_playeranimstate.h">
 				</File>
 				<File
-					RelativePath="..\dlls\baseanimating.h">
+					RelativePath="..\sdk\dlls\baseanimating.h">
 				</File>
 				<File
-					RelativePath="..\dlls\basecombatcharacter.h">
+					RelativePath="..\sdk\dlls\basecombatcharacter.h">
 				</File>
 				<File
-					RelativePath="..\game_shared\basecombatweapon_shared.h">
+					RelativePath="..\sdk\game_shared\basecombatweapon_shared.h">
 				</File>
 				<File
-					RelativePath="..\dlls\baseentity.h">
+					RelativePath="..\sdk\dlls\baseentity.h">
 				</File>
 				<File
-					RelativePath="..\game_shared\baseentity_shared.h">
+					RelativePath="..\sdk\game_shared\baseentity_shared.h">
 				</File>
 				<File
-					RelativePath="..\game_shared\baseplayer_shared.h">
+					RelativePath="..\sdk\game_shared\baseplayer_shared.h">
 				</File>
 				<File
-					RelativePath="..\public\basetypes.h">
+					RelativePath="..\sdk\public\basetypes.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\bitbuf.h">
+					RelativePath="..\sdk\public\tier1\bitbuf.h">
 				</File>
 				<File
-					RelativePath="..\public\Color.h">
+					RelativePath="..\sdk\public\Color.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\convar.h">
+					RelativePath="..\sdk\public\tier1\convar.h">
 				</File>
 				<File
-					RelativePath="..\public\tier0\dbg.h">
+					RelativePath=".\cvars.h">
 				</File>
 				<File
-					RelativePath="..\public\eiface.h">
+					RelativePath="..\sdk\public\tier0\dbg.h">
 				</File>
 				<File
-					RelativePath="..\public\filesystem.h">
+					RelativePath="..\sdk\public\eiface.h">
 				</File>
 				<File
-					RelativePath="..\public\vstdlib\ICommandLine.h">
+					RelativePath="..\sdk\public\filesystem.h">
 				</File>
 				<File
-					RelativePath="..\public\igameevents.h">
+					RelativePath="..\sdk\public\vstdlib\ICommandLine.h">
 				</File>
 				<File
-					RelativePath="..\public\inetchannel.h">
+					RelativePath="..\sdk\public\igameevents.h">
 				</File>
 				<File
-					RelativePath="..\public\inetchannelinfo.h">
+					RelativePath="..\sdk\public\inetchannel.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\interface.h">
+					RelativePath="..\sdk\public\inetchannelinfo.h">
 				</File>
 				<File
-					RelativePath="..\public\dlls\iplayerinfo.h">
+					RelativePath="..\sdk\public\tier1\interface.h">
 				</File>
 				<File
-					RelativePath="..\public\engine\iserverplugin.h">
+					RelativePath="..\sdk\public\dlls\iplayerinfo.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\KeyValues.h">
+					RelativePath="..\sdk\public\engine\iserverplugin.h">
+				</File>
+				<File
+					RelativePath="..\sdk\public\tier1\KeyValues.h">
 				</File>
 				<File
 					RelativePath=".\mysql\win_32\include\mysql.h">
 				</File>
 				<File
-					RelativePath="..\dlls\player.h">
+					RelativePath="..\sdk\dlls\player.h">
 				</File>
 				<File
-					RelativePath="..\public\vstdlib\random.h">
+					RelativePath="..\sdk\public\vstdlib\random.h">
 				</File>
 				<File
-					RelativePath="..\public\vstdlib\strtools.h">
+					RelativePath="..\sdk\public\vstdlib\strtools.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\utlbuffer.h">
+					RelativePath="..\sdk\public\tier1\utlbuffer.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\utlmemory.h">
+					RelativePath="..\sdk\public\tier1\utlmemory.h">
 				</File>
 				<File
-					RelativePath="..\public\tier1\utlvector.h">
+					RelativePath="..\sdk\public\tier1\utlvector.h">
 				</File>
 				<File
-					RelativePath="..\public\vstdlib\vstdlib.h">
+					RelativePath="..\sdk\public\vstdlib\vstdlib.h">
 				</File>
 			</Filter>
 			<Filter
@@ -456,6 +648,12 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_autokickban.h">
+				</File>
+				<File
+					RelativePath=".\mani_callback_sourcemm.h">
+				</File>
+				<File
+					RelativePath=".\mani_callback_valve.h">
 				</File>
 				<File
 					RelativePath=".\mani_chattrigger.h">
@@ -491,6 +689,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath=".\mani_ghost.h">
 				</File>
 				<File
+					RelativePath=".\mani_globals.h">
+				</File>
+				<File
 					RelativePath=".\mani_hlxinterface.h">
 				</File>
 				<File
@@ -501,6 +702,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 				<File
 					RelativePath=".\mani_main.h">
+				</File>
+				<File
+					RelativePath=".\mani_mainclass.h">
 				</File>
 				<File
 					RelativePath=".\mani_mapadverts.h">
@@ -593,6 +797,9 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 					RelativePath="..\..\public\tier0\memdbgon.h">
 				</File>
 				<File
+					RelativePath=".\meta_hooks.h">
+				</File>
+				<File
 					RelativePath=".\mrecipientfilter.h">
 				</File>
 			</Filter>
@@ -604,12 +811,6 @@ copy &quot;$(TargetPath)&quot; C:\csserver\hidden\addons\
 				</File>
 			</Filter>
 		</Filter>
-		<File
-			RelativePath="..\lib\public\tier0.lib">
-		</File>
-		<File
-			RelativePath="..\lib\public\vstdlib.lib">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

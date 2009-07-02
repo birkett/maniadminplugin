@@ -1220,7 +1220,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		}
 
 		// Some people don't want the cash option
-		if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->IsCashAllowed())
+		if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->CanUseProp(MANI_PROP_ACCOUNT))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
 			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_TAKE_CASH_FROM_PLAYER), mani_tk_cash_percent.GetInt());

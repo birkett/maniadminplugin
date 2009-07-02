@@ -54,7 +54,7 @@
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IServerPluginHelpers *helpers;
-extern	IServerPluginCallbacks *gpManiAdminPlugin;
+extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IFileSystem	*filesystem;
 extern	bool war_mode;
 extern	int	max_players;
@@ -1155,7 +1155,7 @@ void ShowTop(player_t *player ,int number_of_ranks)
 		kv->SetInt( "level", 1 );
 		kv->SetInt( "time", 20 );
 		kv->SetString( "msg", rank_output);
-		helpers->CreateMessage( player->entity, DIALOG_TEXT, kv, gpManiAdminPlugin );
+		helpers->CreateMessage( player->entity, DIALOG_TEXT, kv, gpManiISPCCallback );
 		kv->deleteThis();
 	}
 
@@ -1341,7 +1341,7 @@ void ShowStatsMe(player_t *player)
 		kv->SetInt( "level", 1 );
 		kv->SetInt( "time", 20 );
 		kv->SetString( "msg", menu_string);
-		helpers->CreateMessage( player->entity, DIALOG_TEXT, kv, gpManiAdminPlugin );
+		helpers->CreateMessage( player->entity, DIALOG_TEXT, kv, gpManiISPCCallback );
 		kv->deleteThis();
 	}
 

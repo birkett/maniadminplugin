@@ -1438,7 +1438,6 @@ void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 			}
 
 			if (player.is_dead)	continue;
-			if (player.is_bot) continue;
 
 			int immunity_index = -1;
 			if (admin->index != player.index && gpManiClient->IsImmune(&player, &immunity_index))
@@ -1586,6 +1585,23 @@ PLUGIN_RESULT	ProcessMaSetSkin
 	return PLUGIN_STOP;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Force Skin client cvars on ClientActive
+//---------------------------------------------------------------------------------
+void	ForceSkinCExec(player_t *player_ptr)
+{
+
+	if (war_mode) return;
+
+	if (mani_skins_force_cl_minmodels.GetInt() && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		engine->ClientCommand(player_ptr->entity, "cl_minmodels 1");
+		engine->ClientCommand(player_ptr->entity, "cl_min_t 4");
+		engine->ClientCommand(player_ptr->entity, "cl_min_ct 4");
+	}
+
+	return;
+}
 //---------------------------------------------------------------------------------
 // Purpose: Con command for setting skins for models
 //---------------------------------------------------------------------------------

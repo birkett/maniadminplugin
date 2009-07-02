@@ -69,7 +69,9 @@ extern	CGlobalVars *gpGlobals;
 static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString );
 
 ConVar mani_warmup_timer_show_countdown ("mani_warmup_timer_show_countdown", "1", 0, "1 = enable center say countdown, 0 = disable", true, 0, true, 1);
+ConVar mani_warmup_timer_knives_only ("mani_warmup_timer_knives_only", "0", 0, "1 = enable knives only mode, 0 = all weapons allowed", true, 0, true, 1);
 ConVar mani_warmup_timer ("mani_warmup_timer", "0", 0, "Time in seconds at the start of a map before performing mp_restartgame (0 = off)", true, 0, true, 180, ManiWarmupTimerCVar);
+ConVar mani_warmup_timer_ignore_tk ("mani_warmup_timer_ignore_tk", "0", 0, "0 = tk punishment still allowed, 1 = no tk punishments", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -123,7 +125,17 @@ void		ManiWarmupTimer::GameFrame(void)
 	{
 		if (mani_warmup_timer_show_countdown.GetInt())
 		{
-			CSayToAll("Warmup timer %i", mani_warmup_timer.GetInt() - ((int) gpGlobals->curtime));
+			int time_left = mani_warmup_timer.GetInt() - ((int) gpGlobals->curtime);
+
+			if (mani_warmup_timer_knives_only.GetInt() == 1 && 
+				time_left % 5 == 0)
+			{
+				CSayToAll("Knives Only !!");
+			}
+			else 
+			{
+				CSayToAll("Warmup timer %i", time_left);
+			}
 		}
 
 		next_check = gpGlobals->curtime + 1.0;
@@ -133,6 +145,28 @@ void		ManiWarmupTimer::GameFrame(void)
 			engine->ServerCommand("mp_restartgame 1\n");
 		}
 	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Knives only ?
+//---------------------------------------------------------------------------------
+bool		ManiWarmupTimer::KnivesOnly(void)
+{
+	if (!check_timer) return false;
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+
+	return ((mani_warmup_timer_knives_only.GetInt() == 0) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Ignore TK punishments
+//---------------------------------------------------------------------------------
+bool		ManiWarmupTimer::IgnoreTK(void)
+{
+	if (!check_timer) return false;
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+
+	return ((mani_warmup_timer_ignore_tk.GetInt() == 0) ? false:true);
 }
 
 ManiWarmupTimer	g_ManiWarmupTimer;

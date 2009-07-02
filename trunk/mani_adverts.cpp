@@ -48,7 +48,7 @@
 
 extern	IFileSystem	*filesystem;
 extern	IServerPluginHelpers *helpers;
-extern	IServerPluginCallbacks *gpManiAdminPlugin;
+extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	CGlobalVars *gpGlobals;
 extern	int	max_players;
 
@@ -143,7 +143,7 @@ void ShowAdvert(const char* advert_text)
 			kv->SetColor("color", col); 
 			kv->SetInt("level", 5);
 			kv->SetInt("time", 10);
-			helpers->CreateMessage(player.entity, DIALOG_MSG, kv, gpManiAdminPlugin);
+			helpers->CreateMessage(player.entity, DIALOG_MSG, kv, gpManiISPCCallback);
 			kv->deleteThis();
 		}
 	}

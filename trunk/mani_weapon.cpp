@@ -54,6 +54,7 @@
 #include "mani_gametype.h"
 #include "mani_weapon.h"
 #include "mani_vfuncs.h"
+#include "mani_warmuptimer.h"
 #include "cbaseentity.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -367,6 +368,8 @@ bool IsWeaponRestricted(char *weapon_name, int team_index)
 {
 	if (war_mode) return false;
 
+	if (gpManiWarmupTimer->KnivesOnly()) return true;
+
 	// Search for weapon restriction
 	for (int count = 0; count < weapon_list_size; count ++)
 	{
@@ -465,7 +468,7 @@ PLUGIN_RESULT ProcessClientBuy
 	if (!FindPlayerByEntity(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (war_mode) return PLUGIN_CONTINUE;
-	if (!weapons_restricted) return PLUGIN_CONTINUE;
+	if (!weapons_restricted && !gpManiWarmupTimer->KnivesOnly()) return PLUGIN_CONTINUE;
 
 	if ( FStrEq( pcmd, "buy"))
 	{
@@ -788,7 +791,8 @@ void PostProcessRebuyCommand(void)
 	player_t player;
 	char	*rebuy_string;
 
-	if (war_mode || !weapons_restricted)
+	if (war_mode) return;
+	if (!weapons_restricted && !gpManiWarmupTimer->KnivesOnly())
 	{
 		return;
 	}
@@ -810,6 +814,25 @@ void PostProcessRebuyCommand(void)
 	rebuy_string = (char *)engine->GetClientConVarValue(con_command_index + 1, "cl_rebuy");
 	CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	if (!pCombat) return;
+
+	if (gpManiWarmupTimer->KnivesOnly())
+	{
+			CBaseCombatWeapon *pWeapon1 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+			CBaseCombatWeapon *pWeapon2 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+			if (pWeapon1)
+			{
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon1);
+			}
+
+			if (pWeapon2)
+			{
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon2);
+			}
+
+			return;
+	}
 
 	if (NULL != Q_strstr(rebuy_string, "PrimaryWeapon"))
 	{
@@ -938,22 +961,53 @@ void PostProcessRebuyCommand(void)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Strip primary and secondary weapons if necessary
+// Purpose: Reset the weapon count on round start
 //---------------------------------------------------------------------------------
-void RemoveRestrictedWeapons(void)
+void ResetWeaponCount(void)
 {
-	player_t player;
-
-	if (war_mode || !weapons_restricted)
-	{
-		return;
-	}
-
+Msg("Resetting weapon count\n");
 	// Reset all weapons count
 	for (int i = 0; i < weapon_list_size; i ++)
 	{
 		weapon_list[i].ct_count = 0;
 		weapon_list[i].t_count = 0;
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Strip primary and secondary weapons if necessary
+//---------------------------------------------------------------------------------
+void RemoveRestrictedWeapons(player_t *player_ptr)
+{
+	if (war_mode) return;
+	if (!weapons_restricted && !gpManiWarmupTimer->KnivesOnly())
+	{
+		return;
+	}
+
+	if (player_ptr->is_bot) return;
+	Msg("Checking weapon count for player %s\n", player_ptr->name);
+
+	CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
+	CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	if (!pCombat) return;
+
+	if (gpManiWarmupTimer->KnivesOnly())
+	{
+			CBaseCombatWeapon *pWeapon1 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+			CBaseCombatWeapon *pWeapon2 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+			if (pWeapon1)
+			{
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon1);
+			}
+
+			if (pWeapon2)
+			{
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon2);
+			}
+
+			return;
 	}
 
 	for (int i = 0; i < 18; i ++)
@@ -962,57 +1016,46 @@ void RemoveRestrictedWeapons(void)
 		{
 			int	limit_per_team = weapon_list[primary_weapon[i].restrict_index].limit_per_team;
 
-			for (int j = 1; j <= max_players; j ++)
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+			if (!pWeapon) break;
+
+			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+
+			if (FStrEq(core_weapon_name, primary_weapon[i].core_name))
 			{
-				player.index = j;
-				if (!FindPlayerByIndex(&player)) continue;
-				if (player.is_bot) continue;
-
-				CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
-				CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-
-				if (!pCombat) continue;
-				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
-				if (!pWeapon) continue;
-
-				const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
-
-				if (FStrEq(core_weapon_name, primary_weapon[i].core_name))
+				// Found player with weapon
+				if (limit_per_team == 0)
 				{
-					// Found player with weapon
-					if (limit_per_team == 0)
+					CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+					CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+					SayToPlayer(player_ptr,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
+				}
+				else
+				{
+					if (player_ptr->team == TEAM_B)
 					{
-						CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-						CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-						SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", primary_weapon[i].name);
-					}
-					else
-					{
-						if (player.team == TEAM_B)
+						if (weapon_list[primary_weapon[i].restrict_index].ct_count >= limit_per_team)
 						{
-							if (weapon_list[primary_weapon[i].restrict_index].ct_count >= limit_per_team)
-							{
-								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
-							}
-							else
-							{
-								weapon_list[primary_weapon[i].restrict_index].ct_count ++;
-							}
+							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							SayToPlayer(player_ptr,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
 						}
-						else if (player.team == TEAM_A)
+						else
 						{
-							if (weapon_list[primary_weapon[i].restrict_index].t_count >= limit_per_team)
-							{
-								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
-							}
-							else
-							{
-								weapon_list[primary_weapon[i].restrict_index].t_count ++;
-							}
+							weapon_list[primary_weapon[i].restrict_index].ct_count ++;
+						}
+					}
+					else if (player_ptr->team == TEAM_A)
+					{
+						if (weapon_list[primary_weapon[i].restrict_index].t_count >= limit_per_team)
+						{
+							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							SayToPlayer(player_ptr,"Weapon %s has been removed, only %i allowed per team !!", primary_weapon[i].name, limit_per_team);
+						}
+						else
+						{
+							weapon_list[primary_weapon[i].restrict_index].t_count ++;
 						}
 					}
 				}
@@ -1026,56 +1069,46 @@ void RemoveRestrictedWeapons(void)
 		{
 			int	limit_per_team = weapon_list[secondary_weapon[i].restrict_index].limit_per_team;
 
-			for (int j = 1; j <= max_players; j ++)
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+			if (!pWeapon) break;
+
+			const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
+
+			if (FStrEq(core_weapon_name, secondary_weapon[i].core_name))
 			{
-				player.index = j;
-				if (!FindPlayerByIndex(&player)) continue;
-				if (player.is_bot) continue;
-
-				CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
-				CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-				if (!pCombat) continue;
-				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-				if (!pWeapon) continue;
-
-				const char *core_weapon_name = CBaseCombatWeapon_GetName(pWeapon);
-
-				if (FStrEq(core_weapon_name, secondary_weapon[i].core_name))
+				// Found player with weapon
+				if (limit_per_team == 0)
 				{
-					// Found player with weapon
-					if (limit_per_team == 0)
+					CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+					CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+					SayToPlayer(player_ptr,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
+				}
+				else
+				{
+					if (player_ptr->team == TEAM_B)
 					{
-						CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-						CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-						SayToPlayer(&player,"Weapon %s has been removed, do not buy it when restricted !!", secondary_weapon[i].name);
-					}
-					else
-					{
-						if (player.team == TEAM_B)
+						if (weapon_list[secondary_weapon[i].restrict_index].ct_count >= limit_per_team)
 						{
-							if (weapon_list[secondary_weapon[i].restrict_index].ct_count >= limit_per_team)
-							{
-								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
-							}
-							else
-							{
-								weapon_list[secondary_weapon[i].restrict_index].ct_count ++;
-							}
+							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							SayToPlayer(player_ptr,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
 						}
-						else if (player.team == TEAM_A)
+						else
 						{
-							if (weapon_list[secondary_weapon[i].restrict_index].t_count >= limit_per_team)
-							{
-								CBasePlayer *pBase = (CBasePlayer*) pPlayer;
-								CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-								SayToPlayer(&player,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
-							}
-							else
-							{
-								weapon_list[secondary_weapon[i].restrict_index].t_count ++;
-							}
+							weapon_list[secondary_weapon[i].restrict_index].ct_count ++;
+						}
+					}
+					else if (player_ptr->team == TEAM_A)
+					{
+						if (weapon_list[secondary_weapon[i].restrict_index].t_count >= limit_per_team)
+						{
+							CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+							CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+							SayToPlayer(player_ptr,"Weapon %s has been removed, only %i allowed per team !!", secondary_weapon[i].name, limit_per_team);
+						}
+						else
+						{
+							weapon_list[secondary_weapon[i].restrict_index].t_count ++;
 						}
 					}
 				}

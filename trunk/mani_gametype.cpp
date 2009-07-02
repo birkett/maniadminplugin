@@ -619,21 +619,6 @@ int		ManiGameType::GetVoiceOffset(void)
 {
 	return (voice_offset);
 }
-//---------------------------------------------------------------------------------
-// Purpose: Returns true if cash is allowed for the mod
-//---------------------------------------------------------------------------------
-bool		ManiGameType::IsCashAllowed(void)
-{
-	return ((cash_allowed == 0) ? false:true);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Returns cash offset into player
-//---------------------------------------------------------------------------------
-int		ManiGameType::GetCashOffset(void)
-{
-	return (cash_offset);
-}
 
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if amx style menu is allowed in this mod

@@ -63,6 +63,7 @@ typedef unsigned long DWORD;
 #include "inetchannelinfo.h"
 #include "ivoiceserver.h"
 #include "networkstringtabledefs.h"
+
 #include "mani_main.h"
 #include "mani_timers.h"
 #include "mani_player.h"
@@ -105,12 +106,13 @@ typedef unsigned long DWORD;
 #include "mani_mysql.h"
 #include "mani_mysql_thread.h"
 #include "mani_vfuncs.h"
-
+#include "mani_mainclass.h"
+#include "mani_callback_sourcemm.h"
+#include "mani_callback_valve.h"
+#include "mani_globals.h"
 
 #include "shareddefs.h"
 #include "cbaseentity.h"
-//#include "baseentity.h"
-//#include "edict.h"
 
 #include "mani_hook.h"
 
@@ -120,30 +122,6 @@ typedef unsigned long DWORD;
 
 #include "beam_flags.h" 
 
-// Interfaces from the engine
-IVEngineServer	*engine = NULL; // helper functions (messaging clients, loading content, making entities, running commands, etc)
-IFileSystem		*filesystem = NULL; // file I/O 
-IServerGameDLL	*serverdll = NULL;
-IServerGameEnts	*serverents = NULL;
-IGameEventManager2 *gameeventmanager = NULL; // game events interface
-IPlayerInfoManager *playerinfomanager = NULL; // game dll interface to interact with players
-IServerPluginHelpers *helpers = NULL; // special 3rd party plugin helpers from the engine
-IEffects *effects = NULL; // fx
-IEngineSound *esounds = NULL; // sound
-ICvar *cvar = NULL;	// console vars
-INetworkStringTableContainer *networkstringtable = NULL;
-INetworkStringTable *g_pStringTableManiScreen = NULL;
-IVoiceServer *voiceserver = NULL;
-ITempEntsSystem *temp_ents = NULL;
-IUniformRandomStream *randomStr = NULL;
-IEngineTrace *enginetrace = NULL;
-ISpatialPartition *partition = NULL;
-
-bool g_PluginLoaded = false;
-bool g_PluginLoadedOnce = false;
-
-CGlobalVars *gpGlobals = NULL;
-char *mani_version = PLUGIN_VERSION;
 int			menu_message_index = 10;
 int			text_message_index = 5;
 int			fade_message_index = 12;
@@ -172,131 +150,9 @@ int				cheat_cvar_list_size2 = 0;
 char *menu_select_exit_sound="buttons/combine_button7.wav";
 char *menu_select_sound="buttons/button14.wav";
 
-//declare the original func and the gate if in windows. syntax is:
-//DEFVFUNC_
-//        <name of the var you want to hold the original func>,
-//        <return type>,
-//        <args INCLUDING a pointer to the type of class it is in the beginning>
-DEFVFUNC_(voiceserver_SetClientListening, bool, (IVoiceServer* VoiceServer, int iReceiver, int iSender, bool bListen));
+CAdminPlugin g_ManiAdminPlugin;
+CAdminPlugin *gpManiAdminPlugin;
 
-//just define the func you want to be called instead of the original
-//making sure to include VFUNC between the return type and name
-bool VFUNC mysetclientlistening(IVoiceServer* VoiceServer, int iReceiver, int iSender, bool bListen)
-{
-	bool new_listen;
-
-	if (!g_PluginLoaded)
-	{
-		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, bListen);
-	}
-
-	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
-	{
-		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, new_listen);
-	}
-	else
-	{
-		return voiceserver_SetClientListening(VoiceServer, iReceiver, iSender, bListen);
-	}
-}
-
-//	virtual bool			LevelInit( char const *pMapName, 
-//									char const *pMapEntities, char const *pOldLevel, 
-//									char const *pLandmarkName, bool loadGame, bool background ) = 0;
-
-DEFVFUNC_(org_LevelInit, bool, (IServerGameDLL* pServerGameDLL, char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background));
-
-bool VFUNC myLevelInit(IServerGameDLL *pServerGameDLL, char const *pMapName, char const *pMapEntities, char const *pOldLevel, char const *pLandmarkName, bool loadGame, bool background)
-{
-	if (!g_PluginLoaded)
-	{
-		return (org_LevelInit(pServerGameDLL, pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
-	}
-
-	char	*pReplaceEnts = NULL;
-
-	// Copy the map entities
-	if (!gpManiSpawnPoints->AddSpawnPoints(&pReplaceEnts, pMapEntities))
-	{
-		return (org_LevelInit(pServerGameDLL, pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background));
-	}
-
-	bool result = org_LevelInit(pServerGameDLL, pMapName, pReplaceEnts, pOldLevel, pLandmarkName, loadGame, background);
-	free(pReplaceEnts);
-	return result;
-}
-
-//	virtual void PlayerDecal( IRecipientFilter& filer, float delay,
-//		const Vector* pos, int player, int entity ) = 0;
-
-DEFVFUNC_(te_PlayerDecal, void, (ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity));
-
-void VFUNC myplayerdecal(ITempEntsSystem *pTESys, IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)
-{
-	if (!g_PluginLoaded)
-	{
-		te_PlayerDecal(pTESys, filter, delay, pos, player, entity);
-		return;
-	}
-
-//	Msg("Spray detected !!\n");
-	if (gpManiSprayRemove->SprayFired(pos, player))
-	{
-		// We let this one through.
-		te_PlayerDecal(pTESys, filter, delay, pos, player, entity);
-	}
-}
-
-//declare the original func and the gate if in windows. syntax is:
-//DEFVFUNC_
-//        <name of the var you want to hold the original func>,
-//        <return type>,
-//        <args INCLUDING a pointer to the type of class it is in the beginning>
-DEFVFUNC_(OrgEngineEntityMessageBegin, bf_write*, (IVEngineServer* EngineServer, MRecipientFilter *filter, int msg_type));
-
-//just define the func you want to be called instead of the original
-//making sure to include VFUNC between the return type and name
-bf_write* VFUNC ManiEntityMessageBeginHook(IVEngineServer* EngineServer, MRecipientFilter *filter, int msg_type)
-{
-	Msg("Message [%i]\n", msg_type);
-	return OrgEngineEntityMessageBegin(EngineServer, filter, msg_type);
-}
-
-//declare the original func and the gate if in windows. syntax is:
-//DEFVFUNC_
-//        <name of the var you want to hold the original func>,
-//        <return type>,
-//        <args INCLUDING a pointer to the type of class it is in the beginning>
-DEFVFUNC_(grules_FPlayerCanRespawn, bool, (CGameRules* GameRules, CBasePlayer *pPlayer));
-
-//just define the func you want to be called instead of the original
-//making sure to include VFUNC between the return type and name
-bool VFUNC MyFPlayerCanRespawn(CGameRules* GameRules, CBasePlayer *pPlayer)
-{
-
-//	ReSpawnPlayer(pPlayer);
-	//Msg("FPlayerCanRespawn [%s]\n", pPlayer->GetClassName());
-	return grules_FPlayerCanRespawn(GameRules, pPlayer);
-}
-
-//declare the original func and the gate if in windows. syntax is:
-//DEFVFUNC_
-//        <name of the var you want to hold the original func>,
-//        <return type>,
-//        <args INCLUDING a pointer to the type of class it is in the beginning>
-DEFVFUNC_(grules_DefaultFOV, int, (CGameRules* GameRules));
-
-//just define the func you want to be called instead of the original
-//making sure to include VFUNC between the return type and name
-int VFUNC MyDefaultFOV(CGameRules* GameRules)
-{
-
-	//ReSpawnPlayer(pPlayer);
-	Msg("******Default FOV************\n");
-	return grules_DefaultFOV(GameRules);
-}
-// function to initialize any cvars/command in this plugin
-void InitCVars( CreateInterfaceFn cvarFactory );
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -360,6 +216,51 @@ bool		just_loaded;
 float		end_spawn_protection_time;
 int			round_number;
 float		round_start_time = 0;
+rcon_t		*rcon_list;
+vote_rcon_t	*vote_rcon_list;
+vote_question_t	*vote_question_list;
+map_vote_t	map_vote[MANI_MAX_PLAYERS];
+ping_immunity_t	*ping_immunity_list;
+map_t		*user_vote_map_list;
+
+swear_t		*swear_list;
+
+cexec_t		*cexec_list;
+cexec_t		*cexec_t_list;
+cexec_t		*cexec_ct_list;
+cexec_t		*cexec_spec_list;
+cexec_t		*cexec_all_list;
+
+lang_trans_t		*lang_trans_list;
+
+gimp_t				*gimp_phrase_list;
+
+int	rcon_list_size;
+int	vote_rcon_list_size;
+int	vote_question_list_size;
+int	swear_list_size;
+int	ping_immunity_list_size;
+int user_vote_map_list_size;
+
+int	cexec_list_size;
+int	cexec_t_list_size;
+int	cexec_ct_list_size;
+int	cexec_spec_list_size;
+int	cexec_all_list_size;
+
+int	lang_trans_list_size;
+
+int gimp_phrase_list_size;
+
+float	map_start_time;
+float	last_cheat_check_time;
+
+bool vote_started;
+int	level_changed;
+int	message_type;
+float	test_val;
+time_t	last_stats_write_time;
+
 
 ConVar	*mp_friendlyfire; 
 ConVar	*mp_freezetime;
@@ -377,288 +278,22 @@ ConVar  *hostname;
 ConVar	*cs_stacking_num_levels;
 ConVar  *phy_pushscale;
 
-int		con_command_index = 0;
-
-
 //RenderMode_t mani_render_mode = kRenderNormal;
 
 bf_write *msg_buffer;
 
-//---------------------------------------------------------------------------------
-// Purpose: a sample 3rd party plugin class
-//---------------------------------------------------------------------------------
-class CAdminPlugin: public IServerPluginCallbacks, public IGameEventListener2
-{
-public:
-	CAdminPlugin();
-	~CAdminPlugin();
-
-	// IServerPluginCallbacks methods
-	virtual bool			Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory );
-	virtual void			Unload( void );
-	virtual void			Pause( void );
-	virtual void			UnPause( void );
-	virtual const char     *GetPluginDescription( void );      
-	virtual void			LevelInit( char const *pMapName );
-	virtual void			ServerActivate( edict_t *pEdictList, int edictCount, int clientMax );
-	virtual void			GameFrame( bool simulating );
-	virtual void			LevelShutdown( void );
-	virtual void			ClientActive( edict_t *pEntity );
-	virtual void			ClientDisconnect( edict_t *pEntity );
-	virtual void			ClientPutInServer( edict_t *pEntity, char const *playername );
-	virtual void			SetCommandClient( int index );
-	virtual void			ClientSettingsChanged( edict_t *pEdict );
-	virtual PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen );
-	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity );
-	virtual PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
-	virtual void FireGameEvent( IGameEvent * event );
-	virtual int GetCommandIndex() { return m_iClientCommandIndex; }
-			PLUGIN_RESULT	ProcessClientCommandSection2(edict_t	*pEntity,const char *pcmd,const char *pcmd2,const char *pcmd3,const char *say_string,char *trimmed_say,char *arg_string,int *say_argc);
-			void			LoadCheatList(void);
-			void			UpdateCurrentPlayerList(void);
-			void			InitCheatPingList(void);
-			char			*GenerateControlString(void);
-			bool			ProcessCheatCVarPing(player_t *player, const char *pcmd);
-
-			void			ProcessCheatCVarCommands(void);
-			PLUGIN_RESULT	ProcessAdminMenu( edict_t *pEntity);
-			void			ShowPrimaryMenu( edict_t *pEntity, int admin_index);
-			void			ProcessChangeMap( player_t *player, int next_index, int argv_offset );
-			void			ProcessSetNextMap( player_t *player, int next_index, int argv_offset );
-			void			ProcessKickPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessSlayPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessRConVote( player_t *admin, int next_index, int argv_offset );
-			void			ProcessQuestionVote( player_t *admin, int next_index, int argv_offset );
-			void			ProcessExplodeAtCurrentPosition( player_t *player);
-			void			ProcessRconCommand( player_t *admin, int next_index, int argv_offset );
-			void			ProcessCExecCommand( player_t *admin, char *command, int next_index, int argv_offset );
-			void			ProcessCExecPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessBanPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset );
-			void			ProcessMenuSystemVoteRandomMap( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuSystemVoteSingleMap( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuSystemVoteBuildMap( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index );
-			void			ProcessMenuSlapPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuBlindPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuSwapPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuSpecPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuFreezePlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuBurnPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuNoClipPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuDrugPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuGimpPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuTimeBombPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuFireBombPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuFreezeBombPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuBeaconPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessMenuMutePlayer( player_t *admin, int next_index, int argv_offset );
-			bool			CanTeleport(player_t *player);
-			void			ProcessMenuTeleportPlayer( player_t *admin, int next_index, int argv_offset );
-			void			ProcessBanOptions( edict_t *pEntity, const char *ban_command );
-			void			ProcessDelayTypeOptions( player_t *player, const char *menu_command);
-			void			ProcessSlapOptions( edict_t *pEntity);
-			void			ProcessBlindOptions( edict_t *pEntity);
-			void			ProcessBanType( player_t *player );
-			void			ProcessKickType( player_t *player );
-			void			ProcessMapManagementType( player_t *player, int admin_index );
-			void			ProcessPlayerManagementType( player_t *player, int admin_index, int next_index );
-			void			ProcessPunishType( player_t *player, int admin_index, int next_index );
-			void			ProcessVoteType( player_t *player, int admin_index, int next_index );
-			void			ProcessConfigOptions( edict_t *pEntity );
-			void			ProcessCExecOptions( edict_t *pEntity );
-			void			ProcessConfigToggle( edict_t *pEntity );
-			void			ProcessPlayerSay( IGameEvent *event);
-			void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);
-			edict_t *		GetEntityForUserID (const int user_id);
-			void			PrettyPrinter(KeyValues *keyValue, int indent);
-			void			ProcessConsoleVotemap( edict_t *pEntity);
-//			void			ProcessMenuVotemap( edict_t *pEntity, int next_index, int argv_offset );
-			void			ProcessPlayerHurt(IGameEvent * event);
-			void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
-			void			ProcessPlayerTeam(IGameEvent * event);
-			void			ProcessPlayerDeath(IGameEvent * event);
-			void			ShowTampered(void);
-			bool			IsPlayerImmuneFromPingCheck(player_t *player);
-			void			ProcessCheatCVars(void);
-			void			ProcessHighPingKick(void);
-			bool			IsTampered (void);
-			bool			HookSayCommand(void);
-			bool			HookChangeLevelCommand(void);
-			
-			PLUGIN_RESULT	ProcessMaVoteRandom( int index,  bool svr_command,  bool say_command, int argc,  char *command_string,  char *delay_type_string, char *number_of_maps_string);
-			PLUGIN_RESULT	ProcessMaVoteExtend( int index,  bool svr_command,  int argc,  char *command_string);
-			PLUGIN_RESULT	ProcessMaVote( int index,  bool svr_command,  bool say_command, int argc,  char *command_string,  char *delay_type_string, char *map1, char *map2, char *map3, char *map4, char *map5, char *map6, char *map7, char *map8, char *map9, char *map10);
-			bool			AddMapToVote(player_t *player, bool svr_command, bool say_command, char *map_name);
-			PLUGIN_RESULT	ProcessMaVoteQuestion(int index,  bool svr_command,  bool say_command, bool menu_command, int argc,  char *command_string,  char *question, char *answer1, char *answer2, char *answer3, char *answer4, char *answer5, char *answer6, char *answer7, char *answer8, char *answer9, char *answer10);
-			bool			AddQuestionToVote(player_t *player, bool svr_command, bool say_command, char *answer);
-			PLUGIN_RESULT	ProcessMaVoteRCon( int index,  bool svr_command,  bool say_command, bool menu_command, int argc,  char *command_string,  char *question,  char *rcon_command);
-			PLUGIN_RESULT	ProcessMaVoteCancel( int index,  bool svr_command,  int argc,  char *command_string);
-			PLUGIN_RESULT	ProcessMaKick( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaBan( int index,  bool svr_command,  bool ban_by_ip, int argc,  char *command_string, char *time_to_ban, char *target_string);
-			PLUGIN_RESULT	ProcessMaUnBan( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaSlay( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaOffset( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaTeamIndex( int index,  bool svr_command,  int argc,  char *command_string);
-			PLUGIN_RESULT	ProcessMaOffsetScan( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *start_range, char *end_range);
-			PLUGIN_RESULT	ProcessMaOffsetScanF( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *start_range, char *end_range);
-			PLUGIN_RESULT	ProcessMaSlap( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *damage_string);
-			PLUGIN_RESULT	ProcessMaCash( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *amount, int mode);
-			PLUGIN_RESULT	ProcessMaHealth( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *amount, int mode);
-			PLUGIN_RESULT	ProcessMaBlind( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *damage_string);
-			PLUGIN_RESULT	ProcessMaFreeze( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaNoClip( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaBurn( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaDrug( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaDecal( int index,  bool svr_command,  int argc,  char *command_string,  char *decal_name);
-			PLUGIN_RESULT	ProcessMaGive( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *item_name);
-			PLUGIN_RESULT	ProcessMaGiveAmmo( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *weapon_slot_str, char *primary_fire_str, char *amount_str, char *noise_str);
-			PLUGIN_RESULT	ProcessMaColour( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *red_str, char *green_str, char *blue_str, char *alpha_str);
-			PLUGIN_RESULT	ProcessMaColourWeapon( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *red_str, char *green_str, char *blue_str, char *alpha_str);
-			PLUGIN_RESULT	ProcessMaGravity( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *gravity_string);
-			PLUGIN_RESULT	ProcessMaRenderMode( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *render_mode_str);
-			PLUGIN_RESULT	ProcessMaRenderFX( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *render_fx_str);
-			PLUGIN_RESULT	ProcessMaGimp( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaTimeBomb( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaFireBomb( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaFreezeBomb( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaBeacon( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaMute( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *toggle);
-			PLUGIN_RESULT	ProcessMaTeleport( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *x_coords, char *y_coords, char *z_coords);
-			PLUGIN_RESULT	ProcessMaPosition( int index,  bool svr_command,  int argc,  char *command_string);
-			PLUGIN_RESULT	ProcessMaSwapTeam( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaSpec( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string);
-			PLUGIN_RESULT	ProcessMaBalance ( int index,  bool svr_command,  bool mute_action);
-			PLUGIN_RESULT	ProcessMaDropC4 ( int index,  bool svr_command);
-			bool			ProcessMaBalancePlayerType ( player_t	*player, bool svr_command, bool mute_action, bool dead_only, bool dont_care);
-			PLUGIN_RESULT	ProcessMaPSay( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *say_string);
-			PLUGIN_RESULT	ProcessMaMSay( int index,  bool svr_command,  int argc,  char *command_string,  char *time_display, char *target_string, char *say_string);
-			PLUGIN_RESULT	ProcessMaSay( int index,  bool svr_command,  int argc,  char *command_string,  char *say_string);
-			PLUGIN_RESULT	ProcessMaCSay( int index,  bool svr_command,  int argc,  char *command_string,  char *say_string);
-			PLUGIN_RESULT	ProcessMaChat( int index,  bool svr_command,  int argc,  char *command_string,  char *say_string);
-			PLUGIN_RESULT	ProcessMaRCon( int index,  bool svr_command,  int argc,  char *command_string,  char *say_string);
-			PLUGIN_RESULT	ProcessMaBrowse( int index,  int argc,  char *command_string,  char *url_string);
-			PLUGIN_RESULT	ProcessMaCExecAll( int index,  bool svr_command,  int argc,  char *command_string,  char *say_string);
-			PLUGIN_RESULT	ProcessMaCExecTeam( int index,  bool svr_command,  int argc,  char *command_string,  char *say_string, int team);
-			PLUGIN_RESULT	ProcessMaCExec( int index,  bool svr_command,  int argc,  char *command_string,  char *target_string, char *say_string);
-			PLUGIN_RESULT	ProcessMaUsers( int index,  bool svr_command,  int argc,  char *command_string,  char *target_players);
-			PLUGIN_RESULT	ProcessMaRates( int index,  bool svr_command,  int argc,  char *command_string,  char *target_players);
-			PLUGIN_RESULT	ProcessMaConfig( int index,  bool svr_command, int argc, char *filter);
-			PLUGIN_RESULT	ProcessMaHelp( int index,  bool svr_command, int argc, char *filter);
-			PLUGIN_RESULT	ProcessMaSaveLoc( int index,  bool svr_command);
-			PLUGIN_RESULT	ProcessMaWar( int index,  bool svr_command,  int argc, char *option);
-			PLUGIN_RESULT	ProcessMaSettings( int index);
-			PLUGIN_RESULT	ProcessMaTimeLeft( int index, bool svr_command);
-			void			TurnOffOverviewMap(void);
-			void			ProcessMapCycleMode (int map_cycle_mode);
-			void			StartSystemVote (void);
-			void			ProcessVotes (void);
-			void			ProcessVoteConfirmation (player_t *player, bool accept);
-			void			ProcessVoteWin (int win_index);
-			void			ProcessMapWin (int win_index);
-			void			ProcessQuestionWin (int win_index);
-			void			ProcessExtendWin (int win_index);
-			void			ProcessRConWin (int win_index);
-			bool			IsYesNoVote (void);
-			void			ProcessMenuSystemVotemap( player_t *player, int next_index, int argv_offset );
-			void			BuildRandomMapVote( int max_maps);
-			void			ProcessPlayerVoted( player_t *player, int vote_index);
-			void			ProcessBuildUserVoteMaps(void);
-			void			ShowCurrentUserMapVotes( player_t *player, int votes_required );
-			void			ProcessMaUserVoteMap(player_t *player, int argc, const char *map_id);
-			void			ProcessUserVoteMapWin(int map_index);
-			bool			CanWeUserVoteMapYet( player_t *player );
-			bool			CanWeUserVoteMapAgainYet( player_t *player );
-			int				GetVotesRequiredForUserVote( bool player_leaving, float percentage, int minimum_votes );
-			void			ProcessMenuUserVoteMap( player_t *player, int next_index, int argv_offset );
-			void			ShowCurrentUserKickVotes( player_t *player, int votes_required );
-			void			ShowCurrentRockTheVoteMaps( player_t *player);
-			void			ProcessRockTheVoteWin (int win_index);
-			void			ProcessRockTheVoteNominateMap(player_t *player);
-			bool			CanWeRockTheVoteYet(player_t *player);
-			bool 			CanWeNominateAgainYet( player_t *player );
-			void			BuildRockTheVoteMapVote (void);
-			void 			ProcessStartRockTheVote(void);
-			void			ProcessMenuRockTheVoteNominateMap( player_t *player, int next_index, int argv_offset );
-			void			ProcessMaRockTheVoteNominateMap(player_t *player, int argc, const char *map_id);
-			void			ProcessMaRockTheVote(player_t *player);
-			void			ProcessMaUserVoteKick(player_t *player, int argc, const char *user_id);
-			void			ProcessUserVoteKickWin(player_t *player);
-			bool			CanWeUserVoteKickYet( player_t *player );
-			bool			CanWeUserVoteKickAgainYet( player_t *player );
-			void			ProcessMenuUserVoteKick( player_t *player, int next_index, int argv_offset );
-			void			ShowCurrentUserBanVotes( player_t *player, int votes_required );
-			void			ProcessMaUserVoteBan(player_t *player, int argc, const char *user_id);
-			void			ProcessUserVoteBanWin(player_t *player);
-			bool			CanWeUserVoteBanYet( player_t *player );
-			bool			CanWeUserVoteBanAgainYet( player_t *player );
-			void			ProcessMenuUserVoteBan( player_t *player, int next_index, int argv_offset );
-
-private:
-
-	int m_iClientCommandIndex;
-	rcon_t		*rcon_list;
-	vote_rcon_t	*vote_rcon_list;
-	vote_question_t	*vote_question_list;
-	map_vote_t	map_vote[MANI_MAX_PLAYERS];
-	ping_immunity_t	*ping_immunity_list;
-	map_t		*user_vote_map_list;
-
-	swear_t		*swear_list;
-
-	cexec_t		*cexec_list;
-	cexec_t		*cexec_t_list;
-	cexec_t		*cexec_ct_list;
-	cexec_t		*cexec_spec_list;
-	cexec_t		*cexec_all_list;
-
-	lang_trans_t		*lang_trans_list;
-
-	gimp_t				*gimp_phrase_list;
-
-	int	rcon_list_size;
-	int	vote_rcon_list_size;
-	int	vote_question_list_size;
-	int	swear_list_size;
-	int	ping_immunity_list_size;
-	int user_vote_map_list_size;
-
-	int	cexec_list_size;
-	int	cexec_t_list_size;
-	int	cexec_ct_list_size;
-	int	cexec_spec_list_size;
-	int	cexec_all_list_size;
-
-	int	lang_trans_list_size;
-
-	int gimp_phrase_list_size;
-
-	float	map_start_time;
-	float	last_cheat_check_time;
-
-	bool vote_started;
-	int	level_changed;
-	int	message_type;
-	float	test_val;
-	time_t	last_stats_write_time;
-
-
-};
 
 // 
 // The plugin is a static singleton that is exported as an interface
 //
 // Don't forget to make an instance
-CAdminPlugin g_ManiAdminPlugin;
-IServerPluginCallbacks *gpManiAdminPlugin;
 
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CAdminPlugin, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, g_ManiAdminPlugin );
 
 //---------------------------------------------------------------------------------
 // Purpose: constructor/destructor
 //---------------------------------------------------------------------------------
 CAdminPlugin::CAdminPlugin()
 {
-	m_iClientCommandIndex = 0;
 	vote_started = false;
 	rcon_list = NULL;
 	rcon_list_size = 0;
@@ -746,6 +381,7 @@ CAdminPlugin::CAdminPlugin()
 
 	InitMaps();
 	InitPlayerSettingsLists();
+	gpManiIGELCallback = this;
 	gpManiAdminPlugin = this;
 }
 
@@ -762,198 +398,14 @@ CAdminPlugin::~CAdminPlugin()
 //---------------------------------------------------------------------------------
 // Purpose: called when the plugin is loaded, load the interface we need from the engine
 //---------------------------------------------------------------------------------
-bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory )
+bool CAdminPlugin::Load(void)
 {
-	Msg("********************************************************\n");
-	Msg(" Loading ");
-	Msg("%s\n", mani_version);
-	Msg("\n");
-
-	if ((playerinfomanager = (IPlayerInfoManager *)gameServerFactory(INTERFACEVERSION_PLAYERINFOMANAGER,NULL)))
-	{
-		Msg("Loaded playerinfomanager interface at %p\n", playerinfomanager);
-	} 
-	else 
-	{
-		Msg( "Failed to load playerinfomanager\n" );
-		return false;
-	}
-
-	// get the interfaces we want to use
-	if((engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL)))
-	{
-		Msg("Loaded engine interface at %p\n", engine);
-	} 
-	else 
-	{
-		Warning( "Failed to load engine interface\n" );
-		return false;
-	}
-
-	if ((gameeventmanager = (IGameEventManager2 *)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)))
-	{
-		Msg("Loaded events manager interface at %p\n", gameeventmanager);
-	} 
-	else 
-	{
-		Msg( "Failed to events manager interface\n" );
-		return false;
-	}
-
-	if ((filesystem = (IFileSystem*)interfaceFactory(FILESYSTEM_INTERFACE_VERSION, NULL)))
-	{
-		Msg("Loaded filesystem interface at %p\n", filesystem);
-	} 
-	else 
-	{
-		Msg( "Failed to load filesystem interface\n" );
-		return false;
-	}
-
-	if ((helpers = (IServerPluginHelpers*)interfaceFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL)))
-	{
-		Msg("Loaded helpers interface at %p\n", helpers);
-	} 
-	else 
-	{
-		Msg( "Failed to load helpers interface\n" );
-		return false;
-	}
-
-	if ((networkstringtable = (INetworkStringTableContainer *)interfaceFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL)))
-	{
-		Msg("Loaded networkstringtable interface at %p\n", networkstringtable);
-	} 
-	else 
-	{
-		Msg( "Failed to load networkstringtable interface\n" );
-		return false;
-	}
-
-	if ((enginetrace = (IEngineTrace *)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL)))
-	{
-		Msg("Loaded enginetrace interface\n");
-	} 
-	else 
-	{
-		Msg( "Failed to load enginetrace interface\n" );
-		return false;
-	}
-
-	if ((randomStr = (IUniformRandomStream *)interfaceFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL)))
-	{
-		Msg("Loaded random stream interface at %p\n", randomStr);
-	} 
-	else 
-	{
-		Msg( "Failed to load random stream interface\n" );
-		return false;
-	}
-
-	serverents = (IServerGameEnts*)gameServerFactory(INTERFACEVERSION_SERVERGAMEENTS, NULL);
-	if(serverents) 
-	{
-		Msg("Loaded IServerGameEnts interface at %p\n", serverents);
-	} 
-	else 
-	{
-		Msg( "Failed to load IServerGameEnts interface\n" );
-	}
-
-	effects = (IEffects*)gameServerFactory(IEFFECTS_INTERFACE_VERSION, NULL);
-	if(effects) 
-	{
-		Msg("Loaded effects interface at %p\n", effects);
-	} 
-	else 
-	{
-		Msg( "Failed to load effects interface\n" );
-	}
-
-	esounds = (IEngineSound*)interfaceFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL);
-	if (esounds)
-	{
-		Msg("Loaded sounds interface at %p\n", esounds);
-	} 
-	else 
-	{
-		Msg( "Failed to load sounds interface\n" );
-	}
-
-
-	cvar = (ICvar*)interfaceFactory(VENGINE_CVAR_INTERFACE_VERSION, NULL);
-	if(cvar)
- 	{
-		Msg("Loaded cvar interface at %p\n", cvar);
-	} 
-	else 
-	{
-		Msg( "Failed to load cvar interface\n" );
-		return false;
-	}
-
-	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
-	if(serverdll)
- 	{
-		Msg("Loaded servergamedll interface at %p\n", serverdll);
-	} 
-	else 
-	{
-		// Hack for unreleased interface version
-		Msg("Falling back to ServerGameDLL003\n");
-		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-		if(serverdll)
- 		{
-			Msg("Loaded servergamedll interface at %p\n", serverdll);
-		}		
-		else
-		{
-			// Hack for interface 004 not working on older mods
-			Msg("Falling back to ServerGameDLL003\n");
-			serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-			if(serverdll)
- 			{
-				Msg("Loaded servergamedll interface at %p\n", serverdll);
-			}		
-			else		
-			{
-				Msg( "Failed to load servergamedll interface\n" );
-				return false;
-			}
-		}
-	}
-
-	voiceserver = (IVoiceServer*)interfaceFactory(INTERFACEVERSION_VOICESERVER, NULL);
-	if (voiceserver)
-	{
-		Msg("Loaded voiceserver interface at %p\n", voiceserver);
-	} 
-	else 
-	{
-		Msg( "Failed to voiceserver interface\n" );
-	}
-
-	partition = (ISpatialPartition*)interfaceFactory(INTERFACEVERSION_SPATIALPARTITION, NULL);
-	if (partition)
-	{
-		Msg("Loaded partition interface at %p\n", partition);
-	} 
-	else 
-	{
-		Msg( "Failed to partition interface\n" );
-	}
-
-	Msg("********************************************************\n");
 
 	if (IsTampered())
 	{
 		ShowTampered();
 		return false;
 	}
-
-
-	gpGlobals = playerinfomanager->GetGlobalVars();
-	InitCVars( interfaceFactory ); // register any cvars we have defined
 
 	gpManiGameType->Init();
 
@@ -1002,6 +454,17 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 #endif
 	}
 
+#ifdef SOURCEMM
+	if (gpManiGameType->GetAdvancedEffectsAllowed())
+	{
+		temp_ents_cc = SH_GET_CALLCLASS(temp_ents);
+	}
+	else
+	{
+		temp_ents_cc = NULL;
+	}
+
+#endif
 
 	const char *game_type = serverdll->GetGameDescription();
 
@@ -1188,24 +651,11 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 	//HOOKVFUNC(engine, 0, OrgEngineChangeLevel, ManiChangeLevelHook);
 	//HOOKVFUNC(engine, 43, OrgEngineEntityMessageBegin, ManiEntityMessageBeginHook);
 	//HOOKVFUNC(engine, 44, OrgEngineMessageEnd, ManiMessageEndHook);
-
-	if (voiceserver && gpManiGameType->IsVoiceAllowed() && !g_PluginLoadedOnce)
-	{
-		Msg("Hooking voiceserver\n");
-		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
-	}
-
-	if (effects && gpManiGameType->GetAdvancedEffectsAllowed() && !g_PluginLoadedOnce)
-	{
-		Msg("Hooking decals\n");
-		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
-	}
-
-	if (!g_PluginLoadedOnce && gpManiGameType->IsSpawnPointHookAllowed())
-	{
-		Msg("Hooking spawnpoints\n");
-		HOOKVFUNC(serverdll, gpManiGameType->GetSpawnPointHookOffset(), org_LevelInit, myLevelInit);
-	}
+#ifdef SOURCEMM
+	g_ManiSMMHooks.HookVFuncs();
+#else
+	HookVFuncs();
+#endif
 
 	mysql_thread = new ManiMySQLThread();
 
@@ -1214,6 +664,25 @@ bool CAdminPlugin::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn ga
 
 	g_PluginLoaded = true;
 	g_PluginLoadedOnce = true;
+
+	if (gpManiAdminPlugin->IsTampered())
+	{
+		gpManiAdminPlugin->ShowTampered();
+		return true;
+	}
+	else
+	{
+		gameeventmanager->AddListener( gpManiIGELCallback, "weapon_fire", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "round_start", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "round_end", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "round_freeze_end", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_hurt", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_team", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_death", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_say", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_spawn", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_team", true );
+	}
 
 	return true;
 }
@@ -1238,10 +707,12 @@ void CAdminPlugin::Unload( void )
 	FreeTeamList();
 	FreeTKPunishments();
 
-	mysql_thread->Unload();
-	delete mysql_thread;
-	mysql_thread = NULL;
-
+	if (mysql_thread)
+	{
+		mysql_thread->Unload();
+		delete mysql_thread;
+		mysql_thread = NULL;
+	}
 
 	FreeList((void **) &rcon_list, &rcon_list_size);
 	FreeList((void **) &vote_rcon_list, &vote_rcon_list_size);
@@ -1267,10 +738,9 @@ void CAdminPlugin::Unload( void )
 
 	trigger_changemap = false;
 	FreeLanguage();
-
-	gameeventmanager->RemoveListener( this ); // make sure we are unloaded from the event system
-
 	g_PluginLoaded = false;
+	gameeventmanager->RemoveListener(gpManiIGELCallback);
+
 }
 
 //---------------------------------------------------------------------------------
@@ -1300,8 +770,6 @@ const char *CAdminPlugin::GetPluginDescription( void )
 {
 	return mani_version;
 }
-
-
 
 //---------------------------------------------------------------------------------
 // Purpose: called on level start
@@ -1823,24 +1291,28 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	ProcessPlayerSettings();
 	Msg("Player Lists Loaded in %.4f seconds\n", ManiGetTimerDuration(timer_index));
 
-	if (IsTampered())
+	if (this->IsTampered())
 	{
-		ShowTampered();
+		this->ShowTampered();
 		return;
 	}
 	else
 	{
-		gameeventmanager->AddListener( this, "weapon_fire", true );
-		gameeventmanager->AddListener( this, "round_start", true );
-		gameeventmanager->AddListener( this, "round_end", true );
-		gameeventmanager->AddListener( this, "round_freeze_end", true );
-		gameeventmanager->AddListener( this, "player_hurt", true );
-		gameeventmanager->AddListener( this, "player_team", true );
-		gameeventmanager->AddListener( this, "player_death", true );
-		gameeventmanager->AddListener( this, "player_say", true );
-//		gameeventmanager->AddListener( this, "player_changename", true );
-		gameeventmanager->AddListener( this, "player_spawn", true );
-		gameeventmanager->AddListener( this, "player_team", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "weapon_fire", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "round_start", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "round_end", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "round_freeze_end", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_hurt", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_team", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_death", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_say", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_spawn", true );
+		gameeventmanager->AddListener( gpManiIGELCallback, "player_team", true );
+	}
+
+	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		ResetWeaponCount();
 	}
 
 	Msg("********************************************************\n");
@@ -1972,6 +1444,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	//....*/
 //	mysql_close( myData ) ;
 //	while(1);
+
 }
 
 //---------------------------------------------------------------------------------
@@ -2228,7 +1701,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 //---------------------------------------------------------------------------------
 void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple times per map change
 {
-	gameeventmanager->RemoveListener( this );
+	gameeventmanager->RemoveListener(gpManiIGELCallback);
 }
 
 //---------------------------------------------------------------------------------
@@ -2276,6 +1749,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if (!player.is_bot)
 	{
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_JOINSERVER);
+		ForceSkinCExec(&player);
 	}
 }
 
@@ -2542,14 +2016,6 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 		// Execute any post-map configs
 		ExecuteCronTabs(true);
 	}	
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: called on level start
-//---------------------------------------------------------------------------------
-void CAdminPlugin::SetCommandClient( int index )
-{
-	m_iClientCommandIndex = con_command_index = index;
 }
 
 //---------------------------------------------------------------------------------
@@ -7772,36 +7238,6 @@ void CAdminPlugin::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_ind
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Useless, no edict passed in
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT CAdminPlugin::NetworkIDValidated( const char *pszUserName, const char *pszNetworkID )
-{
-//Msg("Mani -> Network ID [%s] Validated\n", pszNetworkID);
-//	player_t player;
-//
-//	if (ProcessPluginPaused()) return PLUGIN_CONTINUE;
-//
-//	Q_strcpy(player.steam_id,pszNetworkID);
-//	Q_strcpy(player.name, pszUserName);
-//
-//	if (mani_stats.GetInt() == 1)
-//	{
-//		if (mani_stats_by_steam_id.GetInt() == 1)
-//		{
-//			AddPlayerToRankList(&player);
-//		}
-//		else
-//		{
-//			AddPlayerNameToRankList(&player); 
-//		}
-//	}
-
-	return PLUGIN_CONTINUE;
-}
-
-
-
-//---------------------------------------------------------------------------------
 // Purpose: called when an event is fired
 //---------------------------------------------------------------------------------
 void CAdminPlugin::FireGameEvent( IGameEvent * event )
@@ -7897,10 +7333,6 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 		}
 
 		round_number ++;
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
-		{
-			RemoveRestrictedWeapons();
-		}
 
 		gpManiGhost->RoundStart();
 	}
@@ -7918,6 +7350,11 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 	}
 	else if (FStrEq(eventname, "round_end"))
 	{
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		{
+			ResetWeaponCount();
+		}
+
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
 			int winning_team = event->GetInt("winner", -1);
@@ -8019,6 +7456,11 @@ void CAdminPlugin::FireGameEvent( IGameEvent * event )
 		if (!gpManiGameType->IsTeamPlayAllowed())
 		{
 			SkinTeamJoin(&spawn_player);
+		}
+
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		{
+			RemoveRestrictedWeapons(&spawn_player);
 		}
 
 		// Give grenade to player if unlimited grenades
@@ -8778,7 +8220,10 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 		ProcessDeathBeam(&attacker, &victim);
 	}
 
-	ProcessTKDeath(&attacker, &victim);
+	if (!gpManiWarmupTimer->IgnoreTK())
+	{
+		ProcessTKDeath(&attacker, &victim);
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -8982,9 +8427,9 @@ bool CAdminPlugin::HookSayCommand(void)
 	bool	team_say;
 	int say_argc;
 
-	if (engine->IsDedicatedServer() && m_iClientCommandIndex == -1) return true;
+	if (engine->IsDedicatedServer() && con_command_index == -1) return true;
 
-	player.index = m_iClientCommandIndex + 1;
+	player.index = con_command_index + 1;
 	if (!FindPlayerByIndex(&player))
 	{
 		Msg("Did not find player\n");
@@ -9267,14 +8712,14 @@ bool CAdminPlugin::HookSayCommand(void)
 	// Check anti spam
 	if (!war_mode && mani_chat_flood_time.GetFloat() > 0.1)
 	{
-		if (chat_flood[m_iClientCommandIndex] > gpGlobals->curtime)
+		if (chat_flood[con_command_index] > gpGlobals->curtime)
 		{
 			SayToPlayer(&player, "%s", mani_chat_flood_message.GetString());
-			chat_flood[m_iClientCommandIndex] = gpGlobals->curtime + mani_chat_flood_time.GetFloat() + 3.0;
+			chat_flood[con_command_index] = gpGlobals->curtime + mani_chat_flood_time.GetFloat() + 3.0;
 			return false;
 		}
 
-		chat_flood[m_iClientCommandIndex] = gpGlobals->curtime + mani_chat_flood_time.GetFloat();
+		chat_flood[con_command_index] = gpGlobals->curtime + mani_chat_flood_time.GetFloat();
 	}
 
 	return true;
@@ -10166,8 +9611,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 		return PLUGIN_STOP;
 	}
 
-	int offset = gpManiGameType->GetCashOffset();
-
 	// Convert to float and int
 	float fAmount = Q_atof(amount);
 	int iAmount = Q_atoi(amount);
@@ -10194,32 +9637,31 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash
 			continue;
 		}
 
-		int *target_cash;
-		target_cash = ((int *)target_player_list[i].entity->GetUnknown() + offset);
+		int target_cash = Prop_GetAccount(target_player_list[i].entity);
 
 		int new_cash = 0;
 
 		switch (mode)
 		{
 			case (MANI_SET_CASH) :	new_cash = iAmount; break;
-			case (MANI_GIVE_CASH) :	new_cash = iAmount + *target_cash; break;
-			case (MANI_GIVE_CASH_PERCENT) :	new_cash = (int) (((float) *target_cash) * (fAmount + 1.0)); break;
-			case (MANI_TAKE_CASH) :	new_cash = *target_cash - iAmount; break;
-			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) *target_cash) * fAmount); break;
-			default : new_cash = *target_cash;
+			case (MANI_GIVE_CASH) :	new_cash = iAmount + target_cash; break;
+			case (MANI_GIVE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * (fAmount + 1.0)); break;
+			case (MANI_TAKE_CASH) :	new_cash = target_cash - iAmount; break;
+			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * fAmount); break;
+			default : new_cash = target_cash;
 		}
 			
 		if (new_cash < 0) new_cash = 0;
 		else if (new_cash > 16000) new_cash = 16000;
 
-		LogCommand (player.entity, "%s : Player [%s] [%s] had [%i] cash, now has [%i] cash\n", command_string, target_player_list[i].name, target_player_list[i].steam_id, *target_cash, new_cash);
+		LogCommand (player.entity, "%s : Player [%s] [%s] had [%i] cash, now has [%i] cash\n", command_string, target_player_list[i].name, target_player_list[i].steam_id, target_cash, new_cash);
 
 		if (!svr_command || mani_mute_con_command_spam.GetInt() == 0)
 		{
 			AdminSayToAll(&player, mani_admincash_anonymous.GetInt(), "changed player %s cash reserves", target_player_list[i].name); 
 		}
 
-		*target_cash = new_cash;
+		Prop_SetAccount(target_player_list[i].entity, new_cash);
 	}
 
 	return PLUGIN_STOP;
@@ -19090,7 +18532,7 @@ bool	CAdminPlugin::IsTampered(void)
 //Msg("Offset required %i\n", checksum - plus1);
 //while(1);
 
-	if (checksum != (plus1 + 8400))
+	if (checksum != (plus1 + 9840))
 	{
 		return true;
 	}
@@ -19099,6 +18541,7 @@ bool	CAdminPlugin::IsTampered(void)
 	return false;
 }
 
+#ifndef SOURCEMM
 //**************************************************************************************************
 // Special hook for say commands
 //**************************************************************************************************
@@ -19338,4 +18781,4 @@ public:
 };
 
 CChangeLevelHook g_ChangeLevelHook;
-
+#endif
