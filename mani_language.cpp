@@ -42,15 +42,19 @@
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
 //#include "convar.h"
+#include "mani_main.h"
 #include "mani_language.h"
 #include "mani_output.h"
 #include "mani_memory.h"
 #include "mani_parser.h"
 #include "mani_convar.h"
 
-#define MANI_MAX_TRANSLATIONS (2500)
+#define MANI_MAX_TRANSLATIONS (3500)
+#define MANI_LANG_VER_REQUIRED (7)
 
 extern IFileSystem	*filesystem;
+
+static char no_translation[32] = " MT ";
 
 struct lang_trans_t
 {
@@ -89,7 +93,7 @@ bool LoadLanguage(void)
 	{
 		correct_version = false;
 	}
-	else if (strcmp(lang_list[1].translation, MANI_LANG_VER_REQUIRED) != 0)
+	else if (atoi(lang_list[1].translation) < MANI_LANG_VER_REQUIRED)
 	{
 		correct_version = false;
 	}
@@ -179,7 +183,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 //	MMsg("Attempting to load %s.cfg\n", language_type);
 
 	// Get the language type we are trying to load
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/%s.cfg", mani_path.GetString(), language_type);
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/%s.cfg", mani_path.GetString(), language_type);
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -266,7 +270,7 @@ void GetLanguageType(char *language)
 	FileHandle_t file_handle;
 
 	// Get the language type we are trying to load
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/language.cfg", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/language.cfg", mani_path.GetString());
 
 	MMsg("Attempting to load [%s]\n", base_filename);
 
@@ -403,18 +407,18 @@ char *error_string
 		i ++;
 	}
 
-	*trans_no = Q_atoi(trans_no_string);
+	*trans_no = atoi(trans_no_string);
 	if (*trans_no == 0)
 	{
 		// Bad string conversion
-		Q_snprintf(error_string, 1024, "Bad translation id [%s]", trans_no_string);
+		snprintf(error_string, 1024, "Bad translation id [%s]", trans_no_string);
 		return NULL;
 	}
 
 	i ++;
 	if (in[i] == '\0')
 	{
-		Q_snprintf(error_string, 1024, "Only translation id [%s] in line", trans_no_string);
+		snprintf(error_string, 1024, "Only translation id [%s] in line", trans_no_string);
 		return NULL;
 	}
 
@@ -428,7 +432,7 @@ char *error_string
 		{
 			if (in[i] == '\0') 
 			{
-				Q_snprintf(error_string, 1024, "Premature end of line while reading parameters, translation id [%s]", trans_no_string);
+				snprintf(error_string, 1024, "Premature end of line while reading parameters, translation id [%s]", trans_no_string);
 				return NULL;
 			}
 
@@ -447,7 +451,7 @@ char *error_string
 	i++;
 	if (in[i] == '\0') 
 	{
-		Q_snprintf(error_string, 1024, "Premature end of line after reading parameters, translation id [%s]", trans_no_string);
+		snprintf(error_string, 1024, "Premature end of line after reading parameters, translation id [%s]", trans_no_string);
 		return NULL;
 	}
 
@@ -485,12 +489,15 @@ char *error_string
 // Purpose: Gets translation without formatting parameters. Use this if you can
 //          as it is much faster than the fmt version
 //---------------------------------------------------------------------------------
-char *Translate(int translate_id)
+char *Translate(player_t *player_ptr, int translate_id)
 {
+	static	char final_string[64];
+
 	if (lang_list[translate_id].translation == NULL)
 	{
 		MMsg("WARNING TRANSLATION ID [%05i] DOES NOT EXIST !!!\n", translate_id);
-		return NULL;
+		snprintf(final_string, sizeof(final_string), "Missing lang [%i]", translate_id);
+		return final_string;
 	}
 
 	return (lang_list[translate_id].translation);
@@ -502,6 +509,7 @@ char *Translate(int translate_id)
 //---------------------------------------------------------------------------------
 char *Translate
 (
+ player_t *player_ptr, 
  int translate_id, 
  const char *fmt1, 
  ...
@@ -520,7 +528,7 @@ char *Translate
 	if (translation_ptr == NULL)
 	{
 		MMsg("WARNING TRANSLATION ID [%05i] DOES NOT EXIST !!!\n", translate_id);
-		Q_snprintf(final_string, sizeof(final_string), "Missing lang [%i]", translate_id);
+		snprintf(final_string, sizeof(final_string), "Missing lang [%i]", translate_id);
 		return final_string;
 	}
 
@@ -541,7 +549,7 @@ char *Translate
 			if (!ExtractFmtToken(fmt1, fmt_parameter[param_size], &index))
 			{
 				MMsg("Error in fmt string [%s] for string [%s] translation id [%i]\n", fmt1, translation_ptr, translate_id);
-				Q_snprintf(final_string, sizeof(final_string), "Lang error [%i]", translate_id);
+				snprintf(final_string, sizeof(final_string), "Lang error [%i]", translate_id);
 				return (final_string);
 			}
 
@@ -566,12 +574,12 @@ char *Translate
 
 			switch (fmt_parameter[i][param_len])
 			{
-			case 's' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], (char *) va_arg(argptr, char *)); break;
-			case 'i' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
-			case 'f' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], (float) va_arg(argptr, double)); break;
-			case 'd' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
-			case 'X' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
-			case 'c' : Q_snprintf(converted_parameter[i], 2048, fmt_parameter[i], (char) va_arg(argptr, int)); break;
+			case 's' : snprintf(converted_parameter[i], 2048, fmt_parameter[i], (char *) va_arg(argptr, char *)); break;
+			case 'i' : snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
+			case 'f' : snprintf(converted_parameter[i], 2048, fmt_parameter[i], (float) va_arg(argptr, double)); break;
+			case 'd' : snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
+			case 'X' : snprintf(converted_parameter[i], 2048, fmt_parameter[i], va_arg(argptr, int)); break;
+			case 'c' : snprintf(converted_parameter[i], 2048, fmt_parameter[i], (char) va_arg(argptr, int)); break;
 			default :	{
 						MMsg("Error in fmt string [%s] for string [%s] translation id [%i]\n", fmt1, translation_ptr, translate_id);
 						va_end(argptr);
@@ -621,6 +629,72 @@ char *Translate
 	return (final_string);
 }
 
+char *Translate
+(
+ player_t *player_ptr,
+ CTranslate& trans_obj
+ )
+{
+	static	char final_string[4096];
+	int		index = 0;
+	int		final_index = 0;
+	int		param_size = 0;
+
+	const int	translate_id = trans_obj.GetID();
+	char *translation_ptr = lang_list[translate_id].translation;
+
+	if (translation_ptr == NULL)
+	{
+		MMsg("WARNING TRANSLATION ID [%05i] DOES NOT EXIST !!!\n", translate_id);
+		snprintf(final_string, sizeof(final_string), "Missing lang [%i]", translate_id);
+		return final_string;
+	}
+
+	param_size = trans_obj.GetSize();
+	if (param_size == 0)
+	{
+		return translation_ptr;
+	}
+
+	index = 0;
+
+	Q_strcpy(final_string, "");
+
+	// Build our final string
+	while (translation_ptr[index] != '\0')
+	{
+		if (translation_ptr[index] == '%' && translation_ptr[index + 1] == '%')
+		{
+			final_string[final_index++] = '%';
+			index+=2;
+			continue;
+		}
+
+		if (translation_ptr[index] == '%' && translation_ptr[index + 1] != '\0')
+		{
+			int parameter_index = GetParamIndex(translation_ptr, &index);
+			if (parameter_index < param_size)
+			{
+				const char *parameter_str = trans_obj.GetString(parameter_index);
+				int param_len = Q_strlen(parameter_str);
+
+				for (int i = 0; i < param_len; i++)
+				{
+					final_string[final_index ++] = parameter_str[i];
+				}
+
+				continue;
+			}
+		}
+	
+		final_string[final_index++] = translation_ptr[index++];
+	}
+
+	final_string[final_index] = '\0';
+
+	return (final_string);
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: Gets our %1p, %20p etc parameter index
 //---------------------------------------------------------------------------------
@@ -650,7 +724,7 @@ int	GetParamIndex
 		*index = *index + 2;
 	}
 
-	param_number = Q_atoi(param_string);
+	param_number = atoi(param_string);
 	if (param_number <= 0)
 	{
 		// Just in case

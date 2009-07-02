@@ -63,6 +63,7 @@ private:
 		int total_deaths;
 		float last_hit_time;
 		int	hit_groups[MANI_MAX_LOG_DODS_HITGROUPS];
+		bool last_hit_headshot;
 	};
 
 	struct player_info_t

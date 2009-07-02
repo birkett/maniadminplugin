@@ -28,6 +28,7 @@
 
 #include "mani_player.h"
 #include "mani_main.h"
+#include "mani_menu.h"
 
 #define MANI_MAX_EVENTS (24)
 #define MANI_EVENT_HASH_SIZE (19)
@@ -63,64 +64,15 @@ public:
 	PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	// End of callbacks
 
-	void			LoadCheatList(void);
-	void			UpdateCurrentPlayerList(void);
-	void			InitCheatPingList(void);
-	char			*GenerateControlString(void);
-	bool			ProcessCheatCVarPing(player_t *player, const char *pcmd);
-
-	void			ProcessCheatCVarCommands(void);
-	PLUGIN_RESULT	ProcessAdminMenu( edict_t *pEntity);
-	void			ShowPrimaryMenu( edict_t *pEntity, int admin_index);
-	void			ProcessChangeMap( player_t *player, int next_index, int argv_offset );
-	void			ProcessSetNextMap( player_t *player, int next_index, int argv_offset );
-	void			ProcessKickPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessSlayPlayer( player_t *admin, int next_index, int argv_offset );
 	void			ProcessExplodeAtCurrentPosition( player_t *player);
-	void			ProcessRconCommand( player_t *admin, int next_index, int argv_offset );
-	void			ProcessCExecCommand( player_t *admin, char *command, int next_index, int argv_offset );
-	void			ProcessCExecPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessBanPlayer( player_t *admin, const char *ban_command, int next_index, int argv_offset );
-	void			ProcessMenuSlapPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuBlindPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuSwapPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuSpecPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuFreezePlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuBurnPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuNoClipPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuDrugPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuGimpPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuTimeBombPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuFireBombPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuFreezeBombPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuBeaconPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessMenuMutePlayer( player_t *admin, int next_index, int argv_offset );
 	bool			CanTeleport(player_t *player);
-	void			ProcessMenuTeleportPlayer( player_t *admin, int next_index, int argv_offset );
-	void			ProcessBanOptions( edict_t *pEntity, const char *ban_command );
-	void			ProcessDelayTypeOptions( player_t *player, const char *menu_command);
-	void			ProcessSlapOptions( edict_t *pEntity);
-	void			ProcessBlindOptions( edict_t *pEntity);
-	void			ProcessBanType( player_t *player );
-	void			ProcessKickType( player_t *player );
-	void			ProcessMapManagementType( player_t *player, int admin_index );
-	void			ProcessPlayerManagementType( player_t *player, int admin_index, int next_index );
-	void			ProcessPunishType( player_t *player, int admin_index, int next_index );
-	void			ProcessVoteType( player_t *player, int admin_index, int next_index );
-	void			ProcessConfigOptions( edict_t *pEntity );
-	void			ProcessCExecOptions( edict_t *pEntity );
-	void			ProcessConfigToggle( edict_t *pEntity );
 	void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);
-	void			PrettyPrinter(KeyValues *keyValue, int indent);
 	void			ProcessConsoleVotemap( edict_t *pEntity);
 	//			void			ProcessMenuVotemap( edict_t *pEntity, int next_index, int argv_offset );
 	void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
 	void			ProcessPlayerTeam(IGameEvent * event);
 	void			ProcessPlayerDeath(IGameEvent * event);
 	void			ProcessDODSPlayerDeath(IGameEvent * event);
-	void			ShowTampered(void);
-	void			ProcessCheatCVars(void);
-	bool			IsTampered (void);
 	bool			HookSayCommand(bool team_say);
 	bool			HookChangeLevelCommand(void);
 
@@ -167,20 +119,16 @@ public:
 	PLUGIN_RESULT	ProcessMaMute(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaTeleport(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaPosition(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaSwapTeam(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaSpec(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaBalance (player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaDropC4 (player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	bool			ProcessMaBalancePlayerType ( player_t	*player_ptr, bool mute_action, bool dead_only, bool dont_care);
-	PLUGIN_RESULT	ProcessMaPSay(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaMSay(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaSay(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaCSay(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaChat(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaRCon(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaBrowse(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaCExec(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaCExecT(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaCExecCT(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaCExecAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaCExecSpec(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaUsers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaAdmins(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaRates(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaConfig(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaSaveLoc(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
@@ -240,6 +188,45 @@ private:
 	int		max_events;
 	bool	event_duplicate;
 };
+
+MENUALL_DEC(PrimaryMenu);
+MENUALL_DEC(RCon);
+MENUALL_DEC(MapManagement);
+MENUALL_DEC(PlayerManagement);
+MENUALL_DEC(PunishType);
+MENUALL_DEC(VoteType);
+MENUALL_DEC(VoteDelayType);
+MENUALL_DEC(BanOptions);
+MENUALL_DEC(SlapOptions);
+MENUALL_DEC(BlindOptions);
+MENUALL_DEC(BanType);
+MENUALL_DEC(KickType);
+MENUALL_DEC(CExecOptions);
+MENUALL_DEC(ConfigOptions);
+MENUALL_DEC(BanPlayer);
+
+MENUALL_DEC(ChangeMap);
+MENUALL_DEC(SetNextMap);
+MENUALL_DEC(KickPlayer);
+MENUALL_DEC(SlapMore);
+MENUALL_DEC(SlapPlayer);
+MENUALL_DEC(BlindPlayer);
+MENUALL_DEC(FreezePlayer);
+MENUALL_DEC(BurnPlayer);
+MENUALL_DEC(DrugPlayer);
+MENUALL_DEC(NoClipPlayer);
+MENUALL_DEC(GimpPlayer);
+MENUALL_DEC(TimeBombPlayer);
+MENUALL_DEC(FireBombPlayer);
+MENUALL_DEC(FreezeBombPlayer);
+MENUALL_DEC(BeaconPlayer);
+MENUALL_DEC(MutePlayer);
+MENUALL_DEC(TeleportPlayer);
+MENUALL_DEC(SlayPlayer);
+MENUALL_DEC(CExec);
+MENUALL_DEC(CExecPlayer);
+
+
 
 extern CAdminPlugin g_ManiAdminPlugin;
 extern CAdminPlugin *gpManiAdminPlugin;

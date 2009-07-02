@@ -83,20 +83,21 @@
 #include "mani_log_css_stats.h"
 #include "mani_log_dods_stats.h"
 #include "mani_mostdestructive.h"
+#include "mani_messagemode.h"
 #include "mani_trackuser.h"
 #include "mani_save_scores.h"
 #include "mani_team_join.h"
 #include "mani_afk.h"
 #include "mani_ping.h"
 #include "mani_mysql.h"
-#include "mani_mysql_thread.h"
 #include "mani_vote.h"
+#include "mani_team.h"
+#include "mani_file.h"
 #include "mani_vfuncs.h"
 #include "mani_help.h"
 #include "mani_mainclass.h"
 #include "mani_callback_sourcemm.h"
 #include "mani_callback_valve.h"
-#include "mani_sourcehook.h"
 #include "mani_commands.h"
 #include "mani_sigscan.h"
 #include "mani_globals.h"
@@ -108,7 +109,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 extern	int	con_command_index;
 
 static int sort_by_cmd_name ( const void *m1,  const void *m2);
@@ -171,6 +171,8 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_say", 2005, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSay);
 	this->RegisterCommand("ma_msay", 2007, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaMSay);
 	this->RegisterCommand("ma_psay", 2009, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaPSay);
+	this->RegisterCommand("ma_pmess", 2233, /*admin?*/ true, /*war ?*/ false, /*server ?*/ false, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaPMess);
+	this->RegisterCommand("ma_exit", 2235, /*admin?*/ true, /*war ?*/ false, /*server ?*/ false, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaExit);
 	this->RegisterCommand("ma_chat", 2011, /*admin?*/ false, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaChat);
 	this->RegisterCommand("ma_csay", 2013, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCSay);
 	this->RegisterCommand("ma_session", 2015, /*admin?*/ false, /*war ?*/ false, /*server ?*/ false, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSession);
@@ -178,8 +180,12 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_rcon", 2019, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaRCon);
 	this->RegisterCommand("ma_browse", 2021, /*admin?*/ false, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaBrowse);
 	this->RegisterCommand("ma_cexec", 2023, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExec);
+	this->RegisterCommand("ma_cexec_t", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExecT);
+	this->RegisterCommand("ma_cexec_ct", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExecCT);
+	this->RegisterCommand("ma_cexec_all", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExecAll);
+	this->RegisterCommand("ma_cexec_spec", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExecSpec);
 	this->RegisterCommand("ma_slap", 2025, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSlap);
-	this->RegisterCommand("ma_setadminflag", /*admin?*/ true, 0, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetAdminFlag);
+	this->RegisterCommand("ma_setflag", /*admin?*/ true, 0, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetFlag);
 	this->RegisterCommand("ma_setskin", 2027, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetSkin);
 	this->RegisterCommand("ma_setcash", 2029, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetCash);
 	this->RegisterCommand("ma_givecash", 2031, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGiveCash);
@@ -204,6 +210,7 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_render_fx", 2069, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaRenderFX);
 	this->RegisterCommand("ma_give", 2071, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGive);
 	this->RegisterCommand("ma_give_ammo", 2073, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGiveAmmo);
+	this->RegisterCommand("ma_giveammo", 2073, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGiveAmmo);
 	this->RegisterCommand("ma_drug", 2075, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaDrug);
 	this->RegisterCommand("ma_decal", 2077, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaDecal);
 	this->RegisterCommand("ma_gimp", 2079, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGimp);
@@ -225,6 +232,7 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_nextmap", 2111, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaNextMap);
 	this->RegisterCommand("ma_listmaps", 2113, /*admin?*/ false, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaListMaps);
 	this->RegisterCommand("ma_maplist", 2115, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaMapList);
+	this->RegisterCommand("ma_maphistory", 2227, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaMapHistory);
 	this->RegisterCommand("ma_mapcycle", 2117, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaMapCycle);
 	this->RegisterCommand("ma_votemaplist", 2119, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaVoteMapList);
 	this->RegisterCommand("ma_war", 2121, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaWar);
@@ -244,9 +252,10 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_nosnipers", 2149, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaNoSnipers);
 	this->RegisterCommand("ma_unrestrict", 2151, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaUnRestrict);
 	this->RegisterCommand("ma_unrestrictall", 2153, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaUnRestrictAll);
+	this->RegisterCommand("ma_restrictall", 2225, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaRestrictAll);
 	this->RegisterCommand("ma_tklist", 2155, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaTKList);
 	this->RegisterCommand("ma_kick", 2157, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaKick);
-	this->RegisterCommand("ma_chattriggers", /*admin?*/ true, 2159, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaChatTriggers);
+	this->RegisterCommand("ma_chattriggers", 2159, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaChatTriggers);
 	this->RegisterCommand("ma_spray", 2161, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSpray);
 	this->RegisterCommand("ma_slay", 2163, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSlay);
 	this->RegisterCommand("ma_offset", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ false, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaOffset);
@@ -282,12 +291,76 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_ranks", 2215, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaRanks);
 	this->RegisterCommand("ma_plranks", 2217, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaPLRanks);
 	this->RegisterCommand("ma_help", 2219, /*admin?*/ false, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaHelp);
+	this->RegisterCommand("ma_effect", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ false, /*tsay ?*/ false, /*say ?*/ false, &ManiCommands::MaEffect);
+	this->RegisterCommand("ma_restrictratio", 2229, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaRestrictRatio);
+	this->RegisterCommand("ma_admins", 2231, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaAdmins);
 	
 	// Register Menu commands triggered via client console
 	//this->RegisterCommand("mam_plranks", /*war ?*/ false, &ManiCommands::MaPLRanks);
 
 	// Sort so we can use a bsearch on the commands, maybe use hash index for them in the future ?
 	qsort(cmd_list, cmd_list_size, sizeof(cmd_t), sort_by_cmd_name); 
+	this->WriteHelpHTML();
+
+// Do some tests
+
+	//float curtime = engine->Time();
+	//int	max_tests = 1000000;
+	//char found_print[256];
+	//cmd_t	cmd_key;
+	//cmd_t	*found_cmd;
+
+	//srand(0);
+
+	//for (int i = 0;i < max_tests; i ++)
+	//{
+	//	int fetch = rand() % cmd_list_size;
+
+	//	Q_strcpy(cmd_key.cmd_name, cmd_list[fetch].cmd_name);
+
+	//	// Do BSearch for function name
+	//	found_cmd = (cmd_t *) bsearch
+	//					(
+	//					&cmd_key, 
+	//					cmd_list, 
+	//					cmd_list_size, 
+	//					sizeof(cmd_t), 
+	//					sort_by_cmd_name
+	//					);
+
+	//	if (found_cmd) 
+	//	{
+	//		// function found
+	//		Q_strcpy(found_print, found_cmd->cmd_name);
+	//	}
+	//}
+
+	//Msg("Time taken %f, %s\n", engine->Time() - curtime, found_print);
+
+	//srand(0);
+
+	//for (int i = 0;i < max_tests; i ++)
+	//{
+	//	int fetch = rand() % cmd_list_size;
+
+	//	Q_strcpy(cmd_key.cmd_name, cmd_list[fetch].cmd_name);
+
+	//	for (int j = 0; j < cmd_list_size; j++)
+	//	{
+	//		if (FStrEq(cmd_key.cmd_name, cmd_list[j].cmd_name))
+	//		{
+	//			// function found
+	//			Q_strcpy(found_print, found_cmd->cmd_name);
+	//			break;
+	//		}
+	//	}
+	//}
+
+	//Msg("Time taken %f, %s\n", engine->Time() - curtime, found_print);
+	//while(1)
+	//{
+	//	Sleep(1);
+	//}
 }
 
 //---------------------------------------------------------------------------------
@@ -299,41 +372,22 @@ void ManiCommands::Unload(void)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Get modes of operation of a command
+// Purpose: Get command index
 //---------------------------------------------------------------------------------
-void	ManiCommands::GetCommandModes
+int	ManiCommands::GetCmdIndexForHelpID
 (
- const int help_id, 
- bool *server_console,
- bool *client_console,
- bool *client_chat,
- bool *war_allowed
+ const int help_id
  )
 {
 	for (int i = 0; i < cmd_list_size; i ++)
 	{
 		if (help_id == cmd_list[i].help_id)
 		{
-			if (cmd_list[i].server_command)
-			{
-				*server_console = true;
-			}
-			if (cmd_list[i].client_command)
-			{
-				*client_console = true;
-			}
-			if (cmd_list[i].say_command || cmd_list[i].tsay_command)
-			{
-				*client_chat = true;
-			}
-			if (cmd_list[i].war_mode_allowed)
-			{
-				*war_allowed = true;
-			}
-
-			return;
+			return i;
 		}
 	}
+
+	return -1;
 }
 
 //---------------------------------------------------------------------------------
@@ -366,7 +420,8 @@ void	ManiCommands::SearchCommands
 (
  player_t *player_ptr, 
  bool	admin_flag,
- const char *pattern
+ const char *pattern,
+ const int command_type
  )
 {
 	int cmd_count = 0; 
@@ -381,6 +436,13 @@ void	ManiCommands::SearchCommands
 
 		if (Q_stristr(cmd_list[i].cmd_name, pattern) != NULL)
 		{
+			if (FStrEq(cmd_list[i].cmd_name, pattern))
+			{
+				cmd_index = i;
+				cmd_count = 1;
+				break;
+			}
+
 			cmd_index = i;
 			cmd_count ++;
 		}
@@ -423,33 +485,144 @@ void	ManiCommands::SearchCommands
 
 			if (Q_stristr(cmd_list[i].cmd_name, pattern) != NULL)
 			{
-				OutputToConsole(player_ptr, "%s : %s\n", cmd_list[i].cmd_name, Translate(cmd_list[i].help_id));
+				OutputToConsole(player_ptr, "%s : %s\n", cmd_list[i].cmd_name, Translate(player_ptr, cmd_list[i].help_id));
 			}
 		}
 	}
 	else
 	{
-		int help_id = cmd_list[cmd_index].help_id;
-		bool server_console = cmd_list[cmd_index].server_command;
-		bool client_console = cmd_list[cmd_index].client_command;
-		bool client_chat = cmd_list[cmd_index].say_command | cmd_list[cmd_index].tsay_command;
-		bool war_allowed = cmd_list[cmd_index].war_mode_allowed;
-
-		// Show command name
-		OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(2000, "%s", cmd_list[cmd_index].cmd_name));
-		// Show types of operation
-		OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(2001, "%s%s%s%s", 
-			(server_console == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO),
-			(client_console == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO),
-			(client_chat == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO),
-			(war_allowed == true) ? Translate(M_MENU_YES):Translate(M_MENU_NO)));
-		// Show Parameters
-		OutputHelpText(GREEN_CHAT, player_ptr, "%s %s", Translate(2002), Translate(help_id));
-		// Show Description
-		OutputHelpText(GREEN_CHAT, player_ptr, "%s %s", Translate(2003), Translate(help_id + 1));
+		DumpHelp(player_ptr, cmd_index, command_type);
 	}
 
 	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Output Help in various formats for say/console/server console format
+//---------------------------------------------------------------------------------
+void	ManiCommands::DumpHelp
+(
+ player_t *player_ptr,
+ int	cmd_index,
+ const int command_type
+ )
+{
+	int help_id = cmd_list[cmd_index].help_id;
+	bool server_console = cmd_list[cmd_index].server_command;
+	bool client_console = cmd_list[cmd_index].client_command;
+	bool client_chat = cmd_list[cmd_index].say_command | cmd_list[cmd_index].tsay_command;
+	bool war_allowed = cmd_list[cmd_index].war_mode_allowed;
+
+	// Show command name
+	OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 2000, "%s", cmd_list[cmd_index].cmd_name));
+	// Show types of operation
+	OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 2001, "%s%s%s%s", 
+		(server_console == true) ? Translate(player_ptr, M_MENU_YES):Translate(player_ptr, M_MENU_NO),
+		(client_console == true) ? Translate(player_ptr, M_MENU_YES):Translate(player_ptr, M_MENU_NO),
+		(client_chat == true) ? Translate(player_ptr, M_MENU_YES):Translate(player_ptr, M_MENU_NO),
+		(war_allowed == true) ? Translate(player_ptr, M_MENU_YES):Translate(player_ptr, M_MENU_NO)));
+	// Show Parameters
+	OutputHelpText(GREEN_CHAT, player_ptr, "%s %s", Translate(player_ptr, 2002), Translate(player_ptr, help_id));
+	// Show Description
+
+	if (command_type == M_SAY || command_type == M_TSAY)
+	{
+		char help_text[2048];
+
+		int length = snprintf(help_text, sizeof(help_text), "%s %s", Translate(player_ptr, 2003), Translate(player_ptr, help_id + 1));
+		if (length > 254)
+		{
+			int start_index = 0;
+			int end_index = 254;
+
+			for(;;)
+			{
+				bool found_line;
+
+				found_line = false;
+				for (int i = end_index; i > start_index; i--)
+				{
+					if (help_text[i] == 0x0a)
+					{
+						// Found line break
+						found_line = true;
+						help_text[i] = '\0';
+						OutputHelpText(GREEN_CHAT, player_ptr, "%s", &(help_text[start_index]));
+						start_index = i + 1;
+						end_index = start_index + 254;
+
+						if (end_index > length)
+						{
+							OutputHelpText(GREEN_CHAT, player_ptr, "%s", &(help_text[start_index]));
+							return;
+						}
+
+						break;
+					}
+				}
+
+				if (!found_line)
+				{
+					break;
+				}
+			}
+		}
+		else
+		{
+			OutputHelpText(GREEN_CHAT, player_ptr, "%s", help_text);
+		}
+	}
+	else if (command_type == M_CCONSOLE)
+	{
+		char help_text[2048];
+
+		int length = snprintf(help_text, sizeof(help_text), "%s %s", Translate(player_ptr, 2003), Translate(player_ptr, help_id + 1));
+		if (length > 700)
+		{
+			int start_index = 0;
+			int end_index = 700;
+
+			for(;;)
+			{
+				bool found_line;
+
+				found_line = false;
+				for (int i = end_index; i > start_index; i--)
+				{
+					if (help_text[i] == 0x0a)
+					{
+						// Found line break
+						found_line = true;
+						help_text[i] = '\0';
+						OutputToConsole(player_ptr, "%s\n", &(help_text[start_index]));
+						start_index = i + 1;
+						end_index = start_index + 700;
+
+						if (end_index > length)
+						{
+							OutputToConsole(player_ptr, "%s\n", &(help_text[start_index]));
+							return;
+						}
+
+						break;
+					}
+				}
+
+				if (!found_line)
+				{
+					break;
+				}
+			}
+		}
+		else
+		{
+			OutputToConsole(player_ptr, "%s\n", help_text);
+		}
+	}
+	else
+	{
+		OutputToConsole(player_ptr, "%s %s\n", Translate(player_ptr, 2003), Translate(player_ptr, help_id + 1));
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -494,7 +667,7 @@ void	ManiCommands::ExtractSayCommand(bool team_say)
 					{
     					// Add it in
 						Q_strcpy(say_argv0, "ma_");
-						Q_strcat(say_argv0, &(argv0[1]));
+						strcat(say_argv0, &(argv0[1]));
 						copied_command = true;
 					}
 				}
@@ -782,7 +955,7 @@ void	ManiCommands::ExtractClientAndServerCommand(void)
 	
 	Q_strcpy(say_argv0, "");
 
-	int initial_len = Q_snprintf(temp_string1, sizeof(temp_string1), "%s ", engine->Cmd_Argv(0));
+	int initial_len = snprintf(temp_string1, sizeof(temp_string1), "%s ", engine->Cmd_Argv(0));
 	Q_strcpy(temp_string2, engine->Cmd_Argv(0));
 
 	say_string = engine->Cmd_Args();
@@ -1005,7 +1178,7 @@ int	ManiCommands::HandleCommand
 			return PLUGIN_CONTINUE;
 		}
 
-		int result = (g_Cmd.*found_cmd->funcPtr) (player_ptr, cmd_key.cmd_name, found_cmd->help_id, command_type, found_cmd->war_mode_allowed);
+		(g_Cmd.*found_cmd->funcPtr) (player_ptr, cmd_key.cmd_name, found_cmd->help_id, command_type, found_cmd->war_mode_allowed);
 		return PLUGIN_STOP;
 	}
 	else if (command_type == M_TSAY)
@@ -1018,13 +1191,37 @@ int	ManiCommands::HandleCommand
 			return PLUGIN_CONTINUE;
 		}
 
-		int result = (g_Cmd.*found_cmd->funcPtr) (player_ptr, cmd_key.cmd_name, found_cmd->help_id, command_type, found_cmd->war_mode_allowed);	
+		(g_Cmd.*found_cmd->funcPtr) (player_ptr, cmd_key.cmd_name, found_cmd->help_id, command_type, found_cmd->war_mode_allowed);	
 		return PLUGIN_STOP;
 	}
 
 	return 0;
 }
 
+int			ManiCommands::Cmd_Argc(void) 
+{
+	return cmd_argc;
+}
+
+const char *ManiCommands::Cmd_Argv(int i) 
+{
+	return cmd_argv[i];
+}
+
+const char *ManiCommands::Cmd_Args(void) 
+{
+	return cmd_argv_cat[1];
+}
+
+const char *ManiCommands::Cmd_Args(int i) 
+{
+	return cmd_argv_cat[i];
+}
+
+const char *ManiCommands::Cmd_SayArg0(void) 
+{
+	return say_argv0;
+}
 //---------------------------------------------------------------------------------
 // Purpose: Initialise a new command
 //---------------------------------------------------------------------------------
@@ -1054,7 +1251,7 @@ void	ManiCommands::AddParam(int number)
 {
 	char	temp_buffer[32];
 	int		length;
-	length = Q_snprintf(temp_buffer, sizeof(number), "%i", number);
+	length = snprintf(temp_buffer, sizeof(number), "%i", number);
 	this->AddStringParam(temp_buffer, length);
 }
 
@@ -1065,7 +1262,7 @@ void	ManiCommands::AddParam(float number)
 {
 	char	temp_buffer[64];
 	int		length;
-	length = Q_snprintf(temp_buffer, sizeof(number), "%f", number);
+	length = snprintf(temp_buffer, sizeof(number), "%f", number);
 	this->AddStringParam(temp_buffer, length);
 }
 
@@ -1079,9 +1276,46 @@ void	ManiCommands::AddParam(char *fmt, ...)
 	char		temp_buffer[2048];
 	
 	va_start ( argptr, fmt );
-	length = Q_vsnprintf( temp_buffer, sizeof(temp_buffer), fmt, argptr );
+	length = vsnprintf( temp_buffer, sizeof(temp_buffer), fmt, argptr );
 	va_end   ( argptr );
 	this->AddStringParam(temp_buffer, length);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Add a integer number as a parameter
+//---------------------------------------------------------------------------------
+void	ManiCommands::SetParam(int argno, int number)
+{
+	char	temp_buffer[32];
+	int		length;
+	length = snprintf(temp_buffer, sizeof(temp_buffer), "%i", number);
+	this->SetStringParam(argno, temp_buffer, length);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Add a float number as a parameter
+//---------------------------------------------------------------------------------
+void	ManiCommands::SetParam(int argno, float number)
+{
+	char	temp_buffer[64];
+	int		length;
+	length = snprintf(temp_buffer, sizeof(temp_buffer), "%f", number);
+	this->SetStringParam(argno, temp_buffer, length);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Add a variable string as a parameter
+//---------------------------------------------------------------------------------
+void	ManiCommands::SetParam(int argno, char *fmt, ...)
+{
+	va_list		argptr;
+	int			length;
+	char		temp_buffer[2048];
+	
+	va_start ( argptr, fmt );
+	length = vsnprintf( temp_buffer, sizeof(temp_buffer), fmt, argptr );
+	va_end   ( argptr );
+	this->SetStringParam(argno, temp_buffer, length);
 }
 
 //---------------------------------------------------------------------------------
@@ -1105,8 +1339,8 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	{
 		// Not the first argument
 		Q_strcpy(&(temp_string1[current_marker1]), string);
-		Q_strcat(temp_string2, " ");
-		Q_strcat(temp_string2, string);
+		strcat(temp_string2, " ");
+		strcat(temp_string2, string);
 		cmd_argv[cmd_argc] = &(temp_string1[current_marker1]);
 		cmd_argv_cat[cmd_argc] = &(temp_string2[current_marker2]);
 	}
@@ -1116,12 +1350,211 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	cmd_argc ++;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Add a string as a parameter
+//---------------------------------------------------------------------------------
+void	ManiCommands::SetStringParam(int argno, char *string, int length)
+{
+	// Nothing to add
+	if (string[0] == '\0') return;
+	int no_of_cmds = cmd_argc;
+	if (no_of_cmds == 0) return;
+
+	memcpy(this->back_up_string, temp_string2, sizeof(temp_string2));
+	this->NewCmd();
+
+	const char *prefix = mani_say_command_prefix.GetString();
+	if (prefix && string[0] == prefix[0])
+	{
+		Q_strcpy(this->say_argv0, &(string[1]));
+	}
+	else
+	{
+		Q_strcpy(this->say_argv0, string);
+	}
+
+	char *str = this->back_up_string;
+
+	for (int i = 0; i < no_of_cmds; i ++)
+	{
+		if (i == argno)
+		{
+			gpCmd->AddParam("%s", string);
+			while(*str++ != 0);
+		}
+		else
+		{
+			gpCmd->AddParam("%s", str);
+			while(*str++ != 0);
+		}
+	}
+}
+
+int		ManiCommands::BadAdmin(int result, player_t *player_ptr, const char *name)
+{
+	// RCON command
+	if (!player_ptr)
+	{
+		if (result == PLUGIN_BAD_ADMIN)
+		{
+			return PLUGIN_STOP;
+		}
+
+		return result;
+	}
+
+	if (result == PLUGIN_BAD_ADMIN)
+	{
+		OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 2580, "%s", name));
+		return PLUGIN_STOP;
+	}
+
+	return result;
+}
+
+void	ManiCommands::WriteHelpHTML(void)
+{
+	char	filename[512];
+
+	FILE *filehandle = NULL;
+	ManiFile *mf = new ManiFile();
+
+	snprintf(filename, sizeof(filename), "./cfg/%s/data/command_help.html", mani_path.GetString());
+	filehandle = mf->Open(filename, "wt");
+	if (filehandle == NULL)
+	{
+		delete mf;
+		return;
+	}
+
+	const char *header_row_bg_colour = "#000080";
+	const char *header_row_font_colour = "#ffffff";
+	const char *cmd_col_bg_colour = "#4d4d4d";
+	const char *cmd_col_font_colour = "#ffffff";
+	const char *rest_bg_colour = "#cccccc";
+	const char *rest_font_colour = "#000000";
+	const char *border_colour = "#000000";
+
+	fprintf(filehandle, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n");
+	fprintf(filehandle, "<HTML>\n");
+	fprintf(filehandle, "<HEAD>\n");
+	fprintf(filehandle, "\t<META HTTP-EQUIV=\"CONTENT-TYPE\" CONTENT=\"text/html; charset=utf-8\">\n");
+	fprintf(filehandle, "\t<TITLE></TITLE>\n");
+	fprintf(filehandle, "\t<META NAME=\"GENERATOR\" CONTENT=\"%s\">\n", PLUGIN_VERSION);
+	fprintf(filehandle, "\t<META NAME=\"AUTHOR\" CONTENT=\"Mani\">\n");
+	fprintf(filehandle, "</HEAD>\n");
+	fprintf(filehandle, "<BODY LANG=\"en-GB\" DIR=\"LTR\">\n");
+	fprintf(filehandle, "<P ALIGN=CENTER STYLE=\"page-break-before: always\"><FONT SIZE=4 STYLE=\"font-size: 16pt\"><B>Mani Admin Plugin Commands %s</B></FONT></P>\n", PLUGIN_VERSION_ID2);
+	fprintf(filehandle, "<TABLE WIDTH=100%% BORDER=1 BORDERCOLOR=\"%s\" CELLPADDING=4 CELLSPACING=0>\n", border_colour);
+	fprintf(filehandle, "\t<COL WIDTH=43*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=61*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=60*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=19*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=19*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=18*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=18*>\n");
+	fprintf(filehandle, "\t<COL WIDTH=18*>\n");
+
+	fprintf(filehandle, "\t<TR VALIGN=TOP>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=17%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3065)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=24%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3066)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t\t<TH WIDTH=23%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3067)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=8%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3068)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=7%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3069)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=7%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3070)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=7%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3071)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t\t<TH WIDTH=7%% BGCOLOR=\"%s\">\n", header_row_bg_colour);
+	fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+	fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", header_row_font_colour, AsciiToHTML(Translate(NULL, 3072)));
+	fprintf(filehandle, "\t\t</TH>\n");
+	fprintf(filehandle, "\t</TR>\n");
+
+	for (int i = 0; i < cmd_list_size; i ++)
+//	for (int i = 0; i < 1; i ++)
+	{
+		fprintf(filehandle, "\t<TR VALIGN=TOP>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=17%% BGCOLOR=\"%s\">\n", cmd_col_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", cmd_col_font_colour, cmd_list[i].cmd_name);
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=24%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+			rest_font_colour,
+			((cmd_list[i].help_id != 0) ? AsciiToHTML(Translate(NULL, cmd_list[i].help_id + 1)):Translate(NULL, 3073)));
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=23%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n",
+			rest_font_colour,
+			((cmd_list[i].help_id != 0) ? AsciiToHTML(Translate(NULL, cmd_list[i].help_id)):"-"));
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=8%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+			rest_font_colour,
+			(cmd_list[i].say_command) ? "X":".");
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=7%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+			rest_font_colour,
+			(cmd_list[i].tsay_command) ? "X":".");
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=7%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+			rest_font_colour,
+			(cmd_list[i].client_command) ? "X":".");
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=7%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+			rest_font_colour,
+			(cmd_list[i].server_command) ? "X":".");
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t\t<TD WIDTH=7%% BGCOLOR=\"%s\">\n", rest_bg_colour);
+		fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
+		fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
+			rest_font_colour,
+			(cmd_list[i].war_mode_allowed) ? "X":".");
+		fprintf(filehandle, "\t\t</TD>\n");
+		fprintf(filehandle, "\t</TR>\n");
+	}
+
+	fprintf(filehandle, "</TABLE>\n<P><BR><BR>\n</P>\n</BODY>\n</HTML>");
+	mf->Close(filehandle);
+	delete mf;
+}
+
+
 // Non-class called version
 #define CON_BODY(_func) \
 	int ManiCommands::_func(player_t *player_ptr, const char *name, const int help_id, int command_type, bool war_mode_allowed) \
 	{ \
 	if (war_mode && !war_mode_allowed) return PLUGIN_CONTINUE; \
-	return (int) Process##_func (player_ptr, name, help_id, command_type); \
+	return g_Cmd.BadAdmin((int) Process##_func (player_ptr, name, help_id, command_type), player_ptr, name); \
 	}
 
 // Class called version
@@ -1129,22 +1562,28 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	int ManiCommands::_func(player_t *player_ptr, const char *name, const int help_id, int command_type, bool war_mode_allowed) \
 	{ \
 		if (war_mode && !war_mode_allowed) return PLUGIN_CONTINUE; \
-		return (int) _class->Process##_func (player_ptr, name, help_id, command_type); \
+		return g_Cmd.BadAdmin(_class->Process##_func (player_ptr, name, help_id, command_type), player_ptr, name); \
 	}
 
 
-	CON_CBODY(gpManiAdminPlugin, MaSay)
-	CON_CBODY(gpManiAdminPlugin, MaMSay)
-	CON_CBODY(gpManiAdminPlugin, MaPSay)
-	CON_CBODY(gpManiAdminPlugin, MaChat)
-	CON_CBODY(gpManiAdminPlugin, MaCSay)
+	CON_CBODY(gpManiMessageMode, MaSay)
+	CON_CBODY(gpManiMessageMode, MaMSay)
+	CON_CBODY(gpManiMessageMode, MaPSay)
+	CON_CBODY(gpManiMessageMode, MaPMess)
+	CON_CBODY(gpManiMessageMode, MaExit)
+	CON_CBODY(gpManiMessageMode, MaChat)
+	CON_CBODY(gpManiMessageMode, MaCSay)
 	CON_CBODY(gpManiStats, MaSession)
 	CON_CBODY(gpManiStats, MaStatsMe)
 	CON_CBODY(gpManiAdminPlugin, MaRCon)
 	CON_CBODY(gpManiAdminPlugin, MaBrowse)
 	CON_CBODY(gpManiAdminPlugin, MaCExec)
+	CON_CBODY(gpManiAdminPlugin, MaCExecT)
+	CON_CBODY(gpManiAdminPlugin, MaCExecCT)
+	CON_CBODY(gpManiAdminPlugin, MaCExecAll)
+	CON_CBODY(gpManiAdminPlugin, MaCExecSpec)
 	CON_CBODY(gpManiAdminPlugin, MaSlap)
-	CON_CBODY(gpManiClient, MaSetAdminFlag)
+	CON_CBODY(gpManiClient, MaSetFlag)
 	CON_BODY(MaSetSkin)
 	CON_CBODY(gpManiAdminPlugin, MaSetCash)
 	CON_CBODY(gpManiAdminPlugin, MaGiveCash)
@@ -1177,9 +1616,9 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	CON_CBODY(gpManiAdminPlugin, MaMute)
 	CON_CBODY(gpManiAdminPlugin, MaTeleport)
 	CON_CBODY(gpManiAdminPlugin, MaPosition)
-	CON_CBODY(gpManiAdminPlugin, MaSwapTeam)
-	CON_CBODY(gpManiAdminPlugin, MaSpec)
-	CON_CBODY(gpManiAdminPlugin, MaBalance)
+	CON_CBODY(gpManiTeam, MaSwapTeam)
+	CON_CBODY(gpManiTeam, MaSpec)
+	CON_CBODY(gpManiTeam, MaBalance)
 	CON_CBODY(gpManiAdminPlugin, MaDropC4)
 	CON_CBODY(gpManiAdminPlugin, MaSaveLoc)
 	CON_CBODY(gpManiStats, MaResetRank)
@@ -1190,6 +1629,7 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	CON_BODY(MaNextMap)
 	CON_BODY(MaListMaps)
 	CON_BODY(MaMapList)
+	CON_BODY(MaMapHistory)
 	CON_BODY(MaMapCycle)
 	CON_BODY(MaVoteMapList)
 
@@ -1203,14 +1643,16 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	CON_CBODY(gpManiVote, MaVoteCancel)
 	CON_BODY(MaPlaySound)
 	CON_BODY(MaFavourites)
-	CON_BODY(MaShowRestrict)
-	CON_BODY(MaRestrict)
-	CON_BODY(MaKnives)
-	CON_BODY(MaPistols)
-	CON_BODY(MaShotguns)
-	CON_BODY(MaNoSnipers)
-	CON_BODY(MaUnRestrict)
-	CON_BODY(MaUnRestrictAll)
+	CON_CBODY(gpManiWeaponMgr, MaShowRestrict)
+	CON_CBODY(gpManiWeaponMgr, MaRestrict)
+	CON_CBODY(gpManiWeaponMgr, MaKnives)
+	CON_CBODY(gpManiWeaponMgr, MaPistols)
+	CON_CBODY(gpManiWeaponMgr, MaShotguns)
+	CON_CBODY(gpManiWeaponMgr, MaNoSnipers)
+	CON_CBODY(gpManiWeaponMgr, MaUnRestrict)
+	CON_CBODY(gpManiWeaponMgr, MaUnRestrictAll)
+	CON_CBODY(gpManiWeaponMgr, MaRestrictAll)
+	CON_CBODY(gpManiWeaponMgr, MaRestrictRatio)
 	CON_BODY(MaTKList)
 	CON_CBODY(gpManiAdminPlugin, MaKick)
 	CON_CBODY(gpManiChatTriggers, MaChatTriggers)
@@ -1228,6 +1670,7 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	CON_CBODY(gpManiAdminPlugin, MaUnBan)
 
 	CON_CBODY(gpManiAdminPlugin, MaUsers)
+	CON_CBODY(gpManiAdminPlugin, MaAdmins)
 	CON_CBODY(gpManiAdminPlugin, MaRates)
 	CON_BODY(MaShowSounds)
 	CON_CBODY(gpManiAdminPlugin, MaConfig)
@@ -1250,4 +1693,5 @@ void	ManiCommands::AddStringParam(char *string, int length)
 	CON_CBODY(gpManiAutoKickBan, MaUnAutoSteam)
 	CON_CBODY(gpManiAutoKickBan, MaUnAutoIP)
 	CON_CBODY(gpManiHelp, MaHelp)
+	CON_CBODY(gpManiCustomEffects, MaEffect)
 

@@ -57,7 +57,10 @@
 #include "mani_warmuptimer.h"
 #include "mani_vote.h" 
 #include "mani_sounds.h"
+#include "mani_team.h"
 #include "mani_maps.h"
+#include "mani_util.h"
+#include "mani_automap.h"
 #include "mani_vfuncs.h"
 #include "mani_help.h"
 #include "mani_commands.h"
@@ -67,10 +70,10 @@ extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
 extern	IPlayerInfoManager *playerinfomanager;
 extern	IServerGameEnts *serverents;
+extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 extern  float timeleft_offset;
 extern  char *mani_version;
 extern	team_scores_t	team_scores;
@@ -102,8 +105,8 @@ ManiVote::ManiVote()
 	vote_question_list_size = 0;
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		user_vote_list[i].ban_id = -1;
-		user_vote_list[i].kick_id = -1;
+		Q_strcpy(user_vote_list[i].ban_id, "");
+		Q_strcpy(user_vote_list[i].kick_id, "");
 		user_vote_list[i].map_index = -1;
 		user_vote_list[i].nominated_map = -1;
 		user_vote_list[i].rock_the_vote = false;
@@ -134,8 +137,8 @@ void	ManiVote::Load(void)
 {
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		user_vote_list[i].ban_id = -1;
-		user_vote_list[i].kick_id = -1;
+		Q_strcpy(user_vote_list[i].ban_id, "");
+		Q_strcpy(user_vote_list[i].kick_id, "");
 		user_vote_list[i].map_index = -1;
 		user_vote_list[i].nominated_map = -1;
 		user_vote_list[i].rock_the_vote = false;
@@ -181,8 +184,8 @@ void	ManiVote::LevelInit(void)
 	// Init votes and menu system
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		user_vote_list[i].ban_id = -1;
-		user_vote_list[i].kick_id = -1;
+		Q_strcpy(user_vote_list[i].ban_id, "");
+		Q_strcpy(user_vote_list[i].kick_id, "");
 		user_vote_list[i].map_index = -1;
 		user_vote_list[i].nominated_map = -1;
 		user_vote_list[i].rock_the_vote = false;
@@ -204,6 +207,60 @@ void	ManiVote::LevelInit(void)
 	map_start_time = gpGlobals->curtime;
 	strcpy(show_hint_results, "");
 	this->LoadConfig();
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Check Player on network ID validated
+//---------------------------------------------------------------------------------
+void ManiVote::NetworkIDValidated(player_t	*player_ptr)
+{
+
+	int index = player_ptr->index - 1;
+
+	Q_strcpy(user_vote_list[index].ban_id, "");
+	Q_strcpy(user_vote_list[index].kick_id, "");
+	user_vote_list[index].map_index = -1;
+	user_vote_list[index].nominated_map = -1;
+	user_vote_list[index].rock_the_vote = false;
+	user_vote_list[index].ban_vote_timestamp = -99;
+	user_vote_list[index].kick_vote_timestamp = -99;
+	user_vote_list[index].nominate_timestamp = -99;
+	user_vote_list[index].map_vote_timestamp = -99;
+	user_vote_list[index].kick_votes = 0;
+	user_vote_list[index].ban_votes = 0;
+
+
+	if (!war_mode && mani_voting.GetInt() == 1 && !ProcessPluginPaused() &&
+		mani_vote_allow_user_vote_kick.GetInt() == 1 &&
+		!IsLAN())
+	{
+		for (int i = 1;i <= max_players; i++)
+		{
+			if (i == player_ptr->index) continue;
+
+			player_t player;
+			
+			player.index = i;
+			if (!FindPlayerByIndex(&player)) continue;
+			if (player.is_bot) continue;
+
+			if (mani_vote_allow_user_vote_kick.GetInt() == 1)
+			{
+				if (strcmp(user_vote_list[i - 1].kick_id, player_ptr->steam_id) == 0)
+				{
+					user_vote_list[player_ptr->index - 1].kick_votes ++;
+				}
+			}
+
+			if (mani_vote_allow_user_vote_ban.GetInt() == 1)
+			{
+				if (strcmp(user_vote_list[i - 1].ban_id, player_ptr->steam_id) == 0)
+				{
+					user_vote_list[player_ptr->index - 1].ban_votes ++;
+				}
+			}
+		}
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -254,16 +311,17 @@ void ManiVote::ClientDisconnect(player_t	*player_ptr)
 	}
 
 	if (!war_mode && mani_voting.GetInt() == 1 && !ProcessPluginPaused() &&
-		mani_vote_allow_user_vote_kick.GetInt() == 1)
+		mani_vote_allow_user_vote_kick.GetInt() == 1 &&
+		!IsLAN())
 	{
 		// De-kick vote player
 
-		if (user_vote_list[player_ptr->index - 1].kick_id != -1)
+		if (strcmp(user_vote_list[player_ptr->index - 1].kick_id,"") != 0)
 		{
 			player_t target_player;
 
-			target_player.user_id = user_vote_list[player_ptr->index - 1].kick_id;
-			if (FindPlayerByUserID(&target_player))
+			Q_strcpy(target_player.steam_id, user_vote_list[player_ptr->index - 1].kick_id);
+			if (FindPlayerBySteamID(&target_player))
 			{
 				if (!target_player.is_bot)
 				{
@@ -276,16 +334,8 @@ void ManiVote::ClientDisconnect(player_t	*player_ptr)
 		}
 
 		user_vote_list[player_ptr->index - 1].kick_votes = 0;
-		user_vote_list[player_ptr->index - 1].kick_id = -1;
+		Q_strcpy(user_vote_list[player_ptr->index - 1].kick_id, "");
 
-		for (int i = 0; i < max_players; i++)
-		{
-			if (user_vote_list[i].kick_id == player_ptr->user_id)
-			{
-				user_vote_list[i].kick_id = -1;
-			}
-		}
-			
 		int votes_required = GetVotesRequiredForUserVote(true, mani_vote_user_vote_kick_percentage.GetFloat(), mani_vote_user_vote_kick_minimum_votes.GetInt());
 		for (int i = 0; i < max_players; i++)
 		{
@@ -296,22 +346,23 @@ void ManiVote::ClientDisconnect(player_t	*player_ptr)
 				if (!FindPlayerByIndex(&server_player)) continue;
 
 				ProcessUserVoteKickWin(&server_player);
-				SayToAll(GREEN_CHAT, true,"Player leaving server triggered vote kick");
+				SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 2500));
 				break;
 			}
 		}
 	}
 
 	if (!war_mode && mani_voting.GetInt() == 1 && !ProcessPluginPaused() &&
-		mani_vote_allow_user_vote_ban.GetInt() == 1)
+		mani_vote_allow_user_vote_ban.GetInt() == 1 &&
+		!IsLAN())
 	{
 		// De-ban vote player
-		if (user_vote_list[player_ptr->index - 1].ban_id != -1)
+		if (strcmp(user_vote_list[player_ptr->index - 1].ban_id, "") != 0)
 		{
 			player_t target_player;
 
-			target_player.user_id = user_vote_list[player_ptr->index - 1].ban_id;
-			if (FindPlayerByUserID(&target_player))
+			Q_strcpy(target_player.steam_id, user_vote_list[player_ptr->index - 1].ban_id);
+			if (FindPlayerBySteamID(&target_player))
 			{
 				if (!target_player.is_bot)
 				{
@@ -324,16 +375,8 @@ void ManiVote::ClientDisconnect(player_t	*player_ptr)
 		}
 
 		user_vote_list[player_ptr->index - 1].ban_votes = 0;
-		user_vote_list[player_ptr->index - 1].ban_id = -1;
+		Q_strcpy(user_vote_list[player_ptr->index - 1].ban_id, "");
 
-		for (int i = 0; i < max_players; i++)
-		{
-			if (user_vote_list[i].ban_id == player_ptr->user_id)
-			{
-				user_vote_list[i].ban_id = -1;
-			}
-		}
-			
 		int votes_required = GetVotesRequiredForUserVote(true, mani_vote_user_vote_ban_percentage.GetFloat(), mani_vote_user_vote_ban_minimum_votes.GetInt());
 		for (int i = 0; i < max_players; i++)
 		{
@@ -344,7 +387,7 @@ void ManiVote::ClientDisconnect(player_t	*player_ptr)
 				if (!FindPlayerByIndex(&server_player)) continue;
 
 				ProcessUserVoteBanWin(&server_player);
-				SayToAll(GREEN_CHAT, true,"Player leaving server triggered vote ban");
+				SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 2501));
 				break;
 			}
 		}
@@ -445,11 +488,11 @@ void ManiVote::GameFrame(void)
 					BuildRandomMapVote(mani_vote_max_maps_for_end_of_map_vote.GetInt());
 					if (!IsYesNoVote())
 					{
-						Q_strcpy(system_vote.vote_title, Translate(551));
+						Q_strcpy(system_vote.vote_title, Translate(NULL, 551));
 					}
 					else
 					{
-						Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552, "%s", vote_option_list[0].vote_command));
+						snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(NULL, 552, "%s", vote_option_list[0].vote_command));
 					}
 
 					StartSystemVote();
@@ -462,7 +505,10 @@ void ManiVote::GameFrame(void)
 				int highest_score = 0;
 				for (int i = 0; i < MANI_MAX_TEAMS; i++)
 				{
-					if (team_scores.team_score[i] > highest_score) highest_score = team_scores.team_score[i];
+					if (gpManiGameType->IsValidActiveTeam(i))
+					{
+						if (gpManiTeam->GetTeamScore(i) > highest_score) highest_score = gpManiTeam->GetTeamScore(i);
+					}
 				}
 
 				if ((mp_winlimit->GetInt() - highest_score) <= mani_vote_rounds_before_end_of_map_vote.GetInt())
@@ -475,11 +521,11 @@ void ManiVote::GameFrame(void)
 					BuildRandomMapVote(mani_vote_max_maps_for_end_of_map_vote.GetInt());
 					if (!IsYesNoVote())
 					{
-						Q_strcpy(system_vote.vote_title, Translate(551));
+						Q_strcpy(system_vote.vote_title, Translate(NULL, 551));
 					}
 					else
 					{
-						Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552, "%s", vote_option_list[0].vote_command));
+						snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(NULL, 552, "%s", vote_option_list[0].vote_command));
 					}
 
 					StartSystemVote();
@@ -492,7 +538,10 @@ void ManiVote::GameFrame(void)
 				int total_rounds = 0;
 				for (int i = 0; i < MANI_MAX_TEAMS; i++)
 				{
-					total_rounds += team_scores.team_score[i];
+					if (gpManiGameType->IsValidActiveTeam(i))
+					{
+						total_rounds += gpManiTeam->GetTeamScore(i);
+					}
 				}
 
 				if ((mp_maxrounds->GetInt() - total_rounds) <= mani_vote_rounds_before_end_of_map_vote.GetInt())
@@ -505,11 +554,11 @@ void ManiVote::GameFrame(void)
 					BuildRandomMapVote(mani_vote_max_maps_for_end_of_map_vote.GetInt());
 					if (!IsYesNoVote())
 					{
-						Q_strcpy(system_vote.vote_title, Translate(551));
+						Q_strcpy(system_vote.vote_title, Translate(NULL, 551));
 					}
 					else
 					{
-						Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552, "%s", vote_option_list[0].vote_command));
+						snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(NULL, 552, "%s", vote_option_list[0].vote_command));
 					}
 
 					StartSystemVote();
@@ -541,7 +590,7 @@ void ManiVote::LoadConfig(void)
 	char	base_filename[256];
 
 	//Get question vote list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/votequestionlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/votequestionlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -568,7 +617,7 @@ void ManiVote::LoadConfig(void)
 	}
 
 	//Get rcon vote list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/voterconlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/voterconlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -633,25 +682,10 @@ void	ManiVote::StartSystemVote (void)
 	{
 		player.index = i;
 		voter_list[player.index - 1].allowed_to_vote = false;
-
 		if (!FindPlayerByIndex(&player)) continue; // No Player
 		if (player.is_bot) continue;  // Bots don't vote
-
 		voter_list[player.index - 1].allowed_to_vote = true;
 		voter_list[player.index - 1].voted = false;
-		
-		if (mani_vote_dont_show_if_alive.GetInt() == 1 && !player.is_dead)
-		{
-			// If option set, don't show vote to alive players but tell them a vote has started
-			SayToPlayer(LIGHT_GREEN_CHAT, &player, "Vote has started, type 'vote' to make your choice");
-		}
-		else
-		{
-			// Force client to run menu command
-			engine->ClientCommand(player.entity, "mani_votemenu\n");
-		}
-
-		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_VOTESTART);
 		system_vote.votes_required ++;
 		system_vote.max_votes ++;
 	}
@@ -664,191 +698,118 @@ void	ManiVote::StartSystemVote (void)
 	show_hint_next = gpGlobals->curtime + 1.0;
 
 	system_vote.end_vote_time = gpGlobals->curtime + mani_vote_allowed_voting_time.GetFloat();
+
+	// Search for players and give them voting options
+	for (int i = 1; i <= max_players; i++)
+	{
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue; // No Player
+		if (player.is_bot) continue;  // Bots don't vote
+
+		if (mani_vote_dont_show_if_alive.GetInt() == 1 && !player.is_dead)
+		{
+			// If option set, don't show vote to alive players but tell them a vote has started
+			SayToPlayer(LIGHT_GREEN_CHAT, &player, "%s", Translate(&player, 2502));
+		}
+		else
+		{
+			// Force client to run menu command
+			MENUPAGE_CREATE_FIRST(SystemVotemapPage, &player, 0, -1);
+		}
+
+		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_VOTESTART);
+	}
 }
 
 
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuSystemVoteRandomMap( player_t *admin, int next_index, int argv_offset )
+int SystemVoteRandomMapItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	if (gpManiVote->SysVoteInProgress()) return CLOSE_MENU;
 
-	if (gpManiVote->SysVoteInProgress()) return;
+	int	no_of_maps;
+	char *delay_type;
 
-	if (argc - argv_offset == 4)
-	{
-		char	delay_type_string[64];
-		int		delay_type = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset)); // delay type
-		int		no_of_maps = Q_atoi(gpCmd->Cmd_Argv(3 + argv_offset)); // Number of maps
+	m_page_ptr->params.GetParam("delay_type", &delay_type);
+	this->params.GetParam("no_of_maps", &no_of_maps);
 
-		if (delay_type == VOTE_NO_DELAY)
-		{
-			Q_strcpy (delay_type_string, "now");
-		}
-		else if (delay_type == VOTE_END_OF_ROUND_DELAY)
-		{
-			Q_strcpy (delay_type_string, "round");
-		}
-		else
-		{
-			Q_strcpy (delay_type_string, "end");
-		}
+	// Run the system vote
+	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_voterandom");
+	gpCmd->AddParam(delay_type);
+	gpCmd->AddParam(no_of_maps);
+	gpManiVote->ProcessMaVoteRandom(player_ptr, "ma_voterandom", 0, M_MENU);
+	return NEW_MENU;
+}
 
-		// Run the system vote
-		gpCmd->NewCmd();
-		gpCmd->AddParam("ma_voterandom");
-		gpCmd->AddParam(delay_type_string);
-		gpCmd->AddParam(no_of_maps);
-		this->ProcessMaVoteRandom(admin, "ma_voterandom", 0, M_MENU);
-		return;
-	}
-	else
-	{
-		char	more_cmd[128];
-		int		m_list_size;
+bool SystemVoteRandomMapPage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (gpManiVote->SysVoteInProgress()) return false;
 
-		// Setup player list
-		FreeMenu();
-
-		// Pick the right map list size
-		if (mani_vote_mapcycle_mode_for_random_map_vote.GetInt() == 0)
-		{
-			m_list_size = map_in_cycle_list_size;
-		}
-		else if (mani_vote_mapcycle_mode_for_random_map_vote.GetInt() == 1)
-		{
-			m_list_size = votemap_list_size;
-		}
-		else
-		{
-			m_list_size = map_list_size;
-		}
-
-		for( int i = 0; i < m_list_size; i++ )
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), " [%i]",  i + 1);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin randommapvote %s %i", gpCmd->Cmd_Argv(2 + argv_offset), i + 1);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;                         
-		}
-
-		Q_snprintf( more_cmd, sizeof(more_cmd), "randommapvote %s", gpCmd->Cmd_Argv(2 + argv_offset));
-
-		DrawSubMenu (admin, Translate(700), Translate(701), next_index, "admin", more_cmd,	true, -1);
-	}
+	this->SetEscLink("%s", Translate(player_ptr, 700));
+	this->SetTitle("%s", Translate(player_ptr, 701));
 	
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: 
-//---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuSystemVoteSingleMap( player_t *admin, int next_index, int argv_offset )
-{
-	const int argc = gpCmd->Cmd_Argc();
-
-	if (system_vote.vote_in_progress) return;
-
-	if (argc - argv_offset == 4)
-	{
-		char	delay_type_string[64];
-		int		delay_type = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset)); // delay type
-		char	map_name[128];
-
-		Q_strcpy(map_name, gpCmd->Cmd_Argv(3 + argv_offset));
-
-		if (delay_type == VOTE_NO_DELAY)
-		{
-			Q_strcpy (delay_type_string, "now");
-		}
-		else if (delay_type == VOTE_END_OF_ROUND_DELAY)
-		{
-			Q_strcpy (delay_type_string, "round");
-		}
-		else
-		{
-			Q_strcpy (delay_type_string, "end");
-		}
-
-		// Run the system vote
-		gpCmd->NewCmd();
-		gpCmd->AddParam("ma_vote");
-		gpCmd->AddParam("%s", delay_type_string);
-		gpCmd->AddParam("%s", map_name);
-		this->ProcessMaVote(admin, "ma_vote", 0, M_MENU);
-		return;
-	}
-	else
-	{
-		char	more_cmd[128];
-		int		m_list_size;
-		map_t	*m_list;
-
-		// Setup player list
-		FreeMenu();
-
-		// Set pointer to correct list
-		switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
-		{
-			case 0: m_list = map_in_cycle_list; m_list_size = map_in_cycle_list_size;break;
-			case 1: m_list = votemap_list; m_list_size = votemap_list_size;break;
-			case 2: m_list = map_list; m_list_size = map_list_size;break;
-			default : break;
-		}
-
-		for( int i = 0; i < m_list_size; i++ )
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), " %s",  m_list[i].map_name);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin singlemapvote %s %s", gpCmd->Cmd_Argv(2 + argv_offset), m_list[i].map_name);
-			Q_strcpy (menu_list[menu_list_size - 1].sort_name, m_list[i].map_name);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;                         
-		}
-
-		Q_snprintf( more_cmd, sizeof(more_cmd), "singlemapvote %s", gpCmd->Cmd_Argv(2 + argv_offset));
-
-		DrawSubMenu (admin, Translate(710), Translate(711), next_index, "admin", more_cmd,	true, -1);
-	}
-	
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: 
-//---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuSystemVoteBuildMap( player_t *admin, int next_index, int argv_offset )
-{
 	int		m_list_size;
-	map_t	*m_list;
 
-	const int argc = gpCmd->Cmd_Argc();
+	// Setup player list
+	// Pick the right map list size
+	if (mani_vote_mapcycle_mode_for_random_map_vote.GetInt() == 0)
+	{
+		m_list_size = map_in_cycle_list_size;
+	}
+	else if (mani_vote_mapcycle_mode_for_random_map_vote.GetInt() == 1)
+	{
+		m_list_size = votemap_list_size;
+	}
+	else
+	{
+		m_list_size = map_list_size;
+	}
 
-	if (system_vote.vote_in_progress) return;
+	for( int i = 0; i < m_list_size; i++ )
+	{
+		MenuItem *ptr = new SystemVoteRandomMapItem;
+		ptr->params.AddParam("no_of_maps", i);
+		ptr->SetDisplayText(" [%i]",  i + 1);
+		this->AddItem(ptr);
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: 
+//---------------------------------------------------------------------------------
+int SystemVoteSingleMapItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	if (gpManiVote->SysVoteInProgress()) return CLOSE_MENU;
+
+	char *map_name;
+	char *delay_type;
+
+	m_page_ptr->params.GetParam("delay_type", &delay_type);
+	this->params.GetParam("map_name", &map_name);
+
+	// Run the system vote
+	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_vote");
+	gpCmd->AddParam("%s", delay_type);
+	gpCmd->AddParam("%s", map_name);
+	gpManiVote->ProcessMaVote(player_ptr, "ma_vote", 0, M_MENU);
+	return NEW_MENU;
+}
+
+bool SystemVoteSingleMapPage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (gpManiVote->SysVoteInProgress()) return false;
+
+	this->SetEscLink("%s", Translate(player_ptr, 710));
+	this->SetTitle("%s", Translate(player_ptr, 711));
+	
+	int		m_list_size = 0;
+	map_t	*m_list = NULL;
 
 	// Set pointer to correct list
 	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -859,115 +820,120 @@ void ManiVote::ProcessMenuSystemVoteBuildMap( player_t *admin, int next_index, i
 		default : break;
 	}
 
-	if (argc - argv_offset == 3)
+	for( int i = 0; i < m_list_size; i++ )
 	{
-		// Map added or taken away from list
-
-		int		map_index = -1;
-
-		for (int i = 0; i < m_list_size; i++)
-		{
-			if (FStrEq(m_list[i].map_name, gpCmd->Cmd_Argv(2 + argv_offset)))
-			{
-				map_index = i;
-				break;
-			}
-		}
-
-		if (map_index == -1) 
-		{
-			SayToPlayer(ORANGE_CHAT, admin, "Invalid map [%s]", gpCmd->Cmd_Argv(2 + argv_offset));
-			return;
-		}
-
-		if (m_list[map_index].selected_for_vote)
-		{
-			m_list[map_index].selected_for_vote = false;
-			SayToPlayer(ORANGE_CHAT, admin, "%s", Translate(722, "%s", m_list[map_index].map_name));
-		}
-		else
-		{
-			m_list[map_index].selected_for_vote = true;
-			SayToPlayer(ORANGE_CHAT, admin, "%s", Translate(723, "%s", m_list[map_index].map_name));
-		}
-
-		engine->ClientCommand(admin->entity, "admin buildmapvote\n");
-		return;
+		MenuItem *ptr = new SystemVoteSingleMapItem;
+		ptr->params.AddParam("map_name", m_list[i].map_name);
+		ptr->SetDisplayText(" %s",  m_list[i].map_name);
+		this->AddItem(ptr);
 	}
-	else
-	{
-		char	more_cmd[128];
 
-		// Setup player list
-		FreeMenu();
-
-		for( int i = 0; i < m_list_size; i++ )
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			if (m_list[i].selected_for_vote)
-			{
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(724, "%s",  m_list[i].map_name));
-			}
-			else
-			{
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), " %s",  m_list[i].map_name);
-			}
-
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin buildmapvote %s %s", gpCmd->Cmd_Argv(2 + argv_offset), m_list[i].map_name);
-			Q_strcpy (menu_list[menu_list_size - 1].sort_name, m_list[i].map_name);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;                         
-		}
-
-		Q_snprintf( more_cmd, sizeof(more_cmd), "buildmapvote %s", gpCmd->Cmd_Argv(2 + argv_offset));
-
-		DrawSubMenu (admin, Translate(720), Translate(721), next_index, "admin", more_cmd,	true, -1);
-	}
-	
-	return;
+	this->SortDisplay();
+	return true;
 }
+
 //---------------------------------------------------------------------------------
 // Purpose: 
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
+int SystemVoteBuildMapItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	if (gpManiVote->SysVoteInProgress()) return CLOSE_MENU;
 
-	if (system_vote.vote_in_progress) return;
+	int		m_list_size = 0;
+	map_t	*m_list = NULL;
 
-	char	delay_type_string[64];
-	int		delay_type = Q_atoi(gpCmd->Cmd_Argv(2)); // delay type
-
-	if (delay_type == VOTE_NO_DELAY)
+	// Set pointer to correct list
+	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
 	{
-		Q_strcpy (delay_type_string, "now");
+		case 0: m_list = map_in_cycle_list; m_list_size = map_in_cycle_list_size;break;
+		case 1: m_list = votemap_list; m_list_size = votemap_list_size;break;
+		case 2: m_list = map_list; m_list_size = map_list_size;break;
+		default : break;
 	}
-	else if (delay_type == VOTE_END_OF_ROUND_DELAY)
+
+	// Map added or taken away from list
+	int		map_index;
+	this->params.GetParam("map_index", &map_index);
+
+	if (m_list[map_index].selected_for_vote)
 	{
-		Q_strcpy (delay_type_string, "round");
+		m_list[map_index].selected_for_vote = false;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 722, "%s", m_list[map_index].map_name));
 	}
 	else
 	{
-		Q_strcpy (delay_type_string, "end");
+		m_list[map_index].selected_for_vote = true;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 723, "%s", m_list[map_index].map_name));
 	}
 
-	int		m_list_size;
-	map_t	*m_list;
+	return REPOP_MENU;
+}
 
-	// Setup player list
-	FreeMenu();
+bool SystemVoteBuildMapPage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (gpManiVote->SysVoteInProgress()) return false;
+
+	this->SetEscLink("%s", Translate(player_ptr, 720));
+	this->SetTitle("%s", Translate(player_ptr, 721));
+	
+	int		m_list_size = 0;
+	map_t	*m_list = NULL;
+
+	// Set pointer to correct list
+	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
+	{
+		case 0: m_list = map_in_cycle_list; m_list_size = map_in_cycle_list_size;break;
+		case 1: m_list = votemap_list; m_list_size = votemap_list_size;break;
+		case 2: m_list = map_list; m_list_size = map_list_size;break;
+		default : break;
+	}
+
+	for( int i = 0; i < m_list_size; i++ )
+	{
+		MenuItem *ptr = new SystemVoteBuildMapItem;
+		ptr->params.AddParam("map_index", i);
+
+		if (m_list[i].selected_for_vote)
+		{
+			ptr->SetDisplayText("%s", Translate(player_ptr, 724, "%s",  m_list[i].map_name));
+		}
+		else
+		{
+			ptr->SetDisplayText(" %s",  m_list[i].map_name);
+		}
+
+		ptr->SetHiddenText("%s",  m_list[i].map_name);
+		this->AddItem(ptr);	
+	}
+
+	this->SortHidden();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: 
+//---------------------------------------------------------------------------------
+void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, const char *delay_type_string)
+{
+	if (system_vote.vote_in_progress) return;
+
+	int delay_type;
+
+	if (FStrEq(delay_type_string, "end"))
+	{
+		delay_type = VOTE_END_OF_MAP_DELAY;
+	}
+	else if (FStrEq(delay_type_string, "round"))
+	{
+		delay_type = VOTE_END_OF_ROUND_DELAY;
+	}
+	else
+	{
+		delay_type = VOTE_NO_DELAY;
+	}
+
+	int		m_list_size = 0;
+	map_t	*m_list = NULL;
 
 	// Set pointer to correct list
 	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -997,8 +963,8 @@ void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
 	FreeList ((void **) &vote_option_list, &vote_option_list_size);
 	if (mani_vote_allow_extend.GetInt() == 1 && selected_map != 1)
 	{
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend Map");
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(admin, 2503));
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
 		vote_option.votes_cast = 0;
 		vote_option.null_command = false;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1019,7 +985,7 @@ void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
 	system_vote.vote_starter = admin->index;
 	system_vote.vote_confirmation = false;
 
-	if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
+	if (gpManiClient->HasAccess(admin->index, ADMIN, ADMIN_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -1027,16 +993,16 @@ void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
 	system_vote.end_vote_time = gpGlobals->curtime + mani_vote_allowed_voting_time.GetFloat();
 	if (!IsYesNoVote())
 	{
-		Q_strcpy(system_vote.vote_title, Translate(551));
+		Q_strcpy(system_vote.vote_title, Translate(NULL, 551));
 	}
 	else
 	{
-		Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552, "%s", vote_option_list[0].vote_command));
+		snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(NULL, 552, "%s", vote_option_list[0].vote_command));
 	}
 
 	StartSystemVote();
 	LogCommand(admin, "Started a random map vote\n");
-	AdminSayToAll(ORANGE_CHAT, admin, mani_adminvote_anonymous.GetInt(), "started a map vote"); 
+	AdminSayToAll(ORANGE_CHAT, admin, mani_adminvote_anonymous.GetInt(), "%s", Translate(NULL, 2504)); 
 	
 	return;
 }
@@ -1046,23 +1012,21 @@ void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, int admin_index )
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteCancel(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_CANCEL_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CANCEL_VOTE, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (!system_vote.vote_in_progress)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: No system voting to cancel!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2505));
 		return PLUGIN_STOP;
 	}
 
-	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "cancelled current vote"); 
+	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "%s", Translate(player_ptr, 2506)); 
 	system_vote.vote_in_progress = false;
 	if (system_vote.vote_type == VOTE_RANDOM_END_OF_MAP)
 	{
@@ -1084,19 +1048,17 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 {
 	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
-	int admin_index = -1;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_RANDOM_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RANDOM_MAP_VOTE, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	if (system_vote.vote_in_progress)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Cannot run as system vote is already in progress !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2507));
 		return PLUGIN_STOP;
 	}
 
@@ -1107,7 +1069,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 	if (gpCmd->Cmd_Argc() < 3)
 	{
 		// Only number of maps passed through
-		number_of_maps = Q_atoi(gpCmd->Cmd_Argv(1));
+		number_of_maps = atoi(gpCmd->Cmd_Argv(1));
 	}
 	else
 	{
@@ -1125,12 +1087,12 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 			delay_type = VOTE_END_OF_ROUND_DELAY;
 		}
 
-		number_of_maps = Q_atoi(gpCmd->Cmd_Argv(2));
+		number_of_maps = atoi(gpCmd->Cmd_Argv(2));
 	}
 
 	if (number_of_maps == 0)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You must have one or more maps !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2508));
 		return PLUGIN_STOP;
 	}
 
@@ -1146,7 +1108,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 	}
 
 	system_vote.vote_confirmation = false;
-	if (player_ptr && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
+	if (player_ptr && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -1155,16 +1117,16 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 	BuildRandomMapVote(number_of_maps);
 	if (!IsYesNoVote())
 	{
-		Q_strcpy(system_vote.vote_title,Translate(551));
+		Q_strcpy(system_vote.vote_title,Translate(player_ptr, 551));
 	}
 	else
 	{
-		Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552, "%s", vote_option_list[0].vote_command));
+		snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(player_ptr, 552, "%s", vote_option_list[0].vote_command));
 	}
 
 	StartSystemVote();
 	LogCommand(player_ptr, "Started a random map vote\n");
-	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "started a random map vote"); 
+	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "%s", Translate(player_ptr, 2509)); 
 
 	return PLUGIN_STOP;
 }
@@ -1174,20 +1136,18 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MAP_VOTE, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	if (system_vote.vote_in_progress)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Cannot run as system vote is already in progress !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2507));
 		return PLUGIN_STOP;
 	}
 
@@ -1237,18 +1197,18 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 
 		if (timelimit_change && (winlimit_change || maxrounds_change))
 		{
-			Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i minutes and %i rounds", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt());
+			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(player_ptr, 2510,"%i%i", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt()));
 		}
 		else if (timelimit_change)
 		{
-			Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i minutes", mani_vote_extend_time.GetInt());
+			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(player_ptr, 2511,"%i", mani_vote_extend_time.GetInt()));
 		}
 		else 
 		{
-			Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i rounds", mani_vote_extend_rounds.GetInt());
+			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(player_ptr, 2512,"%i", mani_vote_extend_rounds.GetInt()));
 		}
 
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
 		vote_option.votes_cast = 0;
 		vote_option.null_command = false;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1257,7 +1217,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 
 	if (!use_delay_string_as_first_map && gpCmd->Cmd_Argc() < 3)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You must have one or more maps !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2507));
 		return PLUGIN_STOP;
 	}
 
@@ -1283,7 +1243,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 	}
 
 	system_vote.vote_confirmation = false;
-	if (player_ptr && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
+	if (player_ptr && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -1291,16 +1251,16 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 	system_vote.end_vote_time = gpGlobals->curtime + mani_vote_allowed_voting_time.GetFloat();
 	if (!IsYesNoVote())
 	{
-		Q_strcpy(system_vote.vote_title, Translate(551));
+		Q_strcpy(system_vote.vote_title, Translate(player_ptr, 551));
 	}
 	else
 	{
-		Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552, "%s", vote_option_list[0].vote_command));
+		snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(player_ptr, 552, "%s", vote_option_list[0].vote_command));
 	}
 
 	StartSystemVote();
 	LogCommand(player_ptr, "Started a map vote\n");
-	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "started a map vote"); 
+	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "%s", Translate(player_ptr, 2504)); 
 
 	return PLUGIN_STOP;
 }
@@ -1310,25 +1270,23 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_MAP_VOTE, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MAP_VOTE, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (system_vote.vote_in_progress)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Cannot run as system vote is already in progress !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2507));
 		return PLUGIN_STOP;
 	}
 
 	if (!mp_timelimit && !mp_winlimit && !mp_maxrounds)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Server does not support a timelimit, win limit or max rounds !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2513));
 		return PLUGIN_STOP;
 	}
 
@@ -1342,7 +1300,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 
 	if (!timelimit_change && !winlimit_change && !maxrounds_change)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: This server has an infinite time limit, win limit and max rounds limit!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2514));
 		return PLUGIN_STOP;
 	}
 
@@ -1355,18 +1313,18 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 
 	if (timelimit_change && winlimit_change && maxrounds_change)
 	{
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i minutes and %i rounds", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt());
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(player_ptr, 2510,"%i%i", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt()));
 	}
 	else if (timelimit_change)
 	{
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i minutes", mani_vote_extend_time.GetInt());
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(player_ptr, 2511,"%i", mani_vote_extend_time.GetInt()));
 	}
 	else 
 	{
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i rounds", mani_vote_extend_rounds.GetInt());
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", Translate(player_ptr, 2512,"%i", mani_vote_extend_rounds.GetInt()));
 	}
 
-	Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
+	snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
 	vote_option.votes_cast = 0;
 	vote_option.null_command = false;
 	AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1384,7 +1342,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 	}
 
 	system_vote.vote_confirmation = false;
-	if (player_ptr && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
+	if (player_ptr && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
@@ -1392,11 +1350,11 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 	system_vote.end_vote_time = gpGlobals->curtime + mani_vote_allowed_voting_time.GetFloat();
 	IsYesNoVote();
 
-	Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(553,"%i", mani_vote_extend_time.GetInt()));
+	snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(player_ptr, 553,"%i", mani_vote_extend_time.GetInt()));
 
 	StartSystemVote();
 	LogCommand(player_ptr, "Started an extend map vote\n");
-	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "started an extend map vote"); 
+	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "%s", Translate(player_ptr, 2515)); 
 
 	return PLUGIN_STOP;
 }
@@ -1411,8 +1369,8 @@ bool	ManiVote::AddMapToVote
 )
 {
 	vote_option_t vote_option;
-	map_t	*m_list;
-	int		m_list_size;
+	map_t	*m_list = NULL;
+	int		m_list_size = 0;
 
 	// Set pointer to correct list
 	switch (mani_vote_mapcycle_mode_for_admin_map_vote.GetInt())
@@ -1436,12 +1394,12 @@ bool	ManiVote::AddMapToVote
 
 	if (!valid_map)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Map [%s] is invalid !!", map_name);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2516, "%s", map_name));
 		return false;
 	}
 	
-	Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", map_name);
-	Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", map_name);
+	snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", map_name);
+	snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", map_name);
 	vote_option.votes_cast = 0;
 	vote_option.null_command = false;
 	AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1455,23 +1413,15 @@ bool	ManiVote::AddMapToVote
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteQuestion(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
+		if ((command_type != M_MENU && !gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_QUESTION_VOTE)) ||
+		    (command_type == M_MENU && !gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MENU_QUESTION_VOTE))  || war_mode)
 		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You are not authorised to use admin commands");
-			return PLUGIN_STOP;
-		}
-
-		if ((command_type != M_MENU && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_QUESTION_VOTE)) ||
-		    (command_type == M_MENU && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_QUESTION_VOTE))  || war_mode)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You are not authorised to start a question vote");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2517));
 			return PLUGIN_STOP;
 		}
 	}
@@ -1480,7 +1430,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteQuestion(player_t *player_ptr, const char *
 
 	if (system_vote.vote_in_progress)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Cannot run as system vote is already in progress!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2507));
 		return PLUGIN_STOP;
 	}
 
@@ -1495,8 +1445,8 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteQuestion(player_t *player_ptr, const char *
 	{
 		vote_option_t vote_option;
 	
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , Translate(M_MENU_YES));
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , Translate(M_MENU_YES));
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , Translate(player_ptr, M_MENU_YES));
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , Translate(player_ptr, M_MENU_YES));
 		vote_option.votes_cast = 0;
 		vote_option.null_command = false;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1515,18 +1465,18 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteQuestion(player_t *player_ptr, const char *
 	}
 
 	system_vote.vote_confirmation = false;
-	if (player_ptr && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
+	if (player_ptr && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
 
 	system_vote.end_vote_time = gpGlobals->curtime + mani_vote_allowed_voting_time.GetFloat();
 	IsYesNoVote();
-	Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", gpCmd->Cmd_Argv(1));
+	snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", gpCmd->Cmd_Argv(1));
 
 	StartSystemVote();
 	LogCommand(player_ptr, "Started a question vote\n");
-	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "started a question vote"); 
+	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "%s", Translate(player_ptr, 2578)); 
 
 	return PLUGIN_STOP;
 }
@@ -1538,8 +1488,8 @@ bool	ManiVote::AddQuestionToVote(const char *answer)
 {
 	vote_option_t vote_option;
 	
-	Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", answer);
-	Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", answer);
+	snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", answer);
+	snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", answer);
 	vote_option.votes_cast = 0;
 	vote_option.null_command = false;
 	AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1554,23 +1504,15 @@ bool	ManiVote::AddQuestionToVote(const char *answer)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
+		if ((command_type != M_MENU && !gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RCON_VOTE)) || 
+		    (command_type == M_MENU && !gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MENU_RCON_VOTE)))
 		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You are not authorised to use admin commands");
-			return PLUGIN_STOP;
-		}
-
-		if ((command_type != M_MENU && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_RCON_VOTE)) || 
-		    (command_type == M_MENU && !gpManiClient->IsAdminAllowed(admin_index, ALLOW_MENU_RCON_VOTE)))
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: You are not authorised to start a rcon vote");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2579));
 			return PLUGIN_STOP;
 		}
 	}
@@ -1579,7 +1521,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *comm
 
 	if (system_vote.vote_in_progress)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Cannot run as system vote is already in progress !!");
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2507));
 		return PLUGIN_STOP;
 	}
 
@@ -1587,8 +1529,8 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *comm
 
 	FreeList ((void **) &vote_option_list, &vote_option_list_size);
 
-	Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", gpCmd->Cmd_Args(2));
-	Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", gpCmd->Cmd_Args(2));
+	snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", gpCmd->Cmd_Args(2));
+	snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", gpCmd->Cmd_Args(2));
 	vote_option.votes_cast = 0;
 	vote_option.null_command = false;
 	AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -1606,18 +1548,18 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *comm
 	}
 
 	system_vote.vote_confirmation = false;
-	if (player_ptr && gpManiClient->IsAdminAllowed(admin_index, ALLOW_ACCEPT_VOTE))
+	if (player_ptr && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_ACCEPT_VOTE))
 	{
 		system_vote.vote_confirmation = true;
 	}
 
 	system_vote.end_vote_time = gpGlobals->curtime + mani_vote_allowed_voting_time.GetFloat();
 	IsYesNoVote();
-	Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", gpCmd->Cmd_Argv(1));
+	snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", gpCmd->Cmd_Argv(1));
 
 	this->StartSystemVote();
 	LogCommand(player_ptr, "Started a RCON vote\n");
-	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "started a RCON vote"); 
+	AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminvote_anonymous.GetInt(), "%s", Translate(player_ptr, 2518)); 
 
 	return PLUGIN_STOP;
 }
@@ -1700,11 +1642,10 @@ void	ManiVote::ProcessVotes (void)
 
 	if (mani_vote_show_vote_mode.GetInt() != 0)
 	{
-		SayToAll(GREEN_CHAT, true, "Results are in, %i vote%s cast", number_of_votes, (number_of_votes == 1) ? " was":"s were");
+		SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 2519,"%i",number_of_votes));
 		if (system_vote.split_winner > 1)
 		{
-			SayToAll(GREEN_CHAT, true, "%i options share equal highest votes, picking random choice...", 
-						system_vote.split_winner);
+			SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 2520, "%i", 	system_vote.split_winner));
 		}
 	}
 
@@ -1722,7 +1663,7 @@ void	ManiVote::ProcessVotes (void)
 		return;
 	}
 
-	float vote_percentage;
+	float vote_percentage = 0.0;
 
 	switch (system_vote.vote_type)
 	{
@@ -1780,23 +1721,16 @@ void	ManiVote::ProcessVotes (void)
 		// We must find the admin if they are still there
 		if (FindPlayerByIndex(&admin))
 		{
-			char	result_text[512];
-
 			// Yes we do, show them the menu
-			FreeMenu();
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MENU_YES));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_vote_accept");
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_MENU_NO));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_vote_refuse");
-
-			Q_snprintf(result_text, sizeof (result_text), "%s", Translate(661, "%s", vote_option_list[highest_index].vote_name));
-			DrawStandardMenu(&admin, Translate(660), result_text, false);
 			system_vote.waiting_decision = true;
 			system_vote.waiting_decision_time = gpGlobals->curtime + 30.0;
+
+			g_menu_mgr.Kill(&admin);
+			MenuPage *ptr = new SystemAcceptVotePage();
+			ptr->params.AddParamVar("result_text", "%s", Translate(NULL, 661, "%s", vote_option_list[highest_index].vote_name));
+			g_menu_mgr.AddMenu(&admin, ptr, 0, 30);
+			ptr->PopulateMenuPage(&admin);
+			ptr->RenderPage(&admin, g_menu_mgr.GetHistorySize(&admin));
 			return;
 		}
 	}
@@ -1804,7 +1738,35 @@ void	ManiVote::ProcessVotes (void)
 	// Process the win
 	ProcessVoteWin (highest_index);
 	system_vote.vote_in_progress = false;
+}
 
+int SystemAcceptVoteItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	bool	option;
+	this->params.GetParam("option", &option);
+
+	gpManiVote->ProcessVoteConfirmation (player_ptr, option);
+	return CLOSE_MENU;
+}
+
+bool SystemAcceptVotePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 660));
+
+	char *result_text;
+	this->params.GetParam("result_text", &result_text);
+	this->SetTitle("%s", result_text);
+
+	MenuItem *ptr = new SystemAcceptVoteItem;
+	ptr->params.AddParam("option", true);
+	ptr->SetDisplayText("%s", Translate(player_ptr, M_MENU_YES));
+	this->AddItem(ptr);
+
+	ptr = new SystemAcceptVoteItem;
+	ptr->params.AddParam("option", false);
+	ptr->SetDisplayText("%s", Translate(player_ptr, M_MENU_NO));
+	this->AddItem(ptr);
+	return true;
 }
 
 //*******************************************************************************
@@ -1848,7 +1810,7 @@ void	ManiVote::BuildCurrentVoteLeaders (void)
 			strcat(show_hint_results,"\n");
 		}
 
-		Q_snprintf(result_string, sizeof(result_string), "%i. %s: (%i)", 
+		snprintf(result_string, sizeof(result_string), "%i. %s: (%i)", 
 					i+1,
 					show_vote_list[i].option, 
 					show_vote_list[i].votes_cast);
@@ -1903,13 +1865,13 @@ char	*ManiVote::GetCompleteVoteProgress (void)
 	if (time_left < 0) time_left = 0;
 
 	// 'Votes: 12/32, 5s left'
-	Q_snprintf(vote_progress_string, sizeof(vote_progress_string),
+	snprintf(vote_progress_string, sizeof(vote_progress_string),
 			"%s %i/%i, %is %s\n%s",
-				Translate(1268),
+				Translate(NULL, 1268),
 				system_vote.votes_so_far,
 				system_vote.total_votes_needed,
 				time_left,
-				Translate(1267),
+				Translate(NULL, 1267),
 				show_hint_results); 
 
 	return vote_progress_string;
@@ -1934,12 +1896,12 @@ void	ManiVote::ProcessVoteConfirmation (player_t *player, bool accept)
 	{
 		if (accept)
 		{
-			AdminSayToAll(ORANGE_CHAT, player, mani_adminvote_anonymous.GetInt(), "accepted vote"); 
+			AdminSayToAll(ORANGE_CHAT, player, mani_adminvote_anonymous.GetInt(), "%s", Translate(player, 2521)); 
 			ProcessVoteWin (system_vote.winner_index);
 		}
 		else
 		{
-			AdminSayToAll(ORANGE_CHAT, player, mani_adminvote_anonymous.GetInt(), "refused vote"); 
+			AdminSayToAll(ORANGE_CHAT, player, mani_adminvote_anonymous.GetInt(), "%s", Translate(player, 2522)); 
 			ProcessPlayActionSound(NULL, MANI_ACTION_SOUND_VOTEEND);
 		}
 	}
@@ -1973,11 +1935,11 @@ void	ManiVote::ProcessVoteWin (int win_index)
 //*******************************************************************************
 void	ManiVote::ProcessMapWin (int win_index)
 {
-	SayToAll (LIGHT_GREEN_CHAT, true, "Option '%s' has won the vote", vote_option_list[win_index].vote_name);
+	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2523, "%s", vote_option_list[win_index].vote_name));
 
 	if (vote_option_list[win_index].null_command)
 	{
-		SayToAll (LIGHT_GREEN_CHAT, true, "Next map will still be %s", next_map);
+		SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2524, "%s", next_map));
 		system_vote.map_decided = true;
 		return;
 	}
@@ -1985,7 +1947,15 @@ void	ManiVote::ProcessMapWin (int win_index)
 	// If extend allowed and win index = 0 (extend)
 	if (FStrEq(vote_option_list[win_index].vote_command,"mani_extend_map"))
 	{
-		if (system_vote.vote_type == VOTE_RANDOM_END_OF_MAP) system_vote.number_of_extends ++;
+		if (system_vote.vote_type == VOTE_RANDOM_END_OF_MAP) 
+		{
+			system_vote.number_of_extends ++;
+			if (mani_vote_end_of_map_swap_team.GetInt() == 1)
+			{
+				gpManiTeam->TriggerSwapTeam();
+			}
+		}
+
 		bool timelimit_change = false;
 		bool winlimit_change = false;
 		bool maxrounds_change = false;
@@ -2028,19 +1998,21 @@ void	ManiVote::ProcessMapWin (int win_index)
 	Q_strcpy(forced_nextmap,vote_option_list[win_index].vote_command);
 	Q_strcpy(next_map, vote_option_list[win_index].vote_command);
 	mani_nextmap.SetValue(next_map);
+	SetChangeLevelReason("System vote");
+	gpManiAutoMap->SetMapOverride(false);
 
 	LogCommand (NULL, "System vote set nextmap to %s\n", vote_option_list[win_index].vote_command);
 	override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
 	override_setnextmap = true;
 	if (system_vote.delay_action == VOTE_NO_DELAY)
 	{
-		SayToAll(LIGHT_GREEN_CHAT, true, "Map will change to %s in 5 seconds", vote_option_list[win_index].vote_command);
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2525,"%s", vote_option_list[win_index].vote_command));
 		trigger_changemap = true;
 		trigger_changemap_time = gpGlobals->curtime + 5.0;
 	}
 	else if (system_vote.delay_action == VOTE_END_OF_ROUND_DELAY)
 	{
-		SayToAll(LIGHT_GREEN_CHAT, true, "Map will change to %s at the end of the round", vote_option_list[win_index].vote_command);
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2526,"%s", vote_option_list[win_index].vote_command));
 		if (mp_timelimit)
 		{
 			mp_timelimit->SetValue(1);
@@ -2048,7 +2020,7 @@ void	ManiVote::ProcessMapWin (int win_index)
 	}
 	else
 	{
-		SayToAll(LIGHT_GREEN_CHAT, true, "Next Map will be %s", vote_option_list[win_index].vote_command);
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2527, "%s", vote_option_list[win_index].vote_command));
 	}
 
 	system_vote.map_decided = true;
@@ -2059,18 +2031,18 @@ void	ManiVote::ProcessMapWin (int win_index)
 //*******************************************************************************
 void	ManiVote::ProcessRConWin (int win_index)
 {
-	SayToAll (LIGHT_GREEN_CHAT, true, "Option '%s' has won the vote", vote_option_list[win_index].vote_name);
+	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2523, "%s", vote_option_list[win_index].vote_name));
 
 	if (vote_option_list[win_index].null_command)
 	{
-		SayToAll (LIGHT_GREEN_CHAT, true, "Command will not be executed");
+		SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2528));
 		return;
 	}
 	else
 	{
 		char	server_cmd[512];
-		Q_snprintf(server_cmd, sizeof(server_cmd), "%s\n", vote_option_list[win_index].vote_command);
-		SayToAll(LIGHT_GREEN_CHAT, true, "Executing RCON command voted for");
+		snprintf(server_cmd, sizeof(server_cmd), "%s\n", vote_option_list[win_index].vote_command);
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2529));
 		LogCommand (NULL, "System vote ran rcon command %s\n", vote_option_list[win_index].vote_command);
 		engine->ServerCommand(server_cmd);
 	}
@@ -2082,8 +2054,8 @@ void	ManiVote::ProcessRConWin (int win_index)
 //*******************************************************************************
 void	ManiVote::ProcessQuestionWin (int win_index)
 {
-	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(554,"%s", system_vote.vote_title));
-	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(555,"%s", vote_option_list[win_index].vote_name));
+	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 554,"%s", system_vote.vote_title));
+	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 555,"%s", vote_option_list[win_index].vote_name));
 }
 
 //*******************************************************************************
@@ -2091,11 +2063,11 @@ void	ManiVote::ProcessQuestionWin (int win_index)
 //*******************************************************************************
 void	ManiVote::ProcessExtendWin (int win_index)
 {
-	SayToAll (LIGHT_GREEN_CHAT, true, "Option '%s' has won the vote", vote_option_list[win_index].vote_name);
+	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2523, "%s", vote_option_list[win_index].vote_name));
 
 	if (vote_option_list[win_index].null_command)
 	{
-		SayToAll (LIGHT_GREEN_CHAT, true, "Map will not be extended");
+		SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2530));
 		return;
 	}
 
@@ -2116,7 +2088,7 @@ void	ManiVote::ProcessExtendWin (int win_index)
 			int timelimit = mp_timelimit->GetInt();
 			// Increase timeleft
 			mp_timelimit->SetValue(timelimit + mani_vote_extend_time.GetInt());
-			SayToAll(LIGHT_GREEN_CHAT, true, "Map extended by %i minutes", mani_vote_extend_time.GetInt());
+			SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2531, "%i", mani_vote_extend_time.GetInt()));
 			LogCommand (NULL, "System vote extended map by %i minutes\n", mani_vote_extend_time.GetInt());
 		}
 
@@ -2125,7 +2097,7 @@ void	ManiVote::ProcessExtendWin (int win_index)
 			int winlimit = mp_winlimit->GetInt();
 			// Increase timeleft
 			mp_winlimit->SetValue(winlimit + mani_vote_extend_rounds.GetInt());
-			SayToAll(LIGHT_GREEN_CHAT, true, "Map extended by %i rounds (mp_winlimit)", mani_vote_extend_rounds.GetInt());
+			SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2532, "%i", mani_vote_extend_rounds.GetInt()));
 			LogCommand (NULL, "System vote extended map by %i rounds\n", mani_vote_extend_rounds.GetInt());
 		}
 
@@ -2134,7 +2106,7 @@ void	ManiVote::ProcessExtendWin (int win_index)
 			int maxrounds = mp_maxrounds->GetInt();
 			// Increase timeleft
 			mp_maxrounds->SetValue(maxrounds + mani_vote_extend_rounds.GetInt());
-			SayToAll(LIGHT_GREEN_CHAT, true, "Map extended by %i rounds (mp_maxrounds)", mani_vote_extend_rounds.GetInt());
+			SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2533, "%i", mani_vote_extend_rounds.GetInt()));
 			LogCommand (NULL, "System vote extended map by %i rounds\n", mani_vote_extend_rounds.GetInt());
 		}
 
@@ -2154,13 +2126,13 @@ bool	ManiVote::IsYesNoVote (void)
 	if (vote_option_list_size > 1) return false;
 
 	// Need to make sure that vote options include 'No'
-	Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , Translate(M_MENU_NO));
-	Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "");
+	snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , Translate(NULL, M_MENU_NO));
+	snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "");
 	vote_option.votes_cast = 0;
 	vote_option.null_command = true;
 	AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
 	vote_option_list[vote_option_list_size - 1] = vote_option;
-	Q_snprintf(vote_option_list[0].vote_name, sizeof(vote_option.vote_name) , Translate(M_MENU_YES));
+	snprintf(vote_option_list[0].vote_name, sizeof(vote_option.vote_name) , Translate(NULL, M_MENU_YES));
 
 	return true;
 }
@@ -2225,7 +2197,7 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 		if (!exclude_map)
 		{
 			// Add map to selection list
-			Q_snprintf(select_map.map_name, sizeof(select_map.map_name) , "%s", m_list[i].map_name);
+			snprintf(select_map.map_name, sizeof(select_map.map_name) , "%s", m_list[i].map_name);
 			AddToList((void **) &select_list, sizeof(map_t), &select_list_size);
 			select_list[select_list_size - 1] = select_map;
 		}
@@ -2267,6 +2239,14 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 		bool timelimit_change = false;
 		bool winlimit_change = false;
 		bool maxrounds_change = false;
+		char	swap_team_str[256]="";
+
+		if (mani_vote_end_of_map_swap_team.GetInt() == 1 && 
+			gpManiGameType->IsGameType(MANI_GAME_CSS) && 
+			system_vote.vote_type == VOTE_RANDOM_END_OF_MAP)
+		{
+			Q_strcpy(swap_team_str, Translate(NULL, 2534));
+		}
 
 		if (mp_timelimit && mp_timelimit->GetInt() != 0) timelimit_change = true;
 		if (mp_winlimit && mp_winlimit->GetInt() != 0) winlimit_change = true;
@@ -2274,18 +2254,18 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 
 		if (timelimit_change && winlimit_change && maxrounds_change)
 		{
-			Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i minutes and %i rounds", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt());
+			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s%s", Translate(NULL, 2510, "%i%i", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt()), swap_team_str);
 		}
 		else if (timelimit_change)
 		{
-			Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i minutes", mani_vote_extend_time.GetInt());
+			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s%s", Translate(NULL, 2511, "%i", mani_vote_extend_time.GetInt()),swap_team_str);
 		}
 		else
 		{
-			Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "Extend by %i rounds", mani_vote_extend_rounds.GetInt());
+			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s%s", Translate(NULL, 2512, "%i", mani_vote_extend_rounds.GetInt()),swap_team_str);
 		}
 
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
 		vote_option.votes_cast = 0;
 		vote_option.null_command = false;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -2299,8 +2279,8 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 		map_index = rand() % select_list_size;
 
 		// Add map to vote options list
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", select_list[map_index].map_name);
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", select_list[map_index].map_name);
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", select_list[map_index].map_name);
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", select_list[map_index].map_name);
 		vote_option.null_command = false;
 		vote_option.votes_cast = 0;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -2337,63 +2317,67 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 	// Map list built
 }
 
-
-
 //---------------------------------------------------------------------------------
 // Purpose: Generic function to handle any system voting
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuSystemVotemap( player_t *player, int next_index, int argv_offset )
+int SystemVotemapItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-
-	// Check if system vote still allowed 
-
-	if (!system_vote.vote_in_progress)
+	if (!gpManiVote->system_vote.vote_in_progress)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Voting not allowed at this time !!");
-		return;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2535));
+		return CLOSE_MENU;
 	}
 
-	if (voter_list[player->index - 1].voted)
+	if (gpManiVote->voter_list[player_ptr->index - 1].voted)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "You have already voted !!");
-		return;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2536));
+		return CLOSE_MENU;
 	}
 
-	if (!voter_list[player->index - 1].allowed_to_vote)
+	if (!gpManiVote->voter_list[player_ptr->index - 1].allowed_to_vote)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "You are too late to join this vote !!");
-		return;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2537));
+		return CLOSE_MENU;
 	}
 
-	if (argc - argv_offset == 2)
+	int	option;
+	this->params.GetParam("option", &option);
+	gpManiVote->ProcessPlayerVoted(player_ptr, option);
+	return CLOSE_MENU;
+}
+
+bool SystemVotemapPage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (!gpManiVote->system_vote.vote_in_progress)
 	{
-		ProcessPlayerVoted(player, Q_atoi(gpCmd->Cmd_Argv(1 + argv_offset)));
-		return;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2535));
+		return false;
 	}
 
-	// Show votes to player
-	FreeMenu();
-	CreateList ((void **) &menu_list, sizeof(menu_t), vote_option_list_size, &menu_list_size);
-
-	for( int i = 0; i < vote_option_list_size; i++ )
+	if (gpManiVote->voter_list[player_ptr->index - 1].voted)
 	{
-		Q_snprintf( menu_list[i].menu_text, sizeof(menu_list[i].menu_text), "%s", vote_option_list[i].vote_name);
-		Q_snprintf( menu_list[i].menu_command, sizeof(menu_list[i].menu_command), "mani_votemenu %i", i);
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2536));
+		return false;
 	}
 
-	if (menu_list_size == 0) return;
-
-	// List size may have changed
-	if (next_index > menu_list_size)
+	if (!gpManiVote->voter_list[player_ptr->index - 1].allowed_to_vote)
 	{
-		// Reset index
-		next_index = 0;
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2537));
+		return false;
 	}
 
-	// Show menu to player
-	DrawSubMenu (player, Translate(550), system_vote.vote_title, next_index,"mani_votemenu", "", false, (int) (system_vote.end_vote_time - gpGlobals->curtime));
-	return;
+	this->SetEscLink("%s", Translate(player_ptr, 550));
+	this->SetTitle("%s", gpManiVote->system_vote.vote_title);
+
+	for( int i = 0; i < gpManiVote->vote_option_list_size; i++ )
+	{
+		MenuItem *ptr = new SystemVotemapItem;
+		ptr->params.AddParam("option", i);
+		ptr->SetDisplayText("%s", gpManiVote->vote_option_list[i].vote_name);
+		this->AddItem(ptr);
+	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -2409,10 +2393,10 @@ void ManiVote::ProcessPlayerVoted( player_t *player, int vote_index)
 
 	switch(mani_vote_show_vote_mode.GetInt())
 	{
-		case (0): SayToPlayer (ORANGE_CHAT, player, "You voted for %s", vote_option_list[vote_index].vote_name); break;
-		case (1): SayToAll (ORANGE_CHAT, true, "Player %s voted", player->name); break;
-		case (2): SayToAll (ORANGE_CHAT,true, "Vote for %s", vote_option_list[vote_index].vote_name); break;
-		case (3): SayToAll(ORANGE_CHAT,true, "%s voted %s", player->name, vote_option_list[vote_index].vote_name); break;
+		case (0): SayToPlayer (ORANGE_CHAT, player, "%s", Translate(NULL, 2538, "%s", vote_option_list[vote_index].vote_name)); break;
+		case (1): SayToAll (ORANGE_CHAT, true, "%s", Translate(NULL, 2539, "%s", player->name)); break;
+		case (2): SayToAll (ORANGE_CHAT,true, "%s", Translate(NULL, 2540, "%s", vote_option_list[vote_index].vote_name)); break;
+		case (3): SayToAll(ORANGE_CHAT,true, "%s", Translate(NULL, 2541, "%s%s", player->name, vote_option_list[vote_index].vote_name)); break;
 		default : break;
 	}
 
@@ -2441,18 +2425,6 @@ void ManiVote::ProcessBuildUserVoteMaps(void)
 
 	// Get list of maps already played and exclude them from being voted !!
 	last_maps = GetLastMapsPlayed(&maps_to_skip, mani_vote_dont_show_last_maps.GetInt());
-
-	if (maps_to_skip != 0)
-	{
-//		MMsg("Maps Not Included for voting !!\n");
-		for (int i = 0; i < maps_to_skip; i ++)
-		{
-//			MMsg("%s ", last_maps[i].map_name);
-		}
-
-//		MMsg("\n");
-	}
-
 	m_list = votemap_list;
 	m_list_size = votemap_list_size;
 
@@ -2473,18 +2445,11 @@ void ManiVote::ProcessBuildUserVoteMaps(void)
 		if (!exclude_map)
 		{
 			// Add map to selection list
-			Q_snprintf(select_map.map_name, sizeof(select_map.map_name) , "%s", m_list[i].map_name);
+			snprintf(select_map.map_name, sizeof(select_map.map_name) , "%s", m_list[i].map_name);
 			AddToList((void **) &user_vote_map_list, sizeof(map_t), &user_vote_map_list_size);
 			user_vote_map_list[user_vote_map_list_size - 1] = select_map;
 		}
 	}
-
-//	MMsg("Maps available for user vote\n");
-	for (int i = 0; i < user_vote_map_list_size; i ++)
-	{
-//		MMsg("%s ", user_vote_map_list[i].map_name);
-	}
-//	MMsg("\n");	
 }
 
 //---------------------------------------------------------------------------------
@@ -2495,8 +2460,8 @@ void ManiVote::ShowCurrentUserMapVotes( player_t *player_ptr, int votes_required
 
 	OutputToConsole(player_ptr, "\n");
 	OutputToConsole(player_ptr, "%s\n", mani_version);
-	OutputToConsole(player_ptr, "\nVotes required for map change is %i\n\n", votes_required);
-	OutputToConsole(player_ptr, "ID  Map Name            Votes\n");
+	OutputToConsole(player_ptr, "%s", Translate(player_ptr, 2542, "%i", votes_required));
+	OutputToConsole(player_ptr, "%s", Translate(player_ptr, 2543));
 	OutputToConsole(player_ptr, "-----------------------------\n");
 
 	int votes_found;
@@ -2522,7 +2487,7 @@ void ManiVote::ShowCurrentUserMapVotes( player_t *player_ptr, int votes_required
 				if (user_vote_list[j].map_index == 0) votes_found ++;
 			}
 
-			OutputToConsole(player_ptr, false, "%-4i%-20s%i\n", 0, "Extend Map", votes_found);
+			OutputToConsole(player_ptr, "%-4i%-20s%i\n", 0, Translate(player_ptr, 2544), votes_found);
 		}
 	}
 
@@ -2537,11 +2502,11 @@ void ManiVote::ShowCurrentUserMapVotes( player_t *player_ptr, int votes_required
 			}
 		}
 
-		OutputToConsole(player_ptr, false, "%-4i%-20s%i\n", i + 1, user_vote_map_list[i].map_name, votes_found);
+		OutputToConsole(player_ptr, "%-4i%-20s%i\n", i + 1, user_vote_map_list[i].map_name, votes_found);
 	}
 
-	OutputToConsole(player_ptr, false, "\nTo vote for a map, type votemap <id> or votemap <map name>\n");
-	OutputToConsole(player_ptr, false, "e.g votemap 3, votemap de_dust2\n\n");
+	OutputToConsole(player_ptr, "%s", Translate(player_ptr, 2545));
+	OutputToConsole(player_ptr, "%s", Translate(player_ptr, 2546));
 
 	return;
 }
@@ -2602,7 +2567,7 @@ void ManiVote::ProcessMaUserVoteMap(player_t *player_ptr, int argc, const char *
 		if (map_index == -1)
 		{
 			// Map name not found, try map number instead
-			map_index = Q_atoi (map_id);
+			map_index = atoi (map_id);
 			if (map_index < 1 || map_index > user_vote_map_list_size)
 			{
 				map_index = -1;
@@ -2613,7 +2578,7 @@ void ManiVote::ProcessMaUserVoteMap(player_t *player_ptr, int argc, const char *
 	// Map failed validation so tell user
 	if (map_index == -1)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "%s is an invalid map to vote for, type 'votemap' to see the maps available", map_id);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2547, "%s", map_id));
 		return;
 	}
 
@@ -2632,7 +2597,7 @@ void ManiVote::ProcessMaUserVoteMap(player_t *player_ptr, int argc, const char *
 	if (!found_vote)
 	{
 		// First vote, inform world
-		SayToAll(GREEN_CHAT, false, "Voting started, type votemap in console or say 'votemap' in game for options");
+		SayToAll(GREEN_CHAT, false, "%s", Translate(player_ptr, 2548));
 	}
 
 	user_vote_list[player_ptr->index - 1].map_index = map_index;
@@ -2650,12 +2615,14 @@ void ManiVote::ProcessMaUserVoteMap(player_t *player_ptr, int argc, const char *
 
 	int votes_left = votes_required - counted_votes;
 
-	SayToAll(ORANGE_CHAT, false, "Player %s voted %s %s, %i more vote%s required", 
-								player_ptr->name, 
-								(map_index == 0) ? "to":"for",
-								(map_index == 0) ? "Extend Map":user_vote_map_list[map_index - 1].map_name,
-								votes_left, 
-								(votes_left == 1) ? " is":"s are");
+	if (map_index == 0)
+	{
+		SayToAll(ORANGE_CHAT, false, "%s", Translate(player_ptr, 2551, "%s%i%s", player_ptr->name, votes_left, (votes_left == 1) ? Translate(player_ptr, 2549):Translate(player_ptr, 2550)));
+	}
+	else
+	{
+		SayToAll(ORANGE_CHAT, false, "%s", Translate(player_ptr, 2552, "%s%s%i%s", player_ptr->name, user_vote_map_list[map_index - 1].map_name, votes_left, (votes_left == 1) ? Translate(player_ptr, 2549):Translate(player_ptr, 2550)));
+	}
 
 	if (votes_left <= 0)
 	{
@@ -2689,7 +2656,7 @@ void ManiVote::ProcessUserVoteMapWin(int map_index)
 			int timelimit = mp_timelimit->GetInt();
 			// Increase timeleft
 			mp_timelimit->SetValue(timelimit + mani_vote_extend_time.GetInt());
-			SayToAll(LIGHT_GREEN_CHAT, true, "Map extended by %i minutes", mani_vote_extend_time.GetInt());
+			SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2531, "%i", mani_vote_extend_time.GetInt()));
 			LogCommand (NULL, "User vote extended map by %i minutes\n", mani_vote_extend_time.GetInt());
 			map_start_time = gpGlobals->curtime + (mani_vote_extend_time.GetInt() * 60);
 		}
@@ -2699,7 +2666,7 @@ void ManiVote::ProcessUserVoteMapWin(int map_index)
 			int winlimit = mp_winlimit->GetInt();
 			// Increase timeleft
 			mp_winlimit->SetValue(winlimit + mani_vote_extend_rounds.GetInt());
-			SayToAll(LIGHT_GREEN_CHAT, true, "Map extended by %i rounds (mp_winlimit)", mani_vote_extend_rounds.GetInt());
+			SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2532, "%i", mani_vote_extend_rounds.GetInt()));
 			LogCommand (NULL, "User vote extended map by %i rounds\n", mani_vote_extend_rounds.GetInt());
 		}
 
@@ -2708,7 +2675,7 @@ void ManiVote::ProcessUserVoteMapWin(int map_index)
 			int maxrounds = mp_maxrounds->GetInt();
 			// Increase timeleft
 			mp_maxrounds->SetValue(maxrounds + mani_vote_extend_rounds.GetInt());
-			SayToAll(LIGHT_GREEN_CHAT, true, "Map extended by %i rounds (mp_maxrounds)", mani_vote_extend_rounds.GetInt());
+			SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2533, "%i", mani_vote_extend_rounds.GetInt()));
 			LogCommand (NULL, "User vote extended map by %i rounds\n", mani_vote_extend_rounds.GetInt());
 		}
 	}
@@ -2721,11 +2688,13 @@ void ManiVote::ProcessUserVoteMapWin(int map_index)
 
 		override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
 		override_setnextmap = true;
-		SayToAll(LIGHT_GREEN_CHAT, true, "Map will change to %s in 5 seconds", user_vote_map_list[map_index - 1].map_name);
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2526, "%s", user_vote_map_list[map_index - 1].map_name));
 		trigger_changemap = true;
 		system_vote.map_decided = true;
 		trigger_changemap_time = gpGlobals->curtime + 5.0;
 		map_start_time = gpGlobals->curtime;
+		SetChangeLevelReason("User vote changed map");
+		gpManiAutoMap->SetMapOverride(false);
 	}
 
 	for (int i = 0; i < max_players; i ++)
@@ -2746,7 +2715,7 @@ bool ManiVote::CanWeUserVoteMapYet( player_t *player )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Voting not allowed for %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2555, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player, 2555):Translate(player, 2554)));
 		return false;
 	}
 
@@ -2762,7 +2731,7 @@ bool ManiVote::CanWeUserVoteMapAgainYet( player_t *player )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "You cannot vote again for another %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2556,"%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player, 2555):Translate(player, 2554)));
 		return false;
 	}
 
@@ -2804,87 +2773,75 @@ int ManiVote::GetVotesRequiredForUserVote
 //---------------------------------------------------------------------------------
 // Purpose: Handle User Vote Map menu draw 
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuUserVoteMap( player_t *player, int next_index, int argv_offset )
+int UserVoteMapItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	char *option;
+	this->params.GetParam("option", &option);
+	gpManiVote->ProcessMaUserVoteMap(player_ptr, 2, option);
+	return CLOSE_MENU;
+}
+
+bool UserVoteMapPage::PopulateMenuPage(player_t *player_ptr)
+{
+
 	int votes_required;
+	int votes_found;
+	// Check and warn player if voting not allowed yet
+	if (!gpManiVote->CanWeUserVoteMapYet(player_ptr)) return false;
+	if (!gpManiVote->CanWeUserVoteMapAgainYet(player_ptr)) return false;
 
+	// Setup map list that the user can vote for
+	this->SetEscLink("%s", Translate(player_ptr, 560));
 
-	if (argc - argv_offset == 2)
+	if (mani_vote_allow_user_vote_map_extend.GetInt() == 1 &&
+		gpManiVote->system_vote.number_of_extends < mani_vote_max_extends.GetInt())
 	{
-		// User voted by menu system, should be a map index
-		const char *map_id = gpCmd->Cmd_Argv(1 + argv_offset);
-		ProcessMaUserVoteMap (player, 2, map_id);
-		return;
-	}
-	else
-	{
-		int votes_found;
-		// Check and warn player if voting not allowed yet
-		if (!CanWeUserVoteMapYet(player)) return;
-		if (!CanWeUserVoteMapAgainYet(player)) return;
+		bool timelimit_change = false;
+		bool winlimit_change = false;
+		bool maxrounds_change = false;
 
-		// Setup map list that the user can vote for
-		FreeMenu();
+		if (mp_timelimit && mp_timelimit->GetInt() != 0) timelimit_change = true;
+		if (mp_winlimit && mp_winlimit->GetInt() != 0) winlimit_change = true;
+		if (mp_maxrounds && mp_maxrounds->GetInt() != 0) maxrounds_change = true;
 
-		if (mani_vote_allow_user_vote_map_extend.GetInt() == 1 &&
-			system_vote.number_of_extends < mani_vote_max_extends.GetInt())
+		if (timelimit_change || winlimit_change || maxrounds_change)
 		{
-			bool timelimit_change = false;
-			bool winlimit_change = false;
-			bool maxrounds_change = false;
-
-			if (mp_timelimit && mp_timelimit->GetInt() != 0) timelimit_change = true;
-			if (mp_winlimit && mp_winlimit->GetInt() != 0) winlimit_change = true;
-			if (mp_maxrounds && mp_maxrounds->GetInt() != 0) maxrounds_change = true;
-
-			if (timelimit_change || winlimit_change || maxrounds_change)
-			{
-				// Extension of map allowed
-				votes_found = 0;
-				for (int j = 0; j < max_players; j++)
-				{
-					// Count votes for extension index 0
-					if (user_vote_list[j].map_index == 0) votes_found ++;
-				}
-
-				AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-				Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Extend Map [%i]", votes_found);							
-				Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_uservotemapmenu 0");
-			}
-		}
-
-		for (int i = 0; i < user_vote_map_list_size; i++)
-		{
+			// Extension of map allowed
 			votes_found = 0;
 			for (int j = 0; j < max_players; j++)
 			{
-				if (user_vote_list[j].map_index == i + 1)
-				{
-					votes_found ++;
-				}
+				// Count votes for extension index 0
+				if (gpManiVote->user_vote_list[j].map_index == 0) votes_found ++;
 			}
 
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%i] %s", votes_found, user_vote_map_list[i].map_name);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_uservotemapmenu %i", i + 1);
+			MenuItem *ptr = new UserVoteMapItem;
+			ptr->params.AddParam("option", "0");
+			ptr->SetDisplayText("Extend Map [%i]", votes_found);
+			this->AddItem(ptr);
 		}
-
-		if (menu_list_size == 0) return;
-
-		// List size may have changed
-		if (next_index > menu_list_size) next_index = 0;
-
-		votes_required = GetVotesRequiredForUserVote(false, mani_vote_user_vote_map_percentage.GetFloat(), mani_vote_user_vote_map_minimum_votes.GetInt());
-
-		char	votes_required_text[128];
-		Q_snprintf( votes_required_text, sizeof(votes_required_text), "%s", Translate(561,"%i", votes_required));							
-
-		// Draw menu list
-		DrawSubMenu (player, Translate(560), votes_required_text, next_index, "mani_uservotemapmenu","", false,-1);
 	}
 
-	return;
+	for (int i = 0; i < gpManiVote->user_vote_map_list_size; i++)
+	{
+		votes_found = 0;
+		for (int j = 0; j < max_players; j++)
+		{
+			if (gpManiVote->user_vote_list[j].map_index == i + 1)
+			{
+				votes_found ++;
+			}
+		}
+
+		MenuItem *ptr = new UserVoteMapItem;
+		ptr->params.AddParamVar("option", "%i", i + 1);
+		ptr->SetDisplayText("[%i] %s", votes_found, gpManiVote->user_vote_map_list[i].map_name);
+		this->AddItem(ptr);
+	}
+
+	votes_required = gpManiVote->GetVotesRequiredForUserVote(false, mani_vote_user_vote_map_percentage.GetFloat(), mani_vote_user_vote_map_minimum_votes.GetInt());
+	this->SetTitle("%s", Translate(player_ptr, 561,"%i", votes_required));				
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -2914,8 +2871,8 @@ void ManiVote::ShowCurrentRockTheVoteMaps( player_t *player_ptr)
 		OutputToConsole(player_ptr, "%-4i%-20s\n", i + 1, user_vote_map_list[i].map_name);
 	}
 
-	OutputToConsole(player_ptr, false, "\nTo nominate a map, type nominate <id> or nominate <map name>\n");
-	OutputToConsole(player_ptr, false, "e.g nominate 3, nominate de_dust2\n\n");
+	OutputToConsole(player_ptr, "\nTo nominate a map, type nominate <id> or nominate <map name>\n");
+	OutputToConsole(player_ptr, "e.g nominate 3, nominate de_dust2\n\n");
 
 	return;
 }
@@ -2925,11 +2882,11 @@ void ManiVote::ShowCurrentRockTheVoteMaps( player_t *player_ptr)
 //*******************************************************************************
 void	ManiVote::ProcessRockTheVoteWin (int win_index)
 {
-	SayToAll (LIGHT_GREEN_CHAT, true, "Option '%s' has won the vote", vote_option_list[win_index].vote_name);
+	SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2523, "%s", vote_option_list[win_index].vote_name));
 
 	if (vote_option_list[win_index].null_command)
 	{
-		SayToAll (LIGHT_GREEN_CHAT, true, "Next map will still be %s", next_map);
+		SayToAll (LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2524, "%s", next_map));
 		system_vote.map_decided = true;
 		return;
 	}
@@ -2940,28 +2897,13 @@ void	ManiVote::ProcessRockTheVoteWin (int win_index)
 	LogCommand (NULL, "System vote set nextmap to %s\n", vote_option_list[win_index].vote_command);
 	override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
 	override_setnextmap = true;
-	SayToAll(LIGHT_GREEN_CHAT, true, "Map will change to %s in 5 seconds", vote_option_list[win_index].vote_command);
+	SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2525, "%s", vote_option_list[win_index].vote_command));
 	trigger_changemap = true;
 	trigger_changemap_time = gpGlobals->curtime + 5.0;
+	SetChangeLevelReason("Rockthevote changed map");
+	gpManiAutoMap->SetMapOverride(false);
 
 	system_vote.map_decided = true;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Handle player saying 'nominate'
-//---------------------------------------------------------------------------------
-void ManiVote::ProcessRockTheVoteNominateMap(player_t *player)
-{
-	// Check if already typed rock the vote
-	if (user_vote_list[player->index - 1].rock_the_vote)
-	{
-		SayToPlayer(ORANGE_CHAT, player, "Your rockthevote command has already been registered, you can't nominate a map");
-		return;
-	}
-
-	// Run nominate menu
-	engine->ClientCommand(player->entity, "mani_rtvnominate\n");
-	
 }
 
 //---------------------------------------------------------------------------------
@@ -2973,7 +2915,7 @@ bool ManiVote::CanWeRockTheVoteYet( player_t *player )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Rock the Vote is not allowed for %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2558, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player, 2553):Translate(player, 2554)));
 		return false;
 	}
 
@@ -2989,7 +2931,7 @@ bool ManiVote::CanWeNominateAgainYet( player_t *player )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "You cannot nominate again for another %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2559, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player, 2553):Translate(player, 2554)));
 		return false;
 	}
 
@@ -3080,7 +3022,7 @@ void	ManiVote::BuildRockTheVoteMapVote (void)
 		if (!exclude_map)
 		{
 			// Add map to selection list
-			Q_snprintf(select_map.map_name, sizeof(select_map.map_name) , "%s", user_vote_map_list[i].map_name);
+			snprintf(select_map.map_name, sizeof(select_map.map_name) , "%s", user_vote_map_list[i].map_name);
 			AddToList((void **) &select_list, sizeof(map_t), &select_list_size);
 			select_list[select_list_size - 1] = select_map;
 		}
@@ -3102,8 +3044,8 @@ void	ManiVote::BuildRockTheVoteMapVote (void)
 	// Add nominated maps to vote options list
 	for (int i = 0; i < nominate_list_size; i++)
 	{
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", nominate_list[i].vote_name);
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", nominate_list[i].vote_name);
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", nominate_list[i].vote_name);
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", nominate_list[i].vote_name);
 		vote_option.null_command = false;
 		vote_option.votes_cast = 0;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -3117,8 +3059,8 @@ void	ManiVote::BuildRockTheVoteMapVote (void)
 		map_index = rand() % select_list_size;
 
 		// Add map to vote options list
-		Q_snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", select_list[map_index].map_name);
-		Q_snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", select_list[map_index].map_name);
+		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", select_list[map_index].map_name);
+		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", select_list[map_index].map_name);
 		vote_option.null_command = false;
 		vote_option.votes_cast = 0;
 		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
@@ -3169,11 +3111,11 @@ void ManiVote::ProcessStartRockTheVote(void)
 	BuildRockTheVoteMapVote ();
 	if (!IsYesNoVote())
 	{
-		Q_strcpy(system_vote.vote_title, Translate(551));
+		Q_strcpy(system_vote.vote_title, Translate(NULL, 551));
 	}
 	else
 	{
-		Q_snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(552,"%s", vote_option_list[0].vote_command));
+		snprintf(system_vote.vote_title, sizeof (system_vote.vote_title), "%s", Translate(NULL, 552,"%s", vote_option_list[0].vote_command));
 	}
 
 	StartSystemVote();
@@ -3184,74 +3126,66 @@ void ManiVote::ProcessStartRockTheVote(void)
 //---------------------------------------------------------------------------------
 // Purpose: Handle User Vote Map menu draw 
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuRockTheVoteNominateMap( player_t *player, int next_index, int argv_offset )
+int RockTheVoteNominateMapItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-
-	if (!CanWeNominateAgainYet(player))
+	if (!gpManiVote->CanWeNominateAgainYet(player_ptr))
 	{
-		return;
+		return CLOSE_MENU;
 	}
 
-	if (argc - argv_offset == 2)
+	char *option;
+	this->params.GetParam("option", &option);
+	gpManiVote->ProcessMaRockTheVoteNominateMap (player_ptr, 2, option);
+
+	return CLOSE_MENU;
+}
+
+bool RockTheVoteNominateMapPage::PopulateMenuPage(player_t *player_ptr)
+{
+	// Setup map list that the user can vote for
+	if (mani_vote_rock_the_vote_number_of_nominations.GetInt() == 0)
 	{
-		// User voted by menu system, should be a map index
-		const char *map_id = gpCmd->Cmd_Argv(1 + argv_offset);
-		ProcessMaRockTheVoteNominateMap (player, 2, map_id);
-		return;
-	}
-	else
-	{
-		if (mani_vote_rock_the_vote_number_of_nominations.GetInt() == 0)
-		{
-			SayToPlayer(ORANGE_CHAT, player, "Nominations are not allowed on this server for rock the vote");
-			return;
-		}
-
-		if (system_vote.map_decided)
-		{
-			SayToPlayer(ORANGE_CHAT, player, "Map has already been decided, rock the vote not available");
-			return;
-		}
-
-		if (system_vote.no_more_rock_the_vote) 
-		{
-			SayToPlayer(ORANGE_CHAT, player, "No more 'rockthevote' commands are allowed on this map");
-			return;
-		}
-
-		// Check if already typed rock the vote
-		if (user_vote_list[player->index - 1].rock_the_vote)
-		{
-			SayToPlayer(ORANGE_CHAT, player, "Your rockthevote command has already been registered, you can't nominate another map");
-			return;
-		}
-
-		if (!CanWeNominateAgainYet(player))
-		{
-			return;
-		}
-
-		// Setup map list that the user can vote for
-		FreeMenu();
-
-		for (int i = 0; i < user_vote_map_list_size; i++)
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", user_vote_map_list[i].map_name);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_rtvnominate %i", i + 1);
-		}
-
-		if (menu_list_size == 0) return;
-
-		// List size may have changed
-		if (next_index > menu_list_size) next_index = 0;
-
-		// Draw menu list
-		DrawSubMenu (player, "Rock The Vote\nChoose a map to nominated then type rockthevote in game", "Press Esc to nominate a map", next_index, "mani_rtvnominate","", false,-1);
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2560));
+		return false;
 	}
 
-	return;
+	if (gpManiVote->system_vote.map_decided)
+	{
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2561));
+		return false;
+	}
+
+	if (gpManiVote->system_vote.no_more_rock_the_vote) 
+	{
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2562));
+		return false;
+	}
+
+	// Check if already typed rock the vote
+	if (gpManiVote->user_vote_list[player_ptr->index - 1].rock_the_vote)
+	{
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2557));
+		return false;
+	}
+
+	if (!gpManiVote->CanWeNominateAgainYet(player_ptr))
+	{
+		return false;
+	}
+
+	this->SetEscLink("%s", Translate(player_ptr, 2563));
+	this->SetTitle("%s", Translate(player_ptr, 2564));
+
+	// Setup map list that the user can vote for
+	for (int i = 0; i < gpManiVote->user_vote_map_list_size; i++)
+	{
+		MenuItem *ptr = new RockTheVoteNominateMapItem;
+		ptr->params.AddParamVar("option", "%i", i + 1);
+		ptr->SetDisplayText("%s", gpManiVote->user_vote_map_list[i].map_name);
+		this->AddItem(ptr);
+	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -3265,26 +3199,26 @@ void ManiVote::ProcessMaRockTheVoteNominateMap(player_t *player, int argc, const
 	if (mani_vote_allow_rock_the_vote.GetInt() == 0) return;
 	if (mani_vote_rock_the_vote_number_of_nominations.GetInt() == 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Nominations are not allowed on this server for rock the vote");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2560));
 		return;
 	}
 
 	if (system_vote.map_decided)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Map has already been decided, rock the vote not available");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2561));
 		return;
 	}
 
 	if (system_vote.no_more_rock_the_vote) 
 	{
-		SayToPlayer(ORANGE_CHAT, player, "No more 'rockthevote' commands are allowed on this map");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2562));
 		return;
 	}
 
 	// Check if already typed rock the vote
 	if (user_vote_list[player->index - 1].rock_the_vote)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Your rockthevote command has already been registered, you can't nominate another map");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2557));
 		return;
 	}
 
@@ -3315,7 +3249,7 @@ void ManiVote::ProcessMaRockTheVoteNominateMap(player_t *player, int argc, const
 	if (map_index == -1)
 	{
 		// Map name not found, try map number instead
-		map_index = Q_atoi (map_id);
+		map_index = atoi (map_id);
 		if (map_index < 1 || map_index > user_vote_map_list_size)
 		{
 			map_index = -1;
@@ -3329,16 +3263,16 @@ void ManiVote::ProcessMaRockTheVoteNominateMap(player_t *player, int argc, const
 	// Map failed validation so tell user
 	if (map_index == -1)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "%s is an invalid map to vote for, type 'nominate' to see the maps available", map_id);
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2565, "%s", map_id));
 		return;
 	}
 
 	user_vote_list[player->index - 1].nominated_map = map_index;
 	user_vote_list[player->index - 1].nominate_timestamp = gpGlobals->curtime;
 
-	SayToAll(ORANGE_CHAT, false, "Player %s nominated map %s for rock the vote", 
+	SayToAll(ORANGE_CHAT, false, "%s", Translate(player, 2566, "%s%s", 
 								player->name, 
-								user_vote_map_list[map_index].map_name);
+								user_vote_map_list[map_index].map_name));
 
 }
 
@@ -3353,20 +3287,20 @@ void ManiVote::ProcessMaRockTheVote(player_t *player)
 	if (mani_vote_allow_rock_the_vote.GetInt() == 0) return;
 	if (system_vote.map_decided) 
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Map has already been decided, rock the vote not available");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2561));
 		return;
 	}
 
 	if (system_vote.no_more_rock_the_vote) 
 	{
-		SayToPlayer(ORANGE_CHAT, player, "No more 'rockthevote' commands are allowed on this map");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2562));
 		return;
 	}
 
 	// Check if already typed rock the vote
 	if (user_vote_list[player->index - 1].rock_the_vote)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Your rockthevote command has already been registered");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2557));
 		return;
 	}
 
@@ -3395,15 +3329,15 @@ void ManiVote::ProcessMaRockTheVote(player_t *player)
 	{
 		if (counted_votes == 1)
 		{
-			SayToAll(LIGHT_GREEN_CHAT, false, "Player %s has started rock the vote, type 'rockthevote' to join in, %i votes required", player->name, votes_required - counted_votes);
+			SayToAll(LIGHT_GREEN_CHAT, false, "%s", Translate(player, 2567, "%s%i", player->name, votes_required - counted_votes));
 			if (mani_vote_rock_the_vote_number_of_maps.GetInt() != 0)
 			{
-				SayToAll(LIGHT_GREEN_CHAT, false, "Type 'nominate' to bring up a nomination menu for your favourite map");
+				SayToAll(LIGHT_GREEN_CHAT, false, "%s", Translate(player, 2568));
 			}
 		}
 		else
 		{
-			SayToAll(ORANGE_CHAT, false, "Player %s has entered rock the vote, %i votes required to trigger map vote", player->name, votes_required - counted_votes);
+			SayToAll(ORANGE_CHAT, false, "%s", Translate(player, 2569, "%s%i", player->name, votes_required - counted_votes));;
 		}
 
 		return;
@@ -3413,7 +3347,7 @@ void ManiVote::ProcessMaRockTheVote(player_t *player)
 	system_vote.start_rock_the_vote = true;
 	if (system_vote.vote_in_progress)
 	{
-		SayToAll(ORANGE_CHAT, false, "Rock the vote will start after the current system vote has ended");
+		SayToAll(ORANGE_CHAT, false, "%s", Translate(player, 2570));
 	}
 
 	for (int i = 0; i < max_players; i ++)
@@ -3468,7 +3402,6 @@ void ManiVote::ShowCurrentUserKickVotes( player_t *player_ptr, int votes_require
 void ManiVote::ProcessMaUserVoteKick(player_t *player_ptr, int argc, const char *kick_id)
 {
 	int votes_required;
-	int admin_index = -1;
 
 	if (mani_vote_user_vote_kick_mode.GetInt() == 0)
 	{
@@ -3482,8 +3415,8 @@ void ManiVote::ProcessMaUserVoteKick(player_t *player_ptr, int argc, const char 
 			if (!FindPlayerByIndex(&admin_player)) continue;
 			if (admin_player.is_bot) continue;
 
-			if (!gpManiClient->IsAdmin(&admin_player, &admin_index)) continue;
-			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK))
+			if (gpManiClient->HasAccess(admin_player.index, ADMIN, ADMIN_BASIC_ADMIN) &&
+				gpManiClient->HasAccess(admin_player.index, ADMIN, ADMIN_KICK))
 			{
 				found_admin = true;
 				break;
@@ -3492,7 +3425,7 @@ void ManiVote::ProcessMaUserVoteKick(player_t *player_ptr, int argc, const char 
 
 		if (found_admin)
 		{
-			SayToPlayer(ORANGE_CHAT, player_ptr, "You can not vote kick when admin is on the server");
+			SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2571));
 			return;
 		}
 	}
@@ -3509,9 +3442,9 @@ void ManiVote::ProcessMaUserVoteKick(player_t *player_ptr, int argc, const char 
 	if (!CanWeUserVoteKickAgainYet(player_ptr)) return;
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(player_ptr, (char *) kick_id, IMMUNITY_ALLOW_KICK))
+	if (!FindTargetPlayers(player_ptr, (char *) kick_id, IMMUNITY_KICK))
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", kick_id));
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", kick_id));
 		return;
 	}
 
@@ -3519,47 +3452,44 @@ void ManiVote::ProcessMaUserVoteKick(player_t *player_ptr, int argc, const char 
 
 	if (target_player->index == player_ptr->index)
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "Voting yourself is not a good idea !!");
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2572));
 		return;
 	}
 
 	if (target_player->is_bot)
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "Player %s is a bot, cannot perform command\n", target_player->name);
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 1261, "%s", target_player->name));
 		return;
 	}
 
-	admin_index = -1;
-	gpManiClient->IsAdmin(target_player, &admin_index);
-
-	if (user_vote_list[player_ptr->index - 1].kick_id != -1 && admin_index == -1)
+	bool admin_access = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN);
+	if (strcmp(user_vote_list[player_ptr->index - 1].kick_id, "") != 0 && !admin_access)
 	{
 		// Player already voted, alter previous vote if not admin
 		player_t change_player;
 
-		change_player.user_id = user_vote_list[player_ptr->index - 1].kick_id;
-		if (FindPlayerByUserID(&change_player))
+		Q_strcpy(change_player.steam_id, user_vote_list[player_ptr->index - 1].kick_id);
+		if (FindPlayerBySteamID(&change_player))
 		{
 			user_vote_list[change_player.index - 1].kick_votes --;
 		}
 	}
 
-	if (admin_index == -1)
+	if (!admin_access)
 	{
 		// Add votes if not admin
 		user_vote_list[target_player->index - 1].kick_votes ++;
 	}
 
-	user_vote_list[player_ptr->index - 1].kick_id = target_player->user_id;
+	Q_strcpy(user_vote_list[player_ptr->index - 1].kick_id, target_player->steam_id);
 	user_vote_list[player_ptr->index - 1].kick_vote_timestamp = gpGlobals->curtime;
 
 	int votes_left = votes_required - user_vote_list[target_player->index - 1].kick_votes;
 
-	SayToAll(ORANGE_CHAT, false, "Player %s voted to kick %s, %i more vote%s required", 
-								player_ptr->name, 
+	SayToAll(ORANGE_CHAT, false, "%s", Translate(player_ptr, 2573, "%s%s%i%s", player_ptr->name, 
 								target_player->name,
 								votes_left, 
-								(votes_left == 1) ? " is":"s are");
+								(votes_left == 1) ? Translate(player_ptr, 2549):Translate(player_ptr, 2550)));
 
 	if (votes_left <= 0)
 	{
@@ -3578,20 +3508,20 @@ void ManiVote::ProcessUserVoteKickWin(player_t *player_ptr)
 	char	kick_cmd[256];
 
 	PrintToClientConsole(player_ptr->entity, "You have been kicked by vote\n");
-	Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were vote kicked\n", player_ptr->user_id);
+	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were vote kicked\n", player_ptr->user_id);
 	LogCommand (NULL, "User vote kick using %s", kick_cmd);
 	engine->ServerCommand(kick_cmd);
-	SayToAll(GREEN_CHAT, true, "Player %s has been kicked by user vote", player_ptr->name);
+	SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 2574, "%s", player_ptr->name));
 
 	user_vote_list[player_ptr->index - 1].kick_votes = 0;
-	user_vote_list[player_ptr->index - 1].kick_id = -1;
+	Q_strcpy(user_vote_list[player_ptr->index - 1].kick_id, "");
 
 	for (int i = 0; i < max_players; i ++)
 	{
 		// Reset votes for that player
-		if (user_vote_list[i].kick_id == player_ptr->user_id) 
+		if (strcmp(user_vote_list[i].kick_id, player_ptr->steam_id) == 0) 
 		{
-			user_vote_list[i].kick_id = -1;
+			Q_strcpy(user_vote_list[i].kick_id, "");
 		}
 	}
 
@@ -3607,7 +3537,7 @@ bool ManiVote::CanWeUserVoteKickYet( player_t *player_ptr )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "Voting not allowed for %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2555, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player_ptr, 2553):Translate(player_ptr, 2554)));
 		return false;
 	}
 
@@ -3623,7 +3553,7 @@ bool ManiVote::CanWeUserVoteKickAgainYet( player_t *player_ptr )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "You cannot vote again for another %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2556, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player_ptr, 2553):Translate(player_ptr, 2554)));
 		return false;
 	}
 
@@ -3633,60 +3563,45 @@ bool ManiVote::CanWeUserVoteKickAgainYet( player_t *player_ptr )
 //---------------------------------------------------------------------------------
 // Purpose: Handle User Vote Kick menu draw 
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuUserVoteKick( player_t *player, int next_index, int argv_offset )
+int UserVoteKickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	int votes_required;
+	if (!gpManiVote->CanWeUserVoteKickYet(player_ptr)) return CLOSE_MENU;
+	if (!gpManiVote->CanWeUserVoteKickAgainYet(player_ptr)) return CLOSE_MENU;
 
-	if (argc - argv_offset == 2)
+	char *option;
+	this->params.GetParam("option", &option);
+	gpManiVote->ProcessMaUserVoteKick (player_ptr, 2, option);
+	return CLOSE_MENU;
+}
+
+bool UserVoteKickPage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (!gpManiVote->CanWeUserVoteKickYet(player_ptr)) return false;
+	if (!gpManiVote->CanWeUserVoteKickAgainYet(player_ptr)) return false;
+
+	for (int i = 1; i <= max_players; i++)
 	{
-		// User voted by menu system, should be a map index
-		const char *user_id = gpCmd->Cmd_Argv(1 + argv_offset);
-		ProcessMaUserVoteKick (player, 2, user_id);
-		return;
-	}
-	else
-	{
-		// Check and warn player if voting not allowed yet
-		if (!CanWeUserVoteKickYet(player)) return;
-		if (!CanWeUserVoteKickAgainYet(player)) return;
+		player_t server_player;
 
-		// Setup map list that the user can vote for
-		FreeMenu();
+		if (player_ptr->index == i) continue;
 
-		for (int i = 1; i <= max_players; i++)
-		{
-			player_t server_player;
+		server_player.index = i;
+		if (!FindPlayerByIndex(&server_player)) continue;
+		if (server_player.is_bot) continue;
 
-			if (player->index == i) continue;
-
-			server_player.index = i;
-			if (!FindPlayerByIndex(&server_player)) continue;
-			if (server_player.is_bot) continue;
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%i] %s", user_vote_list[i-1].kick_votes, server_player.name);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_uservotekickmenu %i", server_player.user_id);
-			Q_strcpy (menu_list[menu_list_size - 1].sort_name, server_player.name);
-		}
-
-		if (menu_list_size == 0) return;
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size) next_index = 0;
-
-		votes_required = GetVotesRequiredForUserVote(false, mani_vote_user_vote_kick_percentage.GetFloat(), mani_vote_user_vote_kick_minimum_votes.GetInt());
-
-		char	votes_required_text[128];
-		Q_snprintf( votes_required_text, sizeof(votes_required_text), "%s", Translate(571,"%i", votes_required));
-
-		// Draw menu list
-		DrawSubMenu (player, Translate(570), votes_required_text, next_index, "mani_uservotekickmenu", "", false,-1);
+		MenuItem *ptr = new UserVoteKickItem;
+		ptr->params.AddParamVar("option", "%i", server_player.user_id);
+		ptr->SetDisplayText("[%i] %s", gpManiVote->user_vote_list[i-1].kick_votes, server_player.name);
+		ptr->SetHiddenText("%s", server_player.name);
+		this->AddItem(ptr);
 	}
 
-	return;
+	this->SortHidden();
+
+	int votes_required = gpManiVote->GetVotesRequiredForUserVote(false, mani_vote_user_vote_kick_percentage.GetFloat(), mani_vote_user_vote_kick_minimum_votes.GetInt());
+	this->SetEscLink("%s", Translate(player_ptr, 570));
+	this->SetTitle("%s", Translate(player_ptr, 571,"%i", votes_required));
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -3733,7 +3648,6 @@ void ManiVote::ShowCurrentUserBanVotes( player_t *player_ptr, int votes_required
 void ManiVote::ProcessMaUserVoteBan(player_t *player_ptr, int argc, const char *ban_id)
 {
 	int votes_required;
-	int admin_index = -1;
 
 	if (mani_vote_user_vote_ban_mode.GetInt() == 0)
 	{
@@ -3747,8 +3661,9 @@ void ManiVote::ProcessMaUserVoteBan(player_t *player_ptr, int argc, const char *
 			if (!FindPlayerByIndex(&admin_player)) continue;
 			if (admin_player.is_bot) continue;
 
-			if (!gpManiClient->IsAdmin(&admin_player, &admin_index)) continue;
-			if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN))
+			if (gpManiClient->HasAccess(admin_player.index, ADMIN, ADMIN_BASIC_ADMIN) && 
+				(gpManiClient->HasAccess(admin_player.index, ADMIN, ADMIN_BAN) ||
+				gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN)))
 			{
 				found_admin = true;
 				break;
@@ -3757,7 +3672,7 @@ void ManiVote::ProcessMaUserVoteBan(player_t *player_ptr, int argc, const char *
 
 		if (found_admin)
 		{
-			SayToPlayer(ORANGE_CHAT, player_ptr, "You can not vote ban when admin is on the server");
+			SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2575));
 			return;
 		}
 	}
@@ -3774,9 +3689,9 @@ void ManiVote::ProcessMaUserVoteBan(player_t *player_ptr, int argc, const char *
 	if (!CanWeUserVoteBanAgainYet(player_ptr)) return;
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(player_ptr, (char *) ban_id, IMMUNITY_ALLOW_BAN))
+	if (!FindTargetPlayers(player_ptr, (char *) ban_id, IMMUNITY_BAN))
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", ban_id));
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", ban_id));
 		return;
 	}
 
@@ -3784,47 +3699,45 @@ void ManiVote::ProcessMaUserVoteBan(player_t *player_ptr, int argc, const char *
 
 	if (target_player->index == player_ptr->index)
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "Voting yourself is not a good idea !!");
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 2572));
 		return;
 	}
 
 	if (target_player->is_bot)
 	{
-		SayToPlayer(ORANGE_CHAT, player_ptr, "Player %s is a bot, cannot perform command\n", target_player->name);
+		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, 1261, "%s", target_player->name));
 		return;
 	}
 
-	admin_index = -1;
-	gpManiClient->IsAdmin(target_player, &admin_index);
+	bool admin_access = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN);
 
-	if (user_vote_list[player_ptr->index - 1].ban_id != -1 && admin_index == -1)
+	if (strcmp(user_vote_list[player_ptr->index - 1].ban_id, "") != 0 && !admin_access)
 	{
 		// Player already voted, alter previous vote if not admin
 		player_t change_player;
 
-		change_player.user_id = user_vote_list[player_ptr->index - 1].ban_id;
-		if (FindPlayerByUserID(&change_player))
+		Q_strcpy(change_player.steam_id, user_vote_list[player_ptr->index - 1].ban_id);
+		if (FindPlayerBySteamID(&change_player))
 		{
 			user_vote_list[change_player.index - 1].ban_votes --;
 		}
 	}
 
-	if (admin_index == -1)
+	if (!admin_access)
 	{
 		// Add votes if not admin
 		user_vote_list[target_player->index - 1].ban_votes ++;
 	}
 
-	user_vote_list[player_ptr->index - 1].ban_id = target_player->user_id;
+	Q_strcpy(user_vote_list[player_ptr->index - 1].ban_id, target_player->steam_id);
 	user_vote_list[player_ptr->index - 1].ban_vote_timestamp = gpGlobals->curtime;
 
 	int votes_left = votes_required - user_vote_list[target_player->index - 1].ban_votes;
 
-	SayToAll(ORANGE_CHAT, false, "Player %s voted to ban %s, %i more vote%s required", 
-								player_ptr->name, 
+	SayToAll(ORANGE_CHAT, false, "%s", Translate(player_ptr, 2576, "%s%s%i%s", player_ptr->name, 
 								target_player->name,
 								votes_left, 
-								(votes_left == 1) ? " is":"s are");
+								(votes_left == 1) ? Translate(player_ptr, 2549):Translate(player_ptr, 2550)));
 
 	if (votes_left <= 0)
 	{
@@ -3842,10 +3755,10 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 {
 	char	ban_cmd[256];
 
-	if (mani_vote_user_vote_ban_type.GetInt() == 0 && sv_lan->GetInt() != 1)
+	if (mani_vote_user_vote_ban_type.GetInt() == 0 && !IsLAN())
 	{
 		// Ban by user id
-		Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
+		snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
 										mani_vote_user_vote_ban_time.GetInt(), 
 										player->user_id);
 		LogCommand(NULL, "User vote banned using %s", ban_cmd);
@@ -3855,7 +3768,7 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 	else if (mani_vote_user_vote_ban_type.GetInt() == 1)
 	{
 		// Ban by user ip address
-		Q_snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", 
+		snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", 
 										mani_vote_user_vote_ban_time.GetInt(), 
 										player->ip_address);
 		LogCommand(NULL, "User vote banned using %s", ban_cmd);
@@ -3865,9 +3778,9 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 	else if (mani_vote_user_vote_ban_type.GetInt() == 2)
 	{
 		// Ban by user id and ip address
-		if (sv_lan->GetInt() == 0)
+		if (!IsLAN())
 		{
-			Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
+			snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
 								mani_vote_user_vote_ban_time.GetInt(), 
 								player->user_id);
 			LogCommand(NULL, "User vote banned using %s", ban_cmd);
@@ -3875,7 +3788,7 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 			engine->ServerCommand("writeid\n");
 		}
 
-		Q_snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", 
+		snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", 
 								mani_vote_user_vote_ban_time.GetInt(), 
 								player->ip_address);
 		LogCommand(NULL, "User vote banned using %s", ban_cmd);
@@ -3884,17 +3797,17 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 	}
 
 	PrintToClientConsole(player->entity, "You have been banned by vote\n");
-	SayToAll(GREEN_CHAT, true, "Player %s has been banned by user vote", player->name);
+	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 2577, "%s", player->name));
 
 	user_vote_list[player->index - 1].ban_votes = 0;
-	user_vote_list[player->index - 1].ban_id = -1;
+	Q_strcpy(user_vote_list[player->index - 1].ban_id, "");
 
 	for (int i = 0; i < max_players; i ++)
 	{
 		// Reset votes for that player
-		if (user_vote_list[i].ban_id == player->user_id) 
+		if (strcmp(user_vote_list[i].ban_id, player->steam_id) == 0)
 		{
-			user_vote_list[i].ban_id = -1;
+			Q_strcpy(user_vote_list[i].ban_id, "");
 		}
 	}
 
@@ -3910,7 +3823,7 @@ bool ManiVote::CanWeUserVoteBanYet( player_t *player )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "Voting not allowed for %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2555, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player, 2553):Translate(player, 2554)));
 		return false;
 	}
 
@@ -3926,7 +3839,7 @@ bool ManiVote::CanWeUserVoteBanAgainYet( player_t *player )
 
 	if (time_left_before_vote > 0)
 	{
-		SayToPlayer(ORANGE_CHAT, player, "You cannot vote again for another %i second%s", time_left_before_vote, (time_left_before_vote == 1) ? "":"s");
+		SayToPlayer(ORANGE_CHAT, player, "%s", Translate(player, 2556, "%i%s", time_left_before_vote, (time_left_before_vote == 1) ? Translate(player, 2553):Translate(player, 2554)));
 		return false;
 	}
 
@@ -3936,167 +3849,108 @@ bool ManiVote::CanWeUserVoteBanAgainYet( player_t *player )
 //---------------------------------------------------------------------------------
 // Purpose: Handle User Vote Ban menu draw 
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessMenuUserVoteBan( player_t *player, int next_index, int argv_offset )
+int UserVoteBanItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	int votes_required;
+	if (!gpManiVote->CanWeUserVoteBanYet(player_ptr)) return CLOSE_MENU;
+	if (!gpManiVote->CanWeUserVoteBanAgainYet(player_ptr)) return CLOSE_MENU;
 
-	if (argc - argv_offset == 2)
+	char *option;
+	this->params.GetParam("option", &option);
+	gpManiVote->ProcessMaUserVoteBan (player_ptr, 2, option);
+	return CLOSE_MENU;
+}
+
+bool UserVoteBanPage::PopulateMenuPage(player_t *player_ptr)
+{
+	if (!gpManiVote->CanWeUserVoteBanYet(player_ptr)) return false;
+	if (!gpManiVote->CanWeUserVoteBanAgainYet(player_ptr)) return false;
+
+	for (int i = 1; i <= max_players; i++)
 	{
-		// User voted by menu system, should be a map index
-		const char *user_id = gpCmd->Cmd_Argv(1 + argv_offset);
-		ProcessMaUserVoteBan (player, 2, user_id);
-		return;
-	}
-	else
-	{
-		// Check and warn player if voting not allowed yet
-		if (!CanWeUserVoteBanYet(player)) return;
-		if (!CanWeUserVoteBanAgainYet(player)) return;
+		player_t server_player;
 
-		// Setup map list that the user can vote for
-		FreeMenu();
+		if (player_ptr->index == i) continue;
 
-		for (int i = 1; i <= max_players; i++)
-		{
-			player_t server_player;
+		server_player.index = i;
+		if (!FindPlayerByIndex(&server_player)) continue;
+		if (server_player.is_bot) continue;
 
-			if (player->index == i) continue;
-
-			server_player.index = i;
-			if (!FindPlayerByIndex(&server_player)) continue;
-			if (server_player.is_bot) continue;
-
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "[%i] %s", user_vote_list[i-1].ban_votes, server_player.name);
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "mani_uservotebanmenu %i", server_player.user_id);
-			Q_strcpy (menu_list[menu_list_size - 1].sort_name, server_player.name);
-		}
-
-		if (menu_list_size == 0) return;
-
-		SortMenu();
-
-		// List size may have changed
-		if (next_index > menu_list_size) next_index = 0;
-
-		votes_required = GetVotesRequiredForUserVote(false, mani_vote_user_vote_ban_percentage.GetFloat(), mani_vote_user_vote_ban_minimum_votes.GetInt());
-
-		char	votes_required_text[128];
-		Q_snprintf( votes_required_text, sizeof(votes_required_text), "%s", Translate(581,"%i", votes_required));
-
-		// Draw menu list
-		DrawSubMenu (player, Translate(580), votes_required_text, next_index, "mani_uservotebanmenu", "", false,-1);
+		MenuItem *ptr = new UserVoteBanItem;
+		ptr->params.AddParamVar("option", "%i", server_player.user_id);
+		ptr->SetDisplayText("[%i] %s", gpManiVote->user_vote_list[i-1].ban_votes, server_player.name);
+		ptr->SetHiddenText("%s", server_player.name);
+		this->AddItem(ptr);
 	}
 
-	return;
+	this->SortHidden();
+
+	int votes_required = gpManiVote->GetVotesRequiredForUserVote(false, mani_vote_user_vote_ban_percentage.GetFloat(), mani_vote_user_vote_ban_minimum_votes.GetInt());
+	this->SetEscLink("%s", Translate(player_ptr, 580));
+	this->SetTitle("%s", Translate(player_ptr, 581,"%i", votes_required));
+	return true;
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Run the RCON vote list menu
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessRConVote( player_t *admin, int next_index, int argv_offset )
+int RConVoteItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	int	option;
+	this->params.GetParam("option", &option);
 
-	if (argc - argv_offset == 3)
+	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_votercon");
+	gpCmd->AddParam("%s", gpManiVote->vote_rcon_list[option].question);
+	gpCmd->AddParam("%s", gpManiVote->vote_rcon_list[option].rcon_command);
+	gpManiVote->ProcessMaVoteRCon(player_ptr, "ma_votercon", 0, false);
+	return NEW_MENU;
+}
+
+bool RConVotePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 240));
+	this->SetTitle("%s", Translate(player_ptr, 241));
+
+	for( int i = 0; i < gpManiVote->vote_rcon_list_size; i++ )
 	{
-		int vote_rcon_index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-
-		if (vote_rcon_index == 0) return;
-		vote_rcon_index --;
-
-		gpCmd->NewCmd();
-		gpCmd->AddParam("ma_votercon");
-		gpCmd->AddParam("%s", vote_rcon_list[vote_rcon_index].question);
-		gpCmd->AddParam("%s", vote_rcon_list[vote_rcon_index].rcon_command);
-		this->ProcessMaVoteRCon(admin, "ma_votercon", 0, false);
-		return;
-	}
-	else
-	{
-
-		// Setup player list
-		FreeMenu();
-
-		for( int i = 0; i < vote_rcon_list_size; i++ )
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", vote_rcon_list[i].alias);							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin votercon %i", i + 1);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		// Draw menu list
-		DrawSubMenu (admin, Translate(240), Translate(241), next_index,"admin","votercon",true,-1);
+		MenuItem *ptr = new RConVoteItem;
+		ptr->params.AddParam("option", i);
+		ptr->SetDisplayText("%s", gpManiVote->vote_rcon_list[i].alias);
+		this->AddItem(ptr);
 	}
 
-
-	return;
+	return true;
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Run the Question vote list menu
 //---------------------------------------------------------------------------------
-void ManiVote::ProcessQuestionVote( player_t *admin, int next_index, int argv_offset )
+int QuestionVoteItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	int	option;
+	this->params.GetParam("option", &option);
 
-	if (argc - argv_offset == 3)
+	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_votequestion");
+	gpCmd->AddParam("%s", gpManiVote->vote_question_list[option].question);
+	gpManiVote->ProcessMaVoteQuestion(player_ptr, "ma_votequestion", 0, M_MENU);
+	return NEW_MENU;
+}
+
+bool QuestionVotePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 250));
+	this->SetTitle("%s", Translate(player_ptr, 251));
+
+	for( int i = 0; i < gpManiVote->vote_question_list_size; i++ )
 	{
-		int vote_question_index = Q_atoi(gpCmd->Cmd_Argv(2 + argv_offset));
-
-		if (vote_question_index == 0) return;
-		vote_question_index --;
-
-		gpCmd->NewCmd();
-		gpCmd->AddParam("ma_votequestion");
-		gpCmd->AddParam("%s", vote_question_list[vote_question_index].question);
-		this->ProcessMaVoteQuestion(admin, "ma_votequestion", 0, M_MENU);
-		return;
-	}
-	else
-	{
-
-		// Setup player list
-		FreeMenu();
-
-		for( int i = 0; i < vote_question_list_size; i++ )
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", vote_question_list[i].alias);							
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin votequestion %i", i + 1);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		// Draw menu list
-		DrawSubMenu (admin, Translate(250), Translate(251), next_index, "admin", "votequestion",true,-1);
+		MenuItem *ptr = new QuestionVoteItem;
+		ptr->params.AddParam("option", i);
+		ptr->SetDisplayText("%s", gpManiVote->vote_question_list[i].alias);
+		this->AddItem(ptr);
 	}
 
-
-	return;
+	return true;
 }
 
 SCON_COMMAND(ma_voterandom, 2123, MaVoteRandom, false);

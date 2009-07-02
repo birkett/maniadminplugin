@@ -34,6 +34,9 @@
 #include "mani_main.h"
 #include "cbaseentity.h"
 
+
+class CCSWeaponInfo;
+
 class CSourceMMMAP : public ISmmPlugin, public IMetamodListener
 {
 public:
@@ -133,6 +136,7 @@ private:
 /*	IGameEventManager2 *m_GameEventManager;	
 	IVEngineServer *m_Engine;
 	IServerGameDLL *m_ServerDll;*/
+	void					HookConCommands(void);
 	int m_iClientCommandIndex;
 };
 
@@ -186,6 +190,7 @@ extern	void TeamSay_handler();
 extern	void ChangeLevel_handler();
 extern	void AutoBuy_handler();
 extern	void ReBuy_handler();
+extern	void RespawnEntities_handler();
 
 extern CSourceMMMAP g_ManiCallback;
 extern ManiSMMHooks g_ManiSMMHooks;

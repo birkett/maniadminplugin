@@ -53,6 +53,7 @@
 #include "mani_client_flags.h"
 #include "mani_memory.h"
 #include "mani_output.h"
+#include "mani_effects.h"
 #include "mani_gametype.h"
 #include "mani_warmuptimer.h"
 #include "mani_afk.h" 
@@ -66,7 +67,7 @@ extern	IServerGameEnts *serverents;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
+extern	time_t	g_RealTime;
 
 static void ManiAFKKicker ( ConVar *var, char const *pOldString );
 
@@ -77,9 +78,6 @@ ConVar mani_afk_kicker_spectator_rounds ("mani_afk_kicker_spectator_rounds", "0"
 ConVar mani_afk_kicker_alive_timer ("mani_afk_kicker_alive_timer", "0", 0, "0 = disabled, > 0 = number of seconds before kick/move", true, 0, true, 1200);
 ConVar mani_afk_kicker_spectator_timer ("mani_afk_kicker_spectator_timer", "0", 0, "0 = disabled, > 0 = number of seconds before kick", true, 0, true, 1200);
 ConVar mani_afk_kicker_immunity_to_spec_only ("mani_afk_kicker_immunity_to_spec_only", "0", 0, "0 = immune players are unaffected by AFK kicker, 1 = immune players are moved to spectator but not kicked", true, 0, true, 1);
-
-static
-void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from );
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -263,13 +261,9 @@ void ManiAFK::GameFrame(void)
 	if (mani_afk_kicker_alive_timer.GetInt() == 0 && mani_afk_kicker_spectator_timer.GetInt() == 0) return;
 	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS) == -1) return;
 
-	time_t current_time;
+	if (g_RealTime < next_check) return;
 
-	time(&current_time);
-
-	if (current_time < next_check) return;
-
-	next_check = current_time + 1;
+	next_check = g_RealTime + 1;
 
 	int max_timeout;
 	if (mani_afk_kicker_alive_timer.GetInt() == 0)
@@ -299,7 +293,7 @@ void ManiAFK::GameFrame(void)
 
 		// Faster way of discriminating hopefully without getting player data
 		// We are in game frame dont forget :)
-		if (afk_list[i].last_active + max_timeout > current_time) continue;
+		if (afk_list[i].last_active + max_timeout > g_RealTime) continue;
 
 		player_t player;
 
@@ -312,31 +306,27 @@ void ManiAFK::GameFrame(void)
 
 		if (player.is_bot) continue;
 
-		int client_index = -1;
-
 		if (gpManiGameType->IsValidActiveTeam(player.team) &&
 			mani_afk_kicker_alive_timer.GetInt() != 0)
 		{
 
 			// Player on active team (considered alive)
-			if (afk_list[i].last_active + mani_afk_kicker_alive_timer.GetInt() <= current_time)
+			if (afk_list[i].last_active + mani_afk_kicker_alive_timer.GetInt() <= g_RealTime)
 			{
-				if (gpManiClient->IsImmune(&player, &client_index))
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AFK))
 				{
-					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
+					this->ResetPlayer(i, true);
+					if (mani_afk_kicker_immunity_to_spec_only.GetInt() == 1)
 					{
-						this->ResetPlayer(i, true);
-						if (mani_afk_kicker_immunity_to_spec_only.GetInt() == 1)
-						{
-							// Shift player to spectator
-							player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
-							SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
-							LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
-							continue;
-						}
-
+						// Shift player to spectator
+						player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
+						//engine->ClientCommand(player.entity, "cmd jointeam %i", gpManiGameType->GetSpectatorIndex());
+						SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
+						LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
 						continue;
 					}
+
+					continue;
 				}
 
 				// Exceeded timeout
@@ -345,6 +335,7 @@ void ManiAFK::GameFrame(void)
 				{
 					// Shift player to spectator
 					player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
+					//engine->ClientCommand(player.entity, "cmd jointeam %i", gpManiGameType->GetSpectatorIndex());
 					SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
 					LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
 				}
@@ -363,15 +354,12 @@ void ManiAFK::GameFrame(void)
 		{
 			// Player is spectator
 			// Player on active team (considered alive)
-			if (afk_list[i].last_active + mani_afk_kicker_spectator_timer.GetInt() <= current_time)
+			if (afk_list[i].last_active + mani_afk_kicker_spectator_timer.GetInt() <= g_RealTime)
 			{
-				if (gpManiClient->IsImmune(&player, &client_index))
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AFK))
 				{
-					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
-					{
-						this->ResetPlayer(i, true);
-						continue;
-					}
+					this->ResetPlayer(i, true);
+					continue;
 				}
 
 				// Exceeded round count
@@ -387,15 +375,12 @@ void ManiAFK::GameFrame(void)
 		else if (player.team == 0 && 
 			gpManiGameType->IsTeamPlayAllowed() &&
 			mani_afk_kicker_spectator_timer.GetInt() != 0 &&
-			afk_list[i].last_active + mani_afk_kicker_spectator_timer.GetInt() <= current_time)
+			afk_list[i].last_active + mani_afk_kicker_spectator_timer.GetInt() <= g_RealTime)
 		{
-			if (gpManiClient->IsImmune(&player, &client_index))
+			if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AFK))
 			{
-				if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
-				{
-					this->ResetPlayer(i, true);
-					continue;
-				}
+				this->ResetPlayer(i, true);
+				continue;
 			}
 
 			// Exceeded round count
@@ -438,8 +423,6 @@ void ManiAFK::RoundEnd(void)
 
 		if (afk_list[i].idle)
 		{
-			int client_index = -1;
-
 			afk_list[i].round_count++;
 
 			if (gpManiGameType->IsValidActiveTeam(player.team) &&
@@ -449,22 +432,20 @@ void ManiAFK::RoundEnd(void)
 				// Player on active team (considered alive)
 				if (afk_list[i].round_count > mani_afk_kicker_alive_rounds.GetInt())
 				{
-					if (gpManiClient->IsImmune(&player, &client_index))
+					if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AFK))
 					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
+						this->ResetPlayer(i, true);
+						if (mani_afk_kicker_immunity_to_spec_only.GetInt() == 1)
 						{
-							this->ResetPlayer(i, true);
-							if (mani_afk_kicker_immunity_to_spec_only.GetInt() == 1)
-							{
-								// Shift player to spectator
-								player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
-								SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
-								LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
-								continue;
-							}
-
+							// Shift player to spectator
+							player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
+							//engine->ClientCommand(player.entity, "cmd jointeam %i", gpManiGameType->GetSpectatorIndex());
+							SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
+							LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
 							continue;
 						}
+
+						continue;
 					}
 
 					// Exceeded round count
@@ -473,6 +454,7 @@ void ManiAFK::RoundEnd(void)
 					{
 						// Shift player to spectator
 						player.player_info->ChangeTeam(gpManiGameType->GetSpectatorIndex());
+						//engine->ClientCommand(player.entity, "cmd jointeam %i", gpManiGameType->GetSpectatorIndex());
 						SayToPlayer(GREEN_CHAT, &player, "You were moved to the Spectator team for being AFK");
 						LogCommand(NULL, "AFK-Kicker moved player [%s] [%s] to Spectator\n", player.name, player.steam_id);
 					}
@@ -493,13 +475,10 @@ void ManiAFK::RoundEnd(void)
 				// Player on active team (considered alive)
 				if (afk_list[i].round_count > mani_afk_kicker_spectator_rounds.GetInt())
 				{
-					if (gpManiClient->IsImmune(&player, &client_index))
+					if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AFK))
 					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
-						{
-							this->ResetPlayer(i, true);
-							continue;
-						}
+						this->ResetPlayer(i, true);
+						continue;
 					}
 
 					// Exceeded round count
@@ -517,13 +496,10 @@ void ManiAFK::RoundEnd(void)
 				mani_afk_kicker_spectator_rounds.GetInt() != 0 &&
 				afk_list[i].round_count > mani_afk_kicker_spectator_rounds.GetInt())
 			{
-				if (gpManiClient->IsImmune(&player, &client_index))
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AFK))
 				{
-					if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AFK))
-					{
-						this->ResetPlayer(i, true);
-						continue;
-					}
+					this->ResetPlayer(i, true);
+					continue;
 				}
 
 				// Exceeded round count

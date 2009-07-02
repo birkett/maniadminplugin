@@ -47,8 +47,17 @@
 #include "mani_language.h"
 #include "mani_keyvalues.h"
 #include "mani_commands.h"
+#include "mani_util.h"
 #include "mani_help.h"
+#include "mani_client_util.h"
 #include "mani_client.h"
+#include "mani_client_sql.h"
+
+#include <map>
+
+#ifdef SOURCEMM
+#include "mani_client_interface.h"
+#endif
 
 extern IFileSystem	*filesystem;
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -57,9 +66,23 @@ extern	int		con_command_index;
 extern	bool	war_mode;
 extern	int	max_players;
 
-static int sort_admin_level ( const void *m1,  const void *m2); 
-static int sort_immunity_level ( const void *m1,  const void *m2); 
-static int sort_player_admin_level ( const void *m1,  const void *m2); 
+#ifdef SOURCEMM
+extern unsigned int g_CallBackCount;
+extern SourceHook::CVector<AdminInterfaceListnerStruct *>g_CallBackList;
+#endif
+
+static int sort_mask_list ( const void *m1,  const void *m2);
+
+static int sort_mask_list ( const void *m1,  const void *m2) 
+{
+	struct mask_level_t *mi1 = (struct mask_level_t *) m1;
+	struct mask_level_t *mi2 = (struct mask_level_t *) m2;
+
+	int result = strcmp(mi1->class_type, mi2->class_type);
+	if (result != 0) return result;
+	return mi1->level_id - mi2->level_id;
+}
+
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -75,16 +98,10 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 ManiClient::ManiClient()
 {
 	// Init
-	client_list = NULL;
-	client_list_size = 0;
-	admin_group_list = NULL;
-	admin_group_list_size = 0;
-	immunity_group_list = NULL;
-	immunity_group_list_size = 0;
-	admin_level_list = NULL;
-	admin_level_list_size = 0;
-	immunity_level_list = NULL;
-	immunity_level_list_size = 0;
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		active_client_list[i] = NULL;
+	}
 
 	this->InitAdminFlags();
 	this->InitImmunityFlags();
@@ -104,28 +121,31 @@ void	ManiClient::NetworkIDValidated(player_t *player_ptr)
 {
 	int	index;
 
-	active_admin_list[player_ptr->index - 1] = -1;
-	active_immunity_list[player_ptr->index - 1] = -1;
-	if (player_ptr->is_bot) return;
-
-	if (IsPotentialAdmin(player_ptr, &index))
+	index = this->FindClientIndex(player_ptr);
+	if (index == -1)
 	{
-		// Check levels
-		if (active_admin_list[player_ptr->index - 1] == -1)
-		{
-			active_admin_list[player_ptr->index - 1] = index;
-			ComputeAdminLevels();
-		}
+		active_client_list[player_ptr->index - 1] = NULL;
 	}
-
-	if (IsPotentialImmune(player_ptr, &index))
+	else
 	{
-		// Check levels
-		if (active_immunity_list[player_ptr->index - 1] == -1)
+		active_client_list[player_ptr->index - 1] = c_list[index];
+
+		// Check levels to see if masking needs to be applied to other players
+		if (!c_list[index]->level_list.IsEmpty())
 		{
-			active_immunity_list[player_ptr->index - 1] = index;
-			ComputeImmunityLevels();
+			this->SetupMasked();
 		}
+
+#ifdef SOURCEMM
+		for(unsigned int i=0;i<g_CallBackCount;i++)
+		{
+			AdminInterfaceListner *ptr = (AdminInterfaceListner *)g_CallBackList[i]->ptr;
+			if(!ptr)
+				continue;
+
+			ptr->Client_Authorized(player_ptr->index);
+		}		
+#endif
 	}
 
 	return;
@@ -137,594 +157,25 @@ void	ManiClient::NetworkIDValidated(player_t *player_ptr)
 void	ManiClient::ClientDisconnect(player_t *player_ptr)
 {
 
-	if (active_admin_list[player_ptr->index - 1] > -1)
+	if (active_client_list[player_ptr->index - 1] != NULL)
 	{
-		active_admin_list[player_ptr->index - 1] = -1;
-		ComputeAdminLevels();
-	}
-
-	if (active_immunity_list[player_ptr->index - 1] > -1)
-	{
-		active_immunity_list[player_ptr->index - 1] = -1;
-		ComputeImmunityLevels();
+		// Check if they had any level ids
+		if (!active_client_list[player_ptr->index - 1]->level_list.IsEmpty())
+		{
+			// Reset pointer then call SetupMasks to reset other
+			// active player masks
+			active_client_list[player_ptr->index - 1] = NULL;
+			this->SetupMasked();
+		}
+		else
+		{
+			active_client_list[player_ptr->index - 1] = NULL;
+		}
 	}
 
 	return;
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Re-calculate admin level flags
-//---------------------------------------------------------------------------------
-void	ManiClient::ComputeAdminLevels(void)
-{
-	player_level_t	*player_list = NULL;
-	player_t	player;
-	int			player_list_size = 0;
-	int			index;
-
-	if (admin_level_list_size == 0) return;
-
-	// Create a list of admin indexes that are on the server and
-	// have level_ids
-	for (int i = 1; i <= max_players; i++)
-	{
-		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree() )
-		{
-			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-			if (playerinfo && playerinfo->IsConnected())
-			{
-				if (playerinfo->IsHLTV()) continue;
-				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
-				if (FStrEq(player.steam_id, "BOT")) continue;
-				player.index = i;
-				Q_strcpy(player.name, playerinfo->GetName());
-				player.entity = pEntity;
-				player.is_bot = false;
-
-				GetIPAddressFromPlayer(&player);
-
-				if (IsPotentialAdmin(&player, &index))
-				{
-					if (client_list[index].admin_level_id != -1)
-					{
-						// Add list of admins on server that 
-						AddToList((void **) &player_list, sizeof(player_level_t), &player_list_size);
-						player_list[player_list_size - 1].client_index = index;
-						player_list[player_list_size - 1].level_id = client_list[index].admin_level_id;
-						for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-						{
-							client_list[index].admin_flags[j] = client_list[index].original_admin_flags[j];
-							if (client_list[index].grouped_admin_flags[j])
-							{
-								client_list[index].admin_flags[j] = true;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if (player_list_size == 0) return;
-
-	// Sort by level id for faster processing
-	qsort(player_list, player_list_size, sizeof(player_level_t), sort_player_admin_level);
-
-	int	min_level = player_list[0].level_id;
-
-	// Remove flags for different levelled players on the server
-	for (int j = 0; j < player_list_size; j++)
-	{
-		int client_index = player_list[j].client_index;
-
-		for (int i = 0; i < admin_level_list_size; i ++)
-		{
-			if (admin_level_list[i].level_id >= min_level &&
-				player_list[j].level_id > admin_level_list[i].level_id)
-			{
-				// Player here is at a lower level so apply filtering
-				for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
-				{
-					if (admin_level_list[i].flags[k])
-					{
-						client_list[client_index].admin_flags[k] = false;
-					}
-				}
-			}
-		}
-	}
-
-	FreeList((void **) &player_list, &player_list_size);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Re-calculate immunity level flags
-//---------------------------------------------------------------------------------
-void	ManiClient::ComputeImmunityLevels(void)
-{
-	player_level_t	*player_list = NULL;
-	player_t	player;
-	int			player_list_size = 0;
-	int			index;
-
-	if (immunity_level_list_size == 0) return;
-
-	// Create a list of client indexes that are on the server and
-	// have level_ids
-	for (int i = 1; i <= max_players; i++)
-	{
-		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree() )
-		{
-			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-			if (playerinfo && playerinfo->IsConnected())
-			{
-				if (playerinfo->IsHLTV()) continue;
-				Q_strcpy(player.steam_id, playerinfo->GetNetworkIDString());
-				if (FStrEq(player.steam_id, "BOT")) continue;
-
-				player.index = i;
-				Q_strcpy(player.name, playerinfo->GetName());
-				player.entity = pEntity;
-				player.is_bot = false;
-
-				GetIPAddressFromPlayer(&player);
-
-				if (IsPotentialImmune(&player, &index))
-				{
-					if (client_list[index].immunity_level_id != -1)
-					{
-						// Add list of clients on server
-						AddToList((void **) &player_list, sizeof(player_level_t), &player_list_size);
-						player_list[player_list_size - 1].client_index = index;
-						player_list[player_list_size - 1].level_id = client_list[index].immunity_level_id;
-						for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-						{
-							client_list[index].immunity_flags[j] = client_list[index].original_immunity_flags[j];
-							if (client_list[index].grouped_immunity_flags[j])
-							{
-								client_list[index].immunity_flags[j] = true;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if (player_list_size == 0) return;
-
-	// Sort by level id for faster processing
-	qsort(player_list, player_list_size, sizeof(player_level_t), sort_player_admin_level);
-
-	int	min_level = player_list[0].level_id;
-
-	// Remove flags for different levelled players on the server
-	for (int j = 0; j < player_list_size; j++)
-	{
-		int client_index = player_list[j].client_index;
-
-		for (int i = 0; i < immunity_level_list_size; i ++)
-		{
-			if (immunity_level_list[i].level_id >= min_level &&
-				player_list[j].level_id > immunity_level_list[i].level_id)
-			{
-				// Player here is at a lower level so apply filtering
-				for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
-				{
-					if (immunity_level_list[i].flags[k])
-					{
-						client_list[client_index].immunity_flags[k] = false;
-					}
-				}
-			}
-		}
-	}
-
-	FreeList((void **) &player_list, &player_list_size);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check if client is officially labelled as admin
-//---------------------------------------------------------------------------------
-bool ManiClient::IsAdmin( player_t *player_ptr, int *admin_index)
-{
-	return IsAdminCore(player_ptr, admin_index, true);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check if client is officially labelled as admin
-//---------------------------------------------------------------------------------
-bool ManiClient::IsAdminCore( player_t *player_ptr, int *client_index, bool recursive)
-{
-	*client_index = -1;
-
-	if (player_ptr->is_bot)
-	{
-		return false;
-	}
-
-	const char *password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
-
-	//Search through admin list for match
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		if (!client_list[i].has_admin_potential)
-		{
-			continue;
-		}
-
-		// Check Steam ID
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
-		{
-			if (client_list[i].steam_list[j].steam_id)
-			{
-				if (FStrEq(client_list[i].steam_list[j].steam_id, player_ptr->steam_id))
-				{
-					*client_index = i;
-					if (recursive && active_admin_list[i] == -1)
-					{
-						active_admin_list[i] = i;
-						ComputeAdminLevels();
-						return IsAdmin(player_ptr, client_index);
-					}
-
-					return true;
-				}
-			}
-		}
-
-		// Check IP address
-		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
-		{
-			if (client_list[i].ip_address_list[j].ip_address && player_ptr->ip_address)
-			{
-				if (FStrEq(client_list[i].ip_address_list[j].ip_address, player_ptr->ip_address)) 
-				{
-					*client_index = i;
-					if (recursive && active_admin_list[i] == -1)
-					{
-						active_admin_list[i] = i;
-						ComputeAdminLevels();
-						return IsAdmin(player_ptr, client_index);
-					}
-
-					return true;
-				}
-			}
-		}
-
-		// Check name password combo
-		if (client_list[i].nick_list_size != 0
-			&& client_list[i].password)
-		{
-			for (int j = 0; j < client_list[i].nick_list_size; j++)
-			{
-				if (strcmp(client_list[i].nick_list[j].nick, player_ptr->name) == 0)
-				{
-					if (strcmp(client_list[i].password, password) == 0)
-					{
-						*client_index = i;
-						if (recursive && active_admin_list[i] == -1)
-						{
-							active_admin_list[i] = i;
-							ComputeAdminLevels();
-							return IsAdmin(player_ptr, client_index);
-						}
-
-						return true;
-					}
-				}
-			}
-		}	
-	}
-
-	return false;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check if client is potenially labelled as admin
-//---------------------------------------------------------------------------------
-bool ManiClient::IsPotentialAdmin( player_t *player_ptr, int *client_index)
-{
-	if (player_ptr->is_bot)
-	{
-		return false;
-	}
-
-	*client_index = -1;
-
-	const char *password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
-
-	//Search through admin list for match
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		if (!client_list[i].has_admin_potential)
-		{
-			continue;
-		}
-
-		// Check Steam ID
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
-		{
-			if (client_list[i].steam_list[j].steam_id)
-			{
-				if (FStrEq(client_list[i].steam_list[j].steam_id, player_ptr->steam_id))
-				{
-					*client_index = i;
-					return true;
-				}
-			}
-		}
-
-		// Check IP address
-		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
-		{
-			if (client_list[i].ip_address_list[j].ip_address && player_ptr->ip_address)
-			{
-				if (FStrEq(client_list[i].ip_address_list[j].ip_address, player_ptr->ip_address)) 
-				{
-					*client_index = i;
-					return true;
-				}
-			}
-		}
-
-		// Check name password combo
-		if (client_list[i].nick_list_size != 0
-			&& client_list[i].password)
-		{
-			for (int j = 0; j < client_list[i].nick_list_size; j++)
-			{
-				if (strcmp(client_list[i].nick_list[j].nick, player_ptr->name) == 0)
-				{
-					if (strcmp(client_list[i].password, password) == 0)
-					{
-						*client_index = i;
-						return true;
-					}
-				}
-			}
-		}	
-	}
-
-	return false;
-}
-
-
-//---------------------------------------------------------------------------------
-// Purpose: Checks if player is immune
-//---------------------------------------------------------------------------------
-bool ManiClient::IsImmune(player_t *player_ptr, int *immunity_index)
-{
-	return IsImmuneCore(player_ptr, immunity_index, true);
-}
-//---------------------------------------------------------------------------------
-// Purpose: Checks if player is immune
-//---------------------------------------------------------------------------------
-bool ManiClient::IsImmuneCore(player_t *player_ptr, int *client_index, bool recursive)
-{
-	*client_index = -1;
-
-	if (player_ptr->is_bot)
-	{
-		return false;
-	}
-
-	const char *password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
-
-	//Search through admin list for match
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		if (!client_list[i].has_immunity_potential)
-		{
-			continue;
-		}
-
-		// Check Steam ID
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
-		{
-			if (client_list[i].steam_list[j].steam_id)
-			{
-				if (FStrEq(client_list[i].steam_list[j].steam_id, player_ptr->steam_id))
-				{
-					*client_index = i;
-					if (recursive && active_immunity_list[i] == -1)
-					{
-						active_immunity_list[i] = i;
-						ComputeImmunityLevels();
-						return IsImmune(player_ptr, client_index);
-					}
-
-					return true;
-				}
-			}
-		}
-
-		// Check IP address
-		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
-		{
-			if (client_list[i].ip_address_list[j].ip_address && player_ptr->ip_address)
-			{
-				if (FStrEq(client_list[i].ip_address_list[j].ip_address, player_ptr->ip_address)) 
-				{
-					*client_index = i;
-					if (recursive && active_immunity_list[i] == -1)
-					{
-						active_immunity_list[i] = i;
-						ComputeImmunityLevels();
-						return IsImmune(player_ptr, client_index);
-					}
-
-					return true;
-				}
-			}
-		}
-
-		// Check name password combo
-		if (client_list[i].nick_list_size != 0 
-			&& client_list[i].password)
-		{
-			for (int j = 0; j < client_list[i].nick_list_size; j++)
-			{
-				if (strcmp(client_list[i].nick_list[j].nick, player_ptr->name) == 0)
-				{
-					if (strcmp(client_list[i].password, password) == 0)
-					{
-						*client_index = i;
-						if (recursive && active_immunity_list[i] == -1)
-						{
-							active_immunity_list[i] = i;
-							ComputeImmunityLevels();
-							return IsImmune(player_ptr, client_index);
-						}
-
-						return true;
-					}
-				}
-			}	
-		}
-	}
-
-	return false;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Checks if player is immune (password already passed through)
-//---------------------------------------------------------------------------------
-bool ManiClient::IsImmuneNoPlayer(player_t *player_ptr, int *client_index)
-{
-	*client_index = -1;
-
-	if (player_ptr->is_bot)
-	{
-		return false;
-	}
-
-	//Search through admin list for match
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		if (!client_list[i].has_immunity_potential)
-		{
-			continue;
-		}
-
-		// Check Steam ID
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
-		{
-			if (client_list[i].steam_list[j].steam_id)
-			{
-				if (FStrEq(client_list[i].steam_list[j].steam_id, player_ptr->steam_id))
-				{
-					*client_index = i;
-					return true;
-				}
-			}
-		}
-
-		// Check IP address
-		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
-		{
-			if (client_list[i].ip_address_list[j].ip_address && player_ptr->ip_address)
-			{
-				if (FStrEq(client_list[i].ip_address_list[j].ip_address, player_ptr->ip_address)) 
-				{
-					*client_index = i;
-					return true;
-				}
-			}
-		}
-
-		// Check name password combo
-		if (client_list[i].nick_list_size != 0 
-			&& client_list[i].password)
-		{
-			for (int j = 0; j < client_list[i].nick_list_size; j++)
-			{
-				if (strcmp(client_list[i].nick_list[j].nick, player_ptr->name) == 0)
-				{
-					if (strcmp(client_list[i].password, player_ptr->password) == 0)
-					{
-						*client_index = i;
-						return true;
-					}
-				}
-			}	
-		}
-	}
-
-	return false;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Checks if player is immune
-//---------------------------------------------------------------------------------
-bool ManiClient::IsPotentialImmune(player_t *player_ptr, int *client_index)
-{
-	*client_index = -1;
-
-	if (player_ptr->is_bot)
-	{
-		return false;
-	}
-
-	const char *password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
-
-	//Search through admin list for match
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		if (!client_list[i].has_immunity_potential)
-		{
-			continue;
-		}
-
-		// Check Steam ID
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
-		{
-			if (client_list[i].steam_list[j].steam_id)
-			{
-				if (FStrEq(client_list[i].steam_list[j].steam_id, player_ptr->steam_id))
-				{
-					*client_index = i;
-					return true;
-				}
-			}
-		}
-
-		// Check IP address
-		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
-		{
-			if (client_list[i].ip_address_list[j].ip_address && player_ptr->ip_address)
-			{
-				if (FStrEq(client_list[i].ip_address_list[j].ip_address, player_ptr->ip_address)) 
-				{
-					*client_index = i;
-					return true;
-				}
-			}
-		}
-
-		// Check name password combo
-		if (client_list[i].nick_list_size != 0 
-			&& client_list[i].password)
-		{
-			for (int j = 0; j < client_list[i].nick_list_size; j++)
-			{
-				if (strcmp(client_list[i].nick_list[j].nick, player_ptr->name) == 0)
-				{
-					if (strcmp(client_list[i].password, password) == 0)
-					{
-						*client_index = i;
-						return true;
-					}
-				}
-			}	
-		}
-	}
-
-	return false;
-}
 //---------------------------------------------------------------------------------
 // Purpose: Parses the Admin config line setting flags
 //---------------------------------------------------------------------------------
@@ -749,33 +200,36 @@ bool ManiClient::OldAddClient
 	{
 		for (int i = 0; i < MAX_ADMIN_FLAGS; i ++)
 		{
+			Q_strcpy(client_ptr->flags[i].flag_name, admin_flag_list[i].flag);
 			if (mani_reverse_admin_flags.GetInt() == 1)
 			{
-				client_ptr->flags[i] = false;
+				client_ptr->flags[i].enabled = false;
 			}
 			else
 			{
-				client_ptr->flags[i] = true;
+				client_ptr->flags[i].enabled = true;
 			}
 		}
 
-		client_ptr->flags[ALLOW_CLIENT_ADMIN] = true;
+		client_ptr->flags[ALLOW_CLIENT_ADMIN].enabled = true;
 	}
 	else
 	{ 
 		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
 		{
+			Q_strcpy(client_ptr->flags[i].flag_name, immunity_flag_list[i].flag);
+
 			if (mani_reverse_immunity_flags.GetInt() == 1)
 			{
-				client_ptr->flags[i] = true;
+				client_ptr->flags[i].enabled = true;
 			}
 			else
 			{
-				client_ptr->flags[i] = false;
+				client_ptr->flags[i].enabled = false;
 			}
 		}
 
-		client_ptr->flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
+		client_ptr->flags[IMMUNITY_ALLOW_BASIC_IMMUNITY].enabled = true;
 	}
 
 	i = 0;
@@ -929,98 +383,79 @@ bool ManiClient::OldAddClient
 		i++;
 	}
 
-	char *flags_string = &(file_details[i]);
-	bool found_group = false;
+	const char *flags_string = &(file_details[i]);
 
 	if (is_admin)
 	{
-		for (int j = 0; j < admin_group_list_size; j ++)
+        if (group_list.Find(ADMIN, flags_string))
 		{
-			if (FStrEq(admin_group_list[j].group_id, flags_string))
+			strcpy(client_ptr->group_id, flags_string);
+			for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
 			{
-				found_group = true;
-				Q_strcpy (client_ptr->group_id, flags_string);
-				break;
+				client_ptr->flags[k].enabled = false;
 			}
-		}			
+			
+			return true;
+		}
 	}
 	else
 	{
-		for (int j = 0; j < immunity_group_list_size; j ++)
+        if (group_list.Find(IMMUNITY, flags_string))
 		{
-			if (FStrEq(immunity_group_list[j].group_id, flags_string))
+			strcpy(client_ptr->group_id, flags_string);
+			for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
 			{
-				found_group = true;
-				Q_strcpy (client_ptr->group_id, flags_string);
-				break;
+				client_ptr->flags[k].enabled = false;
 			}
-		}			
+
+			return true;
+		}
 	}
 
-	if (found_group)
+	while (file_details[i] != '\0')
 	{
-		// Setup flags for individual access
 		if (is_admin)
 		{
-			for (int i = 0; i < MAX_ADMIN_FLAGS; i ++)
+			for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
 			{
-				client_ptr->flags[i] = false;
+				if (file_details[i] == admin_flag_list[k].flag[0])
+				{
+					if (mani_reverse_admin_flags.GetInt() == 1)
+					{
+						client_ptr->flags[k].enabled = true;
+					}
+					else
+					{	
+						client_ptr->flags[k].enabled = false;
+					}
+
+					break;
+				}
 			}
 		}
 		else
-		{ 
-			for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
-			{
-				client_ptr->flags[i] = false;
-			}
-		}
-	}
-	else
-	{
-		while (file_details[i] != '\0')
 		{
-			if (is_admin)
+			for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
 			{
-				for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
+				if (file_details[i] == immunity_flag_list[k].flag[0])
 				{
-					if (file_details[i] == admin_flag_list[k].flag[0])
+					if (mani_reverse_immunity_flags.GetInt() == 1)
 					{
-						if (mani_reverse_admin_flags.GetInt() == 1)
-						{
-							client_ptr->flags[k] = true;
-						}
-						else
-						{	
-							client_ptr->flags[k] = false;
-						}
-
-						break;
+						client_ptr->flags[k].enabled = false;
 					}
+					else
+					{	
+						client_ptr->flags[k].enabled = true;
+					}
+
+					break;
 				}
 			}
-			else
-			{
-				for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
-				{
-					if (file_details[i] == immunity_flag_list[k].flag[0])
-					{
-						if (mani_reverse_immunity_flags.GetInt() == 1)
-						{
-							client_ptr->flags[k] = false;
-						}
-						else
-						{	
-							client_ptr->flags[k] = true;
-						}
-
-						break;
-					}
-				}
-			}
-
-			i++;
 		}
+
+		i++;
 	}
+
 
 	MMsg("\n");
 	return true;
@@ -1029,34 +464,13 @@ bool ManiClient::OldAddClient
 //---------------------------------------------------------------------------------
 // Purpose: Parses the Admin Group config line setting flags
 //---------------------------------------------------------------------------------
-void ManiClient::OldAddAdminGroup(char *file_details)
+void ManiClient::OldAddGroup(char *file_details, char *class_type)
 {
 	char	group_id[128]="";
 	int	i,j;
-	admin_group_t	admin_group;
+	bool	reverse_flags = mani_reverse_admin_flags.GetBool();
 
 	if (file_details[0] != '\"') return;
-
-	if (!AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size))
-	{
-		return;
-	}
-
-	for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
-	{
-		if (mani_reverse_admin_flags.GetInt() == 1)
-		{
-			admin_group.flags[k] = false;
-		}
-		else
-		{
-			admin_group.flags[k] = true;
-		}
-	}
-
-	admin_group.flags[ALLOW_CLIENT_ADMIN] = true;
-
-	Q_strcpy(admin_group.group_id, "");
 
 	i = 1;
 	j = 0;
@@ -1067,8 +481,19 @@ void ManiClient::OldAddAdminGroup(char *file_details)
 		{
 			// No more data
 			group_id[j] = '\0';
-			Q_strcpy(admin_group.group_id, group_id);
-			admin_group_list[admin_group_list_size - 1] = admin_group;
+
+			if (reverse_flags)
+			{
+				// No point adding group
+				return;
+			}
+
+			GlobalGroupFlag *g_flag = group_list.AddGroup(class_type, group_id);
+			const DualStrKey *key_value = NULL;
+			for (const char *desc = flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = flag_desc_list.FindNext(class_type, &key_value))
+			{
+				g_flag->SetFlag(key_value->key2, true);
+			}
 			return;
 		}
 
@@ -1085,137 +510,60 @@ void ManiClient::OldAddAdminGroup(char *file_details)
 		j++;
 	}
 
-	Q_strcpy(admin_group.group_id, group_id);
-
-	MMsg("%s ", group_id);
-
+	// Populate all the flags if needed
+	if (!reverse_flags)
+	{
+		group_list.AddGroup(class_type, group_id);
+		GlobalGroupFlag *g_flag = group_list.AddGroup(class_type, group_id);
+		const DualStrKey *key_value = NULL;
+		for (const char *desc = flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = flag_desc_list.FindNext(class_type, &key_value))
+		{
+			g_flag->SetFlag(key_value->key2, true);
+		}
+	}
+			
 	i++;
 
 	while (file_details[i] != '\0')
 	{
-		for (int k = 0; k < MAX_ADMIN_FLAGS; k ++)
+		char temp_string[8];
+
+		snprintf(temp_string, sizeof(temp_string), "%c", file_details[i]);
+
+		if (flag_desc_list.IsValidFlag(class_type, temp_string))
 		{
-			if (file_details[i] == admin_flag_list[k].flag[0])
+			if (!reverse_flags)
 			{
-				if (mani_reverse_admin_flags.GetInt() == 1)
+				GlobalGroupFlag *g_flag = group_list.AddGroup(class_type, group_id);
+				if (g_flag)
 				{
-					admin_group.flags[k] = true;
-					break;
+					g_flag->SetFlag(temp_string, false);
 				}
-				else
+			}
+			else
+			{
+				GlobalGroupFlag *g_flag = group_list.AddGroup(class_type, group_id);
+				if (g_flag)
 				{
-					admin_group.flags[k] = false;
-					break;
-				}
+					g_flag->SetFlag(temp_string, true);
+				}			
 			}
 		}
 
 		i++;
 	}
-
-	MMsg("\n");
-	admin_group_list[admin_group_list_size - 1] = admin_group;
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Parses the Immunity Group config line setting flags
-//---------------------------------------------------------------------------------
-void ManiClient::OldAddImmunityGroup(char *immunity_details)
-{
-	char	group_id[128]="";
-	int	i,j;
-	immunity_group_t	immunity_group;
-
-	if (immunity_details[0] != '\"') return;
-
-	if (!AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size))
-	{
-		return;
-	}
-
-	for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
-	{
-		if (mani_reverse_immunity_flags.GetInt() == 1)
-		{
-			immunity_group.flags[k] = true;
-		}
-		else
-		{
-			immunity_group.flags[k] = false;
-		}
-	}
-
-	immunity_group.flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
-
-	Q_strcpy(immunity_group.group_id, "");
-
-	i = 1;
-	j = 0;
-
-	for (;;)
-	{
-		if (immunity_details[i] == '\0')
-		{
-			// No more data
-			group_id[j] = '\0';
-			Q_strcpy(immunity_group.group_id, group_id);
-			immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-			return;
-		}
-
-
-		// If reached end quote
-		if (immunity_details[i] == '\"')
-		{
-			group_id[j] = '\0';
-			break;
-		}
-
-		group_id[j] = immunity_details[i];
-		i++;
-		j++;
-	}
-
-	Q_strcpy(immunity_group.group_id, group_id);
-
-	MMsg("%s ", group_id);
-
-	i++;
-
-	while (immunity_details[i] != '\0')
-	{
-		for (int k = 0; k < MAX_IMMUNITY_FLAGS; k ++)
-		{
-			if (immunity_details[i] == immunity_flag_list[k].flag[0])
-			{
-				if (mani_reverse_immunity_flags.GetInt() == 1)
-				{
-					immunity_group.flags[k] = false;
-					break;
-				}
-				else
-				{
-					immunity_group.flags[k] = true;
-					break;
-				}
-			}
-
-		}
-
-		i++;
-	}
-
-	MMsg("\n");
-	immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-}
 
 //---------------------------------------------------------------------------------
 // Purpose: Parses the Admin Group config line setting flags
 //---------------------------------------------------------------------------------
-
 bool	ManiClient::Init(void)
 {
 	// Setup the flags
+	flag_desc_list.LoadFlags();
+	this->AddBuiltInFlags();
+
 	FreeClients();
 	if (LoadOldStyle())
 	{
@@ -1223,11 +571,11 @@ bool	ManiClient::Init(void)
 		WriteClients();
 		if (gpManiDatabase->GetDBEnabled())
 		{
-			if (this->CreateDBTables())
+			if (this->CreateDBTables(NULL))
 			{
-				if (this->CreateDBFlags())
+				if (this->CreateDBFlags(NULL))
 				{
-					this->ExportDataToDB();
+					this->ExportDataToDB(NULL);
 				}
 			}
 		}
@@ -1237,7 +585,7 @@ bool	ManiClient::Init(void)
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		if (!this->GetClientsFromDatabase())
+		if (!this->GetClientsFromDatabase(NULL))
 		{
 			FreeClients();
 			LoadClients();
@@ -1245,6 +593,8 @@ bool	ManiClient::Init(void)
 		else
 		{
 			WriteClients();
+			this->SetupUnMasked();
+			this->SetupMasked();
 		}
 	}
 	else
@@ -1253,7 +603,28 @@ bool	ManiClient::Init(void)
 		LoadClients();
 	}
 
+	flag_desc_list.WriteFlags();
+	this->SetupPlayersOnServer();
+
 	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Finds any players on the server and creates a link ptr to the client class
+//---------------------------------------------------------------------------------
+void	ManiClient::SetupPlayersOnServer(void)
+{
+	for (int i = 1; i <= max_players; i++)
+	{
+		active_client_list[i - 1] = NULL;
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		if (strcmp(player.steam_id, "STEAM_ID_PENDING") == 0) continue;
+
+		this->NetworkIDValidated(&player);
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -1264,12 +635,12 @@ bool	ManiClient::LoadOldStyle(void)
 	FileHandle_t file_handle;
 	char	base_filename[512];
 	char	old_base_filename[512];
-	char	data_in[1024];
+	char	data_in[2048];
 	bool	loaded_old_style = false;
 
 
 	//Get admin groups list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/admingroups.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/admingroups.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -1286,18 +657,18 @@ bool	ManiClient::LoadOldStyle(void)
 				continue;
 			}
 
-			OldAddAdminGroup(data_in);
+			OldAddGroup(data_in, ADMIN);
 		}
 
 		filesystem->Close(file_handle);
 
-		Q_snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
+		snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
 		filesystem->RenameFile(base_filename, old_base_filename);
 		loaded_old_style = true;
 	}
 
 	//Get immunity groups list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/immunitygroups.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/immunitygroups.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -1314,18 +685,18 @@ bool	ManiClient::LoadOldStyle(void)
 				continue;
 			}
 
-			OldAddImmunityGroup(data_in);
+			OldAddGroup(data_in, IMMUNITY);
 		}
 
 		filesystem->Close(file_handle);
 
-		Q_snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
+		snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
 		filesystem->RenameFile(base_filename, old_base_filename);
 		loaded_old_style = true;
 	}
 
 	//Get admin list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/adminlist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/adminlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -1351,14 +722,14 @@ bool	ManiClient::LoadOldStyle(void)
 		}
 
 		filesystem->Close(file_handle);
-		Q_snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
+		snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
 		filesystem->RenameFile(base_filename, old_base_filename);
 
 		loaded_old_style = true;
 	}
 
 	//Get immunity list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/immunitylist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/immunitylist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -1385,112 +756,36 @@ bool	ManiClient::LoadOldStyle(void)
 
 		filesystem->Close(file_handle);
 
-		Q_snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
+		snprintf(old_base_filename, sizeof(old_base_filename), "%s.old", base_filename);
 		filesystem->RenameFile(base_filename, old_base_filename);
 		loaded_old_style = true;
 	}
 
 	// We have to botch in player names here that need to be unqiue
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
 		// No name set up
 		if (gpManiDatabase->GetDBEnabled())
 		{
 			/* Need unique name !! */
-			Q_snprintf(client_list[i].name, sizeof(client_list[i].name), "Client_%i_%s", i+1, 
+			char new_name[128];
+			snprintf(new_name, sizeof(new_name), "Client_%i_%s", i+1, 
 				gpManiDatabase->GetServerGroupID());
+			c_list[i]->SetName(new_name);
 		}
 		else
 		{
-			Q_snprintf(client_list[i].name, sizeof(client_list[i].name), "Client_%i", i+1);
+			char new_name[128];
+			snprintf(new_name, sizeof(new_name), "Client_%i", i+1);
+			c_list[i]->SetName(new_name);
+
 		}
 	}
 
-	// Put into place the admin group flags for the clients
-	for (int i = 0; i < client_list_size; i++)
-	{
-		client_list[i].admin_level_id = -1;
-		client_list[i].immunity_level_id = -1;
-
-		RebuildFlags(&(client_list[i]), MANI_ADMIN_TYPE);
-		RebuildFlags(&(client_list[i]), MANI_IMMUNITY_TYPE);
-	}
+	this->SetupUnMasked();
+	this->SetupMasked();
 
 	return (loaded_old_style);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Add the client to an already existing entry or create a new one
-//---------------------------------------------------------------------------------
-void	ManiClient::RebuildFlags
-(
- client_t	*client_ptr,
- int		type
- )
-{
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		client_ptr->has_admin_potential = false;
-
-		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
-		{
-			client_ptr->admin_flags[i] = client_ptr->original_admin_flags[i];
-			if (client_ptr->admin_flags[i]) client_ptr->has_admin_potential = true;
-			client_ptr->grouped_admin_flags[i] = false;
-		}
-
-		for (int j = 0; j < client_ptr->admin_group_list_size; j++)
-		{
-			for (int k = 0; k < admin_group_list_size; k ++)
-			{
-				if (FStruEq(client_ptr->admin_group_list[j].group_id, admin_group_list[k].group_id))
-				{
-					// Group matches so setup flags for group for this admin
-					for (int l = 0; l < MAX_ADMIN_FLAGS; l ++)
-					{
-						if (admin_group_list[k].flags[l])
-						{
-							client_ptr->admin_flags[l] = true;
-							client_ptr->grouped_admin_flags[l] = true;
-							client_ptr->has_admin_potential = true;
-						}
-					}
-				}
-			}
-		}
-	}
-	else
-	{
-		client_ptr->has_immunity_potential = false;
-
-		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
-		{
-			client_ptr->immunity_flags[i] = client_ptr->original_immunity_flags[i];
-			if (client_ptr->immunity_flags[i]) client_ptr->has_immunity_potential = true;
-			client_ptr->grouped_immunity_flags[i] = false;
-		}
-
-		for (int j = 0; j < client_ptr->immunity_group_list_size; j++)
-		{
-			for (int k = 0; k < immunity_group_list_size; k ++)
-			{
-				if (FStruEq(client_ptr->immunity_group_list[j].group_id, immunity_group_list[k].group_id))
-				{
-					// Group matches so setup flags for group for this admin
-					for (int l = 0; l < MAX_IMMUNITY_FLAGS; l ++)
-					{
-						if (immunity_group_list[k].flags[l])
-						{
-							client_ptr->immunity_flags[l] = true;
-							client_ptr->grouped_immunity_flags[l] = true;
-							client_ptr->has_immunity_potential = true;
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 //---------------------------------------------------------------------------------
@@ -1502,20 +797,20 @@ void	ManiClient::ConvertOldClientToNewClient
  bool	is_admin
  )
 {
-	client_t	*client_ptr;
-	int			client_index = -1;
-	bool		by_steam = false;
-	bool		by_ip = false;
-	bool		by_name = false;
+	ClientPlayer	*client_ptr;
+	int				client_index = -1;
+	bool			by_steam = false;
+	bool			by_ip = false;
+	bool			by_name = false;
 
 	// Find existing client record
-	client_index = FindClientIndex(old_client_ptr->steam_id, true, true);
+	client_index = FindClientIndex(old_client_ptr->steam_id);
 	if (client_index == -1)
 	{
-		client_index = FindClientIndex(old_client_ptr->ip_address, true, true);
+		client_index = FindClientIndex(old_client_ptr->ip_address);
 		if (client_index == -1)
 		{
-			client_index = FindClientIndex(old_client_ptr->name, true, true);
+			client_index = FindClientIndex(old_client_ptr->name);
 			if (client_index != -1)
 			{
 				by_name = true;
@@ -1534,25 +829,15 @@ void	ManiClient::ConvertOldClientToNewClient
 	if (client_index == -1)
 	{
 		// Create new client record as we didn't find one
-		AddToList((void **) &client_list, sizeof(client_t), &client_list_size);
-		client_ptr = &(client_list[client_list_size - 1]);
-		Q_memset (client_ptr, 0, sizeof(client_t));
 		MMsg("Adding client *********\n");
+		client_ptr = new ClientPlayer;
+		c_list.push_back(client_ptr);
 	}
 	else
 	{
 		// We found a client so point there
-		client_ptr = &(client_list[client_index]);
+		client_ptr = c_list[client_index];
 		MMsg("Found client *********\n");
-	}
-
-	if (is_admin)
-	{
-		client_ptr->original_admin_flags[ALLOW_BASIC_ADMIN] = true;
-	}
-	else
-	{
-		client_ptr->original_immunity_flags[IMMUNITY_ALLOW_BASIC_IMMUNITY] = true;
 	}
 
 	// Copy core information about player
@@ -1560,8 +845,7 @@ void	ManiClient::ConvertOldClientToNewClient
 	{
 		if (!by_steam)
 		{
-			AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
-			Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, old_client_ptr->steam_id);
+			client_ptr->steam_list.Add(old_client_ptr->steam_id);
 		}
 	}
 
@@ -1569,8 +853,7 @@ void	ManiClient::ConvertOldClientToNewClient
 	{
 		if (!by_ip)
 		{
-			AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
-			Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, old_client_ptr->ip_address);
+			client_ptr->ip_address_list.Add(old_client_ptr->ip_address);
 		}
 	}
 
@@ -1578,14 +861,13 @@ void	ManiClient::ConvertOldClientToNewClient
 	{
 		if (!by_name)
 		{
-			AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
-			Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, old_client_ptr->name);
+			client_ptr->nick_list.Add(old_client_ptr->name);
 		}
 	}
 
 	if (old_client_ptr->password && !FStrEq(old_client_ptr->password,""))
 	{
-		Q_strcpy(client_ptr->password, old_client_ptr->password);
+		client_ptr->SetPassword(old_client_ptr->password);
 	}
 
 
@@ -1593,13 +875,11 @@ void	ManiClient::ConvertOldClientToNewClient
 	{
 		if (is_admin)
 		{
-			AddToList((void **) &(client_ptr->admin_group_list), sizeof(admin_group_t), &(client_ptr->admin_group_list_size));
-			Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, old_client_ptr->group_id);
+			client_ptr->group_list.Add(ADMIN, old_client_ptr->group_id);
 		}
 		else
 		{
-			AddToList((void **) &(client_ptr->immunity_group_list), sizeof(immunity_group_t), &(client_ptr->immunity_group_list_size));
-			Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, old_client_ptr->group_id);
+			client_ptr->group_list.Add(IMMUNITY, old_client_ptr->group_id);
 		}
 	}
 
@@ -1609,1214 +889,21 @@ void	ManiClient::ConvertOldClientToNewClient
 	{
 		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
 		{
-			client_ptr->original_admin_flags[i] = old_client_ptr->flags[i];
-			client_ptr->admin_flags[i] = old_client_ptr->flags[i];
+			if (old_client_ptr->flags[i].enabled)
+			{
+				client_ptr->personal_flag_list.SetFlag(ADMIN, old_client_ptr->flags[i].flag_name, true);
+			}
 		}
 	}
 	else
 	{
 		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
 		{
-			client_ptr->original_immunity_flags[i] = old_client_ptr->flags[i];
-			client_ptr->admin_flags[i] = old_client_ptr->flags[i];
-		}
-	}
-
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style admin flags
-//---------------------------------------------------------------------------------
-void	ManiClient::LoadClients(void)
-{
-	char	core_filename[256];
-	bool found_match;
-	KeyValues *base_key_ptr;
-
-//	MMsg("*********** Loading admin section of clients.txt ************\n");
-	// Read the clients.txt file
-
-	KeyValues *kv_ptr = new KeyValues("clients.txt");
-
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
-	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
-	{
-		MMsg("Failed to load clients.txt\n");
-		kv_ptr->deleteThis();
-		return;
-	}
-
-	//////////////////////////////////////////////
-	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-	if (!base_key_ptr)
-	{
-//		MMsg("No true subkey found\n");
-		kv_ptr->deleteThis();
-		return;
-	}
-
-	found_match = false;
-
-	// Find our groups first
-	for (;;)
-	{
-		if (FStrEq(base_key_ptr->GetName(), "admingroups"))
-		{
-			found_match = true;
-			break;
-		}
-
-		base_key_ptr = base_key_ptr->GetNextKey();
-		if (!base_key_ptr)
-		{
-			break;
-		}
-	}
-
-	if (found_match)
-	{
-		// Get all the groups in
-		GetAdminGroups(base_key_ptr);
-	}
-
-	//////////////////////////////////////////////
-	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-	if (!base_key_ptr)
-	{
-//		MMsg("No true subkey found\n");
-		kv_ptr->deleteThis();
-		return;
-	}
-
-	found_match = false;
-
-	// Find our immunity groups
-	for (;;)
-	{
-		if (FStrEq(base_key_ptr->GetName(), "immunitygroups"))
-		{
-			found_match = true;
-			break;
-		}
-
-		base_key_ptr = base_key_ptr->GetNextKey();
-		if (!base_key_ptr)
-		{
-			break;
-		}
-	}
-
-	if (found_match)
-	{
-		// Get all the groups in
-		GetImmunityGroups(base_key_ptr);
-	}
-
-	//////////////////////////////////////////////
-	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-	if (!base_key_ptr)
-	{
-//		MMsg("No true subkey found\n");
-		kv_ptr->deleteThis();
-		return;
-	}
-
-	found_match = false;
-
-	// Find our levels next
-	for (;;)
-	{
-		if (FStrEq(base_key_ptr->GetName(), "adminlevels"))
-		{
-			found_match = true;
-			break;
-		}
-
-		base_key_ptr = base_key_ptr->GetNextKey();
-		if (!base_key_ptr)
-		{
-			break;
-		}
-	}
-
-	if (found_match)
-	{
-		// Get all the levels in
-		GetAdminLevels(base_key_ptr);
-	}
-
-	//////////////////////////////////////////////
-	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-	if (!base_key_ptr)
-	{
-//		MMsg("No true subkey found\n");
-		kv_ptr->deleteThis();
-		return;
-	}
-
-	found_match = false;
-
-	// Find our levels next
-	for (;;)
-	{
-		if (FStrEq(base_key_ptr->GetName(), "immunitylevels"))
-		{
-			found_match = true;
-			break;
-		}
-
-		base_key_ptr = base_key_ptr->GetNextKey();
-		if (!base_key_ptr)
-		{
-			break;
-		}
-	}
-
-	if (found_match)
-	{
-		// Get all the levels in
-		GetImmunityLevels(base_key_ptr);
-	}
-
-	//////////////////////////////////////////////
-	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
-	if (!base_key_ptr)
-	{
-//		MMsg("No true subkey found\n");
-		kv_ptr->deleteThis();
-		return;
-	}
-
-	found_match = false;
-
-	// Find our clients next
-	for (;;)
-	{
-		if (FStrEq(base_key_ptr->GetName(), "players"))
-		{
-			found_match = true;
-			break;
-		}
-
-		base_key_ptr = base_key_ptr->GetNextKey();
-		if (!base_key_ptr)
-		{
-			break;
-		}
-	}
-
-	if (found_match)
-	{
-		// Get all the clients in
-		GetClients(base_key_ptr);
-	}
-
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style admin groups
-//---------------------------------------------------------------------------------
-void	ManiClient::GetAdminGroups(KeyValues *ptr)
-{
-	KeyValues *kv_ptr;
-	char	flag_string[4096];
-	char	group_name[128];
-	admin_group_t	admin_group;
-
-	kv_ptr = ptr->GetFirstValue();
-	if (!kv_ptr)
-	{
-		return;
-	}
-
-	for (;;)
-	{
-		Q_memset(&admin_group, 0, sizeof(admin_group_t));
-
-		Q_strcpy(group_name, kv_ptr->GetName());
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
-		Q_strcpy(admin_group.group_id, group_name);
-
-		if (!FStrEq("NULL", flag_string))
-		{
-			int flag_string_index = 0;
-
-			while(flag_string[flag_string_index] != '\0')
+			if (old_client_ptr->flags[i].enabled)
 			{
-				int flag_index = this->GetNextFlag(flag_string, &flag_string_index, MANI_ADMIN_TYPE);
-				if (flag_index != -1)
-				{
-					// Valid flag index given
-					admin_group.flags[flag_index] = true;
-				}
-			}
-
-			AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
-			admin_group_list[admin_group_list_size - 1] = admin_group;
-//			MMsg("Admin Group [%s]\n", admin_group.group_id);
-		}
-
-		kv_ptr = kv_ptr->GetNextValue();
-		if (!kv_ptr)
-		{
-			break;
-		}
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style immunity groups
-//---------------------------------------------------------------------------------
-void	ManiClient::GetImmunityGroups(KeyValues *ptr)
-{
-	KeyValues *kv_ptr;
-	char	flag_string[4096];
-	char	group_name[128];
-	immunity_group_t	immunity_group;
-
-	kv_ptr = ptr->GetFirstValue();
-	if (!kv_ptr)
-	{
-		return;
-	}
-
-	for (;;)
-	{
-		Q_memset(&immunity_group, 0, sizeof(immunity_group_t));
-
-		Q_strcpy(group_name, kv_ptr->GetName());
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
-		Q_strcpy(immunity_group.group_id, group_name);
-
-		if (!FStrEq("NULL", flag_string))
-		{
-			int flag_string_index = 0;
-
-			while(flag_string[flag_string_index] != '\0')
-			{
-				int flag_index = this->GetNextFlag(flag_string, &flag_string_index, MANI_IMMUNITY_TYPE);
-				if (flag_index != -1)
-				{
-					// Valid flag index given
-					immunity_group.flags[flag_index] = true;
-				}
-			}
-
-			AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
-			immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-//			MMsg("Immunity Group [%s]\n", immunity_group.group_id);
-		}
-
-		kv_ptr = kv_ptr->GetNextValue();
-		if (!kv_ptr)
-		{
-			break;
-		}
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style admin levels
-//---------------------------------------------------------------------------------
-void	ManiClient::GetAdminLevels(KeyValues *ptr)
-{
-	KeyValues *kv_ptr;
-	char	flag_string[4096];
-	admin_level_t	admin_level;
-
-	kv_ptr = ptr->GetFirstValue();
-	if (!kv_ptr)
-	{
-		return;
-	}
-
-	for (;;)
-	{
-		Q_memset(&admin_level, 0, sizeof(admin_level_t));
-
-		admin_level.level_id = Q_atoi(kv_ptr->GetName());
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
-
-		if (!FStrEq("NULL", flag_string))
-		{
-			int flag_string_index = 0;
-
-			while(flag_string[flag_string_index] != '\0')
-			{
-				int flag_index = this->GetNextFlag(flag_string, &flag_string_index, MANI_ADMIN_TYPE);
-				if (flag_index != -1)
-				{
-					// Valid flag index given
-					admin_level.flags[flag_index] = true;
-				}
-			}
-
-			AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
-			admin_level_list[admin_level_list_size - 1] = admin_level;
-//			MMsg("Admin Level [%i]\n", admin_level.level_id);
-		}
-
-		kv_ptr = kv_ptr->GetNextValue();
-		if (!kv_ptr)
-		{
-			break;
-		}
-	}
-
-	qsort(admin_level_list, admin_level_list_size, sizeof(admin_level_t), sort_admin_level); 
-
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style immunity levels
-//---------------------------------------------------------------------------------
-void	ManiClient::GetImmunityLevels(KeyValues *ptr)
-{
-	KeyValues *kv_ptr;
-	char	flag_string[4096];
-	immunity_level_t	immunity_level;
-
-	kv_ptr = ptr->GetFirstValue();
-	if (!kv_ptr)
-	{
-		return;
-	}
-
-	for (;;)
-	{
-		Q_memset(&immunity_level, 0, sizeof(immunity_level_t));
-		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i ++)
-		{
-			immunity_level.flags[i] = false;
-		}
-
-		immunity_level.level_id = Q_atoi(kv_ptr->GetName());
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
-
-		if (!FStrEq("NULL", flag_string))
-		{
-			int flag_string_index = 0;
-
-			while(flag_string[flag_string_index] != '\0')
-			{
-				int flag_index = this->GetNextFlag(flag_string, &flag_string_index, MANI_IMMUNITY_TYPE);
-				if (flag_index != -1)
-				{
-					// Valid flag index given
-					immunity_level.flags[flag_index] = true;
-				}
-			}
-
-			AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
-			immunity_level_list[immunity_level_list_size - 1] = immunity_level;
-//			MMsg("Immunity Level [%i]\n", immunity_level.level_id);
-		}
-
-		kv_ptr = kv_ptr->GetNextValue();
-		if (!kv_ptr)
-		{
-			break;
-		}
-	}
-
-	qsort(immunity_level_list, immunity_level_list_size, sizeof(immunity_level_t), sort_immunity_level);
-
-	/*	for (int i = 0; i < immunity_level_list_size; i++)
-	{
-	MMsg("Im Lev [%i]\n", immunity_level_list[i].level_id);
-	for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-	{
-	if (immunity_level_list[i].flags[j])
-	{
-	MMsg("%s ", immunity_flag_list[j].flag_desc);
-	}
-	}
-
-	MMsg("\n");
-	}*/
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style clients flags
-//---------------------------------------------------------------------------------
-void	ManiClient::GetClients(KeyValues *ptr)
-{
-	KeyValues *players_ptr;
-	KeyValues *kv_ptr;
-	KeyValues *temp_ptr;
-
-	char	flag_string[4096];
-	char	temp_string[256];
-	client_t	*client_ptr;
-
-	// Should be at key 'players'
-	players_ptr = ptr->GetFirstSubKey();
-	if (!players_ptr)
-	{
-		return;
-	}
-
-	for (;;)
-	{
-		AddToList((void **) &client_list, sizeof(client_t), &client_list_size);
-		client_ptr = &(client_list[client_list_size - 1]);
-		Q_memset (client_ptr, 0, sizeof(client_t));
-
-		kv_ptr = players_ptr;
-
-		// Do simple stuff first
-		Q_strcpy(client_ptr->email_address, kv_ptr->GetString("email"));
-		client_ptr->admin_level_id = kv_ptr->GetInt("admin_level", -1);
-		client_ptr->immunity_level_id = kv_ptr->GetInt("immunity_level", -1);
-		Q_strcpy(client_ptr->name, kv_ptr->GetString("name"));
-		Q_strcpy(client_ptr->password, kv_ptr->GetString("password"));
-		Q_strcpy(client_ptr->notes, kv_ptr->GetString("notes"));
-
-		/* Handle single steam id */
-		Q_strcpy(temp_string, kv_ptr->GetString("steam", ""));
-		if (!FStrEq(temp_string, ""))
-		{
-			AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
-			Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, temp_string);
-		}
-
-
-		/* Handle single ip */
-		Q_strcpy(temp_string, kv_ptr->GetString("ip", ""));
-		if (!FStrEq(temp_string, ""))
-		{
-			AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
-			Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, temp_string);
-		}
-
-		/* Handle single nickname */
-		Q_strcpy(temp_string, kv_ptr->GetString("nick", ""));
-		if (!FStrEq(temp_string, ""))
-		{
-			AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
-			Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, temp_string);
-		}
-
-		/* Handle single admin group */
-		Q_strcpy(temp_string, kv_ptr->GetString("admingroups", ""));
-		if (!FStrEq(temp_string, ""))
-		{
-			AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
-			Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_string);
-//			MMsg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
-		}
-
-		/* Handle single immunity group */
-		Q_strcpy(temp_string, kv_ptr->GetString("immunitygroups", ""));
-		if (!FStrEq(temp_string, ""))
-		{
-			AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
-			Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_string);
-//			MMsg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
-		}
-
-		// Steam IDs
-		temp_ptr = kv_ptr->FindKey("steam", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
-					Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, temp_ptr->GetString());
-//					MMsg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
+				client_ptr->personal_flag_list.SetFlag(IMMUNITY, old_client_ptr->flags[i].flag_name, true);
 			}
 		}
-
-		// IP Addresses
-		temp_ptr = kv_ptr->FindKey("ip", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
-					Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, temp_ptr->GetString());
-//					MMsg("IP Address [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		// Player nicknames
-		temp_ptr = kv_ptr->FindKey("nick", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
-					Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, temp_ptr->GetString());
-//					MMsg("Nick Name [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		// Admin Groups 
-		temp_ptr = kv_ptr->FindKey("admingroups", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
-					Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_ptr->GetString());
-//					MMsg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		// Immunity Groups 
-		temp_ptr = kv_ptr->FindKey("immunitygroups", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
-					Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_ptr->GetString());
-//					MMsg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		// do the admin flags 
-		temp_ptr = kv_ptr->FindKey("adminflags", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					Q_strcpy(flag_string, temp_ptr->GetString(NULL, "NULL"));
-					if (!FStrEq("NULL", flag_string))
-					{
-						int flag_string_index = 0;
-
-						while(flag_string[flag_string_index] != '\0')
-						{
-							int flag_index = this->GetNextFlag(flag_string, &flag_string_index, MANI_ADMIN_TYPE);
-							if (flag_index != -1)
-							{
-								// Valid flag index given so set original flags
-								// Actual flags are computed when a player leaves
-								// or joins based on the levels setup and
-								// who is on the server.
-								client_ptr->original_admin_flags[flag_index] = true;
-							}
-						}
-					}
-
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		// Do the immunity flags
-		temp_ptr = kv_ptr->FindKey("immunityflags", false);
-		if (temp_ptr)
-		{
-			temp_ptr = temp_ptr->GetFirstValue();
-			if (temp_ptr)
-			{
-				for (;;)
-				{
-					Q_strcpy(flag_string, temp_ptr->GetString(NULL, "NULL"));
-					if (!FStrEq("NULL", flag_string))
-					{
-						int flag_string_index = 0;
-
-						while(flag_string[flag_string_index] != '\0')
-						{
-							int flag_index = this->GetNextFlag(flag_string, &flag_string_index, MANI_IMMUNITY_TYPE);
-							if (flag_index != -1)
-							{
-								// Valid flag index given so set original flags
-								// Actual flags are computed when a player leaves
-								// or joins based on the levels setup and
-								// who is on the server.
-								client_ptr->original_immunity_flags[flag_index] = true;
-							}
-						}
-					}
-
-					temp_ptr = temp_ptr->GetNextValue();
-					if (!temp_ptr)
-					{
-						break;
-					}
-				}
-			}
-		}
-
-		players_ptr = players_ptr->GetNextKey();
-		if (!players_ptr)
-		{
-			break;
-		}
-	}
-
-	// Put into place the admin group flags for the clients
-	for (int i = 0; i < client_list_size; i++)
-	{
-		RebuildFlags(&(client_list[i]), MANI_ADMIN_TYPE);
-		RebuildFlags(&(client_list[i]), MANI_IMMUNITY_TYPE);
-	}
-
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
-
-//	DumpClientsToConsole();
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Loads into memory the new style admin flags
-//---------------------------------------------------------------------------------
-int		ManiClient::GetNextFlag(char *flags_ptr, int *index, int type)
-{
-	char	flag_name[4096];
-
-	// Skip space seperators
-	while (flags_ptr[*index] == ';' || flags_ptr[*index] == ' ' || flags_ptr[*index] == '\t')
-	{
-		*index = *index + 1;
-	}
-
-	if (flags_ptr[*index] == '\0') return -1;
-	int	i = 0;
-
-	while (flags_ptr[*index] != ' ' && 
-		flags_ptr[*index] != ';' && 
-		flags_ptr[*index] != '\t' && 
-		flags_ptr[*index] != '\0')
-	{
-		flag_name[i++] = flags_ptr[*index];
-		*index = *index + 1;
-	}
-
-	flag_name[i] = '\0';
-
-	if (type == MANI_ADMIN_TYPE)
-	{
-		for (i = 0; i < MAX_ADMIN_FLAGS; i++)
-		{
-			if (FStruEq(flag_name, admin_flag_list[i].flag))
-			{
-				return i;
-			}
-		}
-	}
-	else
-	{
-		for (i = 0; i < MAX_IMMUNITY_FLAGS; i++)
-		{
-			if (FStruEq(flag_name, immunity_flag_list[i].flag))
-			{
-				return i;
-			}
-		}
-	}
-
-//	MMsg("Flag [%s] is invalid !!\n", flag_name);
-	return -1;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Dumps the clients list to the console
-//---------------------------------------------------------------------------------
-void		ManiClient::DumpClientsToConsole(void)
-{
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		MMsg("Name [%s]\n", client_list[i].name);
-		MMsg("Email [%s]\n", client_list[i].email_address);
-		MMsg("Admin Level [%i]\n", client_list[i].admin_level_id);
-		MMsg("Immunity Level [%i]\n", client_list[i].immunity_level_id);
-
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
-		{
-			MMsg("Steam : [%s]\n", client_list[i].steam_list[j].steam_id);
-		}
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Writes to the clients.txt file based on data in memory
-//---------------------------------------------------------------------------------
-void		ManiClient::WriteClients(void)
-{
-	char temp_string[1024];
-	char temp_string2[1024];
-
-	char	core_filename[256];
-	ManiKeyValues *client;
-	bool	found_flag;
-
-//	MMsg("*********** Writing clients.txt ************\n");
-
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
-
-	client = new ManiKeyValues( "clients.txt" );
-
-	if (!client->WriteStart(core_filename))
-	{
-		MMsg("Failed to write %s\n", core_filename);
-		delete client;
-		return;
-	}
-
-	client->WriteComment("This key group lists all your client players");
-	client->WriteNewSubKey("players");
-
-//	MMsg("Writing %i client(s)\n",  client_list_size);
-	// Loop through all clients
-	for (int i = 0; i < client_list_size; i ++)
-	{
-		if (!client_list[i].name || FStrEq(client_list[i].name,""))
-		{
-			// No name set up
-			if (gpManiDatabase->GetDBEnabled())
-			{
-				/* Need unique name !! */
-				Q_snprintf(temp_string, sizeof(temp_string), "Client_%i_%s", i+1, 
-					gpManiDatabase->GetServerGroupID());
-			}
-			else
-			{
-				Q_snprintf(temp_string, sizeof(temp_string), "Client_%i", i+1);
-			}
-
-			Q_strcpy(client_list[i].name, temp_string);
-		}
-		else
-		{
-			Q_snprintf(temp_string, sizeof(temp_string), "%s", client_list[i].name);
-		}
-
-		client->WriteComment("This must be a unique client name");
-		client->WriteNewSubKey(temp_string);
-
-		if (client_list[i].email_address) client->WriteKey("email", client_list[i].email_address);
-		if (client_list[i].admin_level_id != -1) client->WriteKey("admin_level", client_list[i].admin_level_id);
-		if (client_list[i].immunity_level_id != -1) client->WriteKey("immunity_level", client_list[i].immunity_level_id);
-		if (client_list[i].name)
-		{
-			client->WriteComment("Client real name");
-			client->WriteKey("name", client_list[i].name);
-		}
-		if (client_list[i].password) client->WriteKey("password", client_list[i].password);
-		if (client_list[i].notes) client->WriteKey("notes", client_list[i].notes);
-		if (client_list[i].steam_list_size == 1) 
-		{
-			client->WriteComment("Steam ID for client");
-			client->WriteKey("steam", client_list[i].steam_list[0].steam_id);
-		}
-		if (client_list[i].ip_address_list_size == 1) client->WriteKey("ip", client_list[i].ip_address_list[0].ip_address);
-		if (client_list[i].nick_list_size == 1) client->WriteKey("nick", client_list[i].nick_list[0].nick);
-
-		// Write Steam IDs if needed.
-		if (client_list[i].steam_list_size > 1)
-		{
-			client->WriteComment("This sub key is for multiple steam ids");
-			client->WriteNewSubKey("steam");
-
-			for (int j = 0; j < client_list[i].steam_list_size; j++)
-			{
-				Q_snprintf(temp_string, sizeof(temp_string), "steam%i", j + 1);
-				client->WriteKey(temp_string, client_list[i].steam_list[j].steam_id);
-			}
-
-			client->WriteEndSubKey();
-		}
-
-		// Write IP Addresses if needed.
-		if (client_list[i].ip_address_list_size > 1)
-		{
-			client->WriteComment("This sub key is for multiple ip addresses");
-			client->WriteNewSubKey("ip");
-
-			for (int j = 0; j < client_list[i].steam_list_size; j++)
-			{
-				Q_snprintf(temp_string, sizeof(temp_string), "IP%i", j + 1);
-				client->WriteKey(temp_string, client_list[i].ip_address_list[j].ip_address);
-			}
-
-			client->WriteEndSubKey();
-		}
-
-		// Write Player Nicknames if needed.
-		if (client_list[i].nick_list_size > 1)
-		{
-			client->WriteComment("This sub key is for multiple player nick names");
-			client->WriteNewSubKey("nick");
-
-			for (int j = 0; j < client_list[i].nick_list_size; j++)
-			{
-				Q_snprintf(temp_string, sizeof(temp_string), "nick%i", j + 1);
-				client->WriteKey(temp_string, client_list[i].nick_list[j].nick);
-			}
-
-			client->WriteEndSubKey();
-		}
-
-		// Write Admin flags if needed.
-		found_flag = false;
-		for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-		{
-			if (client_list[i].original_admin_flags[j])
-			{
-				found_flag = true;
-				break;
-			}
-		}
-
-		if (found_flag)
-		{
-			client->WriteComment("These are personal admin flags for a client");
-			client->WriteNewSubKey("adminflags");
-
-			int flags_number = 1;
-			Q_strcpy(temp_string, "");
-
-			for (int j = 0; j < MAX_ADMIN_FLAGS; j++)
-			{
-				if (client_list[i].original_admin_flags[j])
-				{
-					Q_strcat(temp_string, admin_flag_list[j].flag);
-					Q_strcat(temp_string, " "); // Seperator
-
-					// Split up strings
-					if (Q_strlen(temp_string) > 60)
-					{
-						Q_snprintf(temp_string2, sizeof(temp_string2), "flags%i", flags_number ++);
-						temp_string[Q_strlen(temp_string) - 1] = '\0';
-						client->WriteKey(temp_string2, temp_string);
-						Q_strcpy(temp_string, "");
-					}
-				}
-			}
-
-			if (Q_strlen(temp_string) <= 60)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "flags%i", flags_number ++);
-				if (!FStrEq(temp_string,""))
-				{
-					temp_string[Q_strlen(temp_string) - 1] = '\0';
-				}
-				client->WriteKey(temp_string2, temp_string);
-				Q_strcpy(temp_string, "");
-			}
-
-			client->WriteEndSubKey();
-		}
-
-		if (client_list[i].admin_group_list_size == 1) 
-		{
-			client->WriteComment("This is the admin group the client is subscribed to");
-			client->WriteKey("admingroups", client_list[i].admin_group_list[0].group_id);
-		}
-
-		// Write Admin Groups if needed
-		if (client_list[i].admin_group_list_size > 1)
-		{
-			client->WriteComment("These are the admin groups this client is subscribed to");
-			client->WriteNewSubKey("admingroups");
-
-			for (int j = 0; j < client_list[i].admin_group_list_size; j++)
-			{
-				Q_snprintf(temp_string, sizeof(temp_string), "group%i", j + 1);
-				client->WriteKey(temp_string, client_list[i].admin_group_list[j].group_id);
-			}
-
-			client->WriteEndSubKey();
-		}
-
-		// Write immunity flags if needed.
-		found_flag = false;
-		for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-		{
-			if (client_list[i].original_immunity_flags[j])
-			{
-				found_flag = true;
-				break;
-			}
-		}
-
-		if (found_flag)
-		{
-			client->WriteComment("These are personal immunity flags for a client");
-			client->WriteNewSubKey("immunityflags");
-
-			int flags_number = 1;
-			Q_strcpy(temp_string, "");
-
-			for (int j = 0; j < MAX_IMMUNITY_FLAGS; j++)
-			{
-				if (client_list[i].original_immunity_flags[j])
-				{
-					Q_strcat(temp_string, immunity_flag_list[j].flag);
-					Q_strcat(temp_string, " "); // Seperator
-
-					// Split up strings
-					if (Q_strlen(temp_string) > 60)
-					{
-						Q_snprintf(temp_string2, sizeof(temp_string2), "flags%i", flags_number ++);
-						temp_string[Q_strlen(temp_string) - 1] = '\0';
-						client->WriteKey(temp_string2, temp_string);
-						Q_strcpy(temp_string, "");
-					}
-				}
-			}
-
-			if (Q_strlen(temp_string) <= 60)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "flags%i", flags_number ++);
-				if (!FStrEq(temp_string,""))
-				{
-					temp_string[Q_strlen(temp_string) - 1] = '\0';
-				}
-				client->WriteKey(temp_string2, temp_string);
-				Q_strcpy(temp_string, "");
-			}
-
-			client->WriteEndSubKey();
-		}
-		
-		if (client_list[i].immunity_group_list_size == 1) 
-		{
-			client->WriteComment("This is the immunity group the client is subscribed to");
-			client->WriteKey("immunitygroups", client_list[i].immunity_group_list[0].group_id);
-		}
-
-		// Write Immunity Groups if needed
-		if (client_list[i].immunity_group_list_size > 1)
-		{
-			client->WriteNewSubKey("immunitygroups");
-
-			for (int j = 0; j < client_list[i].immunity_group_list_size; j++)
-			{
-				Q_snprintf(temp_string, sizeof(temp_string), "group%i", j + 1);
-				client->WriteKey(temp_string, client_list[i].immunity_group_list[j].group_id);
-			}
-
-			client->WriteEndSubKey();
-		}
-
-		client->WriteEndSubKey();
-	}
-
-	// End Players
-	client->WriteEndSubKey();
-
-	if (admin_group_list_size != 0)
-	{
-		client->WriteComment("These are the admins groups a client can subscribed to");
-		client->WriteNewSubKey("admingroups");
-
-		for (int i = 0; i < admin_group_list_size; i ++)
-		{
-			Q_strcpy(temp_string, "");
-
-			for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-			{
-				if (admin_group_list[i].flags[j])
-				{
-					// found flag
-					Q_strcat(temp_string, admin_flag_list[j].flag);
-					Q_strcat(temp_string, " ");
-				}
-			}
-
-			if (!FStrEq(temp_string,""))
-			{
-				temp_string[Q_strlen(temp_string) - 1] = '\0';
-			}
-			client->WriteKey(admin_group_list[i].group_id, temp_string);
-		}
-
-		client->WriteEndSubKey();
-	}
-
-	if (immunity_group_list_size != 0)
-	{
-		client->WriteComment("These are the immunity groups a client can subscribed to");
-		client->WriteNewSubKey("immunitygroups");
-
-		for (int i = 0; i < immunity_group_list_size; i ++)
-		{
-			Q_strcpy(temp_string, "");
-
-			for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-			{
-				if (immunity_group_list[i].flags[j])
-				{
-					// found flag
-					Q_strcat(temp_string, immunity_flag_list[j].flag);
-					Q_strcat(temp_string, " ");
-				}
-			}
-
-			if (!FStrEq(temp_string,""))
-			{
-				temp_string[Q_strlen(temp_string) - 1] = '\0';
-			}
-			client->WriteKey(immunity_group_list[i].group_id, temp_string);
-		}
-
-		client->WriteEndSubKey();
-	}
-
-	if (admin_level_list_size != 0)
-	{
-		client->WriteComment("These are the admin level flag definitions that a client can subscribed to");
-		client->WriteNewSubKey("adminlevels");
-
-		for (int i = 0; i < admin_level_list_size; i ++)
-		{
-			Q_strcpy(temp_string, "");
-
-			for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-			{
-				if (admin_level_list[i].flags[j])
-				{
-					// found flag
-					Q_strcat(temp_string, admin_flag_list[j].flag);
-					Q_strcat(temp_string, " ");
-				}
-			}
-
-			if (!FStrEq(temp_string,""))
-			{
-				temp_string[Q_strlen(temp_string) - 1] = '\0';
-			}
-			Q_snprintf(temp_string2, sizeof(temp_string2), "%i", admin_level_list[i].level_id);
-			client->WriteKey(temp_string2, temp_string);
-		}
-
-		client->WriteEndSubKey();
-	}
-
-	if (immunity_level_list_size != 0)
-	{
-		client->WriteComment("These are the immunity level flag definitions that a client can subscribed to");
-		client->WriteNewSubKey("immunitylevels");
-
-		for (int i = 0; i < immunity_level_list_size; i ++)
-		{
-			Q_strcpy(temp_string, "");
-
-			for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-			{
-				if (immunity_level_list[i].flags[j])
-				{
-					// found flag
-					Q_strcat(temp_string, immunity_flag_list[j].flag);
-					Q_strcat(temp_string, " ");
-				}
-			}
-
-			if (!FStrEq(temp_string,""))
-			{
-				temp_string[Q_strlen(temp_string) - 1] = '\0';
-			}
-			Q_snprintf(temp_string2, sizeof(temp_string2), "%i", immunity_level_list[i].level_id);
-			client->WriteKey(temp_string2, temp_string);
-		}
-
-		client->WriteEndSubKey();
-	}
-
-	client->WriteEnd();
-
-	delete client;
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Free's up single client memory allocation
-//---------------------------------------------------------------------------------
-void	ManiClient::FreeClient(client_t *client_ptr)
-{
-	if (client_ptr->steam_list_size)
-	{
-		free (client_ptr->steam_list);
-		client_ptr->steam_list_size = 0;
-		client_ptr->steam_list = NULL;
-	}
-
-	if (client_ptr->ip_address_list_size)
-	{
-		free (client_ptr->ip_address_list);
-		client_ptr->ip_address_list_size = 0;
-		client_ptr->ip_address_list = NULL;
-	}
-
-	if (client_ptr->nick_list_size)
-	{
-		free (client_ptr->nick_list);
-		client_ptr->nick_list_size = 0;
-		client_ptr->nick_list = NULL;
-	}
-
-	if (client_ptr->admin_group_list_size)
-	{
-		free (client_ptr->admin_group_list);
-		client_ptr->admin_group_list_size = 0;
-		client_ptr->admin_group_list = NULL;
-	}
-
-	if (client_ptr->immunity_group_list_size)
-	{
-		free (client_ptr->immunity_group_list);
-		client_ptr->immunity_group_list_size = 0;
-		client_ptr->immunity_group_list = NULL;
 	}
 }
 
@@ -2826,49 +913,20 @@ void	ManiClient::FreeClient(client_t *client_ptr)
 
 void	ManiClient::FreeClients(void)
 {
-	for (int i = 0; i < client_list_size; i++)
+	// New free clients section
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		FreeClient(&(client_list[i]));
+		delete c_list[i];
 	}
 
-	FreeList((void **) &client_list, &client_list_size);
-	FreeList((void **) &admin_group_list, &admin_group_list_size);
-	FreeList((void **) &immunity_group_list, &immunity_group_list_size);
-	FreeList((void **) &admin_level_list, &admin_level_list_size);
-	FreeList((void **) &immunity_level_list, &immunity_level_list_size);
+	c_list.clear();
+	group_list.Kill();
+	level_list.Kill();
 
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Checks if admin is elligible to run the command
-//---------------------------------------------------------------------------------
-
-bool	ManiClient::IsAdminAllowed(player_t *player, const char *command, int admin_flag, bool check_war, int *admin_index)
-{
-	*admin_index = -1;
-
-	if (check_war)
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		OutputHelpText(ORANGE_CHAT, player, "Mani Admin Plugin: Command %s is disabled in war mode", command);
-		return false;
+		active_client_list[i] = NULL;
 	}
-
-	if (!IsAdmin(player, admin_index) || check_war)
-	{
-		OutputHelpText(ORANGE_CHAT, player, "Mani Admin Plugin: You are not an admin");
-		return false;
-	}
-
-	if (admin_flag != ADMIN_DONT_CARE)
-	{
-		if (!client_list[*admin_index].admin_flags[admin_flag])
-		{
-			OutputHelpText(ORANGE_CHAT, player, "Mani Admin Plugin: You are not authorised to run %s", command);
-			return false;
-		}
-	}
-
-	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -2889,19 +947,19 @@ bool IsCommandIssuedByServerAdmin( void )
 //---------------------------------------------------------------------------------
 // Purpose: Creates database tables
 //---------------------------------------------------------------------------------
-bool ManiClient::CreateDBTables(void)
+bool ManiClient::CreateDBTables(player_t *player_ptr)
 {
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
-	MMsg("Creating DB tables if not existing....\n");
-	if (!mani_mysql->Init())
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating DB tables if not existing....");
+	if (!mani_mysql->Init(player_ptr))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL auto_increment, "
 		"name varchar(32) NOT NULL, "
@@ -2918,8 +976,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"steam_id varchar(32) NOT NULL default '', "
@@ -2932,8 +990,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"nick varchar(32) NOT NULL default '', "
@@ -2946,8 +1004,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"ip_address varchar(32) NOT NULL default '', "
@@ -2960,22 +1018,23 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %sflag\n", gpManiDatabase->GetDBTablePrefix());
-	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sflag ( "
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBFlag());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"flag_id varchar(20) BINARY NOT NULL default '', "
 		"type varchar(32) NOT NULL default '', "
 		"description varchar(128) NOT NULL default '', "
 		"PRIMARY KEY (flag_id, type) "
-		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		") TYPE=MyISAM",
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBFlag()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	MMsg("Creating %s%sn", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"server_id mediumint(8) NOT NULL default '0', "
 		"name varchar(128) NOT NULL default '', "
@@ -2994,8 +1053,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBGroup());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBGroup());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"group_id varchar(32) NOT NULL default '', "
 		"flag_string text, "
@@ -3010,8 +1069,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"group_id varchar(32) NOT NULL default '', "
@@ -3026,8 +1085,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"flag_string text, "
@@ -3042,8 +1101,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"level_id mediumint(8) NOT NULL default '-1', "
@@ -3058,8 +1117,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBLevel());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBLevel());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"level_id mediumint(8) NOT NULL default '-1', "
 		"type varchar(32) NOT NULL default '', "
@@ -3074,8 +1133,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"server_group_id varchar(32) NOT NULL default '0', "
@@ -3088,8 +1147,8 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
-	if (!mani_mysql->ExecuteQuery(
+	OutputHelpText(GREEN_CHAT, player_ptr, "Creating %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
+	if (!mani_mysql->ExecuteQuery(player_ptr,
 		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"version_id varchar(20) NOT NULL)",
 		gpManiDatabase->GetDBTablePrefix(),
@@ -3099,16 +1158,17 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	MMsg("Checking %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
+	OutputHelpText(GREEN_CHAT, player_ptr, "Checking %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
 
 	int row_count;
-	if (mani_mysql->ExecuteQuery(&row_count, "SELECT 1 FROM %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion()))
+	if (mani_mysql->ExecuteQuery(player_ptr, &row_count, "SELECT 1 FROM %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion()))
 	{
 		if (row_count == 0)
 		{
-			MMsg("No rows found, inserting into %s%s\n",  gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
+			OutputHelpText(GREEN_CHAT, player_ptr, "No rows found, inserting into %s%s",  gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
 			// No rows so insert one
-			if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES ('%s')", 
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT INTO %s%s VALUES ('%s')", 
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBVersion(),
 				PLUGIN_VERSION_ID2))
@@ -3119,8 +1179,9 @@ bool ManiClient::CreateDBTables(void)
 		}
 		else
 		{
-			MMsg("Row found, updating %s%s\n",  gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
-			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET version_id = '%s'",
+			OutputHelpText(GREEN_CHAT, player_ptr, "Row found, updating %s%s",  gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
+			if (!mani_mysql->ExecuteQuery(player_ptr,
+				"UPDATE %s%s SET version_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBVersion(),
 				PLUGIN_VERSION_ID2))
@@ -3144,57 +1205,82 @@ bool ManiClient::CreateDBTables(void)
 //---------------------------------------------------------------------------------
 // Purpose: Creates flag information in tables
 //---------------------------------------------------------------------------------
-bool ManiClient::CreateDBFlags(void)
+bool ManiClient::CreateDBFlags(player_t *player_ptr)
 {
-	char	temp_sql[8192];
-
-	MMsg("Generating DB access flags if not existing....\n");
-
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
-	if (!mani_mysql->Init())
+	if (!mani_mysql->Init(player_ptr))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Q_snprintf (temp_sql, sizeof(temp_sql), "INSERT IGNORE INTO %sflag VALUES ", gpManiDatabase->GetDBTablePrefix());
+	OutputHelpText(GREEN_CHAT, player_ptr, "Generating DB access flags if not existing....");
 
-	for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
 	{
-		char	temp_flags[256];
+		const DualStrKey *key_value = NULL;
+		for (const char *desc = flag_desc_list.FindFirst(c_type, &key_value); desc != NULL; desc = flag_desc_list.FindNext(c_type, &key_value))
+		{
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Checking class [%s] flag_id [%s]", c_type, key_value->key2);
+			int row_count = 0;
 
-		Q_snprintf(temp_flags, sizeof(temp_flags), "('%s', 'Admin', '%s'),", 
-			admin_flag_list[i].flag,
-			admin_flag_list[i].flag_desc
-			);
+			if (!mani_mysql->ExecuteQuery(player_ptr, &row_count, "SELECT f.description "
+				"FROM %s%s f "
+				"where f.flag_id = '%s' "
+				"and f.type = '%s'",
+				gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBFlag(),
+				key_value->key2, c_type))
+			{
+				delete mani_mysql;
+				return false;
+			}
 
-		Q_strcat(temp_sql, temp_flags);
+			if (row_count == 0)
+			{
+				OutputHelpText(ORANGE_CHAT, player_ptr, "Inserting class [%s] flag_id [%s]", c_type, key_value->key2);
+				// Setup flag record
+				if (!mani_mysql->ExecuteQuery(player_ptr, "INSERT INTO %s%s (flag_id, type, description) VALUES ('%s', '%s', '%s')",
+					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBFlag(),
+					key_value->key2,
+					c_type,
+					desc))
+				{
+					delete mani_mysql;
+					return false;
+				}
+			}
+			else
+			{
+				mani_mysql->FetchRow();
+				if (strcmp(mani_mysql->GetString(0), desc) != 0)
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Updating class [%s] flag_id [%s] with new description [%s]", c_type, key_value->key2, desc);
+					// Update to the new description
+					if (!mani_mysql->ExecuteQuery(player_ptr, "UPDATE %s%s SET description = '%s' WHERE flag_id = '%s' AND type = '%s'",
+						gpManiDatabase->GetDBTablePrefix(),
+						gpManiDatabase->GetDBTBFlag(),
+						desc,
+						key_value->key2,
+						c_type))
+					{
+						delete mani_mysql;
+						return false;
+					}
+				}
+			}
+		}
 	}
 
-	for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
-	{
-		char	temp_flags[256];
+	OutputHelpText(GREEN_CHAT, player_ptr, "Updating version id..");
 
-		Q_snprintf(temp_flags, sizeof(temp_flags), "('%s', 'Immunity', '%s'),", 
-			immunity_flag_list[i].flag,
-			immunity_flag_list[i].flag_desc
-			);
-
-		Q_strcat(temp_sql, temp_flags);
-	}
-
-	MMsg("Updating version id..\n");
-
-	temp_sql[Q_strlen(temp_sql) - 1] = '\0';
-	if (mani_mysql->ExecuteQuery("%s", temp_sql))
-	{
-		mani_mysql->ExecuteQuery("UPDATE %s%s "
+	mani_mysql->ExecuteQuery(player_ptr,
+			"UPDATE %s%s "
 			"SET version_id = '%s'",
 			gpManiDatabase->GetDBTablePrefix(),
 			gpManiDatabase->GetDBTBVersion(),
 			PLUGIN_CORE_VERSION);
-	}
 
 	delete mani_mysql;
 
@@ -3204,68 +1290,68 @@ bool ManiClient::CreateDBFlags(void)
 //---------------------------------------------------------------------------------
 // Purpose: Export data in memory to the database
 //---------------------------------------------------------------------------------
-bool ManiClient::ExportDataToDB(void)
+bool ManiClient::ExportDataToDB(player_t *player_ptr)
 {
-	char	flag_string[1024];
-	bool	found_flag;
+	char	flag_string[2048];
 
-	MMsg("Exporting data from clients.txt to DB....\n");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Exporting data from clients.txt to DB....");
 
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
-	if (!mani_mysql->Init())
+	if (!mani_mysql->Init(player_ptr))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
 	// Clean out tables for this server id
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBGroup(), gpManiDatabase->GetServerGroupID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBGroup(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(), gpManiDatabase->GetServerGroupID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBLevel(), gpManiDatabase->GetServerGroupID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBLevel(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(), gpManiDatabase->GetServerGroupID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(), gpManiDatabase->GetServerGroupID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(), gpManiDatabase->GetServerGroupID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer(), gpManiDatabase->GetServerID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	MMsg("Deleted existing DB data for this server....\n");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Deleted existing DB data for this server....");
 
 	// Do server details
-	if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s', '%s', %i, '%s', '%s', '%s')",
+	if (!mani_mysql->ExecuteQuery(player_ptr, 
+		"INSERT INTO %s%s VALUES (%i, '%s', '%s', %i, '%s', '%s', '%s')",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBServer(),
 		gpManiDatabase->GetServerID(),
@@ -3281,138 +1367,78 @@ bool ManiClient::ExportDataToDB(void)
 		return false;
 	}
 
-	MMsg("Generated server details....\n");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Generated server details....");
 
-	// Do the level groups next
 
-	for (int i = 0; i < admin_level_list_size; i ++)
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
 	{
-		Q_strcpy (flag_string,"");
-		for (int j = 0; j < MAX_ADMIN_FLAGS; j++)
+		const DualStrIntKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = level_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = level_list.FindNext(c_type, &key_value))
 		{
-			char	temp_flag[20];
-
-			if (admin_level_list[i].flags[j])
+			Q_strcpy(flag_string, "");
+			if (g_flag->CatFlags(flag_string))
 			{
-				Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", admin_flag_list[j].flag);
-				Q_strcat(flag_string, temp_flag);
-				found_flag = true;
+				if (!mani_mysql->ExecuteQuery(player_ptr, 
+								"INSERT IGNORE INTO %s%s (level_id, type, flag_string, server_group_id) VALUES (%i, '%s', '%s',  '%s')", 
+								gpManiDatabase->GetDBTablePrefix(),
+								gpManiDatabase->GetDBTBLevel(),
+								key_value->key2,
+								key_value->key1,
+								flag_string,
+								gpManiDatabase->GetServerGroupID()))
+					
+				{
+					delete mani_mysql;
+					return false;
+				}
 			}
-		}
-
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Admin', '%s')", 
-						gpManiDatabase->GetDBTablePrefix(),
-						gpManiDatabase->GetDBTBLevel(),
-						admin_level_list[i].level_id,
-						flag_string,
-						gpManiDatabase->GetServerGroupID()))
-		{
-			delete mani_mysql;
-			return false;
 		}
 	}
 
-	for (int i = 0; i < immunity_level_list_size; i ++)
-	{
-		Q_strcpy (flag_string,"");
-
-		for (int j = 0; j < MAX_IMMUNITY_FLAGS; j++)
-		{
-			char	temp_flag[20];
-
-			if (immunity_level_list[i].flags[j])
-			{
-				Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", immunity_flag_list[j].flag);
-				Q_strcat(flag_string, temp_flag);
-				found_flag = true;
-			}
-		}
-
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Immunity', '%s')", 
-						gpManiDatabase->GetDBTablePrefix(),
-						gpManiDatabase->GetDBTBLevel(),
-						immunity_level_list[i].level_id,
-						flag_string,
-						gpManiDatabase->GetServerGroupID()))
-		{
-			delete mani_mysql;
-			return false;
-		}
-	}
-
-	MMsg("Generated level groups....\n");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Generated level groups....");
 
 	// Do the flag groups next
 
-	for (int i = 0; i < admin_group_list_size; i ++)
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
 	{
-		Q_strcpy (flag_string,"");
-		for (int j = 0; j < MAX_ADMIN_FLAGS; j++)
+		const DualStriKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = group_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = group_list.FindNext(c_type, &key_value))
 		{
-			char	temp_flag[20];
-
-			if (admin_group_list[i].flags[j])
+			Q_strcpy(flag_string, "");
+			if (g_flag->CatFlags(flag_string))
 			{
-				Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", admin_flag_list[j].flag);
-				Q_strcat(flag_string, temp_flag);
-				found_flag = true;
+				if (!mani_mysql->ExecuteQuery(player_ptr, 
+									"INSERT IGNORE INTO %s%s (group_id, flag_string, type, server_group_id) VALUES ('%s', '%s', '%s', '%s')", 
+									gpManiDatabase->GetDBTablePrefix(),
+									gpManiDatabase->GetDBTBGroup(),
+									key_value->key2,
+									flag_string,
+									key_value->key1,
+									gpManiDatabase->GetServerGroupID()))
+				{
+					delete mani_mysql;
+					return false;
+				}
 			}
-		}
-
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Admin', '%s')", 
-						gpManiDatabase->GetDBTablePrefix(),
-						gpManiDatabase->GetDBTBGroup(),
-						admin_group_list[i].group_id,
-						flag_string,
-						gpManiDatabase->GetServerGroupID()))
-		{
-			delete mani_mysql;
-			return false;
 		}
 	}
 
-	for (int i = 0; i < immunity_group_list_size; i ++)
-	{
-		Q_strcpy (flag_string,"");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Generated DB global groups....");
 
-		for (int j = 0; j < MAX_IMMUNITY_FLAGS; j++)
-		{
-			char	temp_flag[20];
-
-			if (immunity_group_list[i].flags[j])
-			{
-				Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", immunity_flag_list[j].flag);
-				Q_strcat(flag_string, temp_flag);
-				found_flag = true;
-			}
-		}
-
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Immunity', '%s')", 
-						gpManiDatabase->GetDBTablePrefix(),
-						gpManiDatabase->GetDBTBGroup(),
-						immunity_group_list[i].group_id,
-						flag_string,
-						gpManiDatabase->GetServerGroupID()))
-		{
-			delete mani_mysql;
-			return false;
-		}
-	}
-
-	MMsg("Generated DB admin/immunity groups....\n");
-
-	MMsg("Building DB client data for %i clients\n", client_list_size);
+	OutputHelpText(GREEN_CHAT, player_ptr, "Building DB client data for %i clients", (int) c_list.size());
 	// Populate client list for players that already exist on the server
 	// and generate new clients if necessary with user ids
-	for (int i = 0; i < client_list_size; i ++)
+	for (int i = 0; i != (int) c_list.size(); i ++)
 	{
 		int	row_count;
 
-		MMsg(".");
+		OutputHelpText(GREEN_CHAT, player_ptr, "%i", (int) c_list.size() - i);
 
-		client_list[i].user_id = -1;
+		c_list[i]->SetUserID(-1);
 
-		if (!mani_mysql->ExecuteQuery(&row_count, "SELECT user_id FROM %s%s WHERE name = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(), client_list[i].name))
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+						&row_count, 
+						"SELECT user_id FROM %s%s WHERE name = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(), c_list[i]->GetName()))
 		{
 			delete mani_mysql;
 			return false;
@@ -3427,45 +1453,48 @@ bool ManiClient::ExportDataToDB(void)
 				return false;
 			}
 
-			client_list[i].user_id = mani_mysql->GetInt(0);
+			c_list[i]->SetUserID(mani_mysql->GetInt(0));
 		}
 		else
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s "
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT IGNORE INTO %s%s "
 				"(name, password, email, notes) "
 				"VALUES "
 				"('%s', '%s', '%s', '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBClient(),
-				client_list[i].name,
-				client_list[i].password,
-				client_list[i].email_address,
-				client_list[i].notes))
+				c_list[i]->GetName(),
+				c_list[i]->GetPassword(),
+				c_list[i]->GetEmailAddress(),
+				c_list[i]->GetNotes()))
 			{
 				delete mani_mysql;
 				return false;
 			}
 
-			client_list[i].user_id = mani_mysql->GetRowID();
+			c_list[i]->SetUserID(mani_mysql->GetRowID());
 		}
 
 		// Setup steam ids
-		if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE user_id = %i",
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+			"DELETE FROM %s%s WHERE user_id = %i",
 			gpManiDatabase->GetDBTablePrefix(),
 			gpManiDatabase->GetDBTBSteam(),
-			client_list[i].user_id))
+			c_list[i]->GetUserID()))
 		{
 			delete mani_mysql;
 			return false;
 		}
 
-		for (int j = 0; j < client_list[i].steam_list_size; j++)
+		for (const char *steam_id = c_list[i]->steam_list.FindFirst(); steam_id != NULL; steam_id = c_list[i]->steam_list.FindNext())
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT IGNORE INTO %s%s (user_id, steam_id) VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBSteam(),
-				client_list[i].user_id,
-				client_list[i].steam_list[j].steam_id))
+				c_list[i]->GetUserID(),
+				steam_id))
 			{
 				delete mani_mysql;
 				return false;
@@ -3473,22 +1502,24 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup ip addresses
-		if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE user_id = %i",
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+			"DELETE FROM %s%s WHERE user_id = %i",
 			gpManiDatabase->GetDBTablePrefix(),
 			gpManiDatabase->GetDBTBIP(),
-			client_list[i].user_id))
+			c_list[i]->GetUserID()))
 		{
 			delete mani_mysql;
 			return false;
 		}
 
-		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
+		for (const char *ip_address = c_list[i]->ip_address_list.FindFirst(); ip_address != NULL; ip_address = c_list[i]->ip_address_list.FindNext())
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT IGNORE INTO %s%s (user_id, ip_address) VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBIP(),
-				client_list[i].user_id,
-				client_list[i].ip_address_list[j].ip_address))
+				c_list[i]->GetUserID(),
+				ip_address))
 			{
 				delete mani_mysql;
 				return false;
@@ -3496,22 +1527,24 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup nickname ids
-		if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE user_id = %i",
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+			"DELETE FROM %s%s WHERE user_id = %i",
 			gpManiDatabase->GetDBTablePrefix(),
 			gpManiDatabase->GetDBTBNick(),
-			client_list[i].user_id))
+			c_list[i]->GetUserID()))
 		{
 			delete mani_mysql;
 			return false;
 		}
 
-		for (int j = 0; j < client_list[i].nick_list_size; j++)
+		for (const char *nick = c_list[i]->nick_list.FindFirst(); nick != NULL; nick = c_list[i]->nick_list.FindNext())
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT IGNORE INTO %s%s (user_id, nick) VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBNick(),
-				client_list[i].user_id,
-				client_list[i].nick_list[j].nick))
+				c_list[i]->GetUserID(),
+				nick))
 			{
 				delete mani_mysql;
 				return false;
@@ -3519,83 +1552,51 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup client_server record
-		if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s')",
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+			"INSERT INTO %s%s (user_id, server_group_id) VALUES (%i, '%s')",
 			gpManiDatabase->GetDBTablePrefix(),
 			gpManiDatabase->GetDBTBClientServer(),
-			client_list[i].user_id,
+			c_list[i]->GetUserID(),
 			gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return false;
 		}
 
-		// Do the client flags next
-		found_flag = false;
-		Q_strcpy (flag_string,"");
+		Q_strcpy(flag_string, "");
 
-		for (int j = 0; j < MAX_ADMIN_FLAGS; j++)
+		// Client personal flags
+		// Search through known about flags
+		for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
 		{
-			char	temp_flag[20];
-
-			if (client_list[i].original_admin_flags[j])
+			if (c_list[i]->personal_flag_list.CatFlags(flag_string, c_type))
 			{
-				Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", admin_flag_list[j].flag);
-				Q_strcat(flag_string, temp_flag);
-				found_flag = true;
-			}
-		}
-
-		if (found_flag)
-		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Admin','%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientFlag(),
-				client_list[i].user_id,
-				flag_string,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				return false;
-			}
-		}
-
-		found_flag = false;
-		Q_strcpy (flag_string,"");
-
-		for (int j = 0; j < MAX_IMMUNITY_FLAGS; j++)
-		{
-			char	temp_flag[20];
-
-			if (client_list[i].original_immunity_flags[j])
-			{
-				Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", immunity_flag_list[j].flag);
-				Q_strcat(flag_string, temp_flag);
-				found_flag = true;
-			}
-		}
-
-		if (found_flag)
-		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Immunity','%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientFlag(),
-				client_list[i].user_id,
-				flag_string,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				return false;
+				if (!mani_mysql->ExecuteQuery(player_ptr, 
+									"INSERT IGNORE INTO %s%s (user_id, flag_string, type, server_group_id) VALUES (%i,'%s','%s','%s')",
+									gpManiDatabase->GetDBTablePrefix(),
+									gpManiDatabase->GetDBTBClientFlag(),
+									c_list[i]->GetUserID(),
+									flag_string,
+									c_type,
+									gpManiDatabase->GetServerGroupID()))
+				{
+					delete mani_mysql;
+					return false;
+				}
 			}
 		}
 
 		// Do the client_group flags next
-		for (int j = 0; j < client_list[i].admin_group_list_size; j++)
+		const char *group_id = NULL;
+		for (const char *c_type = c_list[i]->group_list.FindFirst(&group_id); c_type != NULL; c_type = c_list[i]->group_list.FindNext(&group_id))
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Admin','%s')",
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT IGNORE INTO %s%s (user_id, group_id, type, server_group_id) VALUES (%i,'%s','%s','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBClientGroup(),
-				client_list[i].user_id,
-				client_list[i].admin_group_list[j].group_id,
+				c_list[i]->GetUserID(),
+				group_id,
+				c_type,
 				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
@@ -3603,52 +1604,76 @@ bool ManiClient::ExportDataToDB(void)
 			}
 		}
 
-		for (int j = 0; j < client_list[i].immunity_group_list_size; j++)
+		// Do the client_level flags next
+		
+		const char *cl_type = NULL;
+		for (int level_id = c_list[i]->level_list.FindFirst(&cl_type); level_id != -99999; level_id = c_list[i]->level_list.FindNext(&cl_type))
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Immunity','%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientGroup(),
-				client_list[i].user_id,
-				client_list[i].immunity_group_list[j].group_id,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				return false;
-			}
-		}
-
-		// Do the client_level groups next
-		if (client_list[i].admin_level_id != -1)
-		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,%i,'Admin','%s')",
+			if (!mani_mysql->ExecuteQuery(player_ptr, 
+				"INSERT IGNORE INTO %s%s (user_id, level_id, type, server_group_id) VALUES (%i,%i,'%s','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
 				gpManiDatabase->GetDBTBClientLevel(),
-				client_list[i].user_id,
-				client_list[i].admin_level_id,
+				c_list[i]->GetUserID(),
+				level_id,
+				cl_type,
 				gpManiDatabase->GetServerGroupID()))
 			{
-				delete mani_mysql;
-				return false;
-			}
-		}
-
-		if (client_list[i].immunity_level_id != -1)
-		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,%i,'Immunity','%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientLevel(),
-				client_list[i].user_id,
-				client_list[i].immunity_level_id,
-				gpManiDatabase->GetServerGroupID()))
-			{	
 				delete mani_mysql;
 				return false;
 			}
 		}
 	}
 
-	MMsg("\nClients built on DB\n");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Clients built on DB");
 
+	delete mani_mysql;
+
+	return true;
+
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Export server id information
+//---------------------------------------------------------------------------------
+bool ManiClient::UploadServerID(player_t *player_ptr)
+{
+	OutputHelpText(GREEN_CHAT, player_ptr, "Exporting data from database.txt to DB....");
+	ManiMySQL *mani_mysql = new ManiMySQL();
+
+	if (!mani_mysql->Init(player_ptr))
+	{
+		delete mani_mysql;
+		return false;
+	}
+
+	if (!mani_mysql->ExecuteQuery(player_ptr, "DELETE FROM %s%s WHERE server_id = %i", 
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer(), gpManiDatabase->GetServerID()))
+	{
+		delete mani_mysql;
+		return false;
+	}
+
+	OutputHelpText(GREEN_CHAT, player_ptr, "Deleted existing server information for this server....");
+
+	// Do server details
+	if (!mani_mysql->ExecuteQuery(player_ptr, 
+		"INSERT INTO %s%s VALUES (%i, '%s', '%s', %i, '%s', '%s', '%s')",
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBServer(),
+		gpManiDatabase->GetServerID(),
+		gpManiDatabase->GetServerName(),
+		gpManiDatabase->GetServerIPAddress(),
+		gpManiDatabase->GetServerPort(),
+		gpManiDatabase->GetModName(),
+		gpManiDatabase->GetRCONPassword(),
+		gpManiDatabase->GetServerGroupID()
+		))
+	{
+		delete mani_mysql;
+		return false;
+	}
+
+	OutputHelpText(GREEN_CHAT, player_ptr, "Generated server details....");
 
 	return true;
 
@@ -3657,26 +1682,27 @@ bool ManiClient::ExportDataToDB(void)
 //---------------------------------------------------------------------------------
 // Purpose: Get Client data from database
 //---------------------------------------------------------------------------------
-bool ManiClient::GetClientsFromDatabase(void)
+bool ManiClient::GetClientsFromDatabase(player_t *player_ptr)
 {
 	bool	found_flag;
 	int	row_count;
-	char	flags_string[1024];
+	char	flags_string[2048];
 
 	// Upgrade the database to V1.2 Beta M functionality
 	UpgradeDB1();
 
-	MMsg("Getting client info from the database....\n");
+	OutputHelpText(GREEN_CHAT, player_ptr, "Getting client info from the database....");
 
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
-	if (!mani_mysql->Init())
+	if (!mani_mysql->Init(player_ptr))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET server_group_id = '%s' WHERE server_id = %i",
+	if (!mani_mysql->ExecuteQuery(player_ptr, 
+		"UPDATE %s%s SET server_group_id = '%s' WHERE server_id = %i",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBServer(),
 		gpManiDatabase->GetServerGroupID(),
@@ -3684,7 +1710,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 	{
 		delete mani_mysql;
 		mani_mysql = new ManiMySQL();
-		if (!mani_mysql->Init())
+		if (!mani_mysql->Init(player_ptr))
 		{
 			delete mani_mysql;
 			return false;
@@ -3693,7 +1719,8 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 
 	// Get admin groups
-	if (!mani_mysql->ExecuteQuery(&row_count, 
+	if (!mani_mysql->ExecuteQuery(player_ptr, 
+		&row_count, 
 		"SELECT g.group_id, g.flag_string, g.type "
 		"FROM %s%s g "
 		"WHERE g.server_group_id = '%s' ",
@@ -3710,65 +1737,38 @@ bool ManiClient::GetClientsFromDatabase(void)
 		// Found rows
 		while (mani_mysql->FetchRow())
 		{
-			if (FStrEq(mani_mysql->GetString(2), "Admin"))
+			char *group_id = mani_mysql->GetString(0);
+			Q_strcpy(flags_string, mani_mysql->GetString(1));
+			char *class_type = mani_mysql->GetString(2);
+
+			int flag_index = 0;
+			for (;;)
 			{
-				admin_group_t   admin_group;
-				Q_memset(&admin_group, 0, sizeof(admin_group_t));
-
-				Q_strcpy(admin_group.group_id, mani_mysql->GetString(0));
-
-				int flags_string_index = 0;
-
-				Q_strcpy(flags_string, mani_mysql->GetString(1));
-
-				while(flags_string[flags_string_index] != '\0')
+				char *flag_id = SplitFlagString(flags_string, &flag_index);
+				if (flag_id == NULL)
 				{
-					int flag_index = this->GetNextFlag(flags_string, &flags_string_index, MANI_ADMIN_TYPE);
-					if (flag_index != -1)
-					{
-						// Valid flag index given
-						admin_group.flags[flag_index] = true;
-					}
+					break;
 				}
 
-				AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
-				admin_group_list[admin_group_list_size - 1] = admin_group;
-//				MMsg("Admin Group [%s]\n", admin_group.group_id);
-			}
-			else
-			{
-				immunity_group_t   immunity_group;
-				Q_memset(&immunity_group, 0, sizeof(immunity_group_t));
-				Q_strcpy(immunity_group.group_id, mani_mysql->GetString(0));
-
-				int flags_string_index = 0;
-
-				Q_strcpy(flags_string, mani_mysql->GetString(1));
-
-				while(flags_string[flags_string_index] != '\0')
+				if (flag_desc_list.IsValidFlag(class_type, flag_id))
 				{
-					int flag_index = this->GetNextFlag(flags_string, &flags_string_index, MANI_IMMUNITY_TYPE);
-					if (flag_index != -1)
+					// Create/Update group/level
+					GlobalGroupFlag *g_flag = group_list.AddGroup(class_type, group_id);
+					if (g_flag)
 					{
-						// Valid flag index given
-						immunity_group.flags[flag_index] = true;
+						g_flag->SetFlag(flag_id, true);
 					}
 				}
-
-				AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
-				immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-//				MMsg("Immunity Group [%s]\n", immunity_group.group_id);
 			}
 		}
 	}
 
-
 	// Get admin levels
-	if (!mani_mysql->ExecuteQuery(&row_count, 
+	if (!mani_mysql->ExecuteQuery(player_ptr, 
+		&row_count, 
 		"SELECT l.level_id, l.flag_string, l.type "
 		"FROM %s%s l "
 		"WHERE l.server_group_id = '%s' "
-		"AND l.type = 'Admin' "
 		"ORDER BY l.level_id",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBLevel(),
@@ -3780,76 +1780,48 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 	if (row_count != 0)
 	{
-
 		// Found rows
 		while (mani_mysql->FetchRow())
 		{
-			admin_level_t   admin_level;
-			Q_memset(&admin_level, 0, sizeof(admin_level_t));
+			char *level_id = mani_mysql->GetString(0);
+			Q_strcpy(flags_string, mani_mysql->GetString(1));
+			char *class_type = mani_mysql->GetString(2);
 
-			if (FStrEq(mani_mysql->GetString(2), "Admin"))
+			int flag_index = 0;
+			for (;;)
 			{
-				admin_level.level_id = mani_mysql->GetInt(0);
-
-				int flags_string_index = 0;
-
-				Q_strcpy(flags_string, mani_mysql->GetString(1));
-
-				while(flags_string[flags_string_index] != '\0')
+				char *flag_id = SplitFlagString(flags_string, &flag_index);
+				if (flag_id == NULL)
 				{
-					int flag_index = this->GetNextFlag(flags_string, &flags_string_index, MANI_ADMIN_TYPE);
-					if (flag_index != -1)
-					{
-						// Valid flag index given
-						admin_level.flags[flag_index] = true;
-					}
+					break;
 				}
 
-				AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
-				admin_level_list[admin_level_list_size - 1] = admin_level;
-//				MMsg("Admin Level ID [%i]\n", admin_level.level_id);
+				if (flag_desc_list.IsValidFlag(class_type, flag_id))
+				{
+					// Create/Update group/level
+					GlobalGroupFlag *g_flag = level_list.AddGroup(class_type, atoi(level_id));
+					if (g_flag)
+					{
+						g_flag->SetFlag(flag_id, true);
+					}
+				}
 			}
-			else
-			{
-				immunity_level_t   immunity_level;
-
-				Q_memset(&immunity_level, 0, sizeof(immunity_level_t));
-				immunity_level.level_id = mani_mysql->GetInt(0);
-
-				int flags_string_index = 0;
-
-				Q_strcpy(flags_string, mani_mysql->GetString(1));
-
-				while(flags_string[flags_string_index] != '\0')
-				{
-					int flag_index = this->GetNextFlag(flags_string, &flags_string_index, MANI_IMMUNITY_TYPE);
-					if (flag_index != -1)
-					{
-						// Valid flag index given
-						immunity_level.flags[flag_index] = true;
-					}
-				}
-
-				AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
-				immunity_level_list[immunity_level_list_size - 1] = immunity_level;
-//				MMsg("Immunity Level [%s]\n", immunity_level.level_id);
-			}	
 		}
 	}
-
 
 	// Get clients for this server
 	// Ridiculous search that brings back too many rows but ultimately
 	// is faster than doing all the seperate selects per client
 	// to do the same thing :(
 
-	Msg("SQL server version [%s]\n", mani_mysql->GetServerVersion());
-	Msg("Major [%i] Minor [%i] Issue [%i]\n", mani_mysql->GetMajor(), mani_mysql->GetMinor(), mani_mysql->GetIssue());
+	OutputHelpText(GREEN_CHAT, player_ptr, "SQL server version [%s]", mani_mysql->GetServerVersion());
+	OutputHelpText(GREEN_CHAT, player_ptr, "Major [%i] Minor [%i] Issue [%i]", mani_mysql->GetMajor(), mani_mysql->GetMinor(), mani_mysql->GetIssue());
 
 	if (mani_mysql->IsHigherVer(5,0,11))
 	{
 		// Post 5.0.11
-		if (!mani_mysql->ExecuteQuery(&row_count, 
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+			&row_count, 
 			"select c.user_id, c.name, c.password, c.email, c.notes, "
 			"cf.type, cf.flag_string, "
 			"s.steam_id, n.nick, i.ip_address, "
@@ -3882,7 +1854,8 @@ bool ManiClient::GetClientsFromDatabase(void)
 	}
 	else
 	{
-		if (!mani_mysql->ExecuteQuery(&row_count, 
+		if (!mani_mysql->ExecuteQuery(player_ptr, 
+			&row_count, 
 			"select c.user_id, c.name, c.password, c.email, c.notes, "
 			"cf.type, cf.flag_string, "
 			"s.steam_id, n.nick, i.ip_address, "
@@ -3916,251 +1889,126 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 	// Declare 'last' vars to keep track of changing data
 	int last_user_id = -1;
-	bool done_aflags = false;
-	bool done_iflags = false;
-	bool done_alevel = false;
-	bool done_ilevel = false;
 
 	if (row_count != 0)
 	{
-		client_t	*client_ptr;
+		ClientPlayer	*client_ptr = NULL;
 		// Found rows
 		while (mani_mysql->FetchRow())
 		{
 			if (last_user_id != mani_mysql->GetInt(0))
 			{
-				AddToList((void **) &client_list, sizeof(client_t), &client_list_size);
-				client_ptr = &(client_list[client_list_size - 1]);
-				Q_memset(client_ptr, 0, sizeof(client_t));
+				client_ptr = new ClientPlayer;
+				c_list.push_back(client_ptr);
 
-				client_ptr->user_id = mani_mysql->GetInt(0);
-				client_ptr->admin_level_id = -1;
-				client_ptr->immunity_level_id = -1;
-				Q_strcpy(client_ptr->name, mani_mysql->GetString(1));
-				Q_strcpy(client_ptr->password, mani_mysql->GetString(2));
-				Q_strcpy(client_ptr->email_address, mani_mysql->GetString(3));
-				Q_strcpy(client_ptr->notes, mani_mysql->GetString(4));
-				last_user_id = client_ptr->user_id;
-				done_aflags = false;
-				done_iflags = false;
-				done_alevel = false;
-				done_ilevel = false;
+				client_ptr->SetUserID(mani_mysql->GetInt(0));
+				client_ptr->SetName(mani_mysql->GetString(1));
+				client_ptr->SetPassword(mani_mysql->GetString(2));
+				client_ptr->SetEmailAddress(mani_mysql->GetString(3));
+				client_ptr->SetNotes(mani_mysql->GetString(4));
+				last_user_id = client_ptr->GetUserID();
 			}
 
-			if (!done_aflags && mani_mysql->GetString(5) && 
-				FStrEq(mani_mysql->GetString(5),"Admin"))
+			// Do personal flags first
+			if (mani_mysql->GetString(5) && 
+				mani_mysql->GetString(6))
 			{
-				int flags_string_index = 0;
-
 				Q_strcpy(flags_string, mani_mysql->GetString(6));
 
-				while(flags_string[flags_string_index] != '\0')
+				int flag_index = 0;
+				for (;;)
 				{
-					int flag_index = this->GetNextFlag(flags_string, &flags_string_index, MANI_ADMIN_TYPE);
-					if (flag_index != -1)
+					char *flag_id = this->SplitFlagString(flags_string, &flag_index);
+					if (flag_id == NULL)
 					{
-						// Valid flag index given
-						client_ptr->original_admin_flags[flag_index] = true;
+						break;
+					}
+
+					if (flag_desc_list.IsValidFlag(mani_mysql->GetString(5), flag_id))
+					{
+						// Set personal flag for class type
+						client_ptr->personal_flag_list.SetFlag(mani_mysql->GetString(5), flag_id, true);
 					}
 				}
-
-				done_aflags = true;
 			}
 
-			if (!done_iflags && mani_mysql->GetString(5) && 
-				FStrEq(mani_mysql->GetString(5),"Immunity"))
+			// Group levels
+			if (mani_mysql->GetString(12) && 
+				mani_mysql->GetString(13))
 			{
-				int flags_string_index = 0;
-
-				Q_strcpy(flags_string, mani_mysql->GetString(6));
-
-				while(flags_string[flags_string_index] != '\0')
-				{
-					int flag_index = this->GetNextFlag(flags_string, &flags_string_index, MANI_IMMUNITY_TYPE);
-					if (flag_index != -1)
-					{
-						// Valid flag index given
-						client_ptr->original_immunity_flags[flag_index] = true;
-					}
-				}
-
-				done_iflags = true;
-			}
-
-			if (!done_alevel && mani_mysql->GetString(12) && 
-				FStrEq(mani_mysql->GetString(12),"Admin"))
-			{
-				client_ptr->admin_level_id = mani_mysql->GetInt(13); 
-				done_alevel = true;
-			}
-
-			if (!done_ilevel && mani_mysql->GetString(12) && 
-				FStrEq(mani_mysql->GetString(12),"Immunity"))
-			{
-				client_ptr->immunity_level_id = mani_mysql->GetInt(13); 
-				done_ilevel = true;
+				// Ensure no duplicates
+				client_ptr->level_list.Add(mani_mysql->GetString(12), mani_mysql->GetInt(13));
 			}
 
 			// Check Steam ID
 			if (mani_mysql->GetString(7))
 			{
-				// Found Steam ID, search for exising entry
-				found_flag = false;
-				for (int i = 0; i < client_ptr->steam_list_size; i++)
-				{
-					if (FStrEq(mani_mysql->GetString(7), client_ptr->steam_list[i].steam_id))
-					{
-						found_flag = true;
-						break;
-					}
-				}
-
-				if (!found_flag)
-				{
-					// Add steam ID to client
-					AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
-					Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, mani_mysql->GetString(7));
-//					MMsg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
-				}
+				client_ptr->steam_list.Add(mani_mysql->GetString(7));
 			}
 
 			// Check Nick names
 			if (mani_mysql->GetString(8))
 			{
-				// Found Nick ID, search for exising entry
-				found_flag = false;
-				for (int i = 0; i < client_ptr->nick_list_size; i++)
-				{
-					if (FStrEq(mani_mysql->GetString(8), client_ptr->nick_list[i].nick))
-					{
-						found_flag = true;
-						break;
-					}
-				}
-
-				if (!found_flag)
-				{
-					// Add nickname to client
-					AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
-					Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, mani_mysql->GetString(8));
-//					MMsg("Nick [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
-				}
+				client_ptr->nick_list.Add(mani_mysql->GetString(8));
 			}
 
 			// Check IP Addresses
 			if (mani_mysql->GetString(9))
 			{
-				// Found IP Address, search for exising entry
-				found_flag = false;
-				for (int i = 0; i < client_ptr->ip_address_list_size; i++)
-				{
-					if (FStrEq(mani_mysql->GetString(9), client_ptr->ip_address_list[i].ip_address))
-					{
-						found_flag = true;
-						break;
-					}
-				}
-
-				if (!found_flag)
-				{
-					// Add IP Address to client
-					AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
-					Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, mani_mysql->GetString(9));
-//					MMsg("Nick [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
-				}
+				client_ptr->ip_address_list.Add(mani_mysql->GetString(9));
 			}
 
 			// Check admin groups
-			if (mani_mysql->GetString(10) && FStrEq(mani_mysql->GetString(10),"Admin"))
+			// Group levels
+			found_flag = false;
+			if (mani_mysql->GetString(10) && 
+				mani_mysql->GetString(11))
 			{
-				// Found group
-				found_flag = false;
-				for (int i = 0; i < client_ptr->admin_group_list_size; i++)
-				{
-					if (FStrEq(mani_mysql->GetString(11), client_ptr->admin_group_list[i].group_id))
-					{
-						found_flag = true;
-						break;
-					}
-				}
-
-				if (!found_flag)
-				{
-					AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
-					Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, mani_mysql->GetString(11));
-//					MMsg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
-				}
-			}
-
-			if (mani_mysql->GetString(10) && FStrEq(mani_mysql->GetString(10),"Immunity"))
-			{
-				// Found group
-				found_flag = false;
-				for (int i = 0; i < client_ptr->immunity_group_list_size; i++)
-				{
-					if (FStrEq(mani_mysql->GetString(11), client_ptr->immunity_group_list[i].group_id))
-					{
-						found_flag = true;
-						break;
-					}
-				}
-
-				if (!found_flag)
-				{
-					AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
-					Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, mani_mysql->GetString(11));
-//					MMsg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
-				}
+				client_ptr->group_list.Add(mani_mysql->GetString(10), mani_mysql->GetString(11));
 			}
 		}
 	}
 
-	// Put into place the admin group flags for the clients
-	for (int i = 0; i < client_list_size; i++)
-	{
-		RebuildFlags(&(client_list[i]), MANI_ADMIN_TYPE);
-		RebuildFlags(&(client_list[i]), MANI_IMMUNITY_TYPE);
-	}
+	delete mani_mysql;
 
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
-
-//	DumpClientsToConsole();
 	return true;
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_setadminflag command
+// Purpose: Process the ma_setflag command
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT	ManiClient::ProcessMaSetAdminFlag(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
+PLUGIN_RESULT	ManiClient::ProcessMaSetFlag(player_t *player_ptr, const char *command_name, const int	help_id, const int command_type)
 {
 	int	admin_index;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_SETADMINFLAG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!this->HasAccess(player_ptr->index, ADMIN, ADMIN_SET_FLAG, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+	if (gpCmd->Cmd_Argc() < 4) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Whoever issued the commmand is authorised to do it.
 	char *target_string = (char *) gpCmd->Cmd_Argv(1);
 
-	admin_index = FindClientIndex(target_string, true, false);
+	admin_index = this->FindClientIndex(target_string);
 	if (admin_index != -1)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(M_NO_TARGET, "%s", target_string));
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
 		return PLUGIN_STOP;
 	}
 
 	// Found an admin to update in memory via admin_index
 	// Loop through flags to set them
 
-	char *flags = (char *) gpCmd->Cmd_Argv(2);
+	char *class_type = (char *) gpCmd->Cmd_Argv(2);
+	char *flags = (char *) gpCmd->Cmd_Argv(3);
 	int	length = Q_strlen(flags);
 
-	bool add_flag;
+	ClientPlayer *client_ptr = c_list[admin_index];
+
+	bool add_flag = true;
 	for (int i = 0; i < length; i ++)
 	{
 		if (flags[i] == '+') 
@@ -4177,20 +2025,19 @@ PLUGIN_RESULT	ManiClient::ProcessMaSetAdminFlag(player_t *player_ptr, const char
 
 		if (flags[i] == ' ') continue;
 
-		bool found_flag = false;
+		int flag_index = 0;
 
-		int flag_index = this->GetNextFlag(&(flags[i]), &i, MANI_ADMIN_TYPE);
-		if (flag_index != -1)
+		char *flag_id = this->SplitFlagString(flags, &flag_index);
+		if (flag_id)
 		{
-			// Valid flag index given
-			client_list[admin_index].admin_flags[flag_index] = ((add_flag == true) ? false:true);
-			client_list[admin_index].original_admin_flags[flag_index] = ((add_flag == true) ? false:true);
-			found_flag = true;
-		}
-
-		if (!found_flag)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Flag %s is invalid", flags[i]);
+			if (flag_desc_list.IsValidFlag(class_type, flag_id))
+			{
+				client_ptr->personal_flag_list.SetFlag(class_type, flag_id, add_flag);
+			}
+			else
+			{
+				OutputHelpText(ORANGE_CHAT, player_ptr, "Flag %s is invalid", flag_id);
+			}
 		}
 	}
 
@@ -4205,9 +2052,7 @@ PLUGIN_RESULT	ManiClient::ProcessMaSetAdminFlag(player_t *player_ptr, const char
 //---------------------------------------------------------------------------------
 int		ManiClient::FindClientIndex
 (
- char	*target_string,
- bool	check_if_admin,
- bool	check_if_immune
+ char	*target_string
  )
 {
 	player_t player;
@@ -4216,7 +2061,7 @@ int		ManiClient::FindClientIndex
 
 	// Whoever issued the commmand is authorised to do it.
 
-	int	target_user_id = Q_atoi(target_string);
+	int	target_user_id = atoi(target_string);
 	char target_steam_id[MAX_NETWORKID_LENGTH];
 	player_t	target_player;
 
@@ -4229,11 +2074,8 @@ int		ManiClient::FindClientIndex
 		target_player.user_id = target_user_id;
 		if (FindPlayerByUserID(&target_player))
 		{
-			if (check_if_admin && IsAdmin(&target_player, &client_index))
-			{
-				return client_index;
-			}
-			else if (check_if_immune && IsImmune(&target_player, &client_index))
+			client_index = this->FindClientIndex(&target_player);
+			if (client_index != -1)
 			{
 				return client_index;
 			}
@@ -4247,60 +2089,61 @@ int		ManiClient::FindClientIndex
 		target_steam_id[6] = '\0';
 		if (FStruEq(target_steam_id, "STEAM_"))
 		{
-			for (int i = 0; i < client_list_size; i++)
+			for (int i = 0; i != (int) c_list.size(); i++)
 			{
-				for (int j = 0; j < client_list[i].steam_list_size; j ++)
+				if (c_list[i]->steam_list.Find(target_string))
 				{
-					if (FStrEq(client_list[i].steam_list[j].steam_id, target_string))
-					{
-						client_index = i;
-						return client_index;
-					}
+					return i;
 				}
 			}
 		}
 	}
 
 	// Try ip address next
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		for (int j = 0; j < client_list[i].ip_address_list_size; j ++)
+		if (c_list[i]->steam_list.Find(target_string))
 		{
-			if (FStrEq(client_list[i].ip_address_list[j].ip_address, target_string))
-			{
-				client_index = i;
-				return client_index;
-			}
+			return i;
 		}
 	}
 
 	// Try name id next
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		if (client_list[i].name)
+		if (c_list[i]->GetName() && FStrEq(c_list[i]->GetName(), target_string))
 		{
-			if (FStrEq(client_list[i].name, target_string))
-			{
-				client_index = i;
-				return client_index;
-			}
+			return i;
 		}
 	}
 
 	// Try nick name next
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		for (int j = 0; j < client_list[i].nick_list_size; j ++)
+		if (c_list[i]->nick_list.Find(target_string))
 		{
-			if (FStrEq(client_list[i].nick_list[j].nick, target_string))
-			{
-				client_index = i;
-				return client_index;
-			}
+			return i;
 		}
 	}
 
-	return client_index;
+	return -1;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Find an entry for the target string in the client list
+//---------------------------------------------------------------------------------
+const char *ManiClient::FindClientName
+(
+ player_t *player_ptr
+ )
+{
+	int index = FindClientIndex(player_ptr);
+	if (index == -1)
+	{
+		return NULL;
+	}
+
+	return c_list[index]->GetName();
 }
 
 //---------------------------------------------------------------------------------
@@ -4308,13 +2151,12 @@ int		ManiClient::FindClientIndex
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	client_index;
 	bool	invalid_args = false;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
+		if (!HasAccess(player_ptr->index, ADMIN, ADMIN_CLIENT_ADMIN)) return PLUGIN_BAD_ADMIN;
 	}
 
 	// Cover only command and subcommand being passed in
@@ -4370,32 +2212,32 @@ PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*comm
 	else if (FStrEq(sub_command, "setalevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetLevel(MANI_ADMIN_TYPE, player_ptr, param1, param2);
+		else ProcessSetLevel(ADMIN, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setilevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetLevel(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
+		else ProcessSetLevel(IMMUNITY, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addagroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroup(MANI_ADMIN_TYPE, player_ptr, param1, param2);
+		else ProcessAddGroup(ADMIN, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addigroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroup(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
+		else ProcessAddGroup(IMMUNITY, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setaflag"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetFlag(MANI_ADMIN_TYPE, player_ptr, param1, param2);
+		else ProcessSetFlag(ADMIN, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "setiflag"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessSetFlag(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
+		else ProcessSetFlag(IMMUNITY, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removeclient"))
 	{
@@ -4420,12 +2262,12 @@ PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*comm
 	else if (FStrEq(sub_command, "removeagroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveGroup(MANI_ADMIN_TYPE, player_ptr, param1, param2);
+		else ProcessRemoveGroup(ADMIN, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "removeigroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessRemoveGroup(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
+		else ProcessRemoveGroup(IMMUNITY, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "status"))
 	{
@@ -4446,11 +2288,11 @@ PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*comm
 	{
 		if (argc == 3)
 		{
-			ProcessClientFlagDesc(MANI_ADMIN_TYPE, player_ptr, param1);
+			ProcessClientFlagDesc(ADMIN, player_ptr, param1);
 		}
 		else if (argc == 2)
 		{
-			ProcessAllClientFlagDesc(MANI_ADMIN_TYPE, player_ptr);
+			ProcessAllClientFlagDesc(ADMIN, player_ptr);
 		}
 		else
 		{	
@@ -4461,11 +2303,11 @@ PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*comm
 	{
 		if (argc == 3)
 		{
-			ProcessClientFlagDesc(MANI_IMMUNITY_TYPE, player_ptr, param1);
+			ProcessClientFlagDesc(IMMUNITY, player_ptr, param1);
 		}
 		else if (argc == 2)
 		{
-			ProcessAllClientFlagDesc(MANI_IMMUNITY_TYPE, player_ptr);
+			ProcessAllClientFlagDesc(IMMUNITY, player_ptr);
 		}
 		else
 		{	
@@ -4481,6 +2323,11 @@ PLUGIN_RESULT	ManiClient::ProcessMaClient(player_t *player_ptr, const char	*comm
 	{
 		if (argc != 2) invalid_args = true;
 		else ProcessClientDownload(player_ptr);
+	}
+	else if (FStrEq(sub_command, "serverid"))
+	{
+		if (argc != 2) invalid_args = true;
+		else ProcessClientServerID(player_ptr);
 	}
 	else
 	{
@@ -4504,11 +2351,11 @@ void		ManiClient::ProcessAddClient
  char *param1
  )
 {
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	for (int i = 0; i < client_list_size; i ++)
+	for (int i = 0; i != (int) c_list.size(); i ++)
 	{
-		if (FStrEq(client_list[i].name, param1))
+		if (FStrEq(c_list[i]->GetName(), param1))
 		{
 			// Bad, client already exists 
 			OutputHelpText(ORANGE_CHAT, player_ptr, "ERROR: This client name already exists !!");
@@ -4517,55 +2364,20 @@ void		ManiClient::ProcessAddClient
 	}
 
 	// Add a new client
-	AddToList((void **) &client_list, sizeof(client_t), &client_list_size);
-	client_ptr = &(client_list[client_list_size - 1]);
-	Q_memset (client_ptr, 0, sizeof(client_t));
+	client_ptr = new ClientPlayer;
+	c_list.push_back(client_ptr);
 
-	client_ptr->admin_level_id = -1;
-	client_ptr->immunity_level_id = -1;
-	Q_strcpy(client_ptr->name, param1);
+	client_ptr->SetName(param1);
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s "
-			"(name, password, email, notes) "
-			"VALUES "
-			"('%s', '', '', '')",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTBClient(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		client_ptr->user_id = mani_mysql->GetRowID();
-
-		// Setup client_server record
-		if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s')",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTBClientServer(),
-			client_ptr->user_id,
-			gpManiDatabase->GetServerGroupID()))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLAddClient();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has been added", client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has been added", client_ptr->GetName());
 }
 
 //---------------------------------------------------------------------------------
@@ -4579,69 +2391,38 @@ void		ManiClient::ProcessAddSteam
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-	AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
-	Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, param2);
+	client_ptr = c_list[client_index];
+	BasicStr steam_id(param2);
+	steam_id.Upper();
+	if (strncmp("STEAM_", steam_id.str, 6) != 0)
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "[%s] is not a valid Steam ID", param1);
+		return;
+	}
+
+	client_ptr->steam_list.Add(steam_id.str);
+	this->SetupPlayersOnServer();
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
+		SQLProcessBlock *ptr = new SQLAddSteam();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("steam_id", steam_id.str);
 
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBSteam(),
-				client_ptr->user_id,
-				param2))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Added Steam ID [%s] for client [%s]", param2, client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Added Steam ID [%s] for client [%s]", param2, client_ptr->GetName());
 	return;
 
 }
@@ -4657,69 +2438,44 @@ void		ManiClient::ProcessAddIP
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-	AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
-	Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, param2);
+	client_ptr = c_list[client_index];
+	int count = 0;
+	for (int i = 0; param2[i] != '\0'; i++)
+	{
+		if (param2[i] == '.')
+		{
+			count ++;
+		}
+	}
+
+	if (count < 3 || count > 3)
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "IP Address [%s] is invalid", param2);
+		return;
+	}
+
+	client_ptr->ip_address_list.Add(param2);
+	this->SetupPlayersOnServer();
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBIP(),
-				client_ptr->user_id,
-				param2))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLAddIPAddress();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("ip_adddress", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Added IP Address [%s] for client [%s]", param2, client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Added IP Address [%s] for client [%s]", param2, client_ptr->GetName());
 	return;
 
 }
@@ -4735,69 +2491,29 @@ void		ManiClient::ProcessAddNick
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-	AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
-	Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, param2);
+	client_ptr = c_list[client_index];
+	client_ptr->nick_list.Add(param2);
+	this->SetupPlayersOnServer();
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBNick(),
-				client_ptr->user_id,
-				param2))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLAddNick();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("nick", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Added Nickname [%s] for client [%s]", param2, client_ptr->name);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Added Nickname [%s] for client [%s]", param2, client_ptr->GetName());
 	return;
 
 }
@@ -4813,7 +2529,7 @@ void		ManiClient::ProcessSetName
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	char	old_name[256];
 
 	if (param2 == NULL || FStrEq(param2, ""))
@@ -4822,23 +2538,23 @@ void		ManiClient::ProcessSetName
 		return;
 	}
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
+	client_ptr = c_list[client_index];
 
-	if (FStrEq(client_ptr->name, param2))
+	if (FStrEq(client_ptr->GetName(), param2))
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Both names [%s] and [%s] are the same !!", client_ptr->name, param2);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Both names [%s] and [%s] are the same !!", client_ptr->GetName(), param2);
 		return;
 	}
 
 	// Check for existing clients with the same name
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
 		// Skip target client name
 		if (i == client_index)
@@ -4846,63 +2562,23 @@ void		ManiClient::ProcessSetName
 			continue;
 		}
 
-		if (FStrEq(client_list[i].name, param2))
+		if (FStrEq(c_list[i]->GetName(), param2))
 		{
 			OutputHelpText(ORANGE_CHAT, player_ptr, "A Client already exists with this name !!");
 			return;
 		}
 	}
 		
-	Q_strcpy(old_name, client_ptr->name);	
-	Q_strcpy(client_ptr->name, param2);
+	Q_strcpy(old_name, client_ptr->GetName());	
+	client_ptr->SetName(param2);
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			old_name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET name = '%s' WHERE user_id = %i",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClient(),
-				param2,
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLSetName();
+		ptr->in_params.AddParam("old_name", old_name);
+		ptr->in_params.AddParam("new_name", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new name of [%s]", old_name, param2);
@@ -4920,68 +2596,29 @@ void		ManiClient::ProcessSetPassword
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-	Q_strcpy(client_ptr->password, param2);
+	client_ptr = c_list[client_index];
+	client_ptr->SetPassword(param2);
+	this->SetupPlayersOnServer();
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET password = '%s' WHERE user_id = %i",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClient(),
-				param2,
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLSetPassword();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("password", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new password of [%s]", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new password of [%s]", client_ptr->GetName(), param2);
 	return;
 
 }
@@ -4997,68 +2634,28 @@ void		ManiClient::ProcessSetEmail
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-	Q_strcpy(client_ptr->email_address, param2);
+	client_ptr = c_list[client_index];
+	client_ptr->SetEmailAddress(param2);
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET email = '%s' WHERE user_id = %i",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClient(),
-				param2,
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLSetEmailAddress();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("email", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new email address of [%s]", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new email address of [%s]", client_ptr->GetName(), param2);
 	return;
 
 }
@@ -5074,70 +2671,29 @@ void		ManiClient::ProcessSetNotes
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-	Q_strcpy(client_ptr->notes, param2);
+	client_ptr = c_list[client_index];
+	client_ptr->SetNotes(param2);
 	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get clients for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-
-			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET notes = '%s' WHERE user_id = %i",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClient(),
-				param2,
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				return;
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLSetEmailAddress();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("notes", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new notes of [%s]", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Set client [%s] with new notes of [%s]", client_ptr->GetName(), param2);
 	return;
-
 }
 
 //---------------------------------------------------------------------------------
@@ -5145,32 +2701,21 @@ void		ManiClient::ProcessSetNotes
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessSetLevel
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	int	level_id;
-	bool	found_level = false;
-	char	flag_type[32];
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
-	}
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
 	}
 
 	if (param2 == NULL || FStrEq(param2, ""))
@@ -5179,100 +2724,36 @@ void		ManiClient::ProcessSetLevel
 	}
 	else
 	{
-		level_id = Q_atoi(param2);
+		level_id = atoi(param2);
 	}
 
-	client_ptr = &(client_list[client_index]);
-	if (MANI_ADMIN_TYPE == type)
+	client_ptr = c_list[client_index];
+
+	int old_level_id = client_ptr->level_list.FindFirst(class_type);
+	if (old_level_id != -99999)
 	{
-		client_ptr->admin_level_id = level_id;
-	}
-	else
-	{
-		client_ptr->immunity_level_id = level_id;
+		client_ptr->level_list.Remove(class_type, old_level_id);
 	}
 
-	WriteClients();
+	if (level_id != -1)
+	{
+		client_ptr->level_list.Add(class_type, level_id);
+	}
+
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		int row_count;
-
-		// Add client to database too 
-		ManiMySQL *mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get client for this server
-		if (!mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			return;
-		}
-
-		// Get User ID
-		if (row_count != 0)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id = mani_mysql->GetInt(0);
-
-			// Drop level id reference
-			if (!mani_mysql->ExecuteQuery(&row_count,
-				"DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND server_group_id = '%s' "
-				"AND type = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientLevel(),
-				client_ptr->user_id,
-				gpManiDatabase->GetServerGroupID(),
-				flag_type))
-			{
-				delete mani_mysql;
-				return;
-			}
-
-			if (level_id > -1)
-			{	
-				if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,%i,'%s','%s')",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBClientLevel(),
-					client_ptr->user_id,
-					level_id,
-					flag_type,
-					gpManiDatabase->GetServerGroupID()))
-				{	
-					delete mani_mysql;
-					return;
-				}		
-			}
-		}
-
-		delete mani_mysql;
+		SQLProcessBlock *ptr = new SQLSetLevel();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("class_type", class_type);
+		ptr->in_params.AddParam("level_id", level_id);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Updated client [%s] with new admin level id [%s]", client_ptr->name, param2);
-	}
-	else
-	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Updated client [%s] with new immunity level id [%s]", client_ptr->name, param2);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Updated client [%s] with new %s level id [%s]", client_ptr->GetName(), class_type, param2);
 
+	this->SetupMasked();
+	WriteClients();
 	return;
 
 }
@@ -5282,56 +2763,28 @@ void		ManiClient::ProcessSetLevel
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAddGroup
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	bool	found_group = false;
-	char	flag_type[32];
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
+	client_ptr = c_list[client_index];
 
-	if (MANI_ADMIN_TYPE == type)
+	if (group_list.Find(class_type, param2))
 	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
-	}
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		for (int i = 0; i < admin_group_list_size; i++)
-		{
-			if (FStrEq(admin_group_list[i].group_id, param2))
-			{
-				found_group = true;
-				break;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < immunity_group_list_size; i++)
-		{
-			if (FStrEq(immunity_group_list[i].group_id, param2))
-			{
-				found_group = true;
-				break;
-			}
-		}
+		found_group = true;
 	}
 
 	if (!found_group)
@@ -5340,160 +2793,28 @@ void		ManiClient::ProcessAddGroup
 		return;
 	}
 
-	found_group = false;
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		for (int i = 0; i < client_ptr->admin_group_list_size; i++)
-		{
-			if (FStrEq(client_ptr->admin_group_list[i].group_id, param2))
-			{
-				found_group = true;
-				break;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < client_ptr->immunity_group_list_size; i++)
-		{
-			if (FStrEq(client_ptr->immunity_group_list[i].group_id, param2))
-			{
-				found_group = true;
-				break;
-			}
-		}
-	}
-
-	if (found_group)
+	if (client_ptr->group_list.Find(class_type, param2))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Group ID [%s] is already setup for this user", param2);
 		return;
 	}
 
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
-		Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, param2);
-	}
-	else
-	{
-		AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
-		Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, param2);
-	}
-
-
+	client_ptr->group_list.Add(class_type, param2);
+	this->SetupUnMasked();
+	this->SetupMasked();
 	WriteClients();
-	RebuildFlags(client_ptr, type);
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		for (;;)
-		{
-			int row_count;
-
-			// Add client to database too 
-			ManiMySQL *mani_mysql = new ManiMySQL();
-
-			if (!mani_mysql->Init())
-			{
-				delete mani_mysql;
-				break; 
-			}
-
-			// Get client for this server
-			if (!mani_mysql->ExecuteQuery(&row_count, 
-				"SELECT c.user_id "
-				"FROM %s%s c, %s%s cs "
-				"where cs.server_group_id = '%s' "
-				"and cs.user_id = c.user_id "
-				"and c.name = '%s'",
-				gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-				gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-				gpManiDatabase->GetServerGroupID(),
-				client_ptr->name))
-			{
-				delete mani_mysql;
-				break;
-			}
-
-			// Get User ID
-			if (row_count != 0)
-			{
-				mani_mysql->FetchRow();
-				client_ptr->user_id = mani_mysql->GetInt(0);
-
-				// Check if group actually exists
-				if (!mani_mysql->ExecuteQuery(&row_count,
-					"SELECT 1 "
-					"FROM %s%s "
-					"WHERE group_id = '%s' "
-					"AND server_group_id = '%s' "
-					"AND type = '%s'",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBGroup(),
-					param2,
-					gpManiDatabase->GetServerGroupID(),
-					flag_type))
-				{
-					delete mani_mysql;
-					break;
-				}
-
-				if (row_count == 0)
-				{
-					OutputHelpText(ORANGE_CHAT, player_ptr, "Group ID [%s] is invalid !!", param2);
-					delete mani_mysql;
-					break;
-				}
-
-				// Drop group id reference
-				if (!mani_mysql->ExecuteQuery(&row_count,
-					"DELETE FROM %s%s "
-					"WHERE group_id = '%s' "
-					"AND user_id = %i "
-					"AND server_group_id = '%s' "
-					"AND type = '%s'",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBClientGroup(),
-					param2,
-					client_ptr->user_id,
-					gpManiDatabase->GetServerGroupID(),
-					flag_type))
-				{
-					delete mani_mysql;
-					break;
-				}
-
-				if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','%s',%i)",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBClientGroup(),
-					client_ptr->user_id,
-					param2,
-					flag_type,
-					gpManiDatabase->GetServerGroupID()))
-				{	
-					delete mani_mysql;
-					break;
-				}		
-			}
-
-			delete mani_mysql;
-			break;
-		}
+		SQLProcessBlock *ptr = new SQLAddGroup();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("class_type", class_type);
+		ptr->in_params.AddParam("group_id", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Client [%s] now has admin group [%s] access", client_ptr->name, param2);
-	}
-	else
-	{
-		ComputeImmunityLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Client [%s] now has immunity group [%s] access", client_ptr->name, param2);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client [%s] now has %s group [%s] access", client_ptr->GetName(), class_type, param2);
 
 	return;
 
@@ -5504,68 +2825,21 @@ void		ManiClient::ProcessAddGroup
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAddGroupType
 (
- int	type,
+ const char	*class_type,
  player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
-	int		group_index = -1;
-	char	flag_type[32];
 	bool	insert_required = false;
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
-	}
-
 	// See if group already exists
-	if (MANI_ADMIN_TYPE == type)
-	{
-		for (int i = 0; i < admin_group_list_size; i++)
-		{
-			if (FStrEq(admin_group_list[i].group_id, param1))
-			{
-				group_index = i;
-				break;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < immunity_group_list_size; i++)
-		{
-			if (FStrEq(immunity_group_list[i].group_id, param1))
-			{
-				group_index = i;
-				break;
-			}
-		}
-	}
-
-	if (group_index == -1)
+	GlobalGroupFlag *group_ptr = group_list.Find(class_type, param1);
+	if (group_ptr == NULL)
 	{
 		insert_required = true;
-
-		if (MANI_ADMIN_TYPE == type)
-		{
-			AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
-			Q_memset(&(admin_group_list[admin_group_list_size - 1]), 0, sizeof(admin_group_t));
-			Q_strcpy(admin_group_list[admin_group_list_size - 1].group_id, param1);
-			group_index = admin_group_list_size - 1;
-		}
-		else
-		{
-			AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
-			Q_memset(&(immunity_group_list[immunity_group_list_size - 1]), 0, sizeof(immunity_group_t));
-			Q_strcpy(immunity_group_list[immunity_group_list_size - 1].group_id, param1);
-			group_index = immunity_group_list_size - 1;
-		}
-
+		// No Group exists yet so we shall create one
+		group_ptr = group_list.AddGroup(class_type, param1);
 	}
 
 	int		param2_index = 0;
@@ -5605,21 +2879,11 @@ void		ManiClient::ProcessAddGroupType
 
 		if (param2[param2_index] == '#')
 		{
-			// Add/remove all 
-			// Valid flag index	given
-			if (MANI_ADMIN_TYPE == type)
+			// Add/Remove all flags for this group
+			const DualStrKey *key_value = NULL;
+			for (const char *flag_id = flag_desc_list.FindFirst(class_type, &key_value); flag_id != NULL; flag_id = flag_desc_list.FindNext(class_type, &key_value))
 			{
-				for (int x = 0; x < MAX_ADMIN_FLAGS; x ++)
-				{
-					admin_group_list[group_index].flags[x] = ((flag_add) ? true:false);
-				}
-			}
-			else
-			{
-				for (int x = 0; x < MAX_IMMUNITY_FLAGS; x ++)
-				{
-					immunity_group_list[group_index].flags[x] = ((flag_add) ? true:false);
-				}
+				group_ptr->SetFlag(key_value->key2, flag_add);
 			}
 
 			param2_index++;
@@ -5631,132 +2895,37 @@ void		ManiClient::ProcessAddGroupType
 			continue;
 		}			
 
-		int	flag_index = this->GetNextFlag(param2, &param2_index, type);
-		if (flag_index != -1)
+		char *flag_id = this->SplitFlagString(param2, &param2_index);
+		if (flag_id)
 		{
-			// Valid flag index	given
-			if (MANI_ADMIN_TYPE	== type)
+			if (flag_desc_list.IsValidFlag(class_type, flag_id))
 			{
-				admin_group_list[group_index].flags[flag_index] = ((flag_add) ? true:false);
-			}
-			else
-			{
-				immunity_group_list[group_index].flags[flag_index] = ((flag_add) ? true:false);
+				group_ptr->SetFlag(flag_id, flag_add);
 			}
 		}
 	}
 
+	this->SetupUnMasked();
+	this->SetupMasked();
 	WriteClients();
-
-	if (!insert_required)
-	{
-		for (int i = 0; i < client_list_size; i++)
-		{
-			RebuildFlags(&(client_list[i]), type);
-		}
-	}
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		// Build the strings needed
-		bool found_flag	= false;
-		char	flag_string[1024];
+		char	flag_string[2048];
 		Q_strcpy (flag_string,"");
-
-		if (MANI_ADMIN_TYPE	== type)
+		if (group_ptr->CatFlags(flag_string))
 		{
-			for	(int j = 0;	j <	MAX_ADMIN_FLAGS; j++)
-			{
-				char	temp_flag[20];
-
-				if (admin_group_list[group_index].flags[j])
-				{
-					Q_snprintf(temp_flag, sizeof(temp_flag), "%s ",	admin_flag_list[j].flag);
-					Q_strcat(flag_string, temp_flag);
-					found_flag = true;
-				}
-			}
-		}
-		else
-		{
-			for	(int j = 0;	j <	MAX_IMMUNITY_FLAGS;	j++)
-			{
-				char	temp_flag[20];
-
-				if (immunity_group_list[group_index].flags[j])
-				{
-					Q_snprintf(temp_flag, sizeof(temp_flag), "%s ",	immunity_flag_list[j].flag);
-					Q_strcat(flag_string, temp_flag);
-					found_flag = true;
-				}
-			}
-		}
-
-		for (;;)
-		{
-			// Add client to database too 
-			ManiMySQL *mani_mysql = new ManiMySQL();
-
-			if (!mani_mysql->Init())
-			{
-				delete mani_mysql;
-				break; 
-			}
-
-			if (insert_required)
-			{
-				// Drop group id reference
-				if (!mani_mysql->ExecuteQuery(
-					"INSERT IGNORE INTO %s%s VALUES ('%s', '%s', '%s', '%s')",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBGroup(),
-					param1,
-					flag_string,
-					flag_type,
-					gpManiDatabase->GetServerGroupID()))
-				{
-					delete mani_mysql;
-					break;
-				}
-			}
-			else
-			{
-				if (!mani_mysql->ExecuteQuery(
-					"UPDATE %s%s "
-					"SET flag_string = '%s' "
-					"WHERE group_id = '%s' "
-					"AND type = '%s' "
-					"AND server_group_id = '%s'",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBGroup(),
-					flag_string,
-					param1,
-					flag_type,
-					gpManiDatabase->GetServerGroupID()))
-				{	
-					delete mani_mysql;
-					break;
-				}		
-			}
-
-			delete mani_mysql;
-			break;
+			SQLProcessBlock *ptr = new SQLAddGroupType();
+			ptr->in_params.AddParam("class_type", class_type);
+			ptr->in_params.AddParam("group_id", param1);
+			ptr->in_params.AddParam("flag_string", flag_string);
+			ptr->in_params.AddParam("insert", insert_required);
+			client_sql_manager->AddRequest(ptr);
 		}
 	}
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin group [%s] updated", param1);
-	}
-	else
-	{
-		ComputeImmunityLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity group [%s] updated", param1);
-	}
-
+	OutputHelpText(ORANGE_CHAT, player_ptr, "%s group [%s] updated", class_type, param1);
 	return;
-
 }
 
 //---------------------------------------------------------------------------------
@@ -5764,151 +2933,40 @@ void		ManiClient::ProcessAddGroupType
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessRemoveGroupType
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr, 
  char *param1
  )
 {
-	int		group_index = -1;
-	char	flag_type[32];
-	bool	insert_required = false;
-	char	group_id[128]="";
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
-	}
-
 	// See if group already exists
-	if (MANI_ADMIN_TYPE == type)
+	if (group_list.Find(class_type, param1))
 	{
-		for (int i = 0; i < admin_group_list_size; i++)
-		{
-			if (FStrEq(admin_group_list[i].group_id, param1))
-			{
-				group_index = i;
-				RemoveIndexFromList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size, i, (void *) &(admin_group_list[i]), (void *) &(admin_group_list[admin_group_list_size - 1]));
-				break;
-			}
-		}
+		group_list.RemoveGroup(class_type, param1);
 	}
 	else
-	{
-		for (int i = 0; i < immunity_group_list_size; i++)
-		{
-			if (FStrEq(immunity_group_list[i].group_id, param1))
-			{
-				group_index = i;
-				RemoveIndexFromList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size, i, (void *) &(immunity_group_list[i]), (void *) &(immunity_group_list[immunity_group_list_size - 1]));
-				break;
-			}
-		}
-	}
-
-	if (group_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Group [%s] does not exist !!", param1);
 		return;
 	}
 
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		if (MANI_ADMIN_TYPE == type)
-		{
-			for (int j = 0; j < client_list[i].admin_group_list_size; j++)
-			{
-				if (FStrEq(client_list[i].admin_group_list[j].group_id, param1))
-				{
-					RemoveIndexFromList((void **) &(client_list[i].admin_group_list), sizeof(group_t), &(client_list[i].admin_group_list_size), j,
-						(void *) &(client_list[i].admin_group_list[j]), (void *) &(client_list[i].admin_group_list[client_list[i].admin_group_list_size - 1]));
-				}
-			}
-		}
-		else
-		{
-			for (int j = 0; j < client_list[i].immunity_group_list_size; j++)
-			{
-				if (FStrEq(client_list[i].immunity_group_list[j].group_id, param1))
-				{
-					RemoveIndexFromList((void **) &(client_list[i].immunity_group_list), sizeof(group_t), &(client_list[i].immunity_group_list_size), j,
-												(void *) &(client_list[i].immunity_group_list[j]), (void *) &(client_list[i].immunity_group_list[client_list[i].immunity_group_list_size - 1]));
-
-				}
-			}
-		}
+		c_list[i]->group_list.Remove(class_type, param1);
 	}
 
-	for (int i = 0; i < client_list_size; i++)
-	{
-		RebuildFlags(&(client_list[i]), type);
-	}
-
-	WriteClients();
+	this->SetupUnMasked();
+	this->SetupMasked();
+	this->WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		for (;;)
-		{
-			// Add client to database too 
-			ManiMySQL *mani_mysql = new ManiMySQL();
-
-			if (!mani_mysql->Init())
-			{
-				delete mani_mysql;
-				break; 
-			}
-
-			// Drop group id reference
-			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %s%s "
-				"WHERE group_id = '%s' "
-				"AND type = '%s' "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBGroup(),
-				param1,
-				flag_type,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				break;
-			}
-
-			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %s%s "
-				"WHERE group_id = '%s' "
-				"AND type = '%s' "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientGroup(),
-				param1,
-				flag_type,
-				gpManiDatabase->GetServerGroupID()))
-			{	
-				delete mani_mysql;
-				break;
-			}		
-
-			delete mani_mysql;
-			break;
-		}
+			SQLProcessBlock *ptr = new SQLRemoveGroupType();
+			ptr->in_params.AddParam("class_type", class_type);
+			ptr->in_params.AddParam("group_id", param1);
+			client_sql_manager->AddRequest(ptr);
 	}
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin group [%s] updated", param1);
-	}
-	else
-	{
-		ComputeImmunityLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity group [%s] updated", param1);
-	}
-
+	OutputHelpText(ORANGE_CHAT, player_ptr, "%s group [%s] updated", class_type, param1);
 	return;
 
 }
@@ -5918,72 +2976,23 @@ void		ManiClient::ProcessRemoveGroupType
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAddLevelType
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
-	int		level_index = -1;
 	int		level_id = 0;
-	char	flag_type[32];
 	bool	insert_required = false;
 
-	level_id = Q_atoi(param1);
+	level_id = atoi(param1);
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
-	}
-
-	// See if level already exists
-	if (MANI_ADMIN_TYPE == type)
-	{
-		for (int i = 0; i < admin_level_list_size; i++)
-		{
-			if (admin_level_list[i].level_id == level_id)
-			{
-				level_index = i;
-				break;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < immunity_level_list_size; i++)
-		{
-			if (immunity_level_list[i].level_id == level_id)
-			{
-				level_index = i;
-				break;
-			}
-		}
-	}
-
-	if (level_index == -1)
+	GlobalGroupFlag *level_ptr = level_list.Find(class_type, level_id);
+	if (level_ptr == NULL)
 	{
 		insert_required = true;
-
-		if (MANI_ADMIN_TYPE == type)
-		{
-			AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
-			for (int i = 0; i < MAX_ADMIN_FLAGS; i++) admin_level_list[admin_level_list_size - 1].flags[i] = false;
-			admin_level_list[admin_level_list_size - 1].level_id = level_id;
-			level_index = admin_level_list_size - 1;
-
-		}
-		else
-		{
-			AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
-			for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++) immunity_level_list[immunity_level_list_size - 1].flags[i] = false;
-			immunity_level_list[immunity_level_list_size - 1].level_id = level_id;
-			level_index = immunity_level_list_size - 1;
-		}
-
+		// No Group exists yet so we shall create one
+		level_ptr = level_list.AddGroup(class_type, level_id);
 	}
 
 	int		param2_index = 0;
@@ -6022,21 +3031,11 @@ void		ManiClient::ProcessAddLevelType
 
 		if (param2[param2_index] == '#')
 		{
-			// Add/remove all 
-			// Valid flag index	given
-			if (MANI_ADMIN_TYPE == type)
+			// Add/Remove all flags for this level
+			const DualStrKey *key_value = NULL;
+			for (const char *flag_id = flag_desc_list.FindFirst(class_type, &key_value); flag_id != NULL; flag_id = flag_desc_list.FindNext(class_type, &key_value))
 			{
-				for (int x = 0; x < MAX_ADMIN_FLAGS; x ++)
-				{
-					admin_level_list[level_index].flags[x] = ((flag_add) ? true:false);
-				}
-			}
-			else
-			{
-				for (int x = 0; x < MAX_IMMUNITY_FLAGS; x ++)
-				{
-					immunity_level_list[level_index].flags[x] = ((flag_add) ? true:false);
-				}
+				level_ptr->SetFlag(key_value->key2, flag_add);
 			}
 
 			param2_index++;
@@ -6048,131 +3047,34 @@ void		ManiClient::ProcessAddLevelType
 			continue;
 		}
 
-		int	flag_index = this->GetNextFlag(param2, &param2_index, type);
-		if (flag_index != -1)
+		char *flag_id = this->SplitFlagString(param2, &param2_index);
+		if (flag_id)
 		{
-			// Valid flag index	given
-			if (MANI_ADMIN_TYPE	== type)
+			if (flag_desc_list.IsValidFlag(class_type, flag_id))
 			{
-				admin_level_list[level_index].flags[flag_index] = ((flag_add) ? true:false);
-			}
-			else
-			{
-				immunity_level_list[level_index].flags[flag_index] = ((flag_add) ? true:false);
+				level_ptr->SetFlag(flag_id, flag_add);
 			}
 		}
 	}
 
+	this->SetupUnMasked();
+	this->SetupMasked();
 	WriteClients();
-
-	if (!insert_required)
-	{
-		for (int i = 0; i < client_list_size; i++)
-		{
-			RebuildFlags(&(client_list[i]), type);
-		}
-	}
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
 		// Build the strings needed
-		bool found_flag	= false;
-		char	flag_string[1024];
-		Q_strcpy (flag_string,"");
-
-		if (MANI_ADMIN_TYPE	== type)
-		{
-			for	(int j = 0;	j <	MAX_ADMIN_FLAGS; j++)
-			{
-				char	temp_flag[20];
-
-				if (admin_level_list[level_index].flags[j])
-				{
-					Q_snprintf(temp_flag, sizeof(temp_flag), "%s ",	admin_flag_list[j].flag);
-					Q_strcat(flag_string, temp_flag);
-					found_flag = true;
-				}
-			}
-		}
-		else
-		{
-			for	(int j = 0;	j <	MAX_IMMUNITY_FLAGS;	j++)
-			{
-				char	temp_flag[20];
-
-				if (immunity_level_list[level_index].flags[j])
-				{
-					Q_snprintf(temp_flag, sizeof(temp_flag), "%s ",	immunity_flag_list[j].flag);
-					Q_strcat(flag_string, temp_flag);
-					found_flag = true;
-				}
-			}
-		}
-
-		for (;;)
-		{
-			// Add client to database too 
-			ManiMySQL *mani_mysql = new ManiMySQL();
-
-			if (!mani_mysql->Init())
-			{
-				delete mani_mysql;
-				break; 
-			}
-
-			if (insert_required)
-			{
-				// Insert level id reference
-				if (!mani_mysql->ExecuteQuery(
-					"INSERT IGNORE INTO %s%s VALUES (%i, '%s', '%s', '%s')",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBLevel(),
-					level_id,
-					flag_type,
-					flag_string,
-					gpManiDatabase->GetServerGroupID()))
-				{
-					delete mani_mysql;
-					break;
-				}
-			}
-			else
-			{
-				if (!mani_mysql->ExecuteQuery(
-					"UPDATE %s%s "
-					"SET flag_string = '%s' "
-					"WHERE level_id = %i "
-					"AND type = '%s' "
-					"AND server_group_id = '%s'",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBLevel(),
-					flag_string,
-					level_id,
-					flag_type,
-					gpManiDatabase->GetServerGroupID()))
-				{	
-					delete mani_mysql;
-					break;
-				}		
-			}
-
-			delete mani_mysql;
-			break;
-		}
+		char	flag_string[2048]="";
+		level_ptr->CatFlags(flag_string);
+		SQLProcessBlock *ptr = new SQLAddLevelType();
+		ptr->in_params.AddParam("class_type", class_type);
+		ptr->in_params.AddParam("level_id", level_id);
+		ptr->in_params.AddParam("flag_string", flag_string);
+		ptr->in_params.AddParam("insert", insert_required);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		qsort(admin_level_list, admin_level_list_size, sizeof(admin_level_t), sort_admin_level); 
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin level [%s] updated", param1);
-	}
-	else
-	{
-		qsort(immunity_level_list, immunity_level_list_size, sizeof(immunity_level_t), sort_immunity_level);
-		ComputeImmunityLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity level [%s] updated", param1);
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "%s level [%s] updated", class_type, param1);
 
 	return;
 
@@ -6183,128 +3085,43 @@ void		ManiClient::ProcessAddLevelType
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessRemoveLevelType
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr,  
  char *param1
  )
 {
-	int		level_index = -1;
-	char	flag_type[32];
-	bool	insert_required = false;
-	int		level_id = 0;
-
-	level_id = Q_atoi(param1);
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
-	}
+	int		level_id = atoi(param1);
 
 	// See if level already exists
-	if (MANI_ADMIN_TYPE == type)
+	// See if group already exists
+	if (level_list.Find(class_type, level_id))
 	{
-		for (int i = 0; i < admin_level_list_size; i++)
-		{
-			if (admin_level_list[i].level_id == level_id)
-			{
-				level_index = i;
-				RemoveIndexFromList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size, i,
-					(void *) &(admin_level_list[i]), (void *) &(admin_level_list[admin_level_list_size - 1]));
-				break;
-			}
-		}
+		level_list.RemoveGroup(class_type, level_id);
 	}
 	else
-	{
-		for (int i = 0; i < immunity_level_list_size; i++)
-		{
-			if (immunity_level_list[i].level_id == level_id)
-			{
-				level_index = i;
-				RemoveIndexFromList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size, i,
-					(void *) &(immunity_level_list[i]), (void *) &(immunity_level_list[immunity_level_list_size - 1]));
-				break;
-			}
-		}
-	}
-
-	if (level_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Level [%s] does not exist !!", param1);
 		return;
 	}
 
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		RebuildFlags(&(client_list[i]), type);
+		c_list[i]->level_list.Remove(class_type, level_id);
 	}
 
-	WriteClients();
+	this->SetupUnMasked();
+	this->SetupMasked();
+	this->WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		for (;;)
-		{
-			// Add client to database too 
-			ManiMySQL *mani_mysql = new ManiMySQL();
-
-			if (!mani_mysql->Init())
-			{
-				delete mani_mysql;
-				break; 
-			}
-
-			// Drop level id reference
-			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %s%s "
-				"WHERE level_id = %i "
-				"AND type = '%s' "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBLevel(),
-				level_id,
-				flag_type,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				break;
-			}
-
-			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %s%s "
-				"WHERE level_id = %i "
-				"AND type = '%s' "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientLevel(),
-				level_id,
-				flag_type,
-				gpManiDatabase->GetServerGroupID()))
-			{	
-				delete mani_mysql;
-				break;
-			}		
-
-			delete mani_mysql;
-			break;
-		}
+		SQLProcessBlock *ptr = new SQLRemoveLevelType();
+		ptr->in_params.AddParam("class_type", class_type);
+		ptr->in_params.AddParam("level_id", level_id);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin level [%s] updated", param1);
-	}
-	else
-	{
-		ComputeImmunityLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity level [%s] updated", param1);
-	}
-
+	OutputHelpText(ORANGE_CHAT, player_ptr, "%s level [%s] updated", class_type, param1);
 	return;
 
 }
@@ -6314,73 +3131,25 @@ void		ManiClient::ProcessRemoveLevelType
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessSetFlag
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr, 
  char *param1,
  char *param2
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
-	bool	found_group	= false;
-	char	flag_type[32];
+	ClientPlayer	*client_ptr;
 	int	param2_index = 0;
-	ManiMySQL *mani_mysql =	NULL;
 
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index ==	-1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable	to find	target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-
-	if (MANI_ADMIN_TYPE	== type)
-	{
-		Q_strcpy(flag_type,	"Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type,	"Immunity");
-	}
-
-	if (gpManiDatabase->GetDBEnabled())
-	{
-		mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		int	row_count;
-
-		// Get client for this server
-		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count,	
-			"SELECT	c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id	= '%s' "
-			"and cs.user_id	= c.user_id	"
-			"and c.name	= '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		// Get User	ID
-		if (mani_mysql && row_count)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id	= mani_mysql->GetInt(0);
-		}
-	}
+	client_ptr = c_list[client_index];
 
 	for	(;;)
 	{
@@ -6417,21 +3186,11 @@ void		ManiClient::ProcessSetFlag
 
 		if (param2[param2_index] == '#')
 		{
-			// Add/remove all 
-			// Valid flag index	given
-			if (MANI_ADMIN_TYPE == type)
+			// Add/Remove all flags for this level
+			const DualStrKey *key_value = NULL;
+			for (const char *flag_id = flag_desc_list.FindFirst(class_type, &key_value); flag_id != NULL; flag_id = flag_desc_list.FindNext(class_type, &key_value))
 			{
-				for (int x = 0; x < MAX_ADMIN_FLAGS; x ++)
-				{
-					client_ptr->original_admin_flags[x] = ((flag_add) ? true:false);
-				}
-			}
-			else
-			{
-				for (int x = 0; x < MAX_ADMIN_FLAGS; x ++)
-				{
-					client_ptr->original_immunity_flags[x]	= ((flag_add) ?	true:false);
-				}
+				client_ptr->personal_flag_list.SetFlag(class_type, key_value->key2, flag_add);
 			}
 
 			param2_index++;
@@ -6443,109 +3202,33 @@ void		ManiClient::ProcessSetFlag
 			continue;
 		}
 
-		int	flag_index = this->GetNextFlag(param2, &param2_index, type);
-		if (flag_index != -1)
+		char *flag_id = this->SplitFlagString(param2, &param2_index);
+		if (flag_id)
 		{
-			// Valid flag index	given
-			if (MANI_ADMIN_TYPE	== type)
+			if (flag_desc_list.IsValidFlag(class_type, flag_id))
 			{
-				client_ptr->original_admin_flags[flag_index] = ((flag_add) ? true:false);
-			}
-			else
-			{
-				client_ptr->original_immunity_flags[flag_index]	= ((flag_add) ?	true:false);
+				client_ptr->personal_flag_list.SetFlag(class_type, flag_id, flag_add);
 			}
 		}
 	}
 
-	if (mani_mysql)
+	if (gpManiDatabase->GetDBEnabled())
 	{
-		// Remove flags
-		if (mani_mysql &&
-			!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-			"WHERE user_id = %i	"
-			"AND type =	'%s' "
-			"AND server_group_id = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTBClientFlag(),
-			client_ptr->user_id,
-			flag_type,
-			gpManiDatabase->GetServerGroupID()))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
+		char	flag_string[2048];
+		client_ptr->personal_flag_list.CatFlags(flag_string, class_type);
 
-		// Build the strings needed
-		bool found_flag	= false;
-		char	flag_string[1024];
-		Q_strcpy (flag_string,"");
-
-		if (MANI_ADMIN_TYPE	== type)
-		{
-			for	(int j = 0;	j <	MAX_ADMIN_FLAGS; j++)
-			{
-				char	temp_flag[20];
-
-				if (client_ptr->original_admin_flags[j])
-				{
-					Q_snprintf(temp_flag, sizeof(temp_flag), "%s ",	admin_flag_list[j].flag);
-					Q_strcat(flag_string, temp_flag);
-					found_flag = true;
-				}
-			}
-		}
-		else
-		{
-			for	(int j = 0;	j <	MAX_IMMUNITY_FLAGS;	j++)
-			{
-				char	temp_flag[20];
-
-				if (client_ptr->original_immunity_flags[j])
-				{
-					Q_snprintf(temp_flag, sizeof(temp_flag), "%s ",	immunity_flag_list[j].flag);
-					Q_strcat(flag_string, temp_flag);
-					found_flag = true;
-				}
-			}
-		}
-
-		if (found_flag)
-		{
-			// Add them
-			if (mani_mysql &&
-				!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s	VALUES (%i,'%s','%s','%s')",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientFlag(),
-				client_ptr->user_id,
-				flag_string,
-				flag_type,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-		}
+		SQLProcessBlock *ptr = new SQLSetFlag();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("class_type", class_type);
+		ptr->in_params.AddParam("flag_string", flag_string);
+		client_sql_manager->AddRequest(ptr);
 	}
 
+	this->SetupUnMasked();
+	this->SetupMasked();
 	WriteClients();
-	RebuildFlags(client_ptr, type);
 
-	if (mani_mysql)
-	{
-		delete mani_mysql;
-	}
-
-	if (MANI_ADMIN_TYPE	== type) 
-	{
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Processed admin flags to client [%s]",	client_ptr->name);
-	}
-	else
-	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Processed immunity flags to client [%s]", client_ptr->name);
-		ComputeImmunityLevels();
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Processed %s flags to client [%s]", class_type, client_ptr->GetName());
 
 	return;
 
@@ -6560,181 +3243,48 @@ void		ManiClient::ProcessRemoveClient
  char *param1
  )
 {
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	int		client_index;
-	ManiMySQL *mani_mysql = NULL;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
+	client_ptr = c_list[client_index];
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		mani_mysql = new ManiMySQL();
+		SQLProcessBlock *ptr = new SQLRemoveClient();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		client_sql_manager->AddRequest(ptr);
+	}
 
-		if (!mani_mysql->Init())
+	for (int i = 0; i < max_players; i++)
+	{
+		if (active_client_list[i] == client_ptr)
 		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		int row_count;
-
-		// Get client for this server
-		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		// Get User ID
-		if (mani_mysql && row_count)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id = mani_mysql->GetInt(0);
-
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientServer(),
-				client_ptr->user_id,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			row_count = 0;
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery(&row_count,
-				"SELECT 1 FROM %s%s "
-				"WHERE user_id = %i",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientServer(),
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			if (row_count == 0)
-			{
-				// No client server records so delete unique client
-				if (mani_mysql && 
-					!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-					"WHERE user_id = %i",
-					gpManiDatabase->GetDBTablePrefix(),
-					gpManiDatabase->GetDBTBClient(),
-					client_ptr->user_id))
-				{
-					delete mani_mysql;
-					mani_mysql = NULL;
-				}
-			}				
-
-			// Delete rest of the crap
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientFlag(),
-				client_ptr->user_id,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientGroup(),
-				client_ptr->user_id,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND server_group_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientLevel(),
-				client_ptr->user_id,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i ",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBSteam(),
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i ",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBIP(),
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-
-			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %s%s"
-				"WHERE user_id = %i ",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBNick(),
-				client_ptr->user_id))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-		}
-
-		if (mani_mysql)
-		{
-			delete mani_mysql;
+			active_client_list[i] = NULL;
 		}
 	}
 
+	delete client_ptr;
+	
+	int index = 0;
+	for (vector<ClientPlayer *>::iterator itr = c_list.begin(); itr != c_list.end(); ++itr)
+	{
+		if (index++ == client_index)
+		{
+			c_list.erase(itr);
+			break;
+		}
+	}
 
-	FreeClient(client_ptr);
-	RemoveIndexFromList((void **) &client_list, sizeof(client_t), &client_list_size, client_index,
-		(void *) &(client_list[client_index]), (void *) &(client_list[client_list_size - 1]));
+	this->SetupUnMasked();
+	this->SetupMasked();
 	WriteClients();
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
-
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has been removed !!", param1);
 }
 
@@ -6748,87 +3298,31 @@ void		ManiClient::ProcessRemoveSteam
  char *param2
  )
 {
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	int		client_index;
-	ManiMySQL *mani_mysql = NULL;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-
-	for (int i = 0; i < client_ptr->steam_list_size; i++)
-	{
-		if (FStrEq(client_ptr->steam_list[i].steam_id, param2))
-		{
-			RemoveIndexFromList((void **) &(client_ptr->steam_list), sizeof(steam_t), &client_ptr->steam_list_size, i,
-				(void *) &(client_ptr->steam_list[i]), (void *) &(client_ptr->steam_list[client_ptr->steam_list_size - 1]));
-			break;
-		}
-	}
+	client_ptr = c_list[client_index];
+	client_ptr->steam_list.Remove(param2);
+	this->SetupPlayersOnServer();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		int row_count;
-
-		// Get client for this server
-		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		// Get User ID
-		if (mani_mysql && row_count)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id = mani_mysql->GetInt(0);
-
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND steam_id = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBSteam(),
-				client_ptr->user_id,
-				param2))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-		}
-
-		if (mani_mysql)
-		{
-			delete mani_mysql;
-		}
+		SQLProcessBlock *ptr = new SQLRemoveSteam();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("steam_id", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
 	WriteClients();
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had steam id [%s] removed", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had steam id [%s] removed", client_ptr->GetName(), param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -6841,87 +3335,31 @@ void		ManiClient::ProcessRemoveIP
  char *param2
  )
 {
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	int		client_index;
-	ManiMySQL *mani_mysql = NULL;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-
-	for (int i = 0; i < client_ptr->ip_address_list_size; i++)
-	{
-		if (FStrEq(client_ptr->ip_address_list[i].ip_address, param2))
-		{
-			RemoveIndexFromList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &client_ptr->ip_address_list_size, i,
-				(void *) &(client_ptr->ip_address_list[i]), &(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1]));
-			break;
-		}
-	}
+	client_ptr = c_list[client_index];
+	client_ptr->ip_address_list.Remove(param2);
+	this->SetupPlayersOnServer();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		int row_count;
-
-		// Get client for this server
-		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		// Get User ID
-		if (mani_mysql && row_count)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id = mani_mysql->GetInt(0);
-
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND ip_address = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBIP(),
-				client_ptr->user_id,
-				param2))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-		}
-
-		if (mani_mysql)
-		{
-			delete mani_mysql;
-		}
+		SQLProcessBlock *ptr = new SQLRemoveIPAddress();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("ip", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
 	WriteClients();
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had IP Address [%s] removed", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had IP Address [%s] removed", client_ptr->GetName(), param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -6934,87 +3372,31 @@ void		ManiClient::ProcessRemoveNick
  char *param2
  )
 {
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	int		client_index;
-	ManiMySQL *mani_mysql = NULL;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
-
-	for (int i = 0; i < client_ptr->nick_list_size; i++)
-	{
-		if (FStrEq(client_ptr->nick_list[i].nick, param2))
-		{
-			RemoveIndexFromList((void **) &(client_ptr->nick_list), sizeof(nick_t), &client_ptr->nick_list_size, i,
-				(void *) &(client_ptr->nick_list[i]), (void *) &(client_ptr->nick_list[client_ptr->nick_list_size - 1]));
-			break;
-		}
-	}
+	client_ptr = c_list[client_index];
+	client_ptr->nick_list.Remove(param2);
+	this->SetupPlayersOnServer();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		int row_count;
-
-		// Get client for this server
-		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		// Get User ID
-		if (mani_mysql && row_count)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id = mani_mysql->GetInt(0);
-
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND nick = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBNick(),
-				client_ptr->user_id,
-				param2))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-		}
-
-		if (mani_mysql)
-		{
-			delete mani_mysql;
-		}
+		SQLProcessBlock *ptr = new SQLRemoveNick();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("nick", param2);
+		client_sql_manager->AddRequest(ptr);
 	}
 
 	WriteClients();
-	ComputeAdminLevels();
-	ComputeImmunityLevels();
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had nickname [%s] removed", client_ptr->name, param2);
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Client %s has had nickname [%s] removed", client_ptr->GetName(), param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -7022,137 +3404,40 @@ void		ManiClient::ProcessRemoveNick
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessRemoveGroup
 (
- int type,
+ const char *class_type,
  player_t *player_ptr,  
  char *param1,
  char *param2
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
-	bool	found_group = false;
-	char	flag_type[32];
-	ManiMySQL *mani_mysql = NULL;
+	ClientPlayer	*client_ptr;
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
+	client_ptr = c_list[client_index];
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		Q_strcpy(flag_type, "Admin");
-	}
-	else
-	{
-		Q_strcpy(flag_type, "Immunity");
-	}
+	client_ptr->group_list.Remove(class_type, param2);
 
-	if (MANI_ADMIN_TYPE == type)
-	{
-		for (int i = 0; i < client_ptr->admin_group_list_size; i++)
-		{
-			if (FStrEq(client_ptr->admin_group_list[i].group_id, param2))
-			{
-				RemoveIndexFromList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &client_ptr->admin_group_list_size, i,
-					(void *) &(client_ptr->admin_group_list[i]), (void *) &(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1]));
-				break;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < client_ptr->immunity_group_list_size; i++)
-		{
-			if (FStrEq(client_ptr->immunity_group_list[i].group_id, param2))
-			{
-				RemoveIndexFromList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &client_ptr->immunity_group_list_size, i,
-					(void *) &(client_ptr->immunity_group_list[i]), (void *) &(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1]));
-				break;
-			}
-		}
-	}
+	this->SetupUnMasked();
+	this->SetupMasked();
+	WriteClients();
 
 	if (gpManiDatabase->GetDBEnabled())
 	{
-		mani_mysql = new ManiMySQL();
-
-		if (!mani_mysql->Init())
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		int row_count;
-
-		// Get client for this server
-		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
-			"SELECT c.user_id "
-			"FROM %s%s c, %s%s cs "
-			"where cs.server_group_id = '%s' "
-			"and cs.user_id = c.user_id "
-			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
-			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
-			gpManiDatabase->GetServerGroupID(),
-			client_ptr->name))
-		{
-			delete mani_mysql;
-			mani_mysql = NULL;
-		}
-
-		// Get User ID
-		if (mani_mysql && row_count)
-		{
-			mani_mysql->FetchRow();
-			client_ptr->user_id = mani_mysql->GetInt(0);
-
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
-				"WHERE user_id = %i "
-				"AND group_id = '%s' "
-				"AND type = '%s' "
-				"AND server_group_id = '%s' ",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTBClientGroup(),
-				client_ptr->user_id,
-				param2,
-				flag_type,
-				gpManiDatabase->GetServerGroupID()))
-			{
-				delete mani_mysql;
-				mani_mysql = NULL;
-			}
-		}
-
-		if (mani_mysql)
-		{
-			delete mani_mysql;
-		}
+		SQLProcessBlock *ptr = new SQLRemoveGroup();
+		ptr->in_params.AddParam("name", client_ptr->GetName());
+		ptr->in_params.AddParam("group_id", param2);
+		ptr->in_params.AddParam("class_type", class_type);
+		client_sql_manager->AddRequest(ptr);
 	}
 
-	WriteClients();
-	RebuildFlags(client_ptr, type);
-
-
-	if (mani_mysql)
-	{
-		delete mani_mysql;
-	}
-
-	if (MANI_ADMIN_TYPE == type)
-	{
-		ComputeAdminLevels();
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Removed client [%s] from admin flag group [%s]", client_ptr->name, param2);
-	}
-	else
-	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Removed client [%s] from immunity flag group [%s]", client_ptr->name, param2);
-		ComputeImmunityLevels();
-	}
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Removed client [%s] from %s flag group [%s]", client_ptr->GetName(), class_type, param2);
 }
 
 //---------------------------------------------------------------------------------
@@ -7160,23 +3445,14 @@ void		ManiClient::ProcessRemoveGroup
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessAllClientFlagDesc
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr
  )
 {
-	if (type == MANI_ADMIN_TYPE)
+	const DualStrKey *key_value = NULL;
+	for (const char *desc = flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = flag_desc_list.FindNext(class_type, &key_value))
 	{
-		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
-		}
-	}
-	else
-	{
-		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", immunity_flag_list[i].flag, immunity_flag_list[i].flag_desc);
-		}
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", key_value->key2, desc);
 	}
 }
 
@@ -7185,39 +3461,22 @@ void		ManiClient::ProcessAllClientFlagDesc
 //---------------------------------------------------------------------------------
 void		ManiClient::ProcessClientFlagDesc
 (
- int	type,
+ const char *class_type,
  player_t *player_ptr, 
  char *param1
  )
 {
-	if (type == MANI_ADMIN_TYPE)
+	const DualStrKey *key_value = NULL;
+	for (const char *desc = flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = flag_desc_list.FindNext(class_type, &key_value))
 	{
-		for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
+		if (strcmp(key_value->key2, param1) == 0)
 		{
-			if (FStruEq(admin_flag_list[i].flag, param1))
-			{
-				OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
-				return;
-			}
-
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", key_value->key2, desc);
+			return;
 		}
-
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Admin flag [%s] does not exist !!", param1);
-	}
-	else
-	{
-		for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
-		{
-			if (FStruEq(immunity_flag_list[i].flag, param1))
-			{
-				OutputHelpText(ORANGE_CHAT, player_ptr, "%-20s %s", admin_flag_list[i].flag, admin_flag_list[i].flag_desc);
-				return;
-			}
-		}
-
-		OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity flag [%s] does not exist !!", param1);
 	}
 
+	OutputHelpText(ORANGE_CHAT, player_ptr, "%s flag [%s] does not exist !!", class_type, param1);
 }
 
 //---------------------------------------------------------------------------------
@@ -7228,16 +3487,16 @@ void		ManiClient::ProcessAllClientStatus
  player_t *player_ptr
  )
 {
-	if (client_list_size == 0)
+	if (c_list.empty())
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "No clients setup yet !!");
 		return;
 	}
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "List of clients, use ma_client status <name> for detailed info on a client");
-	for (int i = 0; i < client_list_size; i++)
+	for (int i = 0; i != (int) c_list.size(); i++)
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", client_list[i].name);
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", c_list[i]->GetName());
 	}	
 }
 //---------------------------------------------------------------------------------
@@ -7250,188 +3509,118 @@ void		ManiClient::ProcessClientStatus
  )
 {
 	int	client_index;
-	client_t	*client_ptr;
+	ClientPlayer	*client_ptr;
 	char	temp_string[8192];
 	char	temp_string2[512];
 
 
-	client_index = FindClientIndex(param1, false, false);
+	client_index = FindClientIndex(param1);
 	if (client_index == -1)
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Unable to find target [%s]", param1);
 		return;
 	}
 
-	client_ptr = &(client_list[client_index]);
+	client_ptr = c_list[client_index];
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Name              : %s", client_ptr->name);
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Email             : %s", client_ptr->email_address);
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Notes             : %s", client_ptr->notes);
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Password          : %s", client_ptr->password);
-	if (client_ptr->admin_level_id > -1) OutputHelpText(ORANGE_CHAT, player_ptr, "Admin Level ID    : %i", client_ptr->admin_level_id);
-	if (client_ptr->immunity_level_id > -1) OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity Level ID : %i", client_ptr->immunity_level_id);
-
-	if (client_ptr->steam_list_size != 0)
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Name              : %s", client_ptr->GetName() ? client_ptr->GetName():"");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Email             : %s", client_ptr->GetEmailAddress() ? client_ptr->GetEmailAddress():"");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Notes             : %s", client_ptr->GetNotes() ? client_ptr->GetNotes():"");
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Password          : %s", client_ptr->GetPassword() ? client_ptr->GetPassword():"");
+	const char *c_type1 = NULL;
+	for (int level_id = client_ptr->level_list.FindFirst(&c_type1); level_id != -99999; level_id = client_ptr->level_list.FindNext(&c_type1))
 	{
-		if (client_ptr->steam_list_size == 1)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Steam ID : %s", client_ptr->steam_list[0].steam_id);
-		}
-		else
-		{
-			Q_strcpy(temp_string, "Steam IDs : ");
-			for (int i = 0; i < client_ptr->steam_list_size; i ++)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", client_ptr->steam_list[i].steam_id);
-				Q_strcat(temp_string, temp_string2);
-			}
-
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
-		}
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s Level ID    : %i", c_type1, level_id);
 	}
 
-	if (client_ptr->ip_address_list_size != 0)
+	if (!client_ptr->steam_list.IsEmpty())
 	{
-		if (client_ptr->ip_address_list_size == 1)
+		Q_strcpy(temp_string, "Steam IDs : ");
+		for (const char *steam_id = client_ptr->steam_list.FindFirst(); steam_id != NULL; steam_id = client_ptr->steam_list.FindNext())
 		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "IP Address : %s", client_ptr->ip_address_list[0].ip_address);
+			snprintf(temp_string2, sizeof(temp_string2), "%s ", steam_id);
+			strcat(temp_string, temp_string2);
 		}
-		else
-		{
-			Q_strcpy(temp_string, "IP Addresses : ");
-			for (int i = 0; i < client_ptr->ip_address_list_size; i ++)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", client_ptr->ip_address_list[i].ip_address);
-				Q_strcat(temp_string, temp_string2);
-			}
-
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
-		}
-	}
-
-	if (client_ptr->nick_list_size != 0)
-	{
-		if (client_ptr->nick_list_size == 1)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Nickname : %s", client_ptr->nick_list[0].nick);
-		}
-		else
-		{
-			Q_strcpy(temp_string, "Nicknames : ");
-			for (int i = 0; i < client_ptr->nick_list_size; i ++)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", client_ptr->nick_list[i].nick);
-				Q_strcat(temp_string, temp_string2);
-			}
-
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
-		}
-	}
-
-	if (client_ptr->admin_group_list_size != 0)
-	{
-		if (client_ptr->admin_group_list_size == 1)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Admin Group : %s", client_ptr->admin_group_list[0].group_id);
-		}
-		else
-		{
-			Q_strcpy(temp_string, "Admin Groups : ");
-			for (int i = 0; i < client_ptr->admin_group_list_size; i ++)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", client_ptr->admin_group_list[i].group_id);
-				Q_strcat(temp_string, temp_string2);
-			}
-
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
-		}
-	}
-
-	if (client_ptr->immunity_group_list_size != 0)
-	{
-		if (client_ptr->immunity_group_list_size == 1)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Immunity Group : %s", client_ptr->immunity_group_list[0].group_id);
-		}
-		else
-		{
-			Q_strcpy(temp_string, "Immunity Groups : ");
-			for (int i = 0; i < client_ptr->immunity_group_list_size; i ++)
-			{
-				Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", client_ptr->immunity_group_list[i].group_id);
-				Q_strcat(temp_string, temp_string2);
-			}
-
-			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
-		}
-	}
-
-	bool found_flag = false;
-
-	Q_strcpy(temp_string, "Admin Flags : ");
-	for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
-	{
-		if (client_ptr->original_admin_flags[i])
-		{
-			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", admin_flag_list[i].flag);
-			Q_strcat(temp_string, temp_string2);
-			found_flag = true;
-		}
-	}
-
-	if (found_flag)
-	{
+		
 		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 
-	found_flag = false;
-	Q_strcpy(temp_string, "Immunity Flags : ");
-	for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
+	if (!client_ptr->ip_address_list.IsEmpty())
 	{
-		if (client_ptr->original_immunity_flags[i])
+		Q_strcpy(temp_string, "IP Addresses : ");
+		for (const char *ip_address = client_ptr->ip_address_list.FindFirst(); ip_address != NULL; ip_address = client_ptr->ip_address_list.FindNext())
 		{
-			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", immunity_flag_list[i].flag);
-			Q_strcat(temp_string, temp_string2);
-			found_flag = true;
+			snprintf(temp_string2, sizeof(temp_string2), "%s ", ip_address);
+			strcat(temp_string, temp_string2);
 		}
-	}
-
-	if (found_flag)
-	{
+		
 		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 
-	Q_strcpy(temp_string, "Active Admin Flags : ");
-	for (int i = 0; i < MAX_ADMIN_FLAGS; i++)
+	if (!client_ptr->nick_list.IsEmpty())
 	{
-		if (client_ptr->admin_flags[i])
+		Q_strcpy(temp_string, "Nicknames : ");
+		for (const char *nick = client_ptr->nick_list.FindFirst(); nick != NULL; nick = client_ptr->nick_list.FindNext())
 		{
-			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", admin_flag_list[i].flag);
-			Q_strcat(temp_string, temp_string2);
-			found_flag = true;
+			snprintf(temp_string2, sizeof(temp_string2), "%s ", nick);
+			strcat(temp_string, temp_string2);
 		}
-	}
-
-	if (found_flag)
-	{
+		
 		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
 	}
 
-	found_flag = false;
-	Q_strcpy(temp_string, "Active Immunity Flags : ");
-	for (int i = 0; i < MAX_IMMUNITY_FLAGS; i++)
+	const char *group_id = NULL;
+	for (const char *c_type = client_ptr->group_list.FindFirst(&group_id); c_type != NULL; c_type = client_ptr->group_list.FindNext(&group_id))
 	{
-		if (client_ptr->immunity_flags[i])
+		OutputHelpText(ORANGE_CHAT, player_ptr, "%s Group : %s", c_type, group_id);
+	}
+
+	// Build up flags we are using for this client
+	char string[2048];
+	
+	bool found = false;
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		if (client_ptr->personal_flag_list.CatFlags(string, c_type))
 		{
-			Q_snprintf(temp_string2, sizeof(temp_string2), "%s ", immunity_flag_list[i].flag);
-			Q_strcat(temp_string, temp_string2);
-			found_flag = true;
+			if (!found)
+			{
+				OutputHelpText(ORANGE_CHAT, player_ptr, "Personal Flags:-");
+				found = true;
+			}			
+
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s flags: %s", c_type, string);
 		}
 	}
 
-	if (found_flag)
+	found = false;
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
 	{
-		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", temp_string);
+		if (client_ptr->unmasked_list.CatFlags(string, c_type))
+		{
+			if (!found)
+			{
+				OutputHelpText(ORANGE_CHAT, player_ptr, "Flags including flags from groups:-");
+				found = true;
+			}
+
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s flags: %s", c_type, string);
+		}
+	}
+
+	found = false;
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		if (client_ptr->masked_list.CatFlags(string, c_type))
+		{
+			if (!found)
+			{
+				OutputHelpText(ORANGE_CHAT, player_ptr, "Flags after level group mask applied:-");
+				found = true;
+			}
+		
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s in game flags: %s", c_type, string);
+		}
 	}
 }
 
@@ -7444,112 +3633,24 @@ void		ManiClient::ProcessClientGroupStatus
  char *param1 // type
  )
 {
-	char	flags_string[1024] = "";
+	char	flags_string[2048] = "";
 
-	if (FStrEq(param1, "agroup"))
+	const DualStriKey *key_value1 = NULL;
+	for (GlobalGroupFlag *g_flag = group_list.FindFirst(param1, &key_value1); g_flag != NULL; g_flag = group_list.FindNext(param1, &key_value1))
 	{
-		if (admin_group_list_size == 0)
+		if (g_flag->CatFlags(flags_string))
 		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "No Admin Groups setup");
-		}
-		else 
-		{
-			for (int i = 0; i < admin_group_list_size; i++)
-			{
-				char temp_flag[20];
-				Q_strcpy(flags_string,"");
-
-				for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-				{
-					if (admin_group_list[i].flags[j])
-					{
-						Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", admin_flag_list[j].flag);
-						Q_strcat(flags_string, temp_flag);
-					}
-				}
-
-				OutputHelpText(ORANGE_CHAT, player_ptr, "[%s]   %s", admin_group_list[i].group_id, flags_string);
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s : %s => %s", key_value1->key1, key_value1->key2, flags_string);
 		}
 	}
-	else if (FStrEq(param1, "igroup"))
-	{
-		if (immunity_group_list_size == 0)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "No Immunity Groups setup");
-		}
-		else
-		{
-			for (int i = 0; i < immunity_group_list_size; i++)
-			{
-				char temp_flag[20];
-				Q_strcpy(flags_string,"");
-				for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-				{
-					if (immunity_group_list[i].flags[j])
-					{
-						Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", immunity_flag_list[j].flag);
-						Q_strcat(flags_string, temp_flag);
-					}
-				}
 
-				OutputHelpText(ORANGE_CHAT, player_ptr, "[%s]   %s", immunity_group_list[i].group_id, flags_string);
-			}
-		}
-	}
-	else if (FStrEq(param1, "alevel"))
+	const DualStrIntKey *key_value2 = NULL;
+	for (GlobalGroupFlag *g_flag = level_list.FindFirst(param1, &key_value2); g_flag != NULL; g_flag = level_list.FindNext(param1, &key_value2))
 	{
-		if (admin_level_list_size == 0)
+		if (g_flag->CatFlags(flags_string))
 		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "No Admin Levels setup");
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s : %i => %s", key_value2->key1, key_value2->key2, flags_string);
 		}
-		else
-		{
-			for (int i = 0; i < admin_level_list_size; i++)
-			{
-				char temp_flag[20];
-				Q_strcpy(flags_string,"");
-				for (int j = 0; j < MAX_ADMIN_FLAGS; j ++)
-				{
-					if (admin_level_list[i].flags[j])
-					{
-						Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", admin_flag_list[j].flag);
-						Q_strcat(flags_string, temp_flag);
-					}
-				}
-
-				OutputHelpText(ORANGE_CHAT, player_ptr, "[%i]   %s", admin_level_list[i].level_id, flags_string);
-			}
-		}
-	}
-	else if (FStrEq(param1, "ilevel"))
-	{
-		if (immunity_level_list_size == 0)
-		{
-			OutputHelpText(ORANGE_CHAT, player_ptr, "No Immunity Levels setup");
-		}
-		else
-		{
-			for (int i = 0; i < immunity_level_list_size; i++)
-			{
-				char temp_flag[20];
-				Q_strcpy(flags_string,"");
-				for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
-				{
-					if (immunity_level_list[i].flags[j])
-					{
-						Q_snprintf(temp_flag, sizeof(temp_flag), "%s ", immunity_flag_list[j].flag);
-						Q_strcat(flags_string, temp_flag);
-					}
-				}
-
-				OutputHelpText(ORANGE_CHAT, player_ptr, "[%i]   %s", immunity_level_list[i].level_id, flags_string);
-			}
-		}	
-	}
-	else
-	{
-		gpManiHelp->ShowHelp(player_ptr, "ma_clientgroup", 2223, M_CCONSOLE);
 	}
 }
 
@@ -7571,20 +3672,47 @@ void		ManiClient::ProcessClientUpload
 	// Upload to the database
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Uploading data.....");
-	if (this->CreateDBTables())
+	if (this->CreateDBTables(NULL))
 	{
-		if (this->CreateDBFlags())
+		if (this->CreateDBFlags(NULL))
 		{
-			this->ExportDataToDB();
-			OutputHelpText(ORANGE_CHAT, player_ptr, "Upload suceeded");
+			this->ExportDataToDB(NULL);
+			OutputHelpText(ORANGE_CHAT, NULL, "Upload suceeded");
 			return;
 		}
 	}
 
-	OutputHelpText(ORANGE_CHAT, player_ptr, "Upload failed !!");
+	OutputHelpText(ORANGE_CHAT, NULL, "Upload failed !!");
 
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Handle ma_client sub command ServerID
+//---------------------------------------------------------------------------------
+void		ManiClient::ProcessClientServerID
+(
+ player_t *player_ptr
+ )
+{
+
+	if (!gpManiDatabase->GetDBEnabled())
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Cannot upload as database functionality not enabled, see database.txt");
+		return;
+	}
+
+	// Upload to the database
+
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Uploading Server ID data.....");
+	if (!this->UploadServerID(player_ptr))
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Upload failed !!");
+		return;
+	}
+
+	OutputHelpText(ORANGE_CHAT, player_ptr, "Upload suceeded");
+
+}
 //---------------------------------------------------------------------------------
 // Purpose: Handle ma_client sub command Download
 //---------------------------------------------------------------------------------
@@ -7605,7 +3733,7 @@ void		ManiClient::ProcessClientDownload
 	FreeClients();
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Downloading data.....");
-	if (!this->GetClientsFromDatabase())
+	if (!this->GetClientsFromDatabase(player_ptr))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Download failed, using existing clients.txt file instead");
 		FreeClients();
@@ -7614,6 +3742,8 @@ void		ManiClient::ProcessClientDownload
 	else
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Download succeeded, updating clients.txt");
+		this->SetupUnMasked();
+		this->SetupMasked();
 		WriteClients();
 	}
 }
@@ -7624,7 +3754,7 @@ void		ManiClient::ProcessClientDownload
 void		ManiClient::UpgradeDB1( void )
 {
 	bool update_db = false;
-	char version_string[16];
+	char version_string[32];
 	int	row_count = 0;
 
 	if (!gpManiDatabase->GetDBEnabled())
@@ -7634,13 +3764,14 @@ void		ManiClient::UpgradeDB1( void )
 
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
-	if (!mani_mysql->Init())
+	if (!mani_mysql->Init(NULL))
 	{
 		delete mani_mysql;
 		return;
 	}
 
-	if (!mani_mysql->ExecuteQuery(&row_count, 
+	if (!mani_mysql->ExecuteQuery(NULL,
+		&row_count, 
 		"SELECT v.version_id "
 		"FROM %s%s v",
 		gpManiDatabase->GetDBTablePrefix(),
@@ -7733,7 +3864,7 @@ void		ManiClient::UpgradeDB1( void )
 	if (!column_exists)
 	{
 		MMsg("Updating table %s%s to have column 'server_group_id'....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
-		if (!mani_mysql->ExecuteQuery("ALTER TABLE %s%s ADD server_group_id varchar(32) NOT NULL default ''", 
+		if (!mani_mysql->ExecuteQuery(NULL, "ALTER TABLE %s%s ADD server_group_id varchar(32) NOT NULL default ''", 
 			gpManiDatabase->GetDBTablePrefix(),	gpManiDatabase->GetDBTBServer()))
 		{
 			return ;
@@ -7741,14 +3872,14 @@ void		ManiClient::UpgradeDB1( void )
 	}
 
 	MMsg("Updating table %s%s to have 'Default' for server group id....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
-	if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET server_group_id = 'Default'", 
+	if (!mani_mysql->ExecuteQuery(NULL, "UPDATE %s%s SET server_group_id = 'Default'", 
 		gpManiDatabase->GetDBTablePrefix(),	gpManiDatabase->GetDBTBServer()))
 	{
 		return ;
 	}
 
 	MMsg("Updating stored database version ID to %s....\n",  PLUGIN_VERSION_ID2);
-	if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET version_id = '%s'",
+	if (!mani_mysql->ExecuteQuery(NULL, "UPDATE %s%s SET version_id = '%s'",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBVersion(),
 			PLUGIN_VERSION_ID2))
@@ -7772,14 +3903,14 @@ bool		ManiClient::UpgradeServerIDToServerGroupID
  )
 {
 	MMsg("Updating 'server_id' to 'server_group_id' on table '%s%s'....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery("ALTER TABLE %s%s CHANGE server_id server_group_id varchar(32) NOT NULL default ''", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, "ALTER TABLE %s%s CHANGE server_id server_group_id varchar(32) NOT NULL default ''", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name))
 	{
 		return false;
 	}
 
 	MMsg("Defaulting 'server_group_id' to 'Default' on table '%s%s'....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery("UPDATE %s%s t1 SET t1.server_group_id = 'Default'", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, "UPDATE %s%s t1 SET t1.server_group_id = 'Default'", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name))
 	{
 		return false;
@@ -7796,7 +3927,7 @@ bool		ManiClient::TestColumnExists(ManiMySQL *mani_mysql_ptr, char *table_name, 
 	int row_count;
 
 	MMsg("Testing column '%s' exists on table '%s%s'....\n", column_name, gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery(&row_count, "SHOW COLUMNS FROM %s%s LIKE '%s'", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, &row_count, "SHOW COLUMNS FROM %s%s LIKE '%s'", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name, column_name))
 	{
 		*found_column = false;
@@ -7825,7 +3956,7 @@ bool		ManiClient::TestColumnType(ManiMySQL *mani_mysql_ptr, char *table_name, ch
 	int row_count;
 
 	MMsg("Testing column type '%s' matches column '%s' on table '%s%s'....\n", column_type, column_name, gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery(&row_count, "SHOW COLUMNS FROM %s%s LIKE '%s'", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, &row_count, "SHOW COLUMNS FROM %s%s LIKE '%s'", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name, column_name))
 	{
 		*column_matches = false;
@@ -7859,21 +3990,21 @@ bool		ManiClient::UpgradeClassTypes
  )
 {
 	MMsg("Updating 'type' to be varchar(32) on table %s%s....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery("ALTER TABLE %s%s CHANGE type type varchar(32) NOT NULL default ''", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, "ALTER TABLE %s%s CHANGE type type varchar(32) NOT NULL default ''", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name))
 	{
 		return false;
 	}
 
 	MMsg("Updating 'A' type to be 'Admin' on table %s%s....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery("UPDATE %s%s t1 SET t1.type = 'Admin' where type = 'A'", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, "UPDATE %s%s t1 SET t1.type = 'Admin' where type = 'A'", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name))
 	{
 		return false;
 	}
 
 	MMsg("Updating 'I' type to be 'Immunity' on table %s%s....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
-	if (!mani_mysql_ptr->ExecuteQuery("UPDATE %s%s t1 SET t1.type = 'Immunity' where type = 'I'", 
+	if (!mani_mysql_ptr->ExecuteQuery(NULL, "UPDATE %s%s t1 SET t1.type = 'Immunity' where type = 'I'", 
 		gpManiDatabase->GetDBTablePrefix(),	table_name))
 	{
 		return false;
@@ -7892,13 +4023,12 @@ SCON_COMMAND(ma_client, 2221, MaClient, true);
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiClient::ProcessMaClientGroup(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	client_index;
 	bool	invalid_args = false;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
+		if (!HasAccess(player_ptr->index, ADMIN, ADMIN_CLIENT_ADMIN)) return PLUGIN_BAD_ADMIN;
 	}
 
 	int argc = gpCmd->Cmd_Argc();
@@ -7914,42 +4044,42 @@ PLUGIN_RESULT	ManiClient::ProcessMaClientGroup(player_t *player_ptr, const char	
 	if (FStrEq(sub_command, "addagroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroupType(MANI_ADMIN_TYPE, player_ptr, param1, param2);
+		else ProcessAddGroupType(ADMIN, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addigroup"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddGroupType(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
+		else ProcessAddGroupType(IMMUNITY, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addalevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddLevelType(MANI_ADMIN_TYPE, player_ptr, param1, param2);
+		else ProcessAddLevelType(ADMIN, player_ptr, param1, param2);
 	}
 	else if (FStrEq(sub_command, "addilevel"))
 	{
 		if (argc != 4) invalid_args = true;
-		else ProcessAddLevelType(MANI_IMMUNITY_TYPE, player_ptr, param1, param2);
+		else ProcessAddLevelType(IMMUNITY, player_ptr, param1, param2);
 	}	
 	else if (FStrEq(sub_command, "removeagroup"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveGroupType(MANI_ADMIN_TYPE, player_ptr, param1);
+		else ProcessRemoveGroupType(ADMIN, player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removeigroup"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveGroupType(MANI_IMMUNITY_TYPE, player_ptr, param1);
+		else ProcessRemoveGroupType(IMMUNITY, player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removealevel"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveLevelType(MANI_ADMIN_TYPE, player_ptr, param1);
+		else ProcessRemoveLevelType(ADMIN, player_ptr, param1);
 	}
 	else if (FStrEq(sub_command, "removeilevel"))
 	{
 		if (argc != 3) invalid_args = true;
-		else ProcessRemoveLevelType(MANI_IMMUNITY_TYPE, player_ptr, param1);
+		else ProcessRemoveLevelType(IMMUNITY, player_ptr, param1);
 	}	
 	else if (FStrEq(sub_command, "status"))
 	{
@@ -7982,20 +4112,17 @@ SCON_COMMAND(ma_clientgroup, 2223, MaClientGroup, true);
 //---------------------------------------------------------------------------------
 // Purpose: Con command for setting admin flags
 //---------------------------------------------------------------------------------
-SCON_COMMAND(ma_setadminflag, 0, MaSetAdminFlag, true);
+SCON_COMMAND(ma_setflag, 0, MaSetFlag, true);
 
 //---------------------------------------------------------------------------------
 // Purpose: Handle ma_clientgroup command
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiClient::ProcessMaReloadClients(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	client_index;
-	bool	invalid_args = false;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!IsAdminAllowed(player_ptr, command_name, ALLOW_CLIENT_ADMIN, war_mode, &client_index)) return PLUGIN_STOP;
+		if (!this->HasAccess(player_ptr->index, ADMIN, ADMIN_CLIENT_ADMIN)) return PLUGIN_BAD_ADMIN;
 	}
 
 	this->Init();
@@ -8273,30 +4400,3515 @@ void	ManiClient::InitAdminFlags(void)
 
 }
 
-static int sort_admin_level ( const void *m1,  const void *m2) 
+//---------------------------------------------------------------------------------
+// Purpose: Add custom flag and write flag descriptors
+//---------------------------------------------------------------------------------
+bool ManiClient::AddFlagDesc(const char *class_name, const char *flag_name, const char *description, bool	replace_description)
 {
-	struct admin_level_t *mi1 = (struct admin_level_t *) m1;
-	struct admin_level_t *mi2 = (struct admin_level_t *) m2;
-	return mi1->level_id - mi2->level_id;
+	if (flag_desc_list.AddFlag(class_name, flag_name, description, replace_description))
+	{
+		flag_desc_list.WriteFlags();
+	}
+
+	if (gpManiDatabase->GetDBEnabled())
+	{
+		SQLProcessBlock *ptr = new SQLAddFlagDesc();
+		ptr->in_params.AddParam("description", description);
+		ptr->in_params.AddParam("class_type", class_name);
+		ptr->in_params.AddParam("flag_id", flag_name);
+		client_sql_manager->AddRequest(ptr);
+	}
+
+	return true;
 }
 
-static int sort_immunity_level ( const void *m1,  const void *m2) 
+//---------------------------------------------------------------------------------
+// Purpose: Add Mani Admin Plugin built in flags
+//---------------------------------------------------------------------------------
+void	ManiClient::AddBuiltInFlags(void)
 {
-	struct immunity_level_t *mi1 = (struct immunity_level_t *) m1;
-	struct immunity_level_t *mi2 = (struct immunity_level_t *) m2;
-	return mi1->level_id - mi2->level_id;
+	// Admin class first
+	flag_desc_list.AddFlag(ADMIN, ADMIN_GIMP, Translate(NULL, 1500));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_KICK, Translate(NULL, 1501));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON, Translate(NULL, 1502));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON_MENU1, Translate(NULL, 1503));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON_MENU2, Translate(NULL, 1504));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON_MENU3, Translate(NULL, 1505));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_EXPLODE, Translate(NULL, 1506));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SLAY, Translate(NULL, 1507));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_BAN, Translate(NULL, 1508));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SAY, Translate(NULL, 1509));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CHAT, Translate(NULL, 1510));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_PSAY, Translate(NULL, 1511));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CHANGEMAP, Translate(NULL, 1512));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_PLAYSOUND, Translate(NULL, 1513));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RESTRICT_WEAPON, Translate(NULL, 1514));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CONFIG, Translate(NULL, 1515));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CEXEC, Translate(NULL, 1516));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CEXEC_MENU, Translate(NULL, 1517));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_BLIND, Translate(NULL, 1518));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SLAP, Translate(NULL, 1519));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_FREEZE, Translate(NULL, 1520));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_TELEPORT, Translate(NULL, 1521));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_DRUG, Translate(NULL, 1522));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SWAP, Translate(NULL, 1523));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RCON_VOTE, Translate(NULL, 1524));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_MENU_RCON_VOTE, Translate(NULL, 1525));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RANDOM_MAP_VOTE, Translate(NULL, 1526));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_MAP_VOTE, Translate(NULL, 1527));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_QUESTION_VOTE, Translate(NULL, 1528));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_MENU_QUESTION_VOTE, Translate(NULL, 1529));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CANCEL_VOTE, Translate(NULL, 1530));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_ACCEPT_VOTE, Translate(NULL, 1531));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_MA_RATES, Translate(NULL, 1532));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_BURN, Translate(NULL, 1533));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_NO_CLIP, Translate(NULL, 1534));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_WAR, Translate(NULL, 1535));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_MUTE, Translate(NULL, 1536));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RESET_ALL_RANKS, Translate(NULL, 1537));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CASH, Translate(NULL, 1538));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_RCONSAY, Translate(NULL, 1539));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SKINS, Translate(NULL, 1540));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SETSKINS, Translate(NULL, 1541));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_DROPC4, Translate(NULL, 1542));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SET_FLAG, Translate(NULL, 1543));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_COLOUR, Translate(NULL, 1544));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_TIMEBOMB, Translate(NULL, 1545));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_FIREBOMB, Translate(NULL, 1546));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_FREEZEBOMB, Translate(NULL, 1547));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_HEALTH, Translate(NULL, 1548));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_BEACON, Translate(NULL, 1549));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_GIVE, Translate(NULL, 1550));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_BASIC_ADMIN, Translate(NULL, 1551));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_CLIENT_ADMIN, Translate(NULL, 1552));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_PERM_BAN, Translate(NULL, 1553));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_SPRAY_TAG, Translate(NULL, 1554));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_GRAVITY, Translate(NULL, 1555));
+
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_GIMP, Translate(NULL, 1700));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_KICK, Translate(NULL, 1701));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_SLAY, Translate(NULL, 1702));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_BAN, Translate(NULL, 1703));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_CEXEC, Translate(NULL, 1704));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_BLIND, Translate(NULL, 1705));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_SLAP, Translate(NULL, 1706));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_FREEZE, Translate(NULL, 1707));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_TELEPORT, Translate(NULL, 1708));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_DRUG, Translate(NULL, 1709));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_SWAP, Translate(NULL, 1710));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_TAG, Translate(NULL, 1711));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_BALANCE, Translate(NULL, 1712));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_BURN, Translate(NULL, 1713));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_MUTE, Translate(NULL, 1714));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_RESERVE, Translate(NULL, 1715));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_SETSKIN, Translate(NULL, 1716));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_RESERVE_SKIN, Translate(NULL, 1717));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_TIMEBOMB, Translate(NULL, 1718));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_FIREBOMB, Translate(NULL, 1719));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_FREEZEBOMB, Translate(NULL, 1720));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_BEACON, Translate(NULL, 1721));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_GHOST, Translate(NULL, 1722));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_GIVE, Translate(NULL, 1723));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_COLOUR, Translate(NULL, 1724));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_GRAVITY, Translate(NULL, 1725));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_AUTOJOIN, Translate(NULL, 1726));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_AFK, Translate(NULL, 1727));
+	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_PING, Translate(NULL, 1728));
+
 }
 
-static int sort_player_admin_level ( const void *m1,  const void *m2) 
+//---------------------------------------------------------------------------------
+// Purpose: Checks if a player on the server has access
+//---------------------------------------------------------------------------------
+bool	 ManiClient::HasAccess
+(
+ player_t *player_ptr, 
+ const char *class_type, 
+ const char *flag_name,
+ bool check_war,
+ bool check_unmasked_only
+ )
 {
-	struct player_level_t *mi1 = (struct player_level_t *) m1;
-	struct player_level_t *mi2 = (struct player_level_t *) m2;
-	return mi1->level_id - mi2->level_id;
+	if (check_war)
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Command is disabled in war mode");
+		return false;
+	}
+
+	int index = FindClientIndex(player_ptr);
+	if (index == -1)
+	{
+		return false;
+	}
+
+	// Found a client, look for flag now
+	ClientPlayer *client_ptr = c_list[index];
+
+	// Get unmasked access first
+	bool unmasked_access = client_ptr->unmasked_list.IsFlagSet(class_type, flag_name);
+
+	if (!unmasked_access) 
+	{
+		return false;
+	}
+
+	if (check_unmasked_only) return true;
+
+	if (!client_ptr->level_list.IsEmpty())
+	{
+		// Need to check masked access too
+		if (client_ptr->masked_list.IsFlagSet(class_type, flag_name))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
+
+//---------------------------------------------------------------------------------
+// Purpose: Checks if client has access to functionality
+//---------------------------------------------------------------------------------
+bool	 ManiClient::HasAccess
+(
+ int  player_index, 
+ const char *class_type, 
+ const char *flag_name,
+ bool check_war,
+ bool check_unmasked_only
+ )
+{
+	if (player_index < 1 || player_index > max_players) return false;
+
+	if (check_war)
+	{
+		player_t player;
+
+		player.index = player_index;
+		if (FindPlayerByIndex(&player))
+		{
+			OutputHelpText(ORANGE_CHAT, &player, "Mani Admin Plugin: Command is disabled in war mode");
+		}
+
+		return false;
+	}
+
+	// Found a client, look for flag now
+	if (!active_client_list[player_index - 1]) return false;
+
+	ClientPlayer *client_ptr = active_client_list[player_index - 1];
+
+	// Get unmasked access first
+	bool unmasked_access = client_ptr->unmasked_list.IsFlagSet(class_type, flag_name);
+	if (!unmasked_access) 
+	{
+		return false;
+	}
+
+	if (check_unmasked_only) return true;
+
+	if (!client_ptr->level_list.IsEmpty())
+	{
+		// Need to check masked access too
+		if (client_ptr->masked_list.IsFlagSet(class_type, flag_name))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Free's up memory for an access list
+//---------------------------------------------------------------------------------
+int	ManiClient::FindClientIndex
+(
+ player_t *player_ptr
+ )
+{
+	if (player_ptr->is_bot)
+	{
+		return -1;
+	}
+
+	const char *password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
+
+	//Search through admin list for match
+	for (int i = 0; i != (int) c_list.size(); i ++)
+	{
+		// Check Steam ID
+		if (c_list[i]->steam_list.Find(player_ptr->steam_id))
+		{
+			return i;
+		}
+
+		// Check IP address
+		if (c_list[i]->ip_address_list.Find(player_ptr->ip_address))
+		{
+			return i;
+		}
+
+		// Check name password combo
+		if (c_list[i]->GetPassword() && 
+			strcmp(c_list[i]->GetPassword(), password) == 0 &&
+			c_list[i]->nick_list.Find(player_ptr->name))
+		{
+			return i;
+		}	
+	}
+
+	return -1;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Sets up the unmasked flag accesses for a client
+//---------------------------------------------------------------------------------
+void	ManiClient::SetupUnMasked(void)
+{
+	// Loop through all client lists
+	for (int i = 0; i != (int) c_list.size(); i++)
+	{
+		ClientPlayer *client_ptr = c_list[i];
+
+		// Kill unmasked list if already setup
+		client_ptr->unmasked_list.Kill();
+		client_ptr->unmasked_list.Copy(client_ptr->personal_flag_list);
+
+		// Search groups that this client is a member of
+		const char *group_id = NULL;
+		for (const char *c_type = client_ptr->group_list.FindFirst(&group_id); c_type != NULL; c_type = client_ptr->group_list.FindNext(&group_id))
+		{
+			GlobalGroupFlag *g_flag = group_list.Find(c_type, group_id);
+			if (g_flag)
+			{
+				// Found a group for this client so OR in the flags
+				for(const char *flag_id = g_flag->FindFirst(); flag_id != NULL; flag_id = g_flag->FindNext())
+				{
+					client_ptr->unmasked_list.SetFlag(c_type, flag_id, true);
+				}
+			}
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Sets up the masked flag accesses for a client
+//---------------------------------------------------------------------------------
+void	ManiClient::SetupMasked(void)
+{
+	mask_level_t	*mask_list = NULL;
+	int				mask_list_size = 0;
+
+	// Loop through all clients on server
+	for (int i = 0; i < max_players; i++)
+	{
+		if (active_client_list[i] != NULL)
+		{
+			// Found a client
+			ClientPlayer *client_ptr = active_client_list[i];
+			client_ptr->masked_list.Kill();
+
+			const char *c_type1 = NULL;
+			for (int level_id = client_ptr->level_list.FindFirst(&c_type1); level_id != -99999; level_id = client_ptr->level_list.FindNext(&c_type1))
+			{
+				// Has levels setup !!
+				if (level_id > -1)
+				{
+					AddToList((void **) &mask_list, sizeof(mask_level_t), &mask_list_size);
+					mask_level_t	*mask_ptr = &(mask_list[mask_list_size - 1]);
+
+					mask_ptr->client_ptr = active_client_list[i];
+					mask_ptr->level_id = level_id;
+					Q_strcpy(mask_ptr->class_type, c_type1);
+				}
+			}
+		}
+	}
+
+	if (mask_list_size == 0)
+	{
+		// Nothing to do
+		return;
+	}
+
+	// Sort mask list
+	qsort(mask_list, mask_list_size, sizeof(mask_level_t), sort_mask_list);
+
+	for (int i = 0; i < mask_list_size; i ++)
+	{
+		for (int j = i; j < mask_list_size; j++)
+		{
+			if (strcmp(mask_list[j].class_type, mask_list[i].class_type) != 0)
+			{
+				break;
+			}
+
+			if (mask_list[j].level_id > mask_list[i].level_id)
+			{
+				// Found a candidate to apply the mask to
+				ClientPlayer *mclient_ptr = mask_list[j].client_ptr;
+
+				GlobalGroupFlag *g_flag = level_list.Find(mask_list[i].class_type, mask_list[i].level_id);
+				if (g_flag)
+				{
+					// Found a group for this client so OR in the flags
+					for(const char *flag_id = g_flag->FindFirst(); flag_id != NULL; flag_id = g_flag->FindNext())
+					{
+						// Set the clients masked flag enabled to true
+						mclient_ptr->masked_list.SetFlag(mask_list[i].class_type, flag_id, true);
+					}
+				}
+			}
+		}
+	}
+
+	FreeList((void **) &mask_list, &mask_list_size);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the super new style admin flags
+//---------------------------------------------------------------------------------
+void	ManiClient::LoadClients(void)
+{
+	char	core_filename[256];
+	char	version_string[32];
+	ManiKeyValues *kv_ptr;
+
+	kv_ptr = new ManiKeyValues("clients.txt");
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
+
+	if (!kv_ptr->ReadFile(core_filename))
+	{
+		MMsg("Failed to load %s\n", core_filename);
+		kv_ptr->DeleteThis();
+		return;
+	}
+
+	// clients.txt key
+	read_t *rd_ptr = kv_ptr->GetPrimaryKey();
+	if (!rd_ptr)
+	{
+		kv_ptr->DeleteThis();
+		return;
+	}
+
+	Q_strcpy(version_string, kv_ptr->GetString("version", "NONE"));
+	if (strcmp(version_string, "NONE") == 0)
+	{
+		kv_ptr->DeleteThis();
+		// Load old style clients (will be saved in new format)
+		// Call old style
+		this->LoadClientsBeta();
+		this->WriteClients();
+		return;
+	}
+
+	// Find groups
+	read_t *groups_ptr = kv_ptr->FindKey(rd_ptr, "groups");
+	if (groups_ptr)
+	{
+		// Read in the groups
+		this->ReadGroups(kv_ptr, groups_ptr, true);
+	}
+
+	// Find levels 
+	read_t *levels_ptr = kv_ptr->FindKey(rd_ptr, "levels");
+	if (levels_ptr)
+	{
+		// Read in the levels
+		this->ReadGroups(kv_ptr, levels_ptr, false);
+	}
+
+	// Find players
+	read_t *players_ptr = kv_ptr->FindKey(rd_ptr, "players");
+	if (players_ptr)
+	{
+		this->ReadPlayers(kv_ptr, players_ptr);
+	}
+
+	kv_ptr->DeleteThis();
+
+	// Calculates each clients unmasked flags (flags without levels applied)
+	SetupUnMasked();
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the super new style admin flags
+//---------------------------------------------------------------------------------
+void	ManiClient::ReadGroups
+(
+ ManiKeyValues *kv_ptr,
+ read_t	*read_ptr,
+ bool	group_type
+)
+{
+	for (;;)
+	{
+		read_t	*class_ptr = kv_ptr->GetNextKey(read_ptr);
+		if (class_ptr == NULL)
+		{
+			return;
+		}
+
+		for (;;)
+		{
+			char *class_name = class_ptr->sub_key_name;
+			kv_ptr->ResetKeyIndex();
+
+			for (;;)
+			{
+				char *name = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&name);
+				// Value = Flag string (multiple flags in a string)
+				// Name = Group ID
+				if (value == NULL)
+				{
+					// No more flags for this class
+					break;
+				}
+
+				int i = 0;
+				// Get individual flags
+				for (;;)
+				{
+					char *flag_id = SplitFlagString(value, &i);
+					if (flag_id == NULL)
+					{
+						break;
+					}
+
+					if (flag_desc_list.IsValidFlag(class_name, flag_id))
+					{
+						// Create/Update group/level
+						if (group_type)
+						{
+							GlobalGroupFlag *g_flag = group_list.AddGroup(class_name, name);
+							if (g_flag)
+							{
+								g_flag->SetFlag(flag_id, true);
+							}
+						}
+						else
+						{
+							GlobalGroupFlag *g_flag = level_list.AddGroup(class_name, atoi(name));
+							if (g_flag)
+							{
+								g_flag->SetFlag(flag_id, true);
+							}
+						}
+					}
+				}
+			}
+
+			class_ptr = kv_ptr->GetNextKey(read_ptr);
+			if (!class_ptr)
+			{
+				break;
+			}
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Takes a string an picks out the individual flags (not thread safe!)
+//---------------------------------------------------------------------------------
+char	*ManiClient::SplitFlagString(char *flags_ptr, int *index)
+{
+	static	char	flag_name[4096];
+
+	// Skip space seperators
+	while (flags_ptr[*index] == ';' || flags_ptr[*index] == ' ' || flags_ptr[*index] == '\t')
+	{
+		*index = *index + 1;
+	}
+
+	if (flags_ptr[*index] == '\0') return NULL;
+	int	i = 0;
+
+	while (flags_ptr[*index] != ' ' && 
+		flags_ptr[*index] != ';' && 
+		flags_ptr[*index] != '\t' && 
+		flags_ptr[*index] != '\0')
+	{
+		flag_name[i++] = flags_ptr[*index];
+		*index = *index + 1;
+	}
+
+	flag_name[i] = '\0';
+
+	return flag_name;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the players details
+//---------------------------------------------------------------------------------
+void	ManiClient::ReadPlayers
+(
+ ManiKeyValues *kv_ptr,
+ read_t	*read_ptr
+)
+{
+	char	temp_string[256];
+
+	for (;;)
+	{
+		// Get Player unique id {Client_1_1}
+		read_t	*player_ptr = kv_ptr->GetNextKey(read_ptr);
+		if (player_ptr == NULL)
+		{
+			return;
+		}
+
+		// Add a new client
+		ClientPlayer *client_ptr = new ClientPlayer;
+		c_list.push_back(client_ptr);
+
+		// Do simple stuff first
+		client_ptr->SetEmailAddress(kv_ptr->GetString("email", ""));
+		client_ptr->SetName(kv_ptr->GetString("name", ""));
+		client_ptr->SetPassword(kv_ptr->GetString("password", ""));
+		client_ptr->SetNotes(kv_ptr->GetString("notes", ""));
+
+		/* Handle single steam id */
+		Q_strcpy(temp_string, kv_ptr->GetString("steam", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->steam_list.Add(temp_string);
+		}
+
+
+		/* Handle single ip */
+		Q_strcpy(temp_string, kv_ptr->GetString("ip", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->ip_address_list.Add(temp_string);
+		}
+
+		/* Handle single nickname */
+		Q_strcpy(temp_string, kv_ptr->GetString("nick", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->nick_list.Add(temp_string);
+		}
+
+		// Steam IDs
+		if (kv_ptr->FindKey(player_ptr, "steam"))
+		{
+			kv_ptr->ResetKeyIndex();
+			for (;;)
+			{
+				char *name = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&name);
+				if (value == NULL)
+				{
+					// No more steam ids
+					break;
+				}
+
+				client_ptr->steam_list.Add(value);
+			}
+		}
+
+		// IP Addresses
+		if (kv_ptr->FindKey(player_ptr, "ip"))
+		{
+			kv_ptr->ResetKeyIndex();
+			for (;;)
+			{
+				char *name = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&name);
+				if (value == NULL)
+				{
+					// No more ip addresses
+					break;
+				}
+
+				client_ptr->ip_address_list.Add(value);
+			}
+		}
+
+		// Player nicknames
+		if (kv_ptr->FindKey(player_ptr, "nick"))
+		{
+			kv_ptr->ResetKeyIndex();
+			for (;;)
+			{
+				char *name = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&name);
+				if (value == NULL)
+				{
+					// No more nick names
+					break;
+				}
+
+				client_ptr->nick_list.Add(value);
+			}
+		}
+
+		// Player groups
+		if (kv_ptr->FindKey(player_ptr, "groups"))
+		{
+			kv_ptr->ResetKeyIndex();
+			for (;;)
+			{
+				char *name = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&name);
+				if (value == NULL)
+				{
+					// No more groups
+					break;
+				}
+
+
+				if (group_list.Find(name, value))
+				{
+					client_ptr->group_list.Add(name, value);
+				}
+			}
+		}
+
+		// Player levels
+		if (kv_ptr->FindKey(player_ptr, "levels"))
+		{
+			kv_ptr->ResetKeyIndex();
+			for (;;)
+			{
+				char *name = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&name);
+				if (value == NULL)
+				{
+					// No more groups
+					break;
+				}
+
+				int level_id = atoi(value);
+
+				client_ptr->level_list.Add(name, level_id);
+			}
+		}
+
+		// Last but not least we need to do the personal flags
+		if (kv_ptr->FindKey(player_ptr, "flags"))
+		{
+			kv_ptr->ResetKeyIndex();
+			for (;;)
+			{
+				char *class_type = NULL;
+				char *value = kv_ptr->GetNextKeyValue(&class_type);
+				if (value == NULL)
+				{
+					// No more flags
+					break;
+				}
+
+				int i = 0;
+
+				// Get individual flags
+				for (;;)
+				{
+					char *flag_id = SplitFlagString(value, &i);
+					if (flag_id == NULL)
+					{
+						break;
+					}
+
+					if (flag_desc_list.IsValidFlag(class_type, flag_id))
+					{
+						// Create flag
+						client_ptr->personal_flag_list.SetFlag(class_type, flag_id, true);
+					}
+				}
+			}
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Writes to the clients.txt file based on data in memory
+//---------------------------------------------------------------------------------
+void		ManiClient::WriteClients(void)
+{
+	char temp_string[2048];
+
+	char	core_filename[256];
+	ManiKeyValues *client;
+
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
+
+	client = new ManiKeyValues( "clients.txt" );
+
+	if (!client->WriteStart(core_filename))
+	{
+		MMsg("Failed to write %s\n", core_filename);
+		delete client;
+		return;
+	}
+
+	client->WriteKey("version", "1");
+	client->WriteCR();
+	client->WriteComment("This key group lists all your client players");
+	client->WriteNewSubKey("players");
+
+//	MMsg("Writing %i client(s)\n",  c_list_size);
+	// Loop through all clients
+	for (int i = 0; i != (int) c_list.size(); i ++)
+	{
+		ClientPlayer *client_ptr = c_list[i];
+
+		if (!client_ptr->GetName() || FStrEq(client_ptr->GetName(), ""))
+		{
+			// No name set up
+			if (gpManiDatabase->GetDBEnabled())
+			{
+				/* Need unique name !! */
+				snprintf(temp_string, sizeof(temp_string), "Client_%i_%s", i+1, 
+					gpManiDatabase->GetServerGroupID());
+			}
+			else
+			{
+				snprintf(temp_string, sizeof(temp_string), "Client_%i", i+1);
+			}
+
+			client_ptr->SetName(temp_string);
+		}
+		else
+		{
+			snprintf(temp_string, sizeof(temp_string), "%s", client_ptr->GetName());
+		}
+
+		client->WriteComment("This must be a unique client name");
+		client->WriteNewSubKey(temp_string);
+
+		if (client_ptr->GetEmailAddress()) client->WriteKey("email", client_ptr->GetEmailAddress());
+		if (client_ptr->GetName())
+		{
+			client->WriteComment("Client real name");
+			client->WriteKey("name", client_ptr->GetName());
+		}
+		if (client_ptr->GetPassword()) client->WriteKey("password", client_ptr->GetPassword());
+		if (client_ptr->GetNotes()) client->WriteKey("notes", client_ptr->GetNotes());
+		if (client_ptr->steam_list.Size() == 1) 
+		{
+			client->WriteComment("Steam ID for client");
+			client->WriteKey("steam", client_ptr->steam_list.FindFirst());
+		}
+		if (client_ptr->ip_address_list.Size() == 1) client->WriteKey("ip", client_ptr->ip_address_list.FindFirst());
+		if (client_ptr->nick_list.Size() == 1) client->WriteKey("nick", client_ptr->nick_list.FindFirst());
+
+		// Write Steam IDs if needed.
+		if (client_ptr->steam_list.Size() > 1)
+		{
+			client->WriteComment("This sub key is for multiple steam ids");
+			client->WriteNewSubKey("steam");
+			
+			int j = 1;
+			for (const char *steam_id = client_ptr->steam_list.FindFirst(); steam_id != NULL; steam_id = client_ptr->steam_list.FindNext())
+			{
+				snprintf(temp_string, sizeof(temp_string), "steam%i", j++);
+				client->WriteKey(temp_string, steam_id);
+			}
+
+			client->WriteEndSubKey();
+		}
+
+		// Write IP Addresses if needed.
+		if (client_ptr->ip_address_list.Size() > 1)
+		{
+			client->WriteComment("This sub key is for multiple ip addresses");
+			client->WriteNewSubKey("ip");
+
+			int j = 1;
+			for (const char *ip_address = client_ptr->ip_address_list.FindFirst(); ip_address != NULL; ip_address = client_ptr->ip_address_list.FindNext())
+			{
+				snprintf(temp_string, sizeof(temp_string), "IP%i", j++);
+				client->WriteKey(temp_string, ip_address);
+			}
+
+			client->WriteEndSubKey();
+		}
+
+		// Write Player Nicknames if needed.
+		if (client_ptr->nick_list.Size() > 1)
+		{
+			client->WriteComment("This sub key is for multiple player nick names");
+			client->WriteNewSubKey("nick");
+
+			int j = 1;
+			for (const char *nick = client_ptr->nick_list.FindFirst(); nick != NULL; nick = client_ptr->nick_list.FindNext())
+			{
+				snprintf(temp_string, sizeof(temp_string), "nick%i", j++);
+				client->WriteKey(temp_string, nick);
+			}
+
+			client->WriteEndSubKey();
+		}
+
+		bool found_flags = false;
+		for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+		{
+			bool start_flag = true;
+			while(client_ptr->personal_flag_list.CatFlags(temp_string, c_type, 60, start_flag))
+			{
+				if (!found_flags)
+				{
+					client->WriteComment("These are personal access flags for a player");
+					client->WriteNewSubKey("flags");
+					found_flags = true;
+				}
+
+				if (start_flag)
+				{
+					start_flag = false;
+				}
+
+				client->WriteKey(c_type, temp_string);
+			}
+		}
+
+		if (found_flags) client->WriteEndSubKey();
+
+		// Write out the groups we belong to 
+		if (!client_ptr->group_list.IsEmpty())
+		{
+			client->WriteNewSubKey("groups");
+			const char *group_id = NULL;
+			for (const char *c_type = client_ptr->group_list.FindFirst(&group_id); c_type != NULL; c_type = client_ptr->group_list.FindNext(&group_id))
+			{
+				client->WriteKey(c_type, group_id);
+			}
+			client->WriteEndSubKey();
+		}
+
+		// Write out the levels we belong to 
+		if (!client_ptr->level_list.IsEmpty())
+		{
+			client->WriteNewSubKey("levels");
+			const char *c_type = NULL;
+			for (int level_id = client_ptr->level_list.FindFirst(&c_type); level_id != -99999; level_id = client_ptr->level_list.FindNext(&c_type))
+			{
+				client->WriteKey(c_type, level_id);
+			}
+
+			client->WriteEndSubKey();
+		}
+
+		client->WriteEndSubKey();
+
+		if (i != ((int) c_list.size() - 1))
+		{
+			// Pad out the spacing between players
+			client->WriteCR();
+		}
+	}
+
+	// End Players
+	client->WriteEndSubKey();
+	client->WriteCR();
+
+	// Need to write out our global groups and levels now
+	bool written_primary_key = false;
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		bool new_class_type = true;
+
+		const DualStriKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = group_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = group_list.FindNext(c_type, &key_value))
+		{
+			if (!written_primary_key)
+			{
+				client->WriteComment("These are global groups of flags that can be assigned to clients");
+				client->WriteNewSubKey("groups");
+				written_primary_key = true;
+			}
+
+			bool start = true;
+			while(g_flag->CatFlags(temp_string, 60, start))
+			{
+				start = false;
+				if (new_class_type)
+				{
+                    // Write key 'Admin', 'Immunity' etc
+					client->WriteNewSubKey(c_type);
+					new_class_type = false;
+				}
+
+				// Write each flag
+				client->WriteKey(key_value->key2, temp_string);
+			}
+		}
+
+		if (!new_class_type)
+		{
+			// Write class type end of key
+			client->WriteEndSubKey();
+		}
+	}
+
+	if (written_primary_key)
+	{
+			client->WriteEndSubKey();
+			client->WriteCR();
+	}
+
+	written_primary_key = false;
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		bool new_class_type = true;
+
+		const DualStrIntKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = level_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = level_list.FindNext(c_type, &key_value))
+		{
+			if (!written_primary_key)
+			{
+				client->WriteComment("These are global groups of flags that can be assigned to clients");
+				client->WriteNewSubKey("levels");
+				written_primary_key = true;
+			}
+
+			bool start = true;
+			while(g_flag->CatFlags(temp_string, 60, start))
+			{
+				start = false;
+				if (new_class_type)
+				{
+                    // Write key 'Admin', 'Immunity' etc
+					client->WriteNewSubKey(c_type);
+					new_class_type = false;
+				}
+
+				// Write each flag
+				char str_key[32];
+
+				snprintf(str_key, sizeof(str_key), "%d", key_value->key2);
+				client->WriteKey(str_key, temp_string);
+			}
+		}
+
+		if (!new_class_type)
+		{
+			// Write class type end of key
+			client->WriteEndSubKey();
+		}
+	}
+
+	if (written_primary_key)
+	{
+			client->WriteEndSubKey();
+			client->WriteCR();
+	}
+
+	client->WriteEnd();
+
+	delete client;
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the new style admin flags from Pre Beta RC2
+//---------------------------------------------------------------------------------
+void	ManiClient::LoadClientsBeta(void)
+{
+	char	core_filename[256];
+	bool found_match;
+	KeyValues *base_key_ptr;
+
+//	MMsg("*********** Loading admin section of clients.txt ************\n");
+	// Read the clients.txt file
+
+	KeyValues *kv_ptr = new KeyValues("clients.txt");
+
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
+	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
+	{
+		MMsg("Failed to load clients.txt\n");
+		kv_ptr->deleteThis();
+		return;
+	}
+
+	//////////////////////////////////////////////
+	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+	if (!base_key_ptr)
+	{
+//		MMsg("No true subkey found\n");
+		kv_ptr->deleteThis();
+		return;
+	}
+
+	found_match = false;
+
+	// Find our groups first
+	for (;;)
+	{
+		if (FStrEq(base_key_ptr->GetName(), "admingroups"))
+		{
+			found_match = true;
+			break;
+		}
+
+		base_key_ptr = base_key_ptr->GetNextKey();
+		if (!base_key_ptr)
+		{
+			break;
+		}
+	}
+
+	if (found_match)
+	{
+		// Get all the groups in
+		GetAdminGroupsBeta(base_key_ptr);
+	}
+
+	//////////////////////////////////////////////
+	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+	if (!base_key_ptr)
+	{
+//		MMsg("No true subkey found\n");
+		kv_ptr->deleteThis();
+		return;
+	}
+
+	found_match = false;
+
+	// Find our immunity groups
+	for (;;)
+	{
+		if (FStrEq(base_key_ptr->GetName(), "immunitygroups"))
+		{
+			found_match = true;
+			break;
+		}
+
+		base_key_ptr = base_key_ptr->GetNextKey();
+		if (!base_key_ptr)
+		{
+			break;
+		}
+	}
+
+	if (found_match)
+	{
+		// Get all the groups in
+		GetImmunityGroupsBeta(base_key_ptr);
+	}
+
+	//////////////////////////////////////////////
+	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+	if (!base_key_ptr)
+	{
+//		MMsg("No true subkey found\n");
+		kv_ptr->deleteThis();
+		return;
+	}
+
+	found_match = false;
+
+	// Find our levels next
+	for (;;)
+	{
+		if (FStrEq(base_key_ptr->GetName(), "adminlevels"))
+		{
+			found_match = true;
+			break;
+		}
+
+		base_key_ptr = base_key_ptr->GetNextKey();
+		if (!base_key_ptr)
+		{
+			break;
+		}
+	}
+
+	if (found_match)
+	{
+		// Get all the levels in
+		GetAdminLevelsBeta(base_key_ptr);
+	}
+
+	//////////////////////////////////////////////
+	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+	if (!base_key_ptr)
+	{
+//		MMsg("No true subkey found\n");
+		kv_ptr->deleteThis();
+		return;
+	}
+
+	found_match = false;
+
+	// Find our levels next
+	for (;;)
+	{
+		if (FStrEq(base_key_ptr->GetName(), "immunitylevels"))
+		{
+			found_match = true;
+			break;
+		}
+
+		base_key_ptr = base_key_ptr->GetNextKey();
+		if (!base_key_ptr)
+		{
+			break;
+		}
+	}
+
+	if (found_match)
+	{
+		// Get all the levels in
+		GetImmunityLevelsBeta(base_key_ptr);
+	}
+
+	//////////////////////////////////////////////
+	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
+	if (!base_key_ptr)
+	{
+//		MMsg("No true subkey found\n");
+		kv_ptr->deleteThis();
+		return;
+	}
+
+	found_match = false;
+
+	// Find our clients next
+	for (;;)
+	{
+		if (FStrEq(base_key_ptr->GetName(), "players"))
+		{
+			found_match = true;
+			break;
+		}
+
+		base_key_ptr = base_key_ptr->GetNextKey();
+		if (!base_key_ptr)
+		{
+			break;
+		}
+	}
+
+	if (found_match)
+	{
+		// Get all the clients in
+		GetClientsBeta(base_key_ptr);
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the new style admin groups from Pre Beta 1.2RC2
+//---------------------------------------------------------------------------------
+void	ManiClient::GetAdminGroupsBeta(KeyValues *ptr)
+{
+	KeyValues *kv_ptr;
+	char	flag_string[4096];
+	char	group_name[128];
+	admin_group_t	admin_group;
+
+	kv_ptr = ptr->GetFirstValue();
+	if (!kv_ptr)
+	{
+		return;
+	}
+
+	for (;;)
+	{
+		Q_memset(&admin_group, 0, sizeof(admin_group_t));
+
+		Q_strcpy(group_name, kv_ptr->GetName());
+		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+		Q_strcpy(admin_group.group_id, group_name);
+
+		if (!FStrEq("NULL", flag_string))
+		{
+			int flag_string_index = 0;
+
+			while(flag_string[flag_string_index] != '\0')
+			{
+				char *flag_name = this->SplitFlagString(flag_string, &flag_string_index);
+				if (flag_name != NULL)
+				{
+					if (flag_desc_list.IsValidFlag(ADMIN, flag_name))
+					{
+						GlobalGroupFlag *g_flag = group_list.AddGroup(ADMIN, admin_group.group_id);
+						if (g_flag)
+						{
+							g_flag->SetFlag(flag_name, true);
+						}
+					}
+				}
+			}
+		}
+
+		kv_ptr = kv_ptr->GetNextValue();
+		if (!kv_ptr)
+		{
+			break;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the new style immunity groups from Pre Beta 1.2RC2
+//---------------------------------------------------------------------------------
+void	ManiClient::GetImmunityGroupsBeta(KeyValues *ptr)
+{
+	KeyValues *kv_ptr;
+	char	flag_string[4096];
+	char	group_name[128];
+	immunity_group_t	immunity_group;
+
+	kv_ptr = ptr->GetFirstValue();
+	if (!kv_ptr)
+	{
+		return;
+	}
+
+	for (;;)
+	{
+		Q_memset(&immunity_group, 0, sizeof(immunity_group_t));
+
+		Q_strcpy(group_name, kv_ptr->GetName());
+		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+		Q_strcpy(immunity_group.group_id, group_name);
+
+		if (!FStrEq("NULL", flag_string))
+		{
+			int flag_string_index = 0;
+
+			while(flag_string[flag_string_index] != '\0')
+			{
+				char *flag_name = this->SplitFlagString(flag_string, &flag_string_index);
+				if (flag_name != NULL)
+				{
+					if (flag_desc_list.IsValidFlag("Immunity", flag_name))
+					{
+						GlobalGroupFlag *g_flag = group_list.AddGroup(IMMUNITY, immunity_group.group_id);
+						if (g_flag)
+						{
+							g_flag->SetFlag(flag_name, true);
+						}
+					}
+				}
+			}
+		}
+
+		kv_ptr = kv_ptr->GetNextValue();
+		if (!kv_ptr)
+		{
+			break;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the new style admin levels Pre Beta RC2
+//---------------------------------------------------------------------------------
+void	ManiClient::GetAdminLevelsBeta(KeyValues *ptr)
+{
+	KeyValues *kv_ptr;
+	char	flag_string[4096];
+
+	kv_ptr = ptr->GetFirstValue();
+	if (!kv_ptr)
+	{
+		return;
+	}
+
+	for (;;)
+	{
+		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+
+		if (!FStrEq("NULL", flag_string))
+		{
+			int flag_string_index = 0;
+
+			while(flag_string[flag_string_index] != '\0')
+			{
+				char *flag_name = this->SplitFlagString(flag_string, &flag_string_index);
+				if (flag_name != NULL)
+				{
+					if (flag_desc_list.IsValidFlag(ADMIN, flag_name))
+					{
+						GlobalGroupFlag *g_flag = level_list.AddGroup(ADMIN, atoi(kv_ptr->GetName()));
+						if (g_flag)
+						{
+							g_flag->SetFlag(flag_name, true);
+						}
+					}
+				}
+			}
+		}
+
+		kv_ptr = kv_ptr->GetNextValue();
+		if (!kv_ptr)
+		{
+			break;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the new style immunity levels pre Beta 1.2RC2
+//---------------------------------------------------------------------------------
+void	ManiClient::GetImmunityLevelsBeta(KeyValues *ptr)
+{
+	KeyValues *kv_ptr;
+	char	flag_string[4096];
+
+	kv_ptr = ptr->GetFirstValue();
+	if (!kv_ptr)
+	{
+		return;
+	}
+
+	for (;;)
+	{
+		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+
+		if (!FStrEq("NULL", flag_string))
+		{
+			int flag_string_index = 0;
+
+			while(flag_string[flag_string_index] != '\0')
+			{
+				char *flag_name = this->SplitFlagString(flag_string, &flag_string_index);
+				if (flag_name != NULL)
+				{
+					if (flag_desc_list.IsValidFlag(ADMIN, flag_name))
+					{
+						GlobalGroupFlag *g_flag = level_list.AddGroup(IMMUNITY, atoi(kv_ptr->GetName()));
+						if (g_flag)
+						{
+							g_flag->SetFlag(flag_name, true);
+						}
+					}
+				}
+			}
+		}
+
+		kv_ptr = kv_ptr->GetNextValue();
+		if (!kv_ptr)
+		{
+			break;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Loads into memory the new style clients flags Pre Beta 1.2RC2
+// This will upgrade the old style clients.txt file to be stored in the new format
+//---------------------------------------------------------------------------------
+void	ManiClient::GetClientsBeta(KeyValues *ptr)
+{
+	KeyValues *players_ptr;
+	KeyValues *kv_ptr;
+	KeyValues *temp_ptr;
+
+	char	flag_string[4096];
+	char	temp_string[256];
+	ClientPlayer	*client_ptr;
+
+	// Should be at key 'players'
+	players_ptr = ptr->GetFirstSubKey();
+	if (!players_ptr)
+	{
+		return;
+	}
+
+	for (;;)
+	{
+		client_ptr = (ClientPlayer *) new ClientPlayer;
+		c_list.push_back(client_ptr);
+
+		kv_ptr = players_ptr;
+
+		// Do simple stuff first
+		client_ptr->SetEmailAddress(kv_ptr->GetString("email"));
+		int admin_level_id = kv_ptr->GetInt("admin_level", -1);
+		if (admin_level_id != -1)
+		{
+			client_ptr->level_list.Add(ADMIN, admin_level_id);
+		}
+
+		int immunity_level_id = kv_ptr->GetInt("immunity_level", -1);
+		if (immunity_level_id != -1)
+		{
+			client_ptr->level_list.Add(IMMUNITY, immunity_level_id);
+		}
+
+		client_ptr->SetName(kv_ptr->GetString("name"));
+		client_ptr->SetPassword(kv_ptr->GetString("password"));
+		client_ptr->SetNotes(kv_ptr->GetString("notes"));
+
+		/* Handle single steam id */
+		Q_strcpy(temp_string, kv_ptr->GetString("steam", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->steam_list.Add(temp_string);
+		}
+
+
+		/* Handle single ip */
+		Q_strcpy(temp_string, kv_ptr->GetString("ip", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->ip_address_list.Add(temp_string);
+		}
+
+		/* Handle single nickname */
+		Q_strcpy(temp_string, kv_ptr->GetString("nick", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->nick_list.Add(temp_string);
+		}
+
+		/* Handle single admin group */
+		Q_strcpy(temp_string, kv_ptr->GetString("admingroups", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->group_list.Add(ADMIN, temp_string);
+		}
+
+		/* Handle single immunity group */
+		Q_strcpy(temp_string, kv_ptr->GetString("immunitygroups", ""));
+		if (!FStrEq(temp_string, ""))
+		{
+			client_ptr->group_list.Add(IMMUNITY, temp_string);
+		}
+
+		// Steam IDs
+		temp_ptr = kv_ptr->FindKey("steam", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					client_ptr->steam_list.Add(temp_ptr->GetString());
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		// IP Addresses
+		temp_ptr = kv_ptr->FindKey("ip", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					client_ptr->ip_address_list.Add(temp_ptr->GetString());
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		// Player nicknames
+		temp_ptr = kv_ptr->FindKey("nick", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					client_ptr->nick_list.Add(temp_ptr->GetString());
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		// Admin Groups 
+		temp_ptr = kv_ptr->FindKey("admingroups", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					if (group_list.Find(ADMIN, temp_ptr->GetString()))
+					{
+						client_ptr->group_list.Add(ADMIN, temp_ptr->GetString());
+					}
+
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		// Immunity Groups 
+		temp_ptr = kv_ptr->FindKey("immunitygroups", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					if (group_list.Find(IMMUNITY, temp_ptr->GetString()))
+					{
+						client_ptr->group_list.Add(IMMUNITY, temp_ptr->GetString());
+					}
+
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		// do the admin flags 
+		temp_ptr = kv_ptr->FindKey("adminflags", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					Q_strcpy(flag_string, temp_ptr->GetString(NULL, "NULL"));
+					if (!FStrEq("NULL", flag_string))
+					{
+						int flag_string_index = 0;
+
+						while(flag_string[flag_string_index] != '\0')
+						{
+							char *flag_id = this->SplitFlagString(flag_string, &flag_string_index);
+							if (flag_id != NULL)
+							{
+								if (flag_desc_list.IsValidFlag(ADMIN, flag_id))
+								{
+									// Create flag
+									client_ptr->personal_flag_list.SetFlag(ADMIN, flag_id, true);
+								}
+							}
+						}
+					}
+
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		// Do the immunity flags
+		temp_ptr = kv_ptr->FindKey("immunityflags", false);
+		if (temp_ptr)
+		{
+			temp_ptr = temp_ptr->GetFirstValue();
+			if (temp_ptr)
+			{
+				for (;;)
+				{
+					Q_strcpy(flag_string, temp_ptr->GetString(NULL, "NULL"));
+					if (!FStrEq("NULL", flag_string))
+					{
+						int flag_string_index = 0;
+
+						while(flag_string[flag_string_index] != '\0')
+						{
+							char *flag_id = this->SplitFlagString(flag_string, &flag_string_index);
+							if (flag_id != NULL)
+							{
+								if (flag_desc_list.IsValidFlag(IMMUNITY, flag_id))
+								{
+									// Create flag
+									client_ptr->personal_flag_list.SetFlag(IMMUNITY, flag_id, true);
+								}
+							}
+						}
+					}
+
+					temp_ptr = temp_ptr->GetNextValue();
+					if (!temp_ptr)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		players_ptr = players_ptr->GetNextKey();
+		if (!players_ptr)
+		{
+			break;
+		}
+	}
+
+	// Calculates each clients unmasked flags (flags without levels applied)
+	SetupUnMasked();
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Checks index of player to see if they are a client
+//---------------------------------------------------------------------------------
+bool	ManiClient::IsClient(int id)
+{
+	if (id < 1 || id > max_players) return false;
+	return ((active_client_list[id - 1] == NULL) ? false:true);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Finds a user by name and updates their user_id 
+//---------------------------------------------------------------------------------
+void	ManiClient::UpdateClientUserID(const int user_id, const char *name)
+{
+	for (int i = 0; i != (int) c_list.size(); i++)
+	{
+		if (strcmp(c_list[i]->GetName(), name) == 0)
+		{
+			c_list[i]->SetUserID(user_id);
+			break;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Menus for client admin
+//---------------------------------------------------------------------------------
+int ClientOrGroupItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+
+	if (!this->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp("client", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(ClientOptionPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("group", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(GroupOptionPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("level", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(LevelOptionPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientOrGroupPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2601));
+	this->SetTitle("%s", Translate(player_ptr, 2602));
+
+	MENUOPTION_CREATE(ClientOrGroupItem, 2603, client);
+	MENUOPTION_CREATE(ClientOrGroupItem, 2604, group);
+	MENUOPTION_CREATE(ClientOrGroupItem, 2605, level);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int GroupOptionItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+
+	if (!this->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp("update", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(GroupClassTypePage, player_ptr, AddParam("sub_option", "update"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("add", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ChooseClassTypePage, player_ptr, AddParam("sub_option", "add_group_type"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(GroupRemovePage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("client", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(GroupClassTypePage, player_ptr, AddParam("sub_option", "client"), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool GroupOptionPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2610));
+	this->SetTitle("%s", Translate(player_ptr, 2611));
+
+	MENUOPTION_CREATE(GroupOptionItem, 2612, update);
+	MENUOPTION_CREATE(GroupOptionItem, 2613, add);
+	MENUOPTION_CREATE(GroupOptionItem, 2614, remove);
+	MENUOPTION_CREATE(GroupOptionItem, 2615, client);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int GroupClassTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *class_type;
+	char *group_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("group_id", &group_id) ||
+		!m_page_ptr->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp(sub_option, "update") == 0)
+	{
+		MENUPAGE_CREATE_PARAM2(GroupUpdatePage, player_ptr, AddParam("class_type", class_type), AddParam("group_id", group_id), 0, -1);
+	}
+	else if (strcmp(sub_option, "client") == 0)
+	{
+		MENUPAGE_CREATE_PARAM2(GroupClientPage, player_ptr, AddParam("class_type", class_type), AddParam("group_id", group_id), 0, -1);
+	}
+
+	return NEW_MENU;
+}
+
+bool GroupClassTypePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2630));
+	this->SetTitle("%s", Translate(player_ptr, 2631));
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		const DualStriKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = gpManiClient->group_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = gpManiClient->group_list.FindNext(c_type, &key_value))
+		{
+			MenuItem *ptr = new GroupClassTypeItem();
+			ptr->params.AddParam("class_type", key_value->key1);
+			ptr->params.AddParam("group_id", key_value->key2);
+			ptr->SetDisplayText("%s -> %s", key_value->key1, key_value->key2);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+
+//---------------------------------------------------------------------------------
+int GroupRemoveItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *group_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("group_id", &group_id)) return CLOSE_MENU;
+
+	gpManiClient->ProcessRemoveGroupType(class_type, player_ptr, group_id);
+	return REPOP_MENU;
+}
+
+bool GroupRemovePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2710));
+	this->SetTitle("%s", Translate(player_ptr, 2711));
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		const DualStriKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = gpManiClient->group_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = gpManiClient->group_list.FindNext(c_type, &key_value))
+		{
+			MenuItem *ptr = new GroupRemoveItem();
+			ptr->params.AddParam("class_type", key_value->key1);
+			ptr->params.AddParam("group_id", key_value->key2);
+			ptr->SetDisplayText("%s -> %s", key_value->key1, key_value->key2);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int GroupUpdateItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *group_id;
+	char *flag_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("group_id", &group_id) ||
+		!this->params.GetParam("flag_id", &flag_id)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddGroupType(class_type, player_ptr, group_id, flag_id);
+	return REPOP_MENU;
+}
+
+bool GroupUpdatePage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *class_type;
+	char *group_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("group_id", &group_id)) return false;
+
+	GlobalGroupFlag *g_flag = gpManiClient->group_list.Find(class_type, group_id);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2640));
+	this->SetTitle("%s", Translate(player_ptr, 2641, "%s%s", class_type, group_id));
+
+	MenuItem *ptr = new GroupUpdateItem();
+	ptr->params.AddParam("class_type", class_type);
+	ptr->params.AddParam("group_id", group_id);
+	ptr->params.AddParam("flag_id", "+#");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 2642));
+	ptr->SetHiddenText("1");
+	this->AddItem(ptr);
+
+	ptr = new GroupUpdateItem();
+	ptr->params.AddParam("class_type", class_type);
+	ptr->params.AddParam("group_id", group_id);
+	ptr->params.AddParam("flag_id", "-#");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 2643));
+	ptr->SetHiddenText("2");
+	this->AddItem(ptr);
+
+	// Search for flags we can use for this type
+	const DualStrKey *key_value = NULL;
+	for (const char *desc = gpManiClient->flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = gpManiClient->flag_desc_list.FindNext(class_type, &key_value))
+	{
+		if (strcmp(key_value->key1, class_type) == 0)
+		{
+			ptr = new GroupUpdateItem();
+
+			if (g_flag && g_flag->IsFlagSet(key_value->key2))
+			{
+				ptr->SetDisplayText("* %s", desc);
+				ptr->params.AddParamVar("flag_id", "-%s", key_value->key2);
+			}
+			else
+			{
+				ptr->SetDisplayText("%s", desc);
+				ptr->params.AddParamVar("flag_id", "+%s", key_value->key2);
+			}
+
+			ptr->params.AddParam("class_type", class_type);
+			ptr->params.AddParam("group_id", group_id);
+			ptr->SetHiddenText("%s", desc);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortHidden();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int LevelOptionItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+
+	if (!this->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp("update", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(LevelClassTypePage, player_ptr, AddParam("sub_option", "update"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("add", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ChooseClassTypePage, player_ptr, AddParam("sub_option", "add_level_type"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(LevelRemovePage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("client", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(LevelClassTypePage, player_ptr, AddParam("sub_option", "client"), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool LevelOptionPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2620));
+	this->SetTitle("%s", Translate(player_ptr, 2621));
+
+	MENUOPTION_CREATE(LevelOptionItem, 2622, update);
+	MENUOPTION_CREATE(LevelOptionItem, 2623, add);
+	MENUOPTION_CREATE(LevelOptionItem, 2624, remove);
+	MENUOPTION_CREATE(LevelOptionItem, 2625, client);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int LevelClassTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *sub_option;
+	int	 level_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("level_id", &level_id) ||
+		!m_page_ptr->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp(sub_option, "update") == 0)
+	{
+		MENUPAGE_CREATE_PARAM2(LevelUpdatePage, player_ptr, AddParam("class_type", class_type), AddParam("level_id", level_id), 0, -1);
+	}
+	else if (strcmp(sub_option, "client") == 0)
+	{
+		MENUPAGE_CREATE_PARAM2(LevelClientPage, player_ptr, AddParam("class_type", class_type), AddParam("level_id", level_id), 0, -1);
+	}
+
+	return NEW_MENU;
+}
+
+bool LevelClassTypePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2650));
+	this->SetTitle("%s", Translate(player_ptr, 2651));
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		const DualStrIntKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = gpManiClient->level_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = gpManiClient->level_list.FindNext(c_type, &key_value))
+		{
+			MenuItem *ptr = new LevelClassTypeItem();
+			ptr->params.AddParam("class_type", key_value->key1);
+			ptr->params.AddParam("level_id", key_value->key2);
+			ptr->SetDisplayText("%s -> %i", key_value->key1, key_value->key2);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int LevelClientItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *name;
+	bool add;
+	int	 level_id;
+
+	if (!m_page_ptr->params.GetParam("class_type", &class_type) ||
+		!m_page_ptr->params.GetParam("level_id", &level_id) ||
+		!this->params.GetParam("add", &add) ||
+		!this->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	char level_id_str[16];
+	snprintf(level_id_str, sizeof(level_id_str), "%i", level_id);
+
+	if (add)
+	{
+		gpManiClient->ProcessSetLevel(class_type, player_ptr, name, level_id_str);
+	}
+	else
+	{
+		gpManiClient->ProcessSetLevel(class_type, player_ptr, name, "-1");
+	}
+
+	return REPOP_MENU;
+}
+
+bool LevelClientPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *class_type;
+	int	level_id;
+
+	this->params.GetParam("class_type", &class_type);
+	this->params.GetParam("level_id", &level_id);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2730));
+	this->SetTitle("%s", Translate(player_ptr, 2731, "%s%i", class_type, level_id));
+
+	MenuItem *ptr;
+	for (int i = 0; i != (int) gpManiClient->c_list.size(); i ++)
+	{
+		ClientPlayer *c_ptr = gpManiClient->c_list[i];
+		ptr = new LevelClientItem();
+
+		int old_level_id = c_ptr->level_list.FindFirst(class_type);
+		if (old_level_id != -99999)
+		{
+			ptr->SetDisplayText("* %s -> Level %i", c_ptr->name.str, old_level_id);
+			ptr->params.AddParam("add", false);
+		}
+		else
+		{
+			ptr->SetDisplayText("%s", c_ptr->name.str);
+			ptr->params.AddParam("add", true);
+		}
+
+		ptr->params.AddParam("name", c_ptr->name.str);
+		ptr->SetHiddenText("%s", c_ptr->name.str);
+		this->AddItem(ptr);
+	}
+
+	this->SortHidden();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int GroupClientItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *name;
+	bool add;
+	char *group_id;
+
+	if (!m_page_ptr->params.GetParam("class_type", &class_type) ||
+		!m_page_ptr->params.GetParam("group_id", &group_id) ||
+		!this->params.GetParam("add", &add) ||
+		!this->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	if (add)
+	{
+		gpManiClient->ProcessAddGroup(class_type, player_ptr, name, group_id);
+	}
+	else
+	{
+		gpManiClient->ProcessRemoveGroup(class_type, player_ptr, name, group_id);
+	}
+
+	return REPOP_MENU;
+}
+
+bool GroupClientPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *class_type;
+	char *group_id;
+
+	this->params.GetParam("class_type", &class_type);
+	this->params.GetParam("group_id", &group_id);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2720));
+	this->SetTitle("%s", Translate(player_ptr, 2721, "%s%s", class_type, group_id));
+
+	MenuItem *ptr;
+	for (int i = 0; i != (int) gpManiClient->c_list.size(); i ++)
+	{
+		ClientPlayer *c_ptr = gpManiClient->c_list[i];
+		ptr = new GroupClientItem();
+
+		if (c_ptr->group_list.Find(class_type, group_id))
+		{
+			ptr->SetDisplayText("* %s", c_ptr->name.str);
+			ptr->params.AddParam("add", false);
+		}
+		else
+		{
+			ptr->SetDisplayText("%s", c_ptr->name.str);
+			ptr->params.AddParam("add", true);
+		}
+
+		ptr->params.AddParam("name", c_ptr->name.str);
+		ptr->SetHiddenText("%s", c_ptr->name.str);
+		this->AddItem(ptr);
+	}
+
+	this->SortHidden();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int LevelRemoveItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	int	 level_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("level_id", &level_id)) return CLOSE_MENU;
+
+	char level_id_str[16];
+
+	snprintf(level_id_str, sizeof(level_id_str), "%i", level_id);
+	gpManiClient->ProcessRemoveLevelType(class_type, player_ptr, level_id_str);
+	return REPOP_MENU;
+}
+
+bool LevelRemovePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2701));
+	this->SetTitle("%s", Translate(player_ptr, 2701));
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		const DualStrIntKey *key_value = NULL;
+		for (GlobalGroupFlag *g_flag = gpManiClient->level_list.FindFirst(c_type, &key_value); g_flag != NULL; g_flag = gpManiClient->level_list.FindNext(c_type, &key_value))
+		{
+			MenuItem *ptr = new LevelClassTypeItem();
+			ptr->params.AddParam("class_type", key_value->key1);
+			ptr->params.AddParam("level_id", key_value->key2);
+			ptr->SetDisplayText("%s -> %i", key_value->key1, key_value->key2);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int LevelUpdateItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	int	level_id;
+	char *flag_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("level_id", &level_id) ||
+		!this->params.GetParam("flag_id", &flag_id)) return CLOSE_MENU;
+
+	char level_id_str[16];
+
+	snprintf(level_id_str, sizeof(level_id_str), "%i", level_id);
+	gpManiClient->ProcessAddLevelType(class_type, player_ptr, level_id_str, flag_id);
+	return REPOP_MENU;
+}
+
+bool LevelUpdatePage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *class_type;
+	int	level_id;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("level_id", &level_id)) return false;
+
+	GlobalGroupFlag *g_flag = gpManiClient->level_list.Find(class_type, level_id);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2660));
+	this->SetTitle("%s", Translate(player_ptr, 2661, "%s%i", class_type, level_id));
+
+	MenuItem *ptr = new LevelUpdateItem();
+	ptr->params.AddParam("class_type", class_type);
+	ptr->params.AddParam("level_id", level_id);
+	ptr->params.AddParam("flag_id", "+#");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 2642));
+	ptr->SetHiddenText("1");
+	this->AddItem(ptr);
+
+	ptr = new LevelUpdateItem();
+	ptr->params.AddParam("class_type", class_type);
+	ptr->params.AddParam("level_id", level_id);
+	ptr->params.AddParam("flag_id", "-#");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 2643));
+	ptr->SetHiddenText("2");
+	this->AddItem(ptr);
+
+	// Search for flags we can use for this type
+	const DualStrKey *key_value = NULL;
+	for (const char *desc = gpManiClient->flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = gpManiClient->flag_desc_list.FindNext(class_type, &key_value))
+	{
+		if (strcmp(key_value->key1, class_type) == 0)
+		{
+			ptr = new LevelUpdateItem();
+
+			if (g_flag && g_flag->IsFlagSet(key_value->key2))
+			{
+				ptr->SetDisplayText("* %s", desc);
+				ptr->params.AddParamVar("flag_id", "-%s", key_value->key2);
+			}
+			else
+			{
+				ptr->SetDisplayText("%s", desc);
+				ptr->params.AddParamVar("flag_id", "+%s", key_value->key2);
+			}
+
+			ptr->params.AddParam("class_type", class_type);
+			ptr->params.AddParam("level_id", level_id);
+			ptr->SetHiddenText("%s", desc);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortHidden();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ChooseClassTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *sub_option;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!m_page_ptr->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp(sub_option, "add_level_type") == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(CreateLevelPage, player_ptr, AddParam("class_type", class_type), 0, -1);
+	}
+	else if (strcmp(sub_option, "add_group_type") == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(CreateGroupPage, player_ptr, AddParam("class_type", class_type), 0, -1);
+	}
+
+	return NEW_MENU;
+}
+
+bool ChooseClassTypePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2670));
+	this->SetTitle("%s", Translate(player_ptr, 2671));
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		MenuItem *ptr = new ChooseClassTypeItem();
+		ptr->params.AddParam("class_type", c_type);
+		ptr->SetDisplayText("%s", c_type);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int CreateLevelItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+
+	if (!m_page_ptr->params.GetParam("class_type", &class_type)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddLevelType(class_type, player_ptr, (char *) gpCmd->Cmd_Args(), "");
+	return PREVIOUS_MENU;
+}
+
+bool CreateLevelPage::PopulateMenuPage(player_t *player_ptr)
+{
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2680));
+	this->SetTitle("%s", Translate(player_ptr, 2681));
+
+	MenuItem *ptr = new CreateLevelItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int CreateGroupItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+
+	if (!m_page_ptr->params.GetParam("class_type", &class_type)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddGroupType(class_type, player_ptr, (char *) gpCmd->Cmd_Args(), "");
+	return PREVIOUS_MENU;
+}
+
+bool CreateGroupPage::PopulateMenuPage(player_t *player_ptr)
+{
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2690));
+	this->SetTitle("%s", Translate(player_ptr, 2691));
+
+	MenuItem *ptr = new CreateGroupItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ClientOptionItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+
+	if (!this->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp("update", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SelectClientPage, player_ptr, AddParam("sub_option", "update"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("add", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(AddClientOptionPage, player_ptr, AddParam("sub_option", "add"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SelectClientPage, player_ptr, AddParam("sub_option", "remove"), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("show", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SelectClientPage, player_ptr, AddParam("sub_option", "show"), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientOptionPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2740));
+	this->SetTitle("%s", Translate(player_ptr, 2741));
+
+	MENUOPTION_CREATE(ClientOptionItem, 2742, update);
+	MENUOPTION_CREATE(ClientOptionItem, 2743, add);
+	MENUOPTION_CREATE(ClientOptionItem, 2744, remove);
+	MENUOPTION_CREATE(ClientOptionItem, 2745, show);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SelectClientItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *name;
+
+	if (!this->params.GetParam("name", &name) ||
+		!m_page_ptr->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp(sub_option, "update") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ClientUpdateOptionPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(sub_option, "remove") == 0)
+	{
+		gpManiClient->ProcessRemoveClient(player_ptr, name);
+		return REPOP_MENU;
+	}
+	else if (strcmp(sub_option, "show") == 0)
+	{
+		gpManiClient->ProcessClientStatus(player_ptr, name);
+		return REPOP_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool SelectClientPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2750));
+	this->SetTitle("%s", Translate(player_ptr, 2751));
+
+	for (int i = 0; i != (int) gpManiClient->c_list.size(); i++)
+	{
+		ClientPlayer *c_ptr = gpManiClient->c_list[i];
+
+		MenuItem *ptr = new SelectClientItem();
+		ptr->params.AddParam("name", c_ptr->name.str);
+		ptr->SetDisplayText("%s", c_ptr->name.str);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ClientUpdateOptionItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *name;
+
+	if (!this->params.GetParam("sub_option", &sub_option) ||
+		!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	if (strcmp("set_name", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ClientNamePage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("add_steam", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ClientSteamPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("set_flags", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SetPersonalClassPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove_steam", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(RemoveSteamPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("add_ip", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ClientIPPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove_ip", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(RemoveIPPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("add_nick", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(ClientNickPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove_nick", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(RemoveNickPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("set_password", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(SetPasswordPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("remove_password", sub_option) == 0)
+	{
+		gpManiClient->ProcessSetPassword(player_ptr, name, "");
+		return REPOP_MENU;
+	}
+	else if (strcmp("set_email", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(SetEmailPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("set_notes", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(SetNotesPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientUpdateOptionPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char temp_string[128];
+	char *name;
+	this->params.GetParam("name", &name);
+
+	int client_index = gpManiClient->FindClientIndex(name);
+	if (client_index == -1)
+	{
+		return false;
+	}
+
+	this->SetEscLink("%s", Translate(player_ptr, 2760));
+	this->SetTitle("%s", Translate(player_ptr, 2761, "%s", name));
+
+	MENUOPTION_CREATE(ClientUpdateOptionItem, 2773, set_flags);
+	MENUOPTION_CREATE(ClientUpdateOptionItem, 2762, set_name);
+
+	ClientPlayer *c_ptr = gpManiClient->c_list[client_index];
+
+	MenuItem *ptr = new ClientUpdateOptionItem();
+
+	Q_strcpy(temp_string, "");
+	int l_size = (int) c_ptr->steam_list.Size();
+	if (l_size != 0)
+	{
+		if (l_size > 1)
+		{
+			snprintf(temp_string, sizeof(temp_string), " | %s,...", c_ptr->steam_list.FindFirst());
+		}
+		else
+		{
+			snprintf(temp_string, sizeof(temp_string), " | %s", c_ptr->steam_list.FindFirst());
+		}
+	}
+
+	ptr->params.AddParam("sub_option", "add_steam");
+	ptr->SetDisplayText("%s%s", Translate(player_ptr, 2763), temp_string);
+	this->AddItem(ptr);
+
+	MENUOPTION_CREATE(ClientUpdateOptionItem, 2764, remove_steam);
+
+	ptr = new ClientUpdateOptionItem();
+	Q_strcpy(temp_string, "");
+	l_size = c_ptr->ip_address_list.Size();
+	if (l_size != 0)
+	{
+		if (l_size > 1)
+		{
+			snprintf(temp_string, sizeof(temp_string), " | %s,...", c_ptr->ip_address_list.FindFirst());
+		}
+		else
+		{
+			snprintf(temp_string, sizeof(temp_string), " | %s", c_ptr->ip_address_list.FindFirst());
+		}
+	}
+
+	ptr->params.AddParam("sub_option", "add_ip");
+	ptr->SetDisplayText("%s%s", Translate(player_ptr, 2765), temp_string);
+	this->AddItem(ptr);
+
+	MENUOPTION_CREATE(ClientUpdateOptionItem, 2766, remove_ip);
+
+	ptr = new ClientUpdateOptionItem();
+	Q_strcpy(temp_string, "");
+	l_size = c_ptr->nick_list.Size();
+	if (l_size != 0)
+	{
+		if (l_size > 1)
+		{
+			snprintf(temp_string, sizeof(temp_string), " | %s,...", c_ptr->nick_list.FindFirst());
+		}
+		else
+		{
+			snprintf(temp_string, sizeof(temp_string), " | %s", c_ptr->nick_list.FindFirst());
+		}
+	}
+
+	ptr->params.AddParam("sub_option", "add_nick");
+	ptr->SetDisplayText("%s%s", Translate(player_ptr, 2767), temp_string);
+	this->AddItem(ptr);
+
+	MENUOPTION_CREATE(ClientUpdateOptionItem, 2768, remove_nick);
+
+	ptr = new ClientUpdateOptionItem();
+	Q_strcpy(temp_string, "");
+	if (c_ptr->password.str && strcmp(c_ptr->password.str, "") != 0)
+	{
+		if (snprintf(temp_string, 15, " | %s", c_ptr->password.str) == 15)
+		{
+			strcat(temp_string, "...");
+		}
+	}
+	
+	ptr->params.AddParam("sub_option", "set_password");
+	ptr->SetDisplayText("%s%s", Translate(player_ptr, 2769), temp_string);
+	this->AddItem(ptr);
+
+	MENUOPTION_CREATE(ClientUpdateOptionItem, 2770, remove_password);
+
+	ptr = new ClientUpdateOptionItem();
+	Q_strcpy(temp_string, "");
+	if (c_ptr->email_address.str && strcmp(c_ptr->email_address.str, "") != 0)
+	{
+		if (snprintf(temp_string, 15, " | %s", c_ptr->email_address.str) == 15)
+		{
+			strcat(temp_string, "...");
+		}
+	}
+	
+	ptr->params.AddParam("sub_option", "set_email");
+	ptr->SetDisplayText("%s%s", Translate(player_ptr, 2771), temp_string);
+	this->AddItem(ptr);
+
+	ptr = new ClientUpdateOptionItem();
+	Q_strcpy(temp_string, "");
+	if (c_ptr->notes.str && strcmp(c_ptr->notes.str, "") != 0)
+	{
+		if (snprintf(temp_string, 15, " | %s", c_ptr->notes.str) == 15)
+		{
+			strcat(temp_string, "...");
+		}
+	}
+	
+	ptr->params.AddParam("sub_option", "set_notes");
+	ptr->SetDisplayText("%s%s", Translate(player_ptr, 2772), temp_string);
+	this->AddItem(ptr);
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetNotesItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return false;
+
+	gpManiClient->ProcessSetNotes(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetNotesPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return false;
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2840));
+	this->SetTitle("%s", Translate(player_ptr, 2841, "%s", name));
+
+	MenuItem *ptr = new SetNotesItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetEmailItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	gpManiClient->ProcessSetEmail(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetEmailPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2830));
+	this->SetTitle("%s", Translate(player_ptr, 2831, "%s", name));
+
+	MenuItem *ptr = new SetEmailItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetPasswordItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	gpManiClient->ProcessSetPassword(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetPasswordPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2820));
+	this->SetTitle("%s", Translate(player_ptr, 2821, "%s", name));
+
+	MenuItem *ptr = new SetPasswordItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ClientNameItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *name;
+
+	if (!this->params.GetParam("sub_option", &sub_option) ||
+		!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	if (strcmp("type_name", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(SetNamePage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("player", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(PlayerNamePage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientNamePage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2850));
+	this->SetTitle("%s", Translate(player_ptr, 2851, "%s", name));
+
+	MENUOPTION_CREATE(ClientNameItem, 2852, type_name);
+	MENUOPTION_CREATE(ClientNameItem, 2853, player);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetNameItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	gpManiClient->ProcessSetName(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetNamePage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return false;
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2780));
+	this->SetTitle("%s", Translate(player_ptr, 2781, "%s", name));
+
+	MenuItem *ptr = new SetNameItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int PlayerNameItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	int user_id;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("user_id", &user_id)) return CLOSE_MENU;
+
+	player_t player;
+	player.user_id = user_id;
+	if (!FindPlayerByUserID(&player)) return PREVIOUS_MENU;
+	gpManiClient->ProcessSetName(player_ptr, name, player.name);
+	return PREVIOUS_MENU;
+}
+
+bool PlayerNamePage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2920));
+	this->SetTitle("%s", Translate(player_ptr, 2921, "%s", name));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+
+		// Ignore unicode players
+		bool found_unicode = false;
+		for (int j = 0; j < Q_strlen(player.name); j++)
+		{
+			if (player.name[j] & 0x80)
+			{
+				found_unicode = true;
+				break;
+			}
+		}
+
+		if (found_unicode) continue;
+
+		MenuItem *ptr = new PlayerNameItem();
+		ptr->params.AddParam("user_id", player.user_id);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ClientSteamItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *name;
+
+	if (!this->params.GetParam("sub_option", &sub_option) ||
+		!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	if (strcmp("type_name", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(SetSteamPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("player", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(PlayerSteamPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientSteamPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2860));
+	this->SetTitle("%s", Translate(player_ptr, 2861, "%s", name));
+
+	MENUOPTION_CREATE(ClientSteamItem, 2862, type_name);
+	MENUOPTION_CREATE(ClientSteamItem, 2863, player);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetSteamItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+	gpManiClient->ProcessAddSteam(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetSteamPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return false;
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2790));
+	this->SetTitle("%s", Translate(player_ptr, 2791, "%s", name));
+
+	MenuItem *ptr = new SetSteamItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int PlayerSteamItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *steam_id;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("steam_id", &steam_id)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddSteam(player_ptr, name, steam_id);
+	return PREVIOUS_MENU;
+}
+
+bool PlayerSteamPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2920));
+	this->SetTitle("%s", Translate(player_ptr, 2921, "%s", name));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		if (strcmp(player.steam_id, "STEAM_ID_PENDING") == 0) continue;
+		if (strcmp(player.steam_id, "STEAM_ID_LAN") == 0) continue;
+		MenuItem *ptr = new PlayerSteamItem();
+		ptr->params.AddParam("steam_id", player.steam_id);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ClientIPItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *name;
+
+	if (!this->params.GetParam("sub_option", &sub_option) ||
+		!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	if (strcmp("type_name", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(SetIPPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("player", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(PlayerIPPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientIPPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2870));
+	this->SetTitle("%s", Translate(player_ptr, 2871, "%s", name));
+
+	MENUOPTION_CREATE(ClientIPItem, 2872, type_name);
+	MENUOPTION_CREATE(ClientIPItem, 2873, player);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetIPItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+	gpManiClient->ProcessAddIP(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetIPPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return false;
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2800));
+	this->SetTitle("%s", Translate(player_ptr, 2801, "%s", name));
+
+	MenuItem *ptr = new SetIPItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int PlayerIPItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *ip;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("ip", &ip)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddIP(player_ptr, name, ip);
+	return PREVIOUS_MENU;
+}
+
+bool PlayerIPPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2920));
+	this->SetTitle("%s", Translate(player_ptr, 2921, "%s", name));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		MenuItem *ptr = new PlayerIPItem();
+		ptr->params.AddParam("ip", player.ip_address);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int ClientNickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+	char *name;
+
+	if (!this->params.GetParam("sub_option", &sub_option) ||
+		!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	if (strcmp("type_name", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE_PARAM(SetNickPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("player", sub_option) == 0)
+	{
+		MENUPAGE_CREATE_PARAM(PlayerNickPage, player_ptr, AddParam("name", name), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool ClientNickPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2880));
+	this->SetTitle("%s", Translate(player_ptr, 2881, "%s", name));
+
+	MENUOPTION_CREATE(ClientNickItem, 2882, type_name);
+	MENUOPTION_CREATE(ClientNickItem, 2883, player);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetNickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!m_page_ptr->params.GetParam("name", &name)) return CLOSE_MENU;
+	gpManiClient->ProcessAddNick(player_ptr, name, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool SetNickPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return false;
+
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2810));
+	this->SetTitle("%s", Translate(player_ptr, 2811, "%s", name));
+
+	MenuItem *ptr = new SetNickItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int PlayerNickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *nick;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("nick", &nick)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddNick(player_ptr, name, nick);
+	return PREVIOUS_MENU;
+}
+
+bool PlayerNickPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2920));
+	this->SetTitle("%s", Translate(player_ptr, 2921, "%s", name));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		MenuItem *ptr = new PlayerNickItem();
+		ptr->params.AddParam("nick", player.name);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int RemoveSteamItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *steam_id;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("steam_id", &steam_id)) return CLOSE_MENU;
+
+	gpManiClient->ProcessRemoveSteam(player_ptr, name, steam_id);
+	return PREVIOUS_MENU;
+}
+
+bool RemoveSteamPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2890));
+	this->SetTitle("%s", Translate(player_ptr, 2891, "%s", name));
+
+	int client_index = gpManiClient->FindClientIndex(name);
+	if (client_index == -1) return false;
+
+	ClientPlayer *c_ptr = gpManiClient->c_list[client_index];
+
+	for (const char *steam_id = c_ptr->steam_list.FindFirst(); steam_id != NULL; steam_id = c_ptr->steam_list.FindNext())
+	{
+		MenuItem *ptr = new RemoveSteamItem();
+		ptr->params.AddParam("steam_id", steam_id);
+		ptr->SetDisplayText("%s", steam_id);
+		this->AddItem(ptr);
+	}	
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int RemoveIPItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *ip;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("ip", &ip)) return CLOSE_MENU;
+
+	gpManiClient->ProcessRemoveIP(player_ptr, name, ip);
+	return PREVIOUS_MENU;
+}
+
+bool RemoveIPPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2900));
+	this->SetTitle("%s", Translate(player_ptr, 2901, "%s", name));
+
+	int client_index = gpManiClient->FindClientIndex(name);
+	if (client_index == -1) return false;
+
+	ClientPlayer *c_ptr = gpManiClient->c_list[client_index];
+
+	for (const char *ip = c_ptr->ip_address_list.FindFirst(); ip != NULL; ip = c_ptr->ip_address_list.FindNext())
+	{
+		MenuItem *ptr = new RemoveIPItem();
+		ptr->params.AddParam("ip", ip);
+		ptr->SetDisplayText("%s", ip);
+		this->AddItem(ptr);
+	}	
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int RemoveNickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *nick;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("nick", &nick)) return CLOSE_MENU;
+
+	gpManiClient->ProcessRemoveNick(player_ptr, name, nick);
+	return PREVIOUS_MENU;
+}
+
+bool RemoveNickPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2910));
+	this->SetTitle("%s", Translate(player_ptr, 2911, "%s", name));
+
+	int client_index = gpManiClient->FindClientIndex(name);
+	if (client_index == -1) return false;
+
+	ClientPlayer *c_ptr = gpManiClient->c_list[client_index];
+
+	for (const char *nick = c_ptr->nick_list.FindFirst(); nick != NULL; nick = c_ptr->nick_list.FindNext())
+	{
+		MenuItem *ptr = new RemoveNickItem();
+		ptr->params.AddParam("nick", nick);
+		ptr->SetDisplayText("%s", nick);
+		this->AddItem(ptr);
+	}	
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetPersonalClassItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *class_type;
+
+	if (!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("class_type", &class_type)) return CLOSE_MENU;
+
+	MENUPAGE_CREATE_PARAM2(SetPersonalFlagPage, player_ptr, AddParam("class_type", class_type), AddParam("name", name), 0, -1);
+	return NEW_MENU;
+}
+
+bool SetPersonalClassPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *name;
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 2930));
+	this->SetTitle("%s", Translate(player_ptr, 2931, "%s", name));
+
+	for (const char *c_type = class_type_list.FindFirst(); c_type != NULL; c_type = class_type_list.FindNext())
+	{
+		MenuItem *ptr = new SetPersonalClassItem();
+		ptr->params.AddParam("class_type", c_type);
+		ptr->params.AddParam("name", name);
+		ptr->SetDisplayText("%s", c_type);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SetPersonalFlagItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *class_type;
+	char *name;
+	char *flag_id;
+
+	if (!m_page_ptr->params.GetParam("class_type", &class_type) ||
+		!m_page_ptr->params.GetParam("name", &name) ||
+		!this->params.GetParam("flag_id", &flag_id)) return CLOSE_MENU;
+
+	gpManiClient->ProcessSetFlag(class_type, player_ptr, name, flag_id);
+	return REPOP_MENU;
+}
+
+bool SetPersonalFlagPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *class_type;
+	char *name;
+
+	if (!this->params.GetParam("class_type", &class_type) ||
+		!this->params.GetParam("name", &name)) return false;
+
+	int client_index = gpManiClient->FindClientIndex(name);
+	if (client_index == -1) return false;
+
+	ClientPlayer *c_ptr = gpManiClient->c_list[client_index];
+
+	this->SetEscLink("%s", Translate(player_ptr, 2940));
+	this->SetTitle("%s", Translate(player_ptr, 2941, "%s%s", name, class_type));
+
+	MenuItem *ptr = new SetPersonalFlagItem();
+	ptr->params.AddParam("flag_id", "+#");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 2642));
+	ptr->SetHiddenText("1");
+	this->AddItem(ptr);
+
+	ptr = new SetPersonalFlagItem();
+	ptr->params.AddParam("flag_id", "-#");
+	ptr->SetDisplayText("%s", Translate(player_ptr, 2643));
+	ptr->SetHiddenText("2");
+	this->AddItem(ptr);
+
+	// Search for flags we can use for this type
+	const DualStrKey *key_value = NULL;
+	for (const char *desc = gpManiClient->flag_desc_list.FindFirst(class_type, &key_value); desc != NULL; desc = gpManiClient->flag_desc_list.FindNext(class_type, &key_value))
+	{
+		if (strcmp(key_value->key1, class_type) == 0)
+		{
+			ptr = new SetPersonalFlagItem();
+
+			if (c_ptr->personal_flag_list.IsFlagSet(class_type, key_value->key2))
+			{
+				ptr->SetDisplayText("* %s", desc);
+				ptr->params.AddParamVar("flag_id", "-%s", key_value->key2);
+			}
+			else
+			{
+				ptr->SetDisplayText("%s", desc);
+				ptr->params.AddParamVar("flag_id", "+%s", key_value->key2);
+			}
+
+			ptr->SetHiddenText("%s", desc);
+			this->AddItem(ptr);
+		}
+	}
+
+	this->SortHidden();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int AddClientOptionItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *sub_option;
+
+	if (!this->params.GetParam("sub_option", &sub_option)) return CLOSE_MENU;
+
+	if (strcmp("manual", sub_option) == 0)
+	{
+		INPUTPAGE_CREATE(NewNamePage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("player", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(NameOnServerPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("steam", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(SteamOnServerPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp("ip", sub_option) == 0)
+	{
+		MENUPAGE_CREATE(IPOnServerPage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
+bool AddClientOptionPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2950));
+	this->SetTitle("%s", Translate(player_ptr, 2951));
+
+	MENUOPTION_CREATE(AddClientOptionItem, 2952, manual);
+	MENUOPTION_CREATE(AddClientOptionItem, 2953, player);
+	MENUOPTION_CREATE(AddClientOptionItem, 2954, steam);
+	MENUOPTION_CREATE(AddClientOptionItem, 2955, ip);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int NewNameItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	gpManiClient->ProcessAddClient(player_ptr, (char *) gpCmd->Cmd_Args());
+	return PREVIOUS_MENU;
+}
+
+bool NewNamePage::PopulateMenuPage(player_t *player_ptr)
+{
+	// This is an input object
+	this->SetEscLink("%s", Translate(player_ptr, 2960));
+	this->SetTitle("%s", Translate(player_ptr, 2961));
+
+	MenuItem *ptr = new NewNameItem();
+	this->AddItem(ptr);
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int NameOnServerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+
+	if (!this->params.GetParam("name", &name)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddClient(player_ptr, name);
+	return PREVIOUS_MENU;
+}
+
+bool NameOnServerPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2970));
+	this->SetTitle("%s", Translate(player_ptr, 2971));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		MenuItem *ptr = new NameOnServerItem();
+		ptr->params.AddParam("name", player.name);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int SteamOnServerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *steam_id;
+
+	if (!this->params.GetParam("name", &name) ||
+		!this->params.GetParam("steam_id", &steam_id)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddClient(player_ptr, name);
+	gpManiClient->ProcessAddSteam(player_ptr, name, steam_id);
+	return PREVIOUS_MENU;
+}
+
+bool SteamOnServerPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2980));
+	this->SetTitle("%s", Translate(player_ptr, 2981));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		if (strcmp(player.steam_id, "STEAM_ID_PENDING") == 0) continue;
+		if (strcmp(player.steam_id, "STEAM_ID_LAN") == 0) continue;
+		MenuItem *ptr = new SteamOnServerItem();
+		ptr->params.AddParam("name", player.name);
+		ptr->params.AddParam("steam_id", player.steam_id);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+int IPOnServerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *name;
+	char *ip;
+
+	if (!this->params.GetParam("name", &name) ||
+		!this->params.GetParam("ip", &ip)) return CLOSE_MENU;
+
+	gpManiClient->ProcessAddClient(player_ptr, name);
+	gpManiClient->ProcessAddIP(player_ptr, name, ip);
+	return PREVIOUS_MENU;
+}
+
+bool IPOnServerPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 2990));
+	this->SetTitle("%s", Translate(player_ptr, 2991));
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		MenuItem *ptr = new IPOnServerItem();
+		ptr->params.AddParam("name", player.name);
+		ptr->params.AddParam("ip", player.ip_address);
+		ptr->SetDisplayText("%s", player.name);
+		this->AddItem(ptr);
+	}
+
+	this->SortDisplay();
+	return true;
+}
+
 
 ManiClient	g_ManiClient;
 ManiClient	*gpManiClient;
-
 
 /*
 select c.user_id, c.name, cf.flag_string, cf.type, s.steam_id, n.nick, i.ip_address, cg.group_id, cg.type, cl.level_id, cl.type
@@ -8311,3 +7923,5 @@ where c.user_id = cs.user_id
 and cs.server_group_id = 1
 order by 1, 4, 5,6,7,9, 8, 11, 10
 */
+
+

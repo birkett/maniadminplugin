@@ -124,13 +124,14 @@ bool ManiDatabase::LoadDatabaseFile(void)
 	Q_strcpy(db_tb_level,"level");
 	Q_strcpy(db_tb_client_server,"client_server");
 	Q_strcpy(db_tb_version,"version");
+	db_log_level = 1;
 
 //	MMsg("*********** Loading database.txt ************\n");
 	// Read the database.txt file
 
 	KeyValues *kv_ptr = new KeyValues("database.txt");
 
-	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/database.txt", mani_path.GetString());
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/database.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
 //		MMsg("Failed to load database.txt, no database usage possible\n");
@@ -150,6 +151,7 @@ bool ManiDatabase::LoadDatabaseFile(void)
 	{
 		db_enabled = true;
 	}
+	db_log_level = kv_ptr->GetInt("db_log_level", 1);
 
 	Q_strcpy(db_tb_client, kv_ptr->GetString("db_table_client", "client"));
 	Q_strcpy(db_tb_steam, kv_ptr->GetString("db_table_steam", "steam"));

@@ -65,6 +65,7 @@ public:
 	char	*GetDBTBLevel(void) {return db_tb_level;}
 	char	*GetDBTBClientServer(void) {return db_tb_client_server;}
 	char	*GetDBTBVersion(void) {return db_tb_version;}
+	int		GetDBLogLevel(void) {return db_log_level;}
 
 private:
 
@@ -94,6 +95,7 @@ private:
 	char	db_tb_level[64];
 	char	db_tb_client_server[64];
 	char	db_tb_version[64];
+	int		db_log_level;
 
 	// Game server information (probably in wrong class really)
 	int		server_id;

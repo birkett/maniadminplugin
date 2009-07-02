@@ -59,7 +59,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 // Define Weapons
 static	char	*css_weapons[MANI_MAX_LOG_CSS_WEAPONS] = 

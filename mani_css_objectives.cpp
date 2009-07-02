@@ -61,7 +61,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 ConVar mani_css_objectives ("mani_css_objectives", "0", 0, "0 = css objective punishments disabled, 1 = css objective punishments enabled", true, 0, true, 1);
 
@@ -130,7 +129,7 @@ void ManiCSSObjectives::CSSRoundEnd(int winning_team, const char *message)
 		help_index = 1361;
 	}
 
-	SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(help_index));
+	SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, help_index));
 }
 
 ManiCSSObjectives	g_ManiCSSObjectives;

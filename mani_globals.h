@@ -47,7 +47,7 @@ extern	IVoiceServer *voiceserver;
 extern	ITempEntsSystem *temp_ents;
 extern	IUniformRandomStream *randomStr;
 extern	IEngineTrace *enginetrace;
-extern	ISpatialPartition *partition;
+extern	ISpatialPartition *spatialpartition;
 extern	IServerGameClients *serverclients;
 
 extern	bool g_PluginLoaded;
@@ -69,6 +69,7 @@ extern SourceHook::CallClass<ITempEntsSystem> *temp_ents_cc;
 extern SourceHook::CallClass<IVoiceServer> *voiceserver_cc;
 extern SourceHook::CallClass<IServerGameDLL> *serverdll_cc;
 extern SourceHook::CallClass<ConCommand> *rebuy_cc;
+extern SourceHook::CallClass<ConCommand> *autobuy_cc;
 
 //#endif
 

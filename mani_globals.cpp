@@ -84,7 +84,7 @@ IVoiceServer *voiceserver = NULL;
 ITempEntsSystem *temp_ents = NULL;
 IUniformRandomStream *randomStr = NULL;
 IEngineTrace *enginetrace = NULL;
-ISpatialPartition *partition = NULL;
+ISpatialPartition *spatialpartition = NULL;
 IServerGameClients *serverclients = NULL;
 
 bool g_PluginLoaded = false;
@@ -107,6 +107,7 @@ SourceHook::CallClass<ITempEntsSystem> *temp_ents_cc = NULL;
 SourceHook::CallClass<IVoiceServer> *voiceserver_cc = NULL;
 SourceHook::CallClass<IServerGameDLL> *serverdll_cc = NULL;
 SourceHook::CallClass<ConCommand> *rebuy_cc = NULL;
+SourceHook::CallClass<ConCommand> *autobuy_cc = NULL;
 
 //#endif
 

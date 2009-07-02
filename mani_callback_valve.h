@@ -30,6 +30,13 @@
 
 #include "mani_main.h"
 
+struct interface_data_t
+{
+	char	interface_name[128];
+	char	*ptr;
+	char	base_interface[128];
+};
+
 //---------------------------------------------------------------------------------
 // Purpose: Class definition for Valve callback
 //---------------------------------------------------------------------------------

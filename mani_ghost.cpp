@@ -61,7 +61,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 struct	current_ip_t
 {
@@ -109,19 +108,15 @@ void ManiGhost::Init(void)
 	for (int i = 1; i <= max_players; i++)
 	{
 		player_t	player;
-		int	immunity_index;
 
 		player.index = i;
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.player_info->IsHLTV()) continue;
 		if (player.is_bot) continue;
-		if (gpManiClient->IsAdmin(&player, &immunity_index)) continue;
-		if (gpManiClient->IsImmune(&player, &immunity_index))
+		if (gpManiClient->HasAccess(player.index, ADMIN, ADMIN_BASIC_ADMIN)) continue;
+		if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_GHOST))
 		{
-			if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_GHOST))
-			{
-				continue;
-			}
+			continue;
 		}
 
 		current_ip_list[i - 1].in_use = true;
@@ -156,17 +151,12 @@ void ManiGhost::Init(void)
 //---------------------------------------------------------------------------------
 void ManiGhost::ClientActive(player_t	*player_ptr)
 {
-	int immunity_index;
-
 	if (player_ptr->is_bot) return;
 	if (player_ptr->player_info->IsHLTV()) return;
-	if (gpManiClient->IsAdmin(player_ptr, &immunity_index)) return;
-	if (gpManiClient->IsImmune(player_ptr, &immunity_index))
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN)) return;
+	if (gpManiClient->HasAccess(player_ptr->index, IMMUNITY, IMMUNITY_GHOST))
 	{
-		if (gpManiClient->IsImmunityAllowed(immunity_index, IMMUNITY_ALLOW_GHOST))
-		{
-			return;
-		}
+		return;
 	}
 
 	current_ip_list[player_ptr->index - 1].in_use = true;
@@ -198,7 +188,7 @@ void ManiGhost::ClientDisconnect(player_t	*player_ptr)
 	current_ip_list[player_ptr->index - 1].is_ghost = false;
 
 	int	player_count = 0;
-	int		ghost_index;
+	int	ghost_index = 0;
 
 	// Check for existing ghosted players on same ip
 	for (int i = 0; i < max_players; i++)
@@ -220,7 +210,7 @@ void ManiGhost::ClientDisconnect(player_t	*player_ptr)
 	if (player_count == 1)
 	{
 		// One player left so unghost them
-		current_ip_list[i].is_ghost = false;
+		current_ip_list[ghost_index].is_ghost = false;
 	}
 }
 
@@ -282,9 +272,7 @@ void ManiGhost::PlayerDeath(player_t *player_ptr)
 	}
 	else
 	{
-		int	admin_index = -1;
-
-		if (!gpManiClient->IsAdmin(player_ptr, &admin_index))
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 		{
 			BlindPlayer(player_ptr, 255);
 			SayToPlayer(ORANGE_CHAT, player_ptr, "You have been temporarily blinded for ghosting on an IP address with another player");

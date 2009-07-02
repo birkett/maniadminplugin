@@ -28,6 +28,6 @@
 
 extern	void	FreeCommandList(void);
 extern	void	LoadCommandList(void);
-extern	bool	CheckForReplacement ( player_t *player, char	*command_string);
+extern	bool	CheckForReplacement ( player_t *player, const char	*command_string, char *replaced_command);
 
 #endif

@@ -44,6 +44,7 @@
 #include "mani_convar.h"
 #include "mani_player.h"
 #include "mani_client.h"
+#include "mani_client_flags.h"
 #include "mani_maps.h"
 #include "mani_gametype.h"
 #include "mani_output.h"
@@ -109,7 +110,6 @@ const char	*fmt,
 	char		tempString[1024];
 	char	final_string[2048];
 	bool	found_admin = false;
-	int		admin_index;
 
 	player_t recipient_player;
 	
@@ -119,7 +119,7 @@ const char	*fmt,
 	}
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -127,11 +127,11 @@ const char	*fmt,
 	mrf.RemoveAllRecipients();
 	if (player)
 	{
-		Q_snprintf(final_string, sizeof (final_string), "(ADMIN ONLY) %s: %s", player->name, tempString);
+		snprintf(final_string, sizeof (final_string), "(ADMIN ONLY) %s: %s", player->name, tempString);
 	}
 	else
 	{
-		Q_snprintf(final_string, sizeof (final_string), "(ADMIN ONLY) CONSOLE: %s", tempString);
+		snprintf(final_string, sizeof (final_string), "(ADMIN ONLY) CONSOLE: %s", tempString);
 	}
 
 	OutputToConsole(NULL, "%s\n", final_string);
@@ -149,11 +149,11 @@ const char	*fmt,
 			continue;
 		}
 
-		if (gpManiClient->IsAdmin(&recipient_player, &admin_index))
+		if (gpManiClient->HasAccess(recipient_player.index, ADMIN, ADMIN_BASIC_ADMIN))
 		{
 			// This is an admin player
 			mrf.AddPlayer(i);
-//			OutputToConsole(recipient_player.entity, false, "%s\n", final_string);
+//			OutputToConsole(recipient_player.entity, "%s\n", final_string);
 			found_admin = true;
 		}
 	}
@@ -181,7 +181,6 @@ const char	*fmt,
 	char	final_string[2048];
 	bool	found_player = false;
 	player_t recipient_player;
-	int		admin_index;
 	
 	if (war_mode)
 	{
@@ -189,13 +188,13 @@ const char	*fmt,
 	}
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
 	mrf.MakeReliable();
 	mrf.RemoveAllRecipients();
-	Q_snprintf(final_string, sizeof (final_string), "(TO ADMIN) %s: %s", player->name, tempString);
+	snprintf(final_string, sizeof (final_string), "(TO ADMIN) %s: %s", player->name, tempString);
 	OutputToConsole(NULL, "%s\n", final_string);
 
 	for (int i = 1; i <= max_players; i++)
@@ -215,16 +214,16 @@ const char	*fmt,
 		{
 				mrf.AddPlayer(i);
 				found_player = true;
-//				OutputToConsole(recipient_player.entity, false, "%s\n", final_string);
+//				OutputToConsole(recipient_player.entity, "%s\n", final_string);
 		}
 		else
 		{
-			if (gpManiClient->IsAdmin(&recipient_player, &admin_index))
+			if (gpManiClient->HasAccess(recipient_player.index, ADMIN, ADMIN_BASIC_ADMIN))
 			{
 				// This is an admin player
 				mrf.AddPlayer(i);
 				found_player = true;
-//				OutputToConsole(recipient_player.entity, false, "%s\n", final_string);
+//				OutputToConsole(recipient_player.entity, "%s\n", final_string);
 			}
 		}
 	}
@@ -252,25 +251,24 @@ const char	*fmt,
 	char		tempString[1024];
 	char	admin_final_string[2048];
 	char	non_admin_final_string[2048];
-	int		admin_index;
 	bool	found_player = false;
 	bool	found_admin = false;
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	player_t	server_player;
 
 	if (!player)
 	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
+		snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
+		snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
 	}
 	else
 	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
+		snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
+		snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
 	}
 
 	OutputToConsole(NULL, "%s\n", admin_final_string);
@@ -298,18 +296,18 @@ const char	*fmt,
 				continue;
 			}
 
-			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
+			is_admin = gpManiClient->HasAccess(server_player.index, ADMIN, ADMIN_BASIC_ADMIN);
 			if (is_admin)
 			{
 				found_admin = true;
 				mrfadmin.AddPlayer(i);
-//				OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+//				OutputToConsole(server_player.entity, "%s\n", admin_final_string);
 			}
 			else
 			{
 				found_player = true;
 				mrf.AddPlayer(i);
-//				OutputToConsole(server_player.entity, false, "%s\n", non_admin_final_string);
+//				OutputToConsole(server_player.entity, "%s\n", non_admin_final_string);
 			}
 		}
 
@@ -339,7 +337,7 @@ const char	*fmt,
 			}
 
 			found_player = true;
-//			OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+//			OutputToConsole(server_player.entity, "%s\n", admin_final_string);
 		}
 
 		if (found_player)
@@ -368,25 +366,24 @@ const char	*fmt,
 	char		tempString[1024];
 	char	admin_final_string[2048];
 	char	non_admin_final_string[2048];
-	int		admin_index;
 	bool	found_player = false;
 	bool	found_admin = false;
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	player_t	server_player;
 
 	if (!player)
 	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
+		snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
+		snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
 	}
 	else
 	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
+		snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
+		snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
 	}
 
 	OutputToConsole(NULL, "%s\n", admin_final_string);
@@ -414,14 +411,14 @@ const char	*fmt,
 				continue;
 			}
 
-			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
+			is_admin = gpManiClient->HasAccess(server_player.index, ADMIN, ADMIN_BASIC_ADMIN);
 			if (is_admin)
 			{
 				found_admin = true;
 				mrfadmin.AddPlayer(i);
 				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 				{
-					OutputToConsole(&server_player, false, "%s\n", admin_final_string);
+					OutputToConsole(&server_player, "%s\n", admin_final_string);
 				}
 			}
 			else
@@ -430,7 +427,7 @@ const char	*fmt,
 				mrf.AddPlayer(i);
 				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 				{
-					OutputToConsole(&server_player, false, "%s\n", non_admin_final_string);
+					OutputToConsole(&server_player, "%s\n", non_admin_final_string);
 				}
 			}
 		}
@@ -469,7 +466,7 @@ const char	*fmt,
 			found_player = true;
 			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 			{
-				OutputToConsole(&server_player, false, "%s\n", admin_final_string);
+				OutputToConsole(&server_player, "%s\n", admin_final_string);
 			}
 		}
 
@@ -500,7 +497,7 @@ const char	*fmt,
 	char		tempString[1024];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -527,7 +524,7 @@ const char	*fmt,
 	char		tempString[1024];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -556,7 +553,7 @@ void SayToAll(const int colour, bool echo, const char	*fmt, ...)
 	}
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -582,7 +579,7 @@ void SayToAll(const int colour, bool echo, const char	*fmt, ...)
 
 		if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			if (echo) OutputToConsole(&server_player, false, "%s\n", tempString);
+			if (echo) OutputToConsole(&server_player, "%s\n", tempString);
 		}
 	}
 
@@ -608,7 +605,7 @@ void SayToDead(const int colour, const char	*fmt, ...)
 	}
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -638,7 +635,7 @@ void SayToDead(const int colour, const char	*fmt, ...)
 			found_player = true;
 			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 			{
-				OutputToConsole(&recipient_player, false, "%s\n", tempString);
+				OutputToConsole(&recipient_player, "%s\n", tempString);
 			}
 			continue;
 		}
@@ -649,7 +646,7 @@ void SayToDead(const int colour, const char	*fmt, ...)
 			found_player = true;
 			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 			{
-				OutputToConsole(&recipient_player, false, "%s\n", tempString);
+				OutputToConsole(&recipient_player, "%s\n", tempString);
 			}
 
 			continue;
@@ -677,7 +674,7 @@ void SayToPlayer(const int colour, player_t *player, const char	*fmt, ...)
 	}
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -697,9 +694,9 @@ void SayToPlayer(const int colour, player_t *player, const char	*fmt, ...)
 	mrf.AddPlayer(player->index);
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
-		OutputToConsole(player, false, "%s\n", tempString);
+		OutputToConsole(player, "%s\n", tempString);
 	}
-//	OutputToConsole(NULL, true, "%s\n", tempString);
+//	OutputToConsole(NULL, "%s\n", tempString);
 
 	UTIL_SayText(colour, &mrf, tempString);
 }
@@ -719,25 +716,24 @@ const char	*fmt,
 	char		tempString[1024];
 	char	admin_final_string[1024];
 	char	non_admin_final_string[1024];
-	int		admin_index;
 	bool	found_player = false;
 	bool	found_admin = false;
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	player_t	server_player;
 
 	if (!player)
 	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
+		snprintf(admin_final_string, sizeof (admin_final_string), "(CONSOLE) : %s", tempString);
+		snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(CONSOLE) %s", tempString);
 	}
 	else
 	{
-		Q_snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
-		Q_snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
+		snprintf(admin_final_string, sizeof (admin_final_string), "(ADMIN) %s: %s", player->name, tempString);
+		snprintf(non_admin_final_string, sizeof (non_admin_final_string), "(ADMIN) %s", tempString);
 	}
 
 	OutputToConsole(NULL, "%s\n", admin_final_string);
@@ -768,18 +764,18 @@ const char	*fmt,
 				continue;
 			}
 
-			is_admin = gpManiClient->IsAdmin(&server_player, &admin_index);
+			is_admin = gpManiClient->HasAccess(server_player.index, ADMIN, ADMIN_BASIC_ADMIN);
 			if (is_admin)
 			{
 				found_admin = true;
 				mrfadmin.AddPlayer(i);
-//				OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+//				OutputToConsole(server_player.entity, "%s\n", admin_final_string);
 			}
 			else
 			{
 				found_player = true;
 				mrf.AddPlayer(i);
-//				OutputToConsole(server_player.entity, false, "%s\n", non_admin_final_string);
+//				OutputToConsole(server_player.entity, "%s\n", non_admin_final_string);
 			}
 		}
 
@@ -809,7 +805,7 @@ const char	*fmt,
 			}
 
 			found_player = true;
-//			OutputToConsole(server_player.entity, false, "%s\n", admin_final_string);
+//			OutputToConsole(server_player.entity, "%s\n", admin_final_string);
 		}
 
 		if (found_player)
@@ -831,7 +827,7 @@ void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr)
 	char text_out[192];
 
 	// Copy to restricted size
-	Q_snprintf(text_out, sizeof(text_out), "%s", text_ptr);
+	snprintf(text_out, sizeof(text_out), "%s", text_ptr);
 	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index);
 	msg_buffer->WriteByte(1);
 	msg_buffer->WriteString(text_out);
@@ -859,7 +855,7 @@ void SplitHintString(char *string, int width)
 			last_space = i;
 		}
 
-		if (string[i] == '%' && string[i] == 's')
+		if (string[i] == '%' && string[i + 1] == 's')
 		{
 			string[i] = ' ';
 		}
@@ -906,7 +902,7 @@ const char	*fmt, ...
 	}
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -966,7 +962,7 @@ void	OutputToConsole(player_t *player_ptr, char *fmt, ...)
 	char		tempString[2048];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	if (!player_ptr)
@@ -988,7 +984,7 @@ void DirectLogCommand(char *fmt, ... )
 	char		tempString[1024];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	// Print to server console
@@ -1009,14 +1005,14 @@ void LogCommand(player_t *player_ptr, char *fmt, ... )
 	if(player_ptr)
 	{
 		Q_strcpy (steam_id, player_ptr->steam_id);
-		Q_snprintf( user_details, sizeof(user_details), "[MANI_ADMIN_PLUGIN] Admin [%s] [%s] Executed : ", player_ptr->name, player_ptr->steam_id);
+		snprintf( user_details, sizeof(user_details), "[MANI_ADMIN_PLUGIN] Admin [%s] [%s] Executed : ", player_ptr->name, player_ptr->steam_id);
 	}	
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString2, sizeof(tempString2), fmt, argptr );
+	vsnprintf( tempString2, sizeof(tempString2), fmt, argptr );
 	va_end   ( argptr );
 
-	Q_snprintf( tempString, sizeof(tempString), "%s %s", user_details, tempString2);  
+	snprintf( tempString, sizeof(tempString), "%s %s", user_details, tempString2);  
 
 	WriteToManiLog (tempString, steam_id);
 	// Print to server console
@@ -1050,7 +1046,10 @@ void WriteToManiLog
 	}
 	else if (log_mode == 1 || log_mode == 2 || log_mode == 3)
 	{
-		FileHandle_t	filehandle;
+		FileHandle_t	filehandle = NULL;
+
+		// Still print to log
+		engine->LogPrint( log_string );
 
 		if (log_mode == 1 || log_mode == 2)
 		{
@@ -1062,6 +1061,7 @@ void WriteToManiLog
 					engine->LogPrint( log_string );
 					return;
 			}
+
 		}
 		else if (log_mode == 3)
 		{
@@ -1078,7 +1078,7 @@ void WriteToManiLog
 				}
 			}
 
-			Q_snprintf(steam_filename, sizeof(steam_filename), "./cfg/%s/%s/%s.log", 
+			snprintf(steam_filename, sizeof(steam_filename), "./cfg/%s/%s/%s.log", 
 									mani_path.GetString(),
 									mani_log_directory.GetString(),
 									steam_id
@@ -1102,7 +1102,7 @@ void WriteToManiLog
 
 		char	temp_string[4096];
 
-		int	length = Q_snprintf(temp_string, sizeof(temp_string), "M %02i/%02i/%04i - %02i:%02i:%02i: %s", 
+		int	length = snprintf(temp_string, sizeof(temp_string), "M %02i/%02i/%04i - %02i:%02i:%02i: %s", 
 								time_now->tm_mon + 1,
 								time_now->tm_mday,
 								time_now->tm_year + 1900,
@@ -1123,7 +1123,7 @@ void WriteToManiLog
 //---------------------------------------------------------------------------------
 static void ManiLogMode ( ConVar *var, char const *pOldString )
 {
-	int	log_mode = Q_atoi(var->GetString());
+	int	log_mode = atoi(var->GetString());
 
 	// Setup log mode
 	if (log_mode == 0) return;
@@ -1146,7 +1146,7 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 			// Search for existing log files for todays date
 			for (int i = 0; i < 1000; i++)
 			{
-				Q_snprintf(filename, sizeof(filename), "./cfg/%s/%s/M%02i%02i%03i.log", 
+				snprintf(filename, sizeof(filename), "./cfg/%s/%s/M%02i%02i%03i.log", 
 									mani_path.GetString(),
 									mani_log_directory.GetString(), 
 									(int) time_now->tm_mon + 1, 
@@ -1177,7 +1177,7 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 			}
 		}
 
-		Q_snprintf(mani_log_filename, sizeof(mani_log_filename), "./cfg/%s/%s/M%02i%02i%03i.log", 
+		snprintf(mani_log_filename, sizeof(mani_log_filename), "./cfg/%s/%s/M%02i%02i%03i.log", 
 									mani_path.GetString(),
 									mani_log_directory.GetString(), 
 									(int) time_now->tm_mon + 1, 
@@ -1198,7 +1198,7 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 		// Get round Valve breaking the FPrintf function
 		char	temp_string[2048];
 
-		int	length = Q_snprintf(temp_string, sizeof(temp_string), "M %02i/%02i/%04i - %02i:%02i:%02i: Log file [%s] started for map [%s]\n", 
+		int	length = snprintf(temp_string, sizeof(temp_string), "M %02i/%02i/%04i - %02i:%02i:%02i: Log file [%s] started for map [%s]\n", 
 								time_now->tm_mon + 1,
 								time_now->tm_mday,
 								time_now->tm_year,
@@ -1218,7 +1218,7 @@ static void ManiLogMode ( ConVar *var, char const *pOldString )
 	if (log_mode == 2)
 	{
 		// One big file
-		Q_snprintf(mani_log_filename, sizeof(mani_log_filename), "./cfg/%s/%s/adminlog.log", 
+		snprintf(mani_log_filename, sizeof(mani_log_filename), "./cfg/%s/%s/adminlog.log", 
 									mani_path.GetString(),
 									mani_log_directory.GetString()
 									);
@@ -1243,12 +1243,12 @@ void WriteDebug
 	char		tempString[1024];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	char	filename[512];
 
-	Q_snprintf(filename, sizeof(filename), "./cfg/%s/%s/debug.log", 
+	snprintf(filename, sizeof(filename), "./cfg/%s/%s/debug.log", 
 									mani_path.GetString(),
 									mani_log_directory.GetString()
 									);
@@ -1271,7 +1271,7 @@ void WriteDebug
 	time(&current_time);
 	time_now = localtime(&current_time);
 
-	int	length = Q_snprintf(logString, sizeof(logString), "M %02i/%02i/%04i - %02i:%02i:%02i: %s", 
+	int	length = snprintf(logString, sizeof(logString), "M %02i/%02i/%04i - %02i:%02i:%02i: %s", 
 								time_now->tm_mon + 1,
 								time_now->tm_mday,
 								time_now->tm_year + 1900,
@@ -1299,7 +1299,7 @@ void ClientMsgSinglePlayer
 	tchar szBuf[256];
 	va_list arg_ptr;
 	va_start(arg_ptr, fmt);
-	_vsntprintf(szBuf, sizeof(szBuf)-1, fmt, arg_ptr);
+	vsnprintf(szBuf, sizeof(szBuf)-1, fmt, arg_ptr);
 	va_end(arg_ptr);
 
 	szBuf[sizeof(szBuf)-1] = 0;
@@ -1328,11 +1328,10 @@ void ClientMsg
  ) 
 {
 	player_t	player;
-	int			admin_index;
 	tchar szBuf[256];
 	va_list arg_ptr;
 	va_start(arg_ptr, fmt);
-	_vsntprintf(szBuf, sizeof(szBuf)-1, fmt, arg_ptr);
+	vsnprintf(szBuf, sizeof(szBuf)-1, fmt, arg_ptr);
 	va_end(arg_ptr);
 	Color	admin_only_colour(255, 0, 0, 255);
 
@@ -1353,7 +1352,7 @@ void ClientMsg
 
 		if (admin_only)
 		{
-			if (gpManiClient->IsAdmin(&player, &admin_index))
+			if (gpManiClient->HasAccess(player.index, ADMIN, ADMIN_BASIC_ADMIN))
 			{
 				KeyValues *kv = new KeyValues("Msg");
 				kv->SetString("title", szBuf);
@@ -1388,7 +1387,7 @@ void PrintToClientConsole(edict_t *pEntity, char *fmt, ... )
 	char		tempString[1024];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	// Print to clients console
@@ -1410,7 +1409,7 @@ void OutputHelpText
 	char		tempString[2048];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	if (!player_ptr)
@@ -1453,7 +1452,7 @@ void UTIL_LogPrintf( char *fmt, ... )
 	char		tempString[1024];
 	
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	// Print to server console

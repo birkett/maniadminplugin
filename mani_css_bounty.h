@@ -26,14 +26,24 @@
 #ifndef MANI_CSS_BOUNTY_H
 #define MANI_CSS_BOUNTY_H
 
-	struct top_bounty_t
-	{
-		char	name[MAX_PLAYER_NAME_LENGTH];
-		int		bounty;
-	};
+#include "mani_menu.h"
+
+struct top_bounty_t
+{
+	char	name[MAX_PLAYER_NAME_LENGTH];
+	int		bounty;
+};
+
+class BountyFreePage : public FreePage
+{
+public:
+	bool	OptionSelected(player_t *player_ptr, const int option);
+	bool	Render(player_t *player_ptr);
+};
 
 class ManiCSSBounty
 {
+	friend class BountyFreePage;
 public:
 	ManiCSSBounty();
 	~ManiCSSBounty();
@@ -45,7 +55,6 @@ public:
 	void		PlayerDeath( player_t *victim_ptr,  player_t *attacker_ptr,  bool attacker_exists);
 	void		PlayerSpawn(player_t *player_ptr);
 	void		CSSRoundEnd(const char *message);
-	void		ShowTop(player_t *player_ptr);
 private:
 
 	struct bounty_t

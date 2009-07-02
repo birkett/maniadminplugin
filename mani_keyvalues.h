@@ -53,6 +53,7 @@ struct	read_t
 	int		 sub_key_list_allocated_size;
 
 	int		 current_sub_key;
+	int		 current_key;
 };
 
 class ManiKeyValues
@@ -60,21 +61,21 @@ class ManiKeyValues
 public:
 	ManiKeyValues();
 	~ManiKeyValues();
-	ManiKeyValues(char *title_str);
+	ManiKeyValues(const char *title_str);
 
 	// Writer functions
-	bool	WriteStart(char *filename);
+	bool	WriteStart(const char *filename);
 	void	SetIndent(int indent_level_size) {indent_level = indent_level_size;}
-	bool	WriteNewSubKey(char *sub_key);
-	bool	WriteNewSubKey(int  sub_key);
-	bool	WriteNewSubKey(unsigned int  sub_key);
-	bool	WriteNewSubKey(float  sub_key);
+	bool	WriteNewSubKey(const char *sub_key);
+	bool	WriteNewSubKey(const int  sub_key);
+	bool	WriteNewSubKey(const unsigned int  sub_key);
+	bool	WriteNewSubKey(const float  sub_key);
 	bool	WriteEndSubKey(void);
-	bool	WriteKey(char *key_name, char *value);
-	bool	WriteKey(char *key_name, int value);
-	bool	WriteKey(char *key_name, unsigned int value);
-	bool	WriteKey(char *key_name, float value);
-	bool	WriteComment(char *comment);
+	bool	WriteKey(const char *key_name, const char *value);
+	bool	WriteKey(const char *key_name, const int value);
+	bool	WriteKey(const char *key_name, const unsigned int value);
+	bool	WriteKey(const char *key_name, const float value);
+	bool	WriteComment(const char *comment);
 	bool	WriteCR(void);
 	bool	WriteEnd(void);
 	
@@ -88,6 +89,9 @@ public:
 
 	// Find the next sub key (pointer to sub key)
 	read_t	*GetNextKey(read_t *read_ptr);
+
+	char	*GetNextKeyValue(char **name);
+	void	ResetKeyIndex(void);
 
 	// Find a sub key
 	read_t	*FindKey(read_t *read_ptr, char *name);

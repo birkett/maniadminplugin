@@ -59,7 +59,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 struct	current_ip_t
 {
@@ -164,7 +163,6 @@ void ManiMostDestructive::RoundStart(void)
 void ManiMostDestructive::RoundEnd(void)
 {
 	player_settings_t	*player_settings;
-	bool	player_found = false;
 	int		destruction = 0;
 	int		kills = -999;
 	int		found_index = -1;
@@ -204,44 +202,6 @@ void ManiMostDestructive::RoundEnd(void)
 		}
 	}
 
-	// Nothing to show ?
-	if (found_index == -1)
-	{
-		return;
-	}
-
-	char	player_plural[30];
-
-	if (destruction_list[found_index].kills == 1)
-	{
-		Q_snprintf(player_plural, sizeof(player_plural), Translate(1200));
-	}
-	else
-	{
-		Q_snprintf(player_plural, sizeof(player_plural), Translate(1201));
-	}
-
-	if (destruction_list[found_index].kills == 0)
-	{
-		Q_snprintf (output_message, sizeof(output_message), "%s",
-						Translate(1202, "%s%i",
-						destruction_list[found_index].name,
-						destruction_list[found_index].damage_done));
-	}
-	else
-	{
-		Q_snprintf (output_message, sizeof(output_message), "%s", 
-						Translate(1203, "%s%i%i%s",
-						destruction_list[found_index].name,
-						destruction_list[found_index].damage_done,
-						destruction_list[found_index].kills,
-						player_plural));
-	}
-
-	SplitHintString(output_message, 35);
-	MRecipientFilter mrf;
-	mrf.MakeReliable();
-
 	for (int i = 1; i <= max_players; i ++)
 	{
 		player_t player;
@@ -254,13 +214,39 @@ void ManiMostDestructive::RoundEnd(void)
 		player_settings = FindPlayerSettings(&player);
 		if (!player_settings) continue;
 		if (player_settings->show_destruction == 0) continue;
-		
-		player_found = true;
-		mrf.AddPlayer(i);
-	}
 
-	if (player_found)
-	{
+		char	player_plural[30];
+		if (destruction_list[found_index].kills == 1)
+		{
+			snprintf(player_plural, sizeof(player_plural), Translate(NULL, 1200));
+		}
+		else
+		{
+			snprintf(player_plural, sizeof(player_plural), Translate(NULL, 1201));
+		}
+
+		if (destruction_list[found_index].kills == 0) 
+		{
+			snprintf (output_message, sizeof(output_message), "%s",
+							Translate(&player, 1202, "%s%i",
+							destruction_list[found_index].name,
+							destruction_list[found_index].damage_done));
+		}
+		else
+		{
+			snprintf (output_message, sizeof(output_message), "%s", 
+							Translate(&player, 1203, "%s%i%i%s",
+							destruction_list[found_index].name,
+							destruction_list[found_index].damage_done,
+							destruction_list[found_index].kills,
+							player_plural));
+		}
+
+		SplitHintString(output_message, 35);
+		MRecipientFilter mrf;
+		mrf.RemoveAllRecipients();
+		mrf.MakeReliable();
+		mrf.AddPlayer(i);
 		UTIL_SayHint(&mrf, output_message);
 	}
 }

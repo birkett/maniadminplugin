@@ -54,6 +54,7 @@
 #include "mani_sigscan.h"
 #include "mani_warmuptimer.h"
 #include "mani_gametype.h"
+#include "mani_vars.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
 
@@ -71,6 +72,11 @@ extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from t
 extern  ConVar	*mp_friendlyfire; 
 
 static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString );
+static void ManiWarmupItem1 ( ConVar *var, char const *pOldString );
+static void ManiWarmupItem2 ( ConVar *var, char const *pOldString );
+static void ManiWarmupItem3 ( ConVar *var, char const *pOldString );
+static void ManiWarmupItem4 ( ConVar *var, char const *pOldString );
+static void ManiWarmupItem5 ( ConVar *var, char const *pOldString );
 
 ConVar mani_warmup_timer_show_countdown ("mani_warmup_timer_show_countdown", "1", 0, "1 = enable center say countdown, 0 = disable", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only ("mani_warmup_timer_knives_only", "0", 0, "1 = enable knives only mode, 0 = all weapons allowed", true, 0, true, 1);
@@ -80,12 +86,13 @@ ConVar mani_warmup_timer_ignore_tk ("mani_warmup_timer_ignore_tk", "0", 0, "0 = 
 ConVar mani_warmup_timer_disable_ff ("mani_warmup_timer_disable_ff", "0", 0, "0 = Do not disable friendly fire during warmup, 1 = If friendly fire was turned on, the plugin will disable it during the warmup round", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only_ignore_fyi_aim_maps ("mani_warmup_timer_knives_only_ignore_fyi_aim_maps", "0", 0, "0 = knive mode still allowed on fy/aim maps, 1 = no knive mode for fy_/aim_ maps", true, 0, true, 1);
 ConVar mani_warmup_timer_unlimited_grenades ("mani_warmup_timer_unlimited_grenades", "0", 0, "1 = enable unlimited he grenades, 0 = disable unlimited he's", true, 0, true, 1);
-ConVar mani_warmup_timer_spawn_item_1 ("mani_warmup_timer_spawn_item_1", "item_assaultsuit", 0, "Item to spawn with in warmup mode");
-ConVar mani_warmup_timer_spawn_item_2 ("mani_warmup_timer_spawn_item_2", "", 0, "Item to spawn with in warmup mode");
-ConVar mani_warmup_timer_spawn_item_3 ("mani_warmup_timer_spawn_item_3", "", 0, "Item to spawn with in warmup mode");
-ConVar mani_warmup_timer_spawn_item_4 ("mani_warmup_timer_spawn_item_4", "", 0, "Item to spawn with in warmup mode");
-ConVar mani_warmup_timer_spawn_item_5 ("mani_warmup_timer_spawn_item_5", "", 0, "Item to spawn with in warmup mode");
+ConVar mani_warmup_timer_spawn_item_1 ("mani_warmup_timer_spawn_item_1", "item_assaultsuit", 0, "Item to spawn with in warmup mode", ManiWarmupItem1);
+ConVar mani_warmup_timer_spawn_item_2 ("mani_warmup_timer_spawn_item_2", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem2);
+ConVar mani_warmup_timer_spawn_item_3 ("mani_warmup_timer_spawn_item_3", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem3);
+ConVar mani_warmup_timer_spawn_item_4 ("mani_warmup_timer_spawn_item_4", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem4);
+ConVar mani_warmup_timer_spawn_item_5 ("mani_warmup_timer_spawn_item_5", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem5);
 ConVar mani_warmup_in_progress ("mani_warmup_in_progress", "0", 0, "Used by LDuke VIP mod to detect when warmup mode in operation", true, 0, true, 1);
+ConVar mani_warmup_infinite_ammo ("mani_warmup_infinite_ammo", "0", 0, "Infinite ammo, 0 = disabled, 1 = enabled", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -102,6 +109,11 @@ ManiWarmupTimer::ManiWarmupTimer()
 	check_timer = false;
 	next_check = -999.0;
 	gpManiWarmupTimer = this;
+
+	for (int i = 0; i < 5; i ++)
+	{
+		item_name[i][0] = '\0';
+	}
 }
 
 ManiWarmupTimer::~ManiWarmupTimer()
@@ -133,6 +145,17 @@ void		ManiWarmupTimer::LevelInit(void)
 	{
 		respawn_list[i].needs_respawn = false;
 	}
+
+	for (int i = 0; i < 5; i ++)
+	{
+		item_name[i][0] = '\0';
+	}
+
+	SetRandomItem(&mani_warmup_timer_spawn_item_1, 0);
+	SetRandomItem(&mani_warmup_timer_spawn_item_2, 1);
+	SetRandomItem(&mani_warmup_timer_spawn_item_3, 2);
+	SetRandomItem(&mani_warmup_timer_spawn_item_4, 3);
+	SetRandomItem(&mani_warmup_timer_spawn_item_5, 4);
 }
 
 //---------------------------------------------------------------------------------
@@ -143,9 +166,42 @@ void		ManiWarmupTimer::RoundStart(void)
 	if (war_mode) return;
 	if (mani_warmup_timer.GetInt() == 0) return;
 	if (!check_timer) return;
-
-	if (mani_warmup_timer_knives_only.GetInt() == 0) return;
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.player_info->IsHLTV()) continue;
+
+		CBaseEntity *pPlayer = EdictToCBE(player.entity);
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+		if (!pCombat) continue;
+
+		for (int j = 0; j < 40; j++)
+		{
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
+			if (!pWeapon) continue;
+
+			if (strcmp(CBaseCombatWeapon_GetName(pWeapon), "weapon_c4") != 0)
+			{
+				continue;
+			}
+
+			CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+
+			// Switch to knife
+			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+			if (pWeapon)
+			{
+				CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+			}
+
+			break;
+		}
+	}
 
 	CBaseEntity *weaponc4 = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(NULL, "weapon_c4");
 	if (weaponc4)
@@ -177,6 +233,8 @@ void		ManiWarmupTimer::PlayerSpawn(player_t *player_ptr)
 	if (war_mode) return;
 	if (mani_warmup_timer.GetInt() == 0) return;
 	if (!check_timer) return;
+	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
+	if (fire_restart == false) return;
 
 	respawn_list[player_ptr->index - 1].needs_respawn = false;
 
@@ -185,7 +243,7 @@ void		ManiWarmupTimer::PlayerSpawn(player_t *player_ptr)
 		if (mani_warmup_timer_knives_only.GetInt() == 1)
 		{
 			// Set cash to zero and strip weapons
-			Prop_SetAccount(player_ptr->entity, 0); 
+			Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, 0);
 			CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
 			CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 
@@ -222,33 +280,20 @@ void		ManiWarmupTimer::PlayerSpawn(player_t *player_ptr)
 		GiveItem(player_ptr->entity, "weapon_hegrenade");
 	}
 
-	if (!FStrEq(mani_warmup_timer_spawn_item_1.GetString(),""))
+	for (int i = 0; i < 5; i ++)
 	{
-		if (!(FStrEq(mani_warmup_timer_spawn_item_1.GetString(), "item_assaultsuit") &&
-			!gpManiGameType->IsGameType(MANI_GAME_CSS)))
+		if (item_name[i][0] != '\0')
 		{
-			GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_1.GetString());
+			// Ignore assault suit if not CSS
+			if (i == 0 && 
+				!gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+				strcmp(item_name[i], "item_assaultsuit") == 0)
+			{
+				continue;
+			}
+
+			GiveItem(player_ptr->entity, item_name[i]);
 		}
-	}
-
-	if (!FStrEq(mani_warmup_timer_spawn_item_2.GetString(),""))
-	{
-		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_2.GetString());
-	}
-
-	if (!FStrEq(mani_warmup_timer_spawn_item_3.GetString(),""))
-	{
-		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_3.GetString());
-	}
-
-	if (!FStrEq(mani_warmup_timer_spawn_item_4.GetString(),""))
-	{
-		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_4.GetString());
-	}
-
-	if (!FStrEq(mani_warmup_timer_spawn_item_5.GetString(),""))
-	{
-		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_5.GetString());
 	}
 }
 
@@ -270,7 +315,6 @@ void		ManiWarmupTimer::GameFrame(void)
 	if (!check_timer) return;
 	if (ProcessPluginPaused()) return;
 
-
 	if (mp_friendlyfire && mp_friendlyfire->GetInt() != 0 && mani_warmup_timer_disable_ff.GetInt() == 1)
 		{
 		friendly_fire = true;
@@ -282,10 +326,6 @@ void		ManiWarmupTimer::GameFrame(void)
 		if (mani_warmup_timer_show_countdown.GetInt())
 		{
 			int time_left = mani_warmup_timer.GetInt() - ((int) gpGlobals->curtime);
-
-			bool	knives = mani_warmup_timer_knives_only.GetBool();
-			bool	he = mani_warmup_timer_unlimited_grenades.GetBool();
-
 			CSayToAll("Warmup timer %i", time_left);
 		}
 
@@ -354,6 +394,12 @@ void		ManiWarmupTimer::GameFrame(void)
 					}
 				}
 			}
+		}
+
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+			mani_warmup_infinite_ammo.GetInt() == 1)
+		{
+			this->GiveAllAmmo(); 
 		}
 	}
 }
@@ -479,10 +525,142 @@ bool		ManiWarmupTimer::IgnoreTK(void)
 	return ((mani_warmup_timer_ignore_tk.GetInt() == 0) ? false:true);
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Give everyone ammo
+//---------------------------------------------------------------------------------
+void		ManiWarmupTimer::GiveAllAmmo(void)
+{
+	for (int i = 1; i <= max_players; i++)
+	{
+		player_t player;
+
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_dead) continue;
+		if (player.player_info->IsHLTV()) continue;
+
+		CBaseEntity *pPlayer = EdictToCBE(player.entity);
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+		if (pWeapon)
+		{
+			int	ammo_index;
+			ammo_index = CBaseCombatWeapon_GetPrimaryAmmoType(pWeapon);
+			CBaseCombatCharacter_GiveAmmo(pCombat, 999, ammo_index, true);
+			ammo_index = CBaseCombatWeapon_GetSecondaryAmmoType(pWeapon);
+			CBaseCombatCharacter_GiveAmmo(pCombat, 999, ammo_index, true);
+		}
+
+		pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+		if (pWeapon)
+		{
+			int	ammo_index;
+			ammo_index = CBaseCombatWeapon_GetPrimaryAmmoType(pWeapon);
+			CBaseCombatCharacter_GiveAmmo(pCombat, 999, ammo_index, true);
+			ammo_index = CBaseCombatWeapon_GetSecondaryAmmoType(pWeapon);
+			CBaseCombatCharacter_GiveAmmo(pCombat, 999, ammo_index, true);
+		}
+	}
+}
+
+
+void	ManiWarmupTimer::SetRandomItem(ConVar *cvar_ptr, int item_number)
+{
+	item_t	*item_list = NULL;
+	int	item_list_size = 0;
+
+	const char *item_string = cvar_ptr->GetString();
+
+	if (FStrEq(item_string,""))
+	{
+		item_name[item_number][0] = '\0';
+		return;
+	}
+
+	int i = 0;
+	int j = 0;
+	char	tmp_item_name[80] = "";
+
+	for (;;)
+	{
+		if (item_string[i] == ':' || item_string[i] == '\0')
+		{
+			tmp_item_name[j] = '\0';
+			if (i != 0)
+			{
+				AddToList((void **) &item_list, sizeof(ManiWarmupTimer::item_t), &item_list_size);
+				Q_strcpy(item_list[item_list_size - 1].item_name, tmp_item_name);
+
+				j = 0;
+				if (item_string[i] == '\0')
+				{
+					break;
+				}
+				else
+				{
+					i++;
+					j = 0;
+					continue;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		tmp_item_name[j] = item_string[i];
+		j++;
+		i++;
+	}
+
+	if (item_list_size == 0)
+	{
+		item_name[item_number][0] = '\0';
+	}
+	else if (item_list_size == 1)
+	{
+		strcpy(item_name[item_number], item_list[0].item_name);
+	}
+	else
+	{
+		int choice = rand() % item_list_size;
+		strcpy(item_name[item_number], item_list[choice].item_name);
+	}
+
+	FreeList((void **) &item_list, &item_list_size);
+	return;
+}
+
 ManiWarmupTimer	g_ManiWarmupTimer;
 ManiWarmupTimer	*gpManiWarmupTimer;
 
 static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString )
 {
 	gpManiWarmupTimer->LevelInit();
+}
+
+static void ManiWarmupItem1 ( ConVar *var, char const *pOldString )
+{
+	gpManiWarmupTimer->SetRandomItem(var, 0);
+}
+
+static void ManiWarmupItem2 ( ConVar *var, char const *pOldString )
+{
+	gpManiWarmupTimer->SetRandomItem(var, 1);
+}
+
+static void ManiWarmupItem3 ( ConVar *var, char const *pOldString )
+{
+	gpManiWarmupTimer->SetRandomItem(var, 2);
+}
+
+static void ManiWarmupItem4 ( ConVar *var, char const *pOldString )
+{
+	gpManiWarmupTimer->SetRandomItem(var, 3);
+}
+
+static void ManiWarmupItem5 ( ConVar *var, char const *pOldString )
+{
+	gpManiWarmupTimer->SetRandomItem(var, 4);
 }

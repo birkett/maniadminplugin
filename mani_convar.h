@@ -31,6 +31,13 @@ extern ConVar mani_path;
 
 extern ConVar mani_adverts;
 extern ConVar mani_time_between_adverts;
+extern ConVar mani_advert_dead_only;
+extern ConVar mani_advert_col_blue;
+extern ConVar mani_advert_col_red;
+extern ConVar mani_advert_col_green;
+extern ConVar mani_adverts_top_left;
+extern ConVar mani_adverts_chat_area;
+extern ConVar mani_adverts_bottom_area;
 
 extern ConVar mani_tk_protection;
 extern ConVar mani_tk_forgive;
@@ -87,10 +94,6 @@ extern ConVar mani_tk_team_wound_reflect_threshold;
 extern ConVar mani_tk_team_wound_reflect_ratio;
 extern ConVar mani_tk_team_wound_reflect_ratio_increase;
 
-extern ConVar mani_advert_col_blue;
-extern ConVar mani_advert_col_red;
-extern ConVar mani_advert_col_green;
-
 extern ConVar mani_adminsay_anonymous;
 extern ConVar mani_adminkick_anonymous;
 extern ConVar mani_adminslay_anonymous;
@@ -139,9 +142,6 @@ extern ConVar mani_stats_write_frequency_to_disk;
 extern ConVar mani_stats_include_bot_kills;
 extern ConVar mani_stats_most_destructive;
 
-extern ConVar mani_adverts_top_left;
-extern ConVar mani_adverts_chat_area;
-
 extern ConVar mani_ff_player_only;
 extern ConVar mani_nextmap_player_only;
 extern ConVar mani_timeleft_player_only;
@@ -160,10 +160,6 @@ extern ConVar mani_reserve_slots_include_admin;
 
 extern ConVar mani_reverse_admin_flags;
 extern ConVar mani_reverse_immunity_flags;
-extern ConVar mani_protect_against_cheat_cvars;
-extern ConVar mani_protect_against_cheat_cvars_threshold;
-extern ConVar mani_protect_against_cheat_cvars_mode;
-extern ConVar mani_protect_against_cheat_cvars_ban_time;
 
 extern ConVar mani_military_time;
 
@@ -211,6 +207,7 @@ extern ConVar mani_vote_map_percent_required;
 extern ConVar mani_vote_random_map_percent_required;
 extern ConVar mani_vote_extend_percent_required;
 extern ConVar mani_vote_show_vote_mode;
+extern ConVar  mani_vote_end_of_map_swap_team;
 
 extern ConVar mani_vote_user_vote_map_percentage;
 extern ConVar mani_vote_user_vote_map_time_before_vote;
@@ -359,5 +356,9 @@ extern ConVar mani_external_stats_log_allow_war_logs;
 extern ConVar mani_hostage_follow_warning;
 
 extern ConVar mani_afk_kicker;
+
+extern ConVar mani_all_see_ma_rates;
+
+extern ConVar mani_admin_temp_ban_time_limit;
 
 #endif

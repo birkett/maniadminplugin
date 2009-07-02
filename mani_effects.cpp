@@ -53,6 +53,7 @@
 #include "mani_sounds.h"
 #include "mani_maps.h"
 #include "mani_gametype.h"
+#include "mani_vars.h"
 #include "mani_effects.h"
 #include "mani_vfuncs.h"
 #include "cbaseentity.h"
@@ -70,7 +71,6 @@ extern	IServerGameEnts	*serverents;
 
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
-extern	ConVar	*sv_lan;
 extern	bool war_mode;
 extern	int	con_command_index;
 extern	bf_write *msg_buffer;
@@ -374,6 +374,8 @@ void ProcessFrozenFrame(void)
 				continue;
 			}
 
+			Prop_SetVal(player.entity, MANI_PROP_MOVE_TYPE, MOVETYPE_NONE); 
+
 			if (effects)
 			{
 				// Get player location, so we know where to play the sound.
@@ -381,7 +383,6 @@ void ProcessFrozenFrame(void)
 				Vector end = pos;
 
 				end.z += 500;
-
 
 				/*	virtual void Beam( const Vector &Start, const Vector &End, int nModelIndex, 
 				int nHaloIndex, unsigned char frameStart, unsigned char frameRate,
@@ -482,12 +483,31 @@ void ProcessTimeBombFrame(void)
 											bluelight_index,  // Model index
 											0, // Halo index
 											0, // Start Frame
-											10, // Frame Rate
+											15, // Frame Rate
 											0.2, // Life
 											16, // Width
 											0, // Spread,
 											0, // Amplitude
 											255,255,255,255, // Colour information
+											5, // Rate
+											0);
+											//FBEAM_FADEOUT); //Flags
+
+					// Advanced effects allowed for ring point
+					temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+											0.0, // Delay
+											pos, // Origin
+											16.0,  // Start radius
+											beep_radius, // End radius
+											bluelight_index,  // Model index
+											0, // Halo index
+											0, // Start Frame
+											10, // Frame Rate
+											0.4, // Life
+											20, // Width
+											0, // Spread,
+											1, // Amplitude
+											20,20,20,255, // Colour information
 											5, // Rate
 											0);
 											//FBEAM_FADEOUT); //Flags
@@ -539,12 +559,31 @@ void ProcessTimeBombFrame(void)
 											bluelight_index,  // Model index
 											0, // Halo index
 											0, // Start Frame
-											10, // Frame Rate
+											15, // Frame Rate
 											0.2, // Life
 											16, // Width
 											0, // Spread,
 											0, // Amplitude
 											255,255,255,255, // Colour information
+											5, // Rate
+											0);
+											//FBEAM_FADEOUT); //Flags
+
+					// Advanced effects allowed for ring point
+					temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+											0.0, // Delay
+											pos, // Origin
+											16.0,  // Start radius
+											beep_radius, // End radius
+											bluelight_index,  // Model index
+											0, // Halo index
+											0, // Start Frame
+											10, // Frame Rate
+											0.4, // Life
+											20, // Width
+											0, // Spread,
+											1, // Amplitude
+											20,20,20,255, // Colour information
 											5, // Rate
 											0);
 											//FBEAM_FADEOUT); //Flags
@@ -725,12 +764,31 @@ void ProcessFireBombFrame(void)
 											bluelight_index,  // Model index
 											0, // Halo index
 											0, // Start Frame
-											10, // Frame Rate
+											15, // Frame Rate
 											0.2, // Life
 											16, // Width
 											0, // Spread,
 											0, // Amplitude
 											128,255,255,255, // Colour information
+											5, // Rate
+											0);
+											//FBEAM_FADEOUT); //Flags
+
+					// Advanced effects allowed for ring point
+					temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+											0.0, // Delay
+											pos, // Origin
+											16.0,  // Start radius
+											beep_radius, // End radius
+											bluelight_index,  // Model index
+											0, // Halo index
+											0, // Start Frame
+											10, // Frame Rate
+											0.4, // Life
+											20, // Width
+											0, // Spread,
+											1, // Amplitude
+											20,255,255,255, // Colour information
 											5, // Rate
 											0);
 											//FBEAM_FADEOUT); //Flags
@@ -782,7 +840,7 @@ void ProcessFireBombFrame(void)
 											bluelight_index,  // Model index
 											0, // Halo index
 											0, // Start Frame
-											10, // Frame Rate
+											15, // Frame Rate
 											0.2, // Life
 											16, // Width
 											0, // Spread,
@@ -792,6 +850,24 @@ void ProcessFireBombFrame(void)
 											0);
 											//FBEAM_FADEOUT); //Flags
 
+					// Advanced effects allowed for ring point
+					temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+											0.0, // Delay
+											pos, // Origin
+											16.0,  // Start radius
+											beep_radius, // End radius
+											bluelight_index,  // Model index
+											0, // Halo index
+											0, // Start Frame
+											10, // Frame Rate
+											0.4, // Life
+											20, // Width
+											0, // Spread,
+											1, // Amplitude
+											20,255,255,255, // Colour information
+											5, // Rate
+											0);
+											//FBEAM_FADEOUT); //Flags
 				}
 
 				punish_mode_list[i].next_fire_bomb_update_time = gpGlobals->curtime + 0.7;
@@ -969,12 +1045,30 @@ void ProcessFreezeBombFrame(void)
 											bluelight_index,  // Model index
 											0, // Halo index
 											0, // Start Frame
-											10, // Frame Rate
+											15, // Frame Rate
 											0.2, // Life
 											16, // Width
 											0, // Spread,
 											0, // Amplitude
 											255,128,255,255, // Colour information
+											5, // Rate
+											0);
+											//FBEAM_FADEOUT); //Flags
+
+					temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+											0.0, // Delay
+											pos, // Origin
+											16.0,  // Start radius
+											beep_radius, // End radius
+											bluelight_index,  // Model index
+											0, // Halo index
+											0, // Start Frame
+											10, // Frame Rate
+											0.4, // Life
+											20, // Width
+											0, // Spread,
+											1, // Amplitude
+											255,20,255,255, // Colour information
 											5, // Rate
 											0);
 											//FBEAM_FADEOUT); //Flags
@@ -1026,7 +1120,7 @@ void ProcessFreezeBombFrame(void)
 											bluelight_index,  // Model index
 											0, // Halo index
 											0, // Start Frame
-											10, // Frame Rate
+											15, // Frame Rate
 											0.2, // Life
 											16, // Width
 											0, // Spread,
@@ -1036,6 +1130,23 @@ void ProcessFreezeBombFrame(void)
 											0);
 											//FBEAM_FADEOUT); //Flags
 
+					temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+											0.0, // Delay
+											pos, // Origin
+											16.0,  // Start radius
+											beep_radius, // End radius
+											bluelight_index,  // Model index
+											0, // Halo index
+											0, // Start Frame
+											10, // Frame Rate
+											0.4, // Life
+											20, // Width
+											0, // Spread,
+											1, // Amplitude
+											255,20,255,255, // Colour information
+											5, // Rate
+											0);
+											//FBEAM_FADEOUT); //Flags
 				}
 
 				punish_mode_list[i].next_freeze_bomb_update_time = gpGlobals->curtime + 0.7;
@@ -1114,13 +1225,13 @@ void ProcessFreezeBombFrame(void)
 
 							if (!FindPlayerByIndex(&blast_player)) continue;
 
-							ProcessFreezePlayer(&blast_player, false);
+							ProcessFreezePlayer(&blast_player, (punish_mode_list[i].freeze_bomb == MANI_TK_ENFORCED) ? false:true);
 						}
 					}
 				}
 
 
-				ProcessFreezePlayer(&player, false);
+				ProcessFreezePlayer(&player, (punish_mode_list[i].freeze_bomb == MANI_TK_ENFORCED) ? false:true);
 				punish_mode_list[i].freeze_bomb = 0;
 				FreeList((void **) &time_bomb_list, &time_bomb_list_size);
 				continue;
@@ -1206,6 +1317,22 @@ void ProcessBeaconFrame(void)
 										4, // Rate
 										0);
 											//FBEAM_FADEOUT); //Flags
+								temp_ents->BeamRingPoint((IRecipientFilter &)mrf, 
+										0.0, // Delay
+										pos, // Origin
+										16.0,  // Start radius
+										beep_radius, // End radius
+										purplelaser_index,  // Model index
+										0, // Halo index
+										0, // Start Frame
+										10, // Frame Rate
+										0.4, // Life
+										20, // Width
+										0, // Spread,
+										1, // Amplitude
+										255,20,20,255, // Colour information
+										4, // Rate
+										0);
 
 			}
 
@@ -1232,7 +1359,7 @@ const char	*fmt,
 	char		tempString[128];
 
 	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
+	vsnprintf( tempString, sizeof(tempString), fmt, argptr );
 	va_end   ( argptr );
 
 	MRecipientFilter mrf;
@@ -1389,27 +1516,39 @@ void	SlayPlayer
 		}
 	}
 
-	if (player_ptr->is_bot)
-	{
-		char kill_cmd[128];
-		int j = Q_strlen(player_ptr->name) - 1;
-
-		while (j != -1)
+//	if (gpManiGameType->GetVFuncIndex(MANI_VFUNC_COMMIT_SUICIDE) == -1)
+/*	if (1)
+	{*/
+		if (player_ptr->is_bot)
 		{
-			if (player_ptr->name[j] == '\0') break;
-			if (player_ptr->name[j] == ' ') break;
-			j--;
+			char kill_cmd[128];
+			int j = Q_strlen(player_ptr->name) - 1;
+
+			while (j != -1)
+			{
+				if (player_ptr->name[j] == '\0') break;
+				if (player_ptr->name[j] == ' ') break;
+				j--;
+			}
+
+			j++;
+
+			snprintf(kill_cmd, sizeof(kill_cmd), "bot_kill \"%s\"\n", &(player_ptr->name[j]));
+			engine->ServerCommand(kill_cmd);
 		}
-
-		j++;
-
-		Q_snprintf(kill_cmd, sizeof(kill_cmd), "bot_kill \"%s\"\n", &(player_ptr->name[j]));
-		engine->ServerCommand(kill_cmd);
-	}
+		else
+		{
+			helpers->ClientCommand(player_ptr->entity, "kill");
+			//helpers->ClientCommand(player->entity, "kill\n");
+		}
+/*	}
 	else
 	{
-		engine->ClientCommand(player_ptr->entity, "cmd kill\n");
-		//helpers->ClientCommand(player->entity, "kill\n");
+		CBasePlayer *pPlayer = (CBasePlayer *) EdictToCBE(player_ptr->entity);
+		if (pPlayer)
+		{
+			CBasePlayer_CommitSuicide(pPlayer);
+		}
 	}
 /*	}
 	else
@@ -1426,17 +1565,12 @@ void	SlayPlayer
 	if (!kill_as_suicide)
 	{
 		CBaseEntity *pCBE = EdictToCBE(player_ptr->entity);
-		int index;
-
-		// Need to save the players score
-		index = gpManiGameType->GetPtrIndex(pCBE, MANI_VAR_FRAGS);
-		if (index != -2)
+		if (Map_CanUseMap(pCBE, MANI_VAR_FRAGS))
 		{
-			int *frags;
-			frags = ((int *)pCBE + index);
-			*frags = *frags + 1;
+			int frags = Map_GetVal(pCBE, MANI_VAR_FRAGS, 0);
+			frags += 1;
+			Map_SetVal(pCBE, MANI_VAR_FRAGS, frags);
 		}
-
 	}
 }
 
@@ -1457,7 +1591,7 @@ void	ProcessSlapPlayer
 
 	int health = 0;
 
-	health = Prop_GetHealth(player->entity);
+	health = Prop_GetVal(player->entity, MANI_PROP_HEALTH, 0);
 	// health = m_pCBaseEntity->GetHealth();
 	if (health <= 0)
 	{
@@ -1471,7 +1605,7 @@ void	ProcessSlapPlayer
 	}
 
 	//m_pCBaseEntity->SetHealth(health);
-	Prop_SetHealth(player->entity, health);
+	Prop_SetVal(player->entity, MANI_PROP_HEALTH, health);
 
 //	Vector vVel = m_pCBaseEntity->GetLocalVelocity();
 
@@ -1576,17 +1710,8 @@ void	ProcessFreezePlayer(player_t *player_ptr, bool admin_called)
 
 	if (punish_mode_list[index].frozen) return;
 
-//	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-
-	Prop_SetMoveType(player_ptr->entity,MOVETYPE_NONE); 
-//	m_pCBaseEntity->m_MoveType = MOVETYPE_NONE;
+	Prop_SetVal(player_ptr->entity, MANI_PROP_MOVE_TYPE, MOVETYPE_NONE); 
 	ProcessSetColour(player_ptr->entity, 0, 128, 255, 135 );
-
-	if (gpManiGameType->CanUseProp(MANI_PROP_RENDER_MODE))
-	{
-		//m_pCBaseEntity->SetRenderMode ((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
-		Prop_SetRenderMode(player_ptr->entity, gpManiGameType->GetAlphaRenderMode());
-	}
 
 	punish_mode_list[player_ptr->index].next_frozen_update_time = -999;
 
@@ -1630,16 +1755,9 @@ void	ProcessUnFreezePlayer(player_t *player_ptr)
 
 	if (!punish_mode_list[index].frozen) return;
 
-//	CBaseEntity *m_pCBaseEntity = player_ptr->entity->GetUnknown()->GetBaseEntity(); 
-//	m_pCBaseEntity->m_MoveType = MOVETYPE_WALK;
-	Prop_SetMoveType(player_ptr->entity, MOVETYPE_WALK); 
+	Prop_SetVal(player_ptr->entity, MANI_PROP_MOVE_TYPE, MOVETYPE_WALK); 
 
 	ProcessSetColour(player_ptr->entity, 255, 255, 255, 255 );
-	if (gpManiGameType->CanUseProp(MANI_PROP_RENDER_MODE))
-	{
-		//m_pCBaseEntity->SetRenderMode ((RenderMode_t) 0);
-		Prop_SetRenderMode(player_ptr->entity, 0);
-	}
 
 	punish_mode_list[index].frozen = 0;
 	punish_mode_list[player_ptr->index].next_frozen_update_time = -999;
@@ -1678,8 +1796,8 @@ void	ProcessTakeCash (player_t *donator, player_t *receiver)
 
 	int cash_to_give = 0;
 
-	int donators_cash = Prop_GetAccount(donator->entity);
-	int receiver_cash = Prop_GetAccount(receiver->entity);
+	int donators_cash = Prop_GetVal(donator->entity, MANI_PROP_ACCOUNT, 0);
+	int receiver_cash = Prop_GetVal(receiver->entity, MANI_PROP_ACCOUNT, 0);
 
 //	receiver_cash = ((int *)receiver->entity->GetUnknown() + offset);
 
@@ -1692,15 +1810,15 @@ void	ProcessTakeCash (player_t *donator, player_t *receiver)
 
 	if (receiver_cash + cash_to_give > 16000)
 	{
-		Prop_SetAccount(receiver->entity, 160000);
+		Prop_SetVal(receiver->entity, MANI_PROP_ACCOUNT, 160000);
 	}
 	else
 	{
-		Prop_SetAccount(receiver->entity, receiver_cash + cash_to_give);
+		Prop_SetVal(receiver->entity, MANI_PROP_ACCOUNT, (receiver_cash + cash_to_give));
 	}
 
 	// Donators cash should never go negative
-	Prop_SetAccount(donator->entity, donators_cash - cash_to_give);
+	Prop_SetVal(donator->entity, MANI_PROP_ACCOUNT, (donators_cash - cash_to_give));
 	// *donators_cash = *donators_cash - cash_to_give;
 	
 }
@@ -2044,13 +2162,10 @@ void	ProcessSetColour(edict_t *pEntity, int r, int g, int b, int a)
 
 	if (a != 255 && gpManiGameType->CanUseProp(MANI_PROP_RENDER_MODE))
 	{
-		//pCBaseEntity->SetRenderMode((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
-		Prop_SetRenderMode(pEntity, gpManiGameType->GetAlphaRenderMode());
+		Prop_SetVal(pEntity, MANI_PROP_RENDER_MODE, gpManiGameType->GetAlphaRenderMode());
 	}
 
-	Prop_SetRenderColor(pEntity, r,g,b,a);
-//	pCBaseEntity->SetRenderColor( r, g, b, a );
-
+	Prop_SetColor(pEntity, r,g,b,a);
 }
 
 //---------------------------------------------------------------------------------
@@ -2073,12 +2188,10 @@ void	ProcessSetWeaponColour(CBaseEntity *pCBaseEntity, int r, int g, int b, int 
 			edict_t *pEntity = serverents->BaseEntityToEdict(pWeapon);
 			if (a != 255)
 			{
-				Prop_SetRenderMode(pEntity, gpManiGameType->GetAlphaRenderMode());
-//				pWeapon->SetRenderMode((RenderMode_t) gpManiGameType->GetAlphaRenderMode());
+				Prop_SetVal(pEntity, MANI_PROP_RENDER_MODE, gpManiGameType->GetAlphaRenderMode());
 			}
 
-			Prop_SetRenderColor(pEntity, r, g, b, a);
-//			pWeapon->SetRenderColor( r, g, b, a );
+			Prop_SetColor(pEntity, r, g, b, a);
 		}
 	}
 }

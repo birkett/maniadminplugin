@@ -74,7 +74,7 @@ public:
 	~ManiCustomEffects();
 
 	void		Init(void); // Run at level init and startup
-	void		ProcessMaEffect(void);
+	PLUGIN_RESULT	ProcessMaEffect(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	int			GetDecal(char *name);
 
 private:

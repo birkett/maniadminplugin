@@ -40,14 +40,21 @@ public:
 	ManiMySQL();
 	~ManiMySQL();
 
-	bool	Init(void);
-	bool	ExecuteQuery(  char	*sql_query, ... );
-	bool	ExecuteQuery(  int	*row_count, char	*sql_query, ... );
+	bool	Init(player_t *player_ptr);
+	bool	ExecuteQuery(player_t *player_ptr,  char	*sql_query, ... );
+	bool	ExecuteQuery(player_t *player_ptr,  int	*row_count, char	*sql_query, ... );
 	bool	FetchRow( void);
-	int		GetInt(int column) {return (atoi(row[column]));}
-	float	GetFloat(int column) {return (atof(row[column]));}
-	char	*GetString(int column) {return (row[column]);}
-	bool	GetBool(int column) {return ((atoi(row[column]) == 0) ? false:true);}
+	int		GetInt(int column) {return atoi(((row[column] == NULL) ? "-1":row[column]));}
+	float	GetFloat(int column) {return atof(((row[column] == NULL) ? "-1":row[column]));}
+	char	*GetString(int column) {return ((row[column] == NULL) ? NULL:row[column]);}
+
+	bool	GetBool(int column) 
+	{
+		if (row[column] == NULL) return false; 
+		else 
+		return (((row[column] == 0) ? false:true));
+	}
+
 	int		GetRowID(void);
 	char	*GetServerVersion(void);
 	int		GetMajor(void) {return major;}

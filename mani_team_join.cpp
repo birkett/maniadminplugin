@@ -62,7 +62,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern	ConVar	*sv_lan;
 
 static int sort_saved_team_by_steam_id ( const void *m1,  const void *m2);
 
@@ -167,20 +166,15 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 	if (mani_team_join_force_auto.GetInt() == 0) return PLUGIN_CONTINUE;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return PLUGIN_CONTINUE;
 
-	int team_number = Q_atoi(team_id);
+	int team_number = atoi(team_id);
 	player_t player;
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return PLUGIN_CONTINUE;
 	if (player.is_bot) return PLUGIN_CONTINUE;
 
-	int client_index;
-
-	if (gpManiClient->IsImmune(&player, &client_index))
+	if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_AUTOJOIN))
 	{
-		if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_AUTOJOIN))
-		{
-			return PLUGIN_CONTINUE;
-		}
+		return PLUGIN_CONTINUE;
 	}
 
 	if (mani_team_join_keep_same_team.GetInt() == 0 || 

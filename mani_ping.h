@@ -51,6 +51,13 @@ private:
 	void		ResetPlayer(int index);
 	bool		IsPlayerImmune(player_t *player_ptr);
 
+	struct ping_player_t
+	{
+		player_t	player;
+		int			current_ping;
+		bool		in_use;
+	};
+
 	struct ping_t
 	{
 		bool	check_ping;
@@ -62,6 +69,7 @@ private:
 	int				ping_immunity_list_size;
 
 	ping_t	ping_list[MANI_MAX_PLAYERS];
+	ping_player_t	ping_player_list[MANI_MAX_PLAYERS];
 	float	next_check;
 };
 

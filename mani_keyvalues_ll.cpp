@@ -132,7 +132,7 @@ bool	ManiKeyValues::WriteNewSubKey(char *sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -153,7 +153,7 @@ bool	ManiKeyValues::WriteNewSubKey(int sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -174,7 +174,7 @@ bool	ManiKeyValues::WriteNewSubKey(unsigned int sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -195,7 +195,7 @@ bool	ManiKeyValues::WriteNewSubKey(float sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%f\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%f\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -217,7 +217,7 @@ bool	ManiKeyValues::WriteEndSubKey(void)
 	int	bytes;
 
 	current_indent -= indent_level;
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s}\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s}\n", 
 							indent_levels[current_indent]);
 	if (bytes == 0) 
 	{
@@ -237,7 +237,7 @@ bool	ManiKeyValues::WriteKey(char *key_name, char *value)
 
 	if (value[0] == '\0') return true;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%s\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%s\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -258,7 +258,7 @@ bool	ManiKeyValues::WriteKey(char *key_name, int value)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -279,7 +279,7 @@ bool	ManiKeyValues::WriteKey(char *key_name, unsigned int value)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -300,7 +300,7 @@ bool	ManiKeyValues::WriteKey(char *key_name, float value)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%f\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%f\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -321,7 +321,7 @@ bool	ManiKeyValues::WriteComment(char *comment)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s// %s\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s// %s\n", 
 							indent_levels[current_indent], 
 							comment
 							);
@@ -341,7 +341,7 @@ bool	ManiKeyValues::WriteCR(void)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "\n");
+	bytes = snprintf(buffer,sizeof(buffer), "\n");
 	if (bytes == 0) 
 	{
 		return false;
@@ -440,7 +440,7 @@ float	ManiKeyValues::GetFloat(char *name, float init)
 		return init;
 	}
 	
-	return Q_atof(ptr->key_value);
+	return atof(ptr->key_value);
 }
 
 //---------------------------------------------------------------------------------
@@ -455,7 +455,7 @@ int	ManiKeyValues::GetInt(char *name, int init)
 		return init;
 	}
 	
-	return Q_atoi(ptr->key_value);
+	return atoi(ptr->key_value);
 }
 
 //---------------------------------------------------------------------------------

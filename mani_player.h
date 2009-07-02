@@ -85,7 +85,7 @@ extern  int			target_player_list_size;
 extern	void	SetPluginPausedStatus(bool status);
 extern	bool	ProcessPluginPaused(void);
 
-extern	bool	FindTargetPlayers(player_t *requesting_player, const char *target_string, int immunity_flag);
+extern	bool	FindTargetPlayers(player_t *requesting_player, const char *target_string, char *immunity_flag);
 extern	bool	FindPlayerBySteamID(player_t *player_ptr);
 extern	bool	FindPlayerByUserID(player_t *player_ptr);
 extern	bool	FindPlayerByEntity(player_t *player_ptr);
@@ -108,8 +108,6 @@ extern	void	ResetActivePlayers(void);
 extern	void	ProcessPlayerSettings(void);
 extern	void	FreePlayerSettings(void);
 extern	void	FreePlayerNameSettings(void);
-extern	void	ShowSettingsPrimaryMenu(player_t *player, int next_index);
-extern	PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity);
 
 extern	PLUGIN_RESULT	ProcessMaDamage( int index);
 extern	PLUGIN_RESULT	ProcessMaDamageTimeout( int index);
@@ -120,7 +118,12 @@ extern	PLUGIN_RESULT	ProcessMaDestruction( int index);
 extern	PLUGIN_RESULT	ProcessMaVoteProgress( int index);
 extern	int				GetNumberOfActivePlayers(void );
 extern  void UTIL_KickPlayer( player_t *player_ptr,  char *short_reason,  char *long_reason,  char *log_reason );
+extern  bool UTIL_DropC4(edict_t *pEntity);
+extern	void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id);
 
+#include "mani_menu.h"
 
+MENUALL_DEC(PlayerSettings);
+MENUALL_DEC(SkinChoice);
 
 #endif

@@ -1150,8 +1150,8 @@ void	ManiMySQLThread::ProcessRequestComplete(request_list_t *request_list_ptr)
 
 				for (int k = 0; k < request_ptr->sql_list[i].num_fields; k ++)
 				{
-					Q_strcat(sql_out, request_ptr->sql_list[i].row_list[j].row[k]);
-					Q_strcat(sql_out, " ");
+					strcat(sql_out, request_ptr->sql_list[i].row_list[j].row[k]);
+					strcat(sql_out, " ");
 				}
 
 				if (svr_command)

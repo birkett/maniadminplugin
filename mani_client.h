@@ -29,33 +29,121 @@
 #define MAX_ADMIN_FLAGS (54)
 #define MAX_IMMUNITY_FLAGS (29)
 
-#define MANI_ADMIN_TYPE (0)
-#define MANI_IMMUNITY_TYPE (1)
+#define ADMIN ("Admin")
+#define IMMUNITY ("Immunity")
+
+#include <vector>
+#include "mani_player.h"
+#include "mani_client_util.h"
 
 extern	bool	IsCommandIssuedByServerAdmin( void );
 
-struct admin_level_t
-{
-	int		level_id;
-	bool	flags[MAX_ADMIN_FLAGS];
-};
-
-struct immunity_level_t
-{
-	int		level_id;
-	bool	flags[MAX_IMMUNITY_FLAGS];
-};
-
-struct player_level_t
-{
-	int		level_id;
-	int		client_index;
-};
-
 class ManiMySQL;
+class ManiKeyValues;
+class LevelList;
+class GroupList;
+
+struct read_t;
+
+class ClientPlayer
+{
+	MENUFRIEND_DEC(LevelClient);
+	MENUFRIEND_DEC(GroupClient);
+	MENUFRIEND_DEC(SelectClient);
+	MENUFRIEND_DEC(SetEmail);
+	MENUFRIEND_DEC(SetNotes);
+	MENUFRIEND_DEC(SetName);
+	MENUFRIEND_DEC(SetPassword);
+	MENUFRIEND_DEC(ClientUpdateOption);
+	MENUFRIEND_DEC(PlayerSteam);
+	MENUFRIEND_DEC(PlayerIP);
+	MENUFRIEND_DEC(PlayerNick);
+	MENUFRIEND_DEC(SetSteam);
+	MENUFRIEND_DEC(SetIP);
+	MENUFRIEND_DEC(SetNick);
+	MENUFRIEND_DEC(RemoveSteam);
+	MENUFRIEND_DEC(RemoveIP);
+	MENUFRIEND_DEC(RemoveNick);
+	MENUFRIEND_DEC(SetPersonalFlag);
+	MENUFRIEND_DEC(NewName);
+	MENUFRIEND_DEC(NameOnServer);
+	MENUFRIEND_DEC(SteamOnServer);
+	MENUFRIEND_DEC(IPOnServer);
+
+public:
+	ClientPlayer(){};
+	~ClientPlayer(){};
+
+	void SetEmailAddress(const char *str_ptr) {email_address.Set(str_ptr);}
+	void SetName(const char *str_ptr) {name.Set(str_ptr);}
+	void SetPassword(const char *str_ptr) {password.Set(str_ptr);}
+	void SetNotes(const char *str_ptr) {notes.Set(str_ptr);}
+	void SetUserID(const int user_id) {this->user_id = user_id;}
+	const char *GetEmailAddress() {return email_address.str;}
+	const char *GetName() {return name.str;}
+	const char *GetPassword() {return password.str;}
+	const char *GetNotes() {return notes.str;}
+	const int	GetUserID() {return user_id;}
+	
+	StringSet	ip_address_list;
+	StringSet	nick_list;
+	StringSet	steam_list;
+
+	// Personal flag storage here
+	PersonalFlag	personal_flag_list;
+
+	// Summed access flags including grouped
+	PersonalFlag	unmasked_list;
+
+	// Summed access flags after applying level masks
+	// Computed using applicable level id and unmasked_list above
+	PersonalFlag	masked_list;
+
+	// Groups that this client belongs to
+	GroupSet		group_list;
+	LevelSet		level_list;
+
+private:
+	BasicStr	email_address;
+	BasicStr	name;
+	BasicStr	password;
+	int			user_id;
+	BasicStr	notes;
+};
 
 class ManiClient
 {
+	MENUFRIEND_DEC(GroupClassType);
+	MENUFRIEND_DEC(GroupUpdate);	
+	MENUFRIEND_DEC(LevelClassType);
+	MENUFRIEND_DEC(LevelUpdate);
+	MENUFRIEND_DEC(CreateLevel);
+	MENUFRIEND_DEC(CreateGroup);
+	MENUFRIEND_DEC(LevelRemove);
+	MENUFRIEND_DEC(GroupRemove);
+	MENUFRIEND_DEC(LevelClient);
+	MENUFRIEND_DEC(GroupClient);
+	MENUFRIEND_DEC(SelectClient);
+	MENUFRIEND_DEC(SetEmail);
+	MENUFRIEND_DEC(SetName);
+	MENUFRIEND_DEC(SetNotes);
+	MENUFRIEND_DEC(SetPassword);
+	MENUFRIEND_DEC(ClientUpdateOption);
+	MENUFRIEND_DEC(PlayerName);
+	MENUFRIEND_DEC(PlayerSteam);
+	MENUFRIEND_DEC(PlayerIP);
+	MENUFRIEND_DEC(PlayerNick);
+	MENUFRIEND_DEC(SetSteam);
+	MENUFRIEND_DEC(SetIP);
+	MENUFRIEND_DEC(SetNick);
+	MENUFRIEND_DEC(RemoveSteam);
+	MENUFRIEND_DEC(RemoveIP);
+	MENUFRIEND_DEC(RemoveNick);
+	MENUFRIEND_DEC(SetPersonalFlag);
+	MENUFRIEND_DEC(NewName);
+	MENUFRIEND_DEC(NameOnServer);
+	MENUFRIEND_DEC(SteamOnServer);
+	MENUFRIEND_DEC(IPOnServer);
 
 public:
 	ManiClient();
@@ -68,81 +156,36 @@ public:
 	// Update level masks
 	void		ClientDisconnect(player_t *player_ptr);
 
-	bool			IsAdmin(player_t *player_ptr, int *client_index);
-	bool			IsImmune(player_t *player_ptr, int *client_index);
-	bool			IsImmuneNoPlayer(player_t *player_ptr, int *client_index);
-	bool			IsPotentialAdmin(player_t *player_ptr, int *client_index);
-	bool			IsAdminAllowed(player_t *player, const char *command, int admin_flag, bool check_war, int *admin_index);
-	inline	bool	IsAdminAllowed(int admin_index, int flag) const {return client_list[admin_index].admin_flags[flag];}
-	inline	bool	IsImmunityAllowed(int immunity_index, int flag) const {return client_list[immunity_index].immunity_flags[flag];}
-	PLUGIN_RESULT	ProcessMaSetAdminFlag(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	bool			IsClient(int id);
+	PLUGIN_RESULT	ProcessMaSetFlag(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 	PLUGIN_RESULT	ProcessMaClient(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 	PLUGIN_RESULT	ProcessMaClientGroup(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
 	PLUGIN_RESULT	ProcessMaReloadClients(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
+	const char		*FindClientName(player_t *player_ptr);
+
+	// New accessors
+	bool			HasAccess(player_t *player_ptr, const char *class_type, const char *flag_name, bool check_war = false, bool check_unmasked_only = false);
+	bool			HasAccess(int player_index, const char *class_type, const char *flag_name, bool check_war = false, bool check_unmasked_only = false);
+	bool			AddFlagDesc(const char *class_name, const char *flag_name, const char *description, bool	replace_description = true );
+	void			UpdateClientUserID(const int user_id, const char *name);
 
 private:
 
-	struct steam_t
+	/******* structs required for V1.1 upgrade to new format ******/
+	struct old_flag_t
 	{
-		char	steam_id[MAX_NETWORKID_LENGTH];
-	};
-
-	struct nick_t
-	{
-		char	nick[32];
-	};
-
-	struct ip_address_t
-	{
-		char	ip_address[128];
-	};
-
-	struct group_t
-	{
-		char	group_id[128];
-	};
-
-	struct client_t
-	{
-		char	email_address[128];
-		ip_address_t	*ip_address_list;
-		nick_t	*nick_list;
-		steam_t	*steam_list;
-		group_t	*admin_group_list;
-		group_t	*immunity_group_list;
-		int		ip_address_list_size;
-		int		steam_list_size;
-		int		nick_list_size;
-		int		admin_group_list_size;
-		int		immunity_group_list_size;
-		char	name[128];
-		char	password[128];
-		int		user_id;
-		int		admin_level_id;
-		int		immunity_level_id;
-		char	notes[256];
-		bool	has_admin_potential;
-		bool	has_immunity_potential;
-		bool	admin_flags[MAX_ADMIN_FLAGS];
-		bool	grouped_admin_flags[MAX_ADMIN_FLAGS];
-		bool	original_admin_flags[MAX_ADMIN_FLAGS];
-
-		bool	immunity_flags[MAX_IMMUNITY_FLAGS];
-		bool	grouped_immunity_flags[MAX_IMMUNITY_FLAGS];
-		bool	original_immunity_flags[MAX_IMMUNITY_FLAGS];
-
-//		bool	admin_exclude_flag;
-//		bool	immunity_exclude_flag;
+		bool	enabled;
+		char	flag_name[16];
 	};
 
 	struct old_style_client_t
 	{
-		char	steam_id[MAX_NETWORKID_LENGTH];
-		char	ip_address[128];
-		char	name[128];
-		char	password[128];
-		char	group_id[128];
-		bool	flags[MAX_ADMIN_FLAGS + MAX_IMMUNITY_FLAGS];
+		char		steam_id[MAX_NETWORKID_LENGTH];
+		char		ip_address[128];
+		char		name[128];
+		char		password[128];
+		char		group_id[128];
+		old_flag_t	flags[MAX_ADMIN_FLAGS + MAX_IMMUNITY_FLAGS];
 	};
 
 	struct admin_group_t
@@ -163,36 +206,27 @@ private:
 		char	flag_desc[64];
 	};
 
+	// These two used for port of old flags
+	flag_t		admin_flag_list[MAX_ADMIN_FLAGS];
+	flag_t		immunity_flag_list[MAX_IMMUNITY_FLAGS];
+
+	/************* End of structs for V1.1 upgrade ***************/
+
 	void		DefaultValues(void);
 	bool		FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr);
 	void		InitAdminFlags(void);
 	void		InitImmunityFlags(void);
 	void		FreeClients(void);
-	void		FreeClient(client_t *client_ptr);
-	bool		OldAddClient( char *file_details, old_style_client_t *client_ptr, bool	is_admin);
-	void		OldAddAdminGroup(char *admin_details);
-	void		OldAddImmunityGroup(char *immunity_details);
-	void		ConvertOldClientToNewClient(old_style_client_t	*old_client_ptr,bool	is_admin);
+	void		SetupPlayersOnServer(void);
+	bool		OldAddClient( char *file_details, old_style_client_t *client_ptr, bool is_admin);
+	void		OldAddGroup(char *admin_details, char *class_type);
+	void		ConvertOldClientToNewClient(old_style_client_t	*old_client_ptr, bool is_admin);
 	bool		LoadOldStyle(void);
-	void		LoadClients(void);
-	void		GetAdminGroups(KeyValues *ptr);
-	void		GetImmunityGroups(KeyValues *ptr);
-	void		GetAdminLevels(KeyValues *ptr);
-	void		GetImmunityLevels(KeyValues *ptr);
-	void		GetClients(KeyValues *ptr);
-	int			GetNextFlag(char *flags_ptr, int *index, int type);
-	void		WriteClients(void);
-	void		DumpClientsToConsole(void);
-	void		ComputeAdminLevels(void);
-	void		ComputeImmunityLevels(void);
-	bool		IsAdminCore( player_t *player_ptr, int *client_index, bool recursive);
-	bool		IsImmuneCore( player_t *player_ptr, int *client_index, bool recursive);
-	bool		IsPotentialImmune(player_t *player_ptr, int *client_index);
-	int			FindClientIndex( char *target_string, bool check_if_admin,  bool	check_if_immune);
-	bool		CreateDBTables(void);
-	bool		CreateDBFlags(void);
-	bool		ExportDataToDB(void);
-	bool 		GetClientsFromDatabase(void);
+	bool		CreateDBTables(player_t *player_ptr);
+	bool		CreateDBFlags(player_t *player_ptr);
+	bool		ExportDataToDB(player_t *player_ptr);
+	bool		UploadServerID(player_t *player_ptr);
+	bool 		GetClientsFromDatabase(player_t *player_ptr);
 	void		ProcessAddClient( player_t *player_ptr,  char *param1);
 	void		ProcessAddSteam( player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessAddIP( player_t *player_ptr,  char *param1, char *param2);
@@ -201,28 +235,28 @@ private:
 	void		ProcessSetPassword( player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessSetEmail( player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessSetNotes( player_t *player_ptr,  char *param1, char *param2);
-	void		ProcessAddGroup( int type, player_t *player_ptr,  char *param1, char *param2);
-	void		ProcessSetLevel( int type, player_t *player_ptr,  char *param1, char *param2);
-	void		ProcessSetFlag( int type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessAddGroup( const char *class_type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetLevel( const char *class_type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessSetFlag( const char *class_type, player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessRemoveClient( player_t *player_ptr,  char *param1);
  	void		ProcessRemoveSteam( player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessRemoveIP( player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessRemoveNick( player_t *player_ptr,  char *param1, char *param2);
-	void		ProcessRemoveGroup( int type, player_t *player_ptr,  char *param1, char *param2);
-	void		RebuildFlags(client_t *client_ptr, int type);
+	void		ProcessRemoveGroup( const char *class_type, player_t *player_ptr,  char *param1, char *param2);
 	void		ProcessClientStatus( player_t *player_ptr,  char *param1 );
 	void		ProcessClientUpload( player_t *player_ptr);
 	void		ProcessClientDownload( player_t *player_ptr);
 	void		ProcessAllClientStatus( player_t *player_ptr);
+	void		ProcessClientServerID(player_t *player_ptr);
 
 	// Group based commands
-	void		ProcessAddGroupType( int type, player_t *player_ptr,  char *param1, char *param2);
-	void		ProcessAddLevelType( int type, player_t *player_ptr,  char *param1, char *param2);
-	void		ProcessRemoveGroupType( int type, player_t *player_ptr,  char *param1);
-	void		ProcessRemoveLevelType( int type, player_t *player_ptr,  char *param1);
+	void		ProcessAddGroupType( const char *class_type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessAddLevelType( const char *class_type, player_t *player_ptr,  char *param1, char *param2);
+	void		ProcessRemoveGroupType( const char *class_type, player_t *player_ptr,  char *param1);
+	void		ProcessRemoveLevelType( const char *class_type, player_t *player_ptr,  char *param1);
 	void		ProcessClientGroupStatus( player_t *player_ptr,  char *param1 );
-	void		ProcessClientFlagDesc( int type, player_t *player_ptr,  char *param1);
-	void		ProcessAllClientFlagDesc( int type, player_t *player_ptr);
+	void		ProcessClientFlagDesc( const char *class_type, player_t *player_ptr,  char *param1);
+	void		ProcessAllClientFlagDesc( const char *class_type, player_t *player_ptr);
 
 	// V1.2BetaM upgrade functions
 	void		UpgradeDB1( void );
@@ -231,27 +265,89 @@ private:
 	bool		TestColumnExists(ManiMySQL *mani_mysql_ptr, char *table_name, char *column_name, bool *found_column);
 	bool		TestColumnType(ManiMySQL *mani_mysql_ptr, char *table_name, char *column_name, char *column_type, bool *column_matches);
 
-	client_t		*client_list;
-	int				client_list_size;
-	
-	admin_group_t	*admin_group_list;
-	int				admin_group_list_size;
-	
-	immunity_group_t	*immunity_group_list;
-	int				immunity_group_list_size;
+	void		AddBuiltInFlags(void);
+	void		SetupUnMasked(void);
+	void		SetupMasked(void);
+	void		WriteClients(void);
+	void		LoadClients(void);
+	char		*SplitFlagString(char *flags_ptr, int *index);
+	void		ReadGroups(ManiKeyValues *kv_ptr, read_t *read_ptr, bool group_type);
+	void		ReadPlayers(ManiKeyValues *kv_ptr, read_t *read_ptr);
 
-	admin_level_t	*admin_level_list;
-	int				admin_level_list_size;
+	void		LoadClientsBeta(void);
+	void		GetAdminGroupsBeta(KeyValues *ptr);
+	void		GetImmunityGroupsBeta(KeyValues *ptr);
+	void		GetAdminLevelsBeta(KeyValues *ptr);
+	void		GetImmunityLevelsBeta(KeyValues *ptr);
+	void		GetClientsBeta(KeyValues *ptr);
+	int			FindClientIndex( player_t *player_ptr );
+	int			FindClientIndex( char *target_string );
 
-	immunity_level_t	*immunity_level_list;
-	int				immunity_level_list_size;
 
-	flag_t		admin_flag_list[MAX_ADMIN_FLAGS];
-	flag_t		immunity_flag_list[MAX_IMMUNITY_FLAGS];
+	// List of available global groups
+	GroupList	group_list;
 
-	int			active_admin_list[MANI_MAX_PLAYERS];
-	int			active_immunity_list[MANI_MAX_PLAYERS];
+	// List of available global levels
+	LevelList	level_list;
+
+	// Stores ptrs to client records for players actually on the server, 
+	// this allows fast lookups by index
+	ClientPlayer	*active_client_list[64];
+
+	// Stores all clients in a list
+	vector<ClientPlayer *> c_list;
+	FlagDescList	flag_desc_list;
 };
+
+struct	mask_level_t
+{
+	ClientPlayer	*client_ptr;
+	char	class_type[32];
+	int		level_id;
+};
+
+MENUALL_DEC(ClientOrGroup);
+MENUALL_DEC(GroupOption);
+MENUALL_DEC(LevelOption);
+MENUALL_DEC(GroupClassType);
+MENUALL_DEC(GroupUpdate);
+MENUALL_DEC(LevelClassType);
+MENUALL_DEC(LevelUpdate);
+MENUALL_DEC(ChooseClassType);
+MENUALL_DEC(CreateLevel);
+MENUALL_DEC(CreateGroup);
+MENUALL_DEC(LevelRemove);
+MENUALL_DEC(GroupRemove);
+MENUALL_DEC(LevelClient);
+MENUALL_DEC(GroupClient);
+MENUALL_DEC(ClientOption);
+MENUALL_DEC(SelectClient);
+MENUALL_DEC(ClientUpdateOption);
+MENUALL_DEC(SetEmail);
+MENUALL_DEC(SetPassword);
+MENUALL_DEC(SetNotes);
+MENUALL_DEC(SetName);
+MENUALL_DEC(ClientName);
+MENUALL_DEC(ClientSteam);
+MENUALL_DEC(ClientIP);
+MENUALL_DEC(ClientNick);
+MENUALL_DEC(PlayerName);
+MENUALL_DEC(PlayerSteam);
+MENUALL_DEC(PlayerIP);
+MENUALL_DEC(PlayerNick);
+MENUALL_DEC(SetSteam);
+MENUALL_DEC(SetIP);
+MENUALL_DEC(SetNick);
+MENUALL_DEC(RemoveSteam);
+MENUALL_DEC(RemoveIP);
+MENUALL_DEC(RemoveNick);
+MENUALL_DEC(SetPersonalClass);
+MENUALL_DEC(SetPersonalFlag);
+MENUALL_DEC(AddClientOption);
+MENUALL_DEC(NewName);
+MENUALL_DEC(NameOnServer);
+MENUALL_DEC(SteamOnServer);
+MENUALL_DEC(IPOnServer);
 
 extern	ManiClient *gpManiClient;
 

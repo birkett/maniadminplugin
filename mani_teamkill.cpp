@@ -53,6 +53,9 @@
 #include "mani_sounds.h"
 #include "mani_effects.h"
 #include "mani_gametype.h"
+#include "mani_util.h"
+#include "mani_warmuptimer.h"
+#include "mani_team.h"
 #include "mani_teamkill.h"
 #include "mani_commands.h"
 #include "cbaseentity.h"
@@ -63,7 +66,6 @@ extern	INetworkStringTableContainer *networkstringtable;
 
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
-extern	ConVar	*sv_lan;
 extern	bool war_mode;
 extern	int	con_command_index;
 extern	float		end_spawn_protection_time;
@@ -82,7 +84,7 @@ struct	tk_confirm_t
 
 tk_player_t	*tk_player_list = NULL;
 static	tk_bot_t tk_bot_list[MANI_MAX_PUNISHMENTS];
-static	tk_confirm_t tk_confirm_list[MANI_MAX_PLAYERS];
+//static	tk_confirm_t tk_confirm_list[MANI_MAX_PLAYERS];
 
 int	tk_player_list_size = 0;
 
@@ -97,7 +99,8 @@ static	void	ProcessTKNoForgiveMode( player_t *attacker_ptr,  player_t *victim_pt
 static	int		GetRandomTKPunishmentAgainstBot(void);
 static	int		GetRandomTKPunishmentAgainstHuman(void);
 static	bool	IsMenuOptionAllowed( int punishment, bool is_bot);
-static	bool	IsMenuSelectionValid( player_t *player_ptr, char *steam_id_ptr, int user_id );
+
+static	int	current_round;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -166,11 +169,15 @@ void	InitTKPunishments (void)
 		tk_bot_list[MANI_TK_BEACON].punish_cvar_ptr = &mani_tk_allow_beacon_option;
 	}
 
-	for (int i = 0; i < MANI_MAX_PLAYERS; i ++)
-	{
-		tk_confirm_list[i].confirmed = false;
-	}
+	current_round = 0;
+}
 
+//---------------------------------------------------------------------------------
+// Purpose: Process Rounds End event
+//---------------------------------------------------------------------------------
+void	TKRoundStart (void)
+{
+	current_round ++;
 }
 
 //---------------------------------------------------------------------------------
@@ -179,14 +186,6 @@ void	InitTKPunishments (void)
 void	FreeTKPunishments (void)
 {
 	FreeList((void **) &tk_player_list, &tk_player_list_size);
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Free the tk punishments list
-//---------------------------------------------------------------------------------
-void	ProcessTKDisconnected (player_t *player_ptr)
-{
-	tk_confirm_list[player_ptr->index - 1].confirmed = false;
 }
 
 //---------------------------------------------------------------------------------
@@ -220,7 +219,7 @@ void	ProcessTKSpawnPunishment
 		}
 
 		if (player_ptr->is_bot) continue;
-		if (sv_lan && sv_lan->GetInt() == 1) continue;
+		if (IsLAN()) continue;
 
 		// Only human players on web
 		if (FStrEq(tk_player_list[i].steam_id, player_ptr->steam_id))
@@ -281,7 +280,7 @@ void	ProcessTKSelectedPunishment
 (
  int	punishment, 
  player_t *victim_ptr, 
- const char	*attacker_user_id, 
+ const int	attacker_user_id, 
  char	*attacker_steam_id, 
  bool	bot_calling // Bot called for this punishment
  )
@@ -293,19 +292,13 @@ void	ProcessTKSelectedPunishment
 	if (war_mode) return;
 
 	// Check user allowed to select punishment
-	if (!bot_calling)
-	{
-		if (!IsMenuSelectionValid(victim_ptr, attacker_steam_id, Q_atoi(attacker_user_id))) return;
-	}
-
-
 	if (!IsMenuOptionAllowed(punishment, bot_calling))
 	{
 		return;
 	}
 
 
-	attacker.user_id = Q_atoi(attacker_user_id);
+	attacker.user_id = attacker_user_id;
 	Q_strcpy (attacker.steam_id, attacker_steam_id);
 
 	// Check if player found on server
@@ -356,7 +349,7 @@ void	ProcessPlayerNotOnServer
 	if (bot_calling) return;
 
 	// If we are in lan mode we can't track using steam id
-	if (sv_lan && sv_lan->GetInt() == 1) return;
+	if (IsLAN()) return;
 
 	// Could not find attacker on server, doesn't mean he
 	// doesn't exist in the tk list !!
@@ -516,11 +509,7 @@ void	ProcessImmediatePunishment
 	}
 
 	// Player not found in tk list so add if attacker is not a bot
-	CreateNewTKPlayer(attacker_ptr->name, attacker_ptr->steam_id, attacker_ptr->user_id, 0, 0);
-	if (NeedToIncrementViolations(victim_ptr, punishment))
-	{
-		tk_player_list[i].violations_committed ++;
-	}
+	CreateNewTKPlayer(attacker_ptr->name, attacker_ptr->steam_id, attacker_ptr->user_id, 1, 0);
 
 	// Check if ban required
 	if (TKBanPlayer (attacker_ptr, tk_player_list_size - 1))
@@ -693,17 +682,17 @@ bool	GetTKPunishSayString
 		Q_strcpy(log_string,"");
 		switch (punishment)
 		{
-		case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s will be slayed for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_SLAP: Q_snprintf(output_string, 512, "Player %s will be slapped for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_BLIND: Q_snprintf(output_string, 512, "Player %s will be blinded for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_FREEZE: Q_snprintf(output_string, 512, "Player %s will be frozen for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_SLAY: snprintf(output_string, 512, "Player %s will be slayed for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_SLAP: snprintf(output_string, 512, "Player %s will be slapped for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_BLIND: snprintf(output_string, 512, "Player %s will be blinded for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_FREEZE: snprintf(output_string, 512, "Player %s will be frozen for team killing %s", attacker_ptr->name, victim_ptr->name); break;
 		case MANI_TK_CASH: return false; // No future tense needed
-		case MANI_TK_BURN: Q_snprintf(output_string, 512, "Player %s will be burned for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_DRUG: Q_snprintf(output_string, 512, "Player %s will be drugged for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_TIME_BOMB: Q_snprintf(output_string, 512, "Player %s will be turned into a time bomb for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_FIRE_BOMB: Q_snprintf(output_string, 512, "Player %s will be turned into a fire bomb for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_FREEZE_BOMB: Q_snprintf(output_string, 512, "Player %s will be turned into a freeze bomb for team killing %s", attacker_ptr->name, victim_ptr->name); break;
-		case MANI_TK_BEACON: Q_snprintf(output_string, 512, "Player %s will be turned into a beacon for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_BURN: snprintf(output_string, 512, "Player %s will be burned for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_DRUG: snprintf(output_string, 512, "Player %s will be drugged for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_TIME_BOMB: snprintf(output_string, 512, "Player %s will be turned into a time bomb for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_FIRE_BOMB: snprintf(output_string, 512, "Player %s will be turned into a fire bomb for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_FREEZE_BOMB: snprintf(output_string, 512, "Player %s will be turned into a freeze bomb for team killing %s", attacker_ptr->name, victim_ptr->name); break;
+		case MANI_TK_BEACON: snprintf(output_string, 512, "Player %s will be turned into a beacon for team killing %s", attacker_ptr->name, victim_ptr->name); break;
 		case MANI_TK_FORGIVE: return false; // No future tense needed
 		default: break;
 		}
@@ -712,52 +701,52 @@ bool	GetTKPunishSayString
 	{
 		switch (punishment)
 		{
-		case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s has been slayed for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection slayed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_SLAY: snprintf(output_string, 512, "Player %s has been slayed for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection slayed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_SLAP: Q_snprintf(output_string, 512, "Player %s has been slapped for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection slapped user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_SLAP: snprintf(output_string, 512, "Player %s has been slapped for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection slapped user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_BLIND: Q_snprintf(output_string, 512, "Player %s has been blinded for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection blinded user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_BLIND: snprintf(output_string, 512, "Player %s has been blinded for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection blinded user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_FREEZE: Q_snprintf(output_string, 512, "Player %s has been frozen for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection froze user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_FREEZE: snprintf(output_string, 512, "Player %s has been frozen for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection froze user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_CASH: Q_snprintf(output_string, 512, "Player %s has taken %i percent cash from %s", victim_ptr->name, mani_tk_cash_percent.GetInt(), attacker_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection took cash from user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_CASH: snprintf(output_string, 512, "Player %s has taken %i percent cash from %s", victim_ptr->name, mani_tk_cash_percent.GetInt(), attacker_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection took cash from user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_BURN: Q_snprintf(output_string, 512, "Player %s has been burned for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection burned user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_BURN: snprintf(output_string, 512, "Player %s has been burned for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection burned user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_DRUG: Q_snprintf(output_string, 512, "Player %s has been drugged for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection drugged user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_DRUG: snprintf(output_string, 512, "Player %s has been drugged for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection drugged user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_TIME_BOMB: Q_snprintf(output_string, 512, "Player %s has been turned into a time bomb for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection time bombed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_TIME_BOMB: snprintf(output_string, 512, "Player %s has been turned into a time bomb for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection time bombed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_FIRE_BOMB: Q_snprintf(output_string, 512, "Player %s has been turned into a fire bomb for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection fire bombed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_FIRE_BOMB: snprintf(output_string, 512, "Player %s has been turned into a fire bomb for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection fire bombed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_FREEZE_BOMB: Q_snprintf(output_string, 512, "Player %s has been turned into a freeze bomb for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection freeze bombed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_FREEZE_BOMB: snprintf(output_string, 512, "Player %s has been turned into a freeze bomb for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection freeze bombed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_BEACON: Q_snprintf(output_string, 512, "Player %s has been turned into a beacon for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection beaconed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
+		case MANI_TK_BEACON: snprintf(output_string, 512, "Player %s has been turned into a beacon for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection beaconed user [%s] steam id [%s] for team killing user [%s] steam id [%s]\n", attacker_ptr->name, attacker_ptr->steam_id, victim_ptr->name, victim_ptr->steam_id);
 							break;
 
-		case MANI_TK_FORGIVE: Q_snprintf(output_string, 512, "Player %s has been forgiven for team killing %s", attacker_ptr->name, victim_ptr->name);
-							Q_snprintf(log_string, 512, "");
+		case MANI_TK_FORGIVE: snprintf(output_string, 512, "Player %s has been forgiven for team killing %s", attacker_ptr->name, victim_ptr->name);
+							snprintf(log_string, 512, "");
 							break;
 
 		default: break;
@@ -782,44 +771,44 @@ bool	GetTKAutoPunishSayString
 
 	switch (punishment)
 	{
-	case MANI_TK_SLAY: Q_snprintf(output_string, 512, "Player %s has been slayed for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto slayed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_SLAY: snprintf(output_string, 512, "Player %s has been slayed for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto slayed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_SLAP: Q_snprintf(output_string, 512, "Player %s has been slapped for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto slapped user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_SLAP: snprintf(output_string, 512, "Player %s has been slapped for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto slapped user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_BLIND: Q_snprintf(output_string, 512, "Player %s has been blinded for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto blinded user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_BLIND: snprintf(output_string, 512, "Player %s has been blinded for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto blinded user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_FREEZE: Q_snprintf(output_string, 512, "Player %s has been frozen for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto froze user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_FREEZE: snprintf(output_string, 512, "Player %s has been frozen for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto froze user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_BURN: Q_snprintf(output_string, 512, "Player %s has been burned for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto burned user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_BURN: snprintf(output_string, 512, "Player %s has been burned for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto burned user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_DRUG: Q_snprintf(output_string, 512, "Player %s has been drugged for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto drugged user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_DRUG: snprintf(output_string, 512, "Player %s has been drugged for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto drugged user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_TIME_BOMB: Q_snprintf(output_string, 512, "Player %s has been turned into a time bomb for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto time bombed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_TIME_BOMB: snprintf(output_string, 512, "Player %s has been turned into a time bomb for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto time bombed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_FIRE_BOMB: Q_snprintf(output_string, 512, "Player %s has been turned into a fire bomb for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto fire bombed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_FIRE_BOMB: snprintf(output_string, 512, "Player %s has been turned into a fire bomb for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto fire bombed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_FREEZE_BOMB: Q_snprintf(output_string, 512, "Player %s has been turned into a freeze bomb for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto freeze bombed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_FREEZE_BOMB: snprintf(output_string, 512, "Player %s has been turned into a freeze bomb for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto freeze bombed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
-	case MANI_TK_BEACON: Q_snprintf(output_string, 512, "Player %s has been turned into a beacon for a previous team killing violation", attacker_ptr->name);
-						Q_snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto beaconed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
+	case MANI_TK_BEACON: snprintf(output_string, 512, "Player %s has been turned into a beacon for a previous team killing violation", attacker_ptr->name);
+						snprintf(log_string, 512, "[MANI_ADMIN_PLUGIN] TK Protection auto beaconed user [%s] steam id [%s] for team killing\n", attacker_ptr->name, attacker_ptr->steam_id);
 						break;
 
 	default: return false;
@@ -841,7 +830,7 @@ bool	TKBanPlayer (player_t	*attacker, int ban_index)
 	}
 	
 	// Don't bother banning if on lan
-	if (sv_lan && sv_lan->GetInt() == 1) return false;
+	if (IsLAN()) return false;
 
 	// Make sure index is within bounds
 	if (tk_player_list_size >= ban_index && ban_index >= 0)
@@ -871,7 +860,7 @@ bool	TKBanPlayer (player_t	*attacker, int ban_index)
 				}
 			}
 
-			Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s kick\n", mani_tk_ban_time.GetInt(), attacker->steam_id);
+			snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s kick\n", mani_tk_ban_time.GetInt(), attacker->steam_id);
 
 			engine->ServerCommand(ban_cmd);
 			engine->ServerCommand("writeid\n");
@@ -933,7 +922,7 @@ bool	IsTKPlayerMatch
 )
 {
 
-	if (sv_lan && sv_lan->GetInt() == 1)
+	if (IsLAN())
 	{
 		// Lan mode
 		if (tk_player->user_id == player->user_id)
@@ -954,37 +943,6 @@ bool	IsTKPlayerMatch
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Check if unique id is valid for plugin
-//---------------------------------------------------------------------------------
-static
-bool IsMenuSelectionValid
-(
- player_t *player_ptr,
- char	*steam_id_ptr,
- int	user_id
- )
-{
-	if (!tk_confirm_list[player_ptr->index - 1].confirmed)
-	{
-		return false;
-	}
-
-	tk_confirm_list[player_ptr->index - 1].confirmed = false;
-
-	if (user_id != tk_confirm_list[player_ptr->index - 1].user_id)
-	{
-		return false;
-	}
-
-	if (!FStrEq(steam_id_ptr, tk_confirm_list[player_ptr->index - 1].steam_id))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-//---------------------------------------------------------------------------------
 // Purpose: Handle a player death event
 //---------------------------------------------------------------------------------
 bool ProcessTKDeath
@@ -1002,7 +960,7 @@ bool ProcessTKDeath
 	if (attacker_ptr->user_id <= 0) return false;
 
 	// Are players on same team ?
-	if (!IsOnSameTeam (victim_ptr, attacker_ptr))	return false;
+	if (!gpManiTeam->IsOnSameTeam (victim_ptr, attacker_ptr))	return false;
 
 	if (mani_tk_forgive.GetInt() == 0)
 	{
@@ -1017,7 +975,7 @@ bool ProcessTKDeath
 	{
 		for (int i = 0; i < tk_player_list_size; i++)
 		{
-			if (sv_lan && sv_lan->GetInt() == 1)
+			if (IsLAN())
 			{
 				if (attacker_ptr->user_id == tk_player_list[i].user_id)
 				{
@@ -1102,184 +1060,133 @@ bool ProcessTKDeath
 		char	log_string[512];
 		char	output_string[512];
 		GetTKPunishSayString(bot_choice, attacker_ptr, victim_ptr, output_string, log_string, false);
-// MMsg("bot_choice = [%i]\nSay String [%s]\n", bot_choice, output_string);
 		ProcessTKPunishment(bot_choice, attacker_ptr, victim_ptr, output_string, log_string, false);
 		return false;
 	}
 
-	tk_confirm_list[victim_ptr->index - 1].confirmed = true;
-	Q_strcpy(tk_confirm_list[victim_ptr->index - 1].steam_id, attacker_ptr->steam_id);
-	Q_strcpy(tk_confirm_list[victim_ptr->index - 1].name, attacker_ptr->name);
-	tk_confirm_list[victim_ptr->index - 1].user_id = attacker_ptr->user_id;
-
 	// Force client to call command to show menu
-	engine->ClientCommand(victim_ptr->entity, "%s %i \"%s\"", (attacker_ptr->is_bot) ? "tkbot":"tkhuman", attacker_ptr->user_id, attacker_ptr->steam_id);
+	g_menu_mgr.Kill(victim_ptr);
+	MENUPAGE_CREATE_PARAM4(TKPlayerPage, 
+							victim_ptr, 
+							AddParam("is_bot", attacker_ptr->is_bot), 
+							AddParam("user_id", attacker_ptr->user_id), 
+							AddParam("steam_id", attacker_ptr->steam_id), 
+							AddParam("name", attacker_ptr->name),
+							2,
+							-1);
 	return true;
 }
 
 //---------------------------------------------------------------------------------
 // Purpose: Handle draw tk punishment menu
 //---------------------------------------------------------------------------------
-void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset )
+int TKPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
-	char	steam_id[50];
+	bool	is_bot;
 	int		user_id;
-	int		punishment;
-	bool	is_bot = false;
+	char	*steam_id;
+	int		punish;
 
-	// Format of command is
-	// tkbot/tkhuman user_id steam_id punishment_id
-	//       0          1       2          3
+	if (!m_page_ptr->params.GetParam("is_bot", &is_bot)) return CLOSE_MENU;
+	if (!m_page_ptr->params.GetParam("user_id", &user_id)) return CLOSE_MENU;
+	if (!m_page_ptr->params.GetParam("steam_id", &steam_id)) return CLOSE_MENU;
+	if (!this->params.GetParam("punish", &punish)) return CLOSE_MENU;
 
-	if (war_mode) return;
+	ProcessTKSelectedPunishment(punish, player_ptr, user_id, steam_id, is_bot);
+	return CLOSE_MENU;
+}
 
-	if (FStrEq(gpCmd->Cmd_Argv(0), "tkbot"))
+bool TKPlayerPage::PopulateMenuPage(player_t *player_ptr)
+{
+
+	bool	is_bot;
+	char	*name;
+
+	this->params.GetParam("is_bot", &is_bot);
+	this->params.GetParam("name", &name);
+
+	this->SetEscLink("%s", Translate(player_ptr, 620));
+	this->SetTitle("%s", Translate(player_ptr, 631,"%s", name));
+
+	// Some people don't want the forgive option
+	if (IsMenuOptionAllowed(MANI_TK_FORGIVE, is_bot))
 	{
-		is_bot = true;
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 632, AddParam("punish", MANI_TK_FORGIVE));
 	}
 
-	if (argc - argv_offset == 4)
+	// Some people don't want the slay option
+	if (IsMenuOptionAllowed(MANI_TK_SLAY, is_bot))
 	{
-		Q_snprintf(steam_id, sizeof(steam_id), "%s", gpCmd->Cmd_Argv(2 + argv_offset));
-		punishment = Q_atoi(gpCmd->Cmd_Argv(3 + argv_offset));
-		ProcessTKSelectedPunishment(punishment, player_ptr, gpCmd->Cmd_Argv(1 + argv_offset), steam_id, is_bot);
-		return;
-	}
-	else if (argc - argv_offset == 3)
-	{
-		// Format of command is
-		// tkbot/tkhuman user_id steam_id 
-		//       0          1       2               
-
-		user_id = Q_atoi(gpCmd->Cmd_Argv(1 + argv_offset));
-		Q_snprintf(steam_id, sizeof(steam_id), "%s", gpCmd->Cmd_Argv(2 + argv_offset));
-		if (!IsMenuSelectionValid(player_ptr, steam_id, user_id)) return;
-
-		FreeMenu();
-
-		// Some people don't want the forgive option
-		if (IsMenuOptionAllowed(MANI_TK_FORGIVE, is_bot))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(632));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FORGIVE);
-		}
-
-		// Some people don't want the slay option
-		if (IsMenuOptionAllowed(MANI_TK_SLAY, is_bot))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(633));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_SLAY);
-		}
-
-		// Some people don't want the slap option
-		if (IsMenuOptionAllowed(MANI_TK_SLAP, is_bot) && gpManiGameType->IsSlapAllowed())
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(634, "%i", mani_tk_slap_to_damage.GetInt()));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_SLAP);
-		}
-
-		// Some people don't want the slap option
-		if (IsMenuOptionAllowed(MANI_TK_BEACON, is_bot) && gpManiGameType->GetAdvancedEffectsAllowed())
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(643));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_BEACON);
-		}
-
-		// Some people don't want the time bomb option
-		if (IsMenuOptionAllowed(MANI_TK_TIME_BOMB, is_bot))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(640));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_TIME_BOMB);
-		}
-
-		// Some people don't want the fire bomb option
-		if (IsMenuOptionAllowed(MANI_TK_FIRE_BOMB, is_bot) && gpManiGameType->IsFireAllowed())
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(641));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FIRE_BOMB);
-		}
-
-		// Some people don't want the freeze bomb option
-		if (IsMenuOptionAllowed(MANI_TK_FREEZE_BOMB, is_bot))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(642));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FREEZE_BOMB);
-		}
-
-		// Some people don't want the freeze option
-		if (IsMenuOptionAllowed(MANI_TK_FREEZE, is_bot))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(636));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FREEZE);
-		}
-
-		// Some people don't want the burn option
-		if (IsMenuOptionAllowed(MANI_TK_BURN, is_bot)  && gpManiGameType->IsFireAllowed())
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(639));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_BURN);
-		}
-
-		// Some people don't want the cash option
-		if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->CanUseProp(MANI_PROP_ACCOUNT))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(637, "%i", mani_tk_cash_percent.GetInt()));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_CASH);
-		}
-
-		// Some people don't want the drug option
-		if (IsMenuOptionAllowed(MANI_TK_DRUG, is_bot) && gpManiGameType->IsDrugAllowed())
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(638));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_DRUG);
-		}
-
-		// Some people don't want the blind option
-		if (IsMenuOptionAllowed(MANI_TK_BLIND, is_bot))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(635));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_BLIND);
-		}
-
-		if (menu_list_size == 0) return;
-		// List size may have changed
-		if (next_index > menu_list_size) next_index = 0;
-
-		char more_cmd[128];
-		Q_snprintf( more_cmd, sizeof(more_cmd), "%i \"%s\"", user_id, steam_id);
-
-		char menu_title[512];
-		Q_snprintf( menu_title, sizeof(menu_title), "%s", Translate(631,"%s", tk_confirm_list[player_ptr->index - 1].name));
-
-		// Draw menu list
-		if (is_bot)
-		{
-			DrawSubMenu (player_ptr, Translate(630), menu_title, next_index, "tkbot", more_cmd, false, -1);
-		}
-		else
-		{
-			DrawSubMenu (player_ptr, Translate(630), menu_title, next_index, "tkhuman", more_cmd, false, -1);
-		}
-		
-		tk_confirm_list[player_ptr->index - 1].confirmed = true;
-		Q_strcpy(tk_confirm_list[player_ptr->index - 1].steam_id, steam_id);
-		tk_confirm_list[player_ptr->index - 1].user_id = user_id;
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 633, AddParam("punish", MANI_TK_SLAY));
 	}
 
-	return;
+	// Some people don't want the slap option
+	if (IsMenuOptionAllowed(MANI_TK_SLAP, is_bot) && gpManiGameType->IsSlapAllowed())
+	{
+		MenuItem *ptr = new TKPlayerItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, 634, "%i", mani_tk_slap_to_damage.GetInt()));
+		ptr->params.AddParam("punish", MANI_TK_SLAP);
+		this->AddItem(ptr);
+	}
+
+	// Some people don't want the beacon option
+	if (IsMenuOptionAllowed(MANI_TK_BEACON, is_bot) && gpManiGameType->GetAdvancedEffectsAllowed())
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 643, AddParam("punish", MANI_TK_BEACON));
+	}
+
+	// Some people don't want the time bomb option
+	if (IsMenuOptionAllowed(MANI_TK_TIME_BOMB, is_bot))
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 640, AddParam("punish", MANI_TK_TIME_BOMB));
+	}
+
+	// Some people don't want the fire bomb option
+	if (IsMenuOptionAllowed(MANI_TK_FIRE_BOMB, is_bot) && gpManiGameType->IsFireAllowed())
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 641, AddParam("punish", MANI_TK_FIRE_BOMB));
+	}
+
+	// Some people don't want the freeze bomb option
+	if (IsMenuOptionAllowed(MANI_TK_FREEZE_BOMB, is_bot))
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 642, AddParam("punish", MANI_TK_FREEZE_BOMB));
+	}
+
+	// Some people don't want the freeze option
+	if (IsMenuOptionAllowed(MANI_TK_FREEZE, is_bot))
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 636, AddParam("punish", MANI_TK_FREEZE));
+	}
+
+	// Some people don't want the burn option
+	if (IsMenuOptionAllowed(MANI_TK_BURN, is_bot)  && gpManiGameType->IsFireAllowed())
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 639, AddParam("punish", MANI_TK_BURN));
+	}
+
+	// Some people don't want the cash option
+	if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->CanUseProp(MANI_PROP_ACCOUNT))
+	{
+		MenuItem *ptr = new TKPlayerItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, 637, "%i", mani_tk_cash_percent.GetInt()));
+		ptr->params.AddParam("punish", MANI_TK_CASH);
+		this->AddItem(ptr);
+	}
+
+	// Some people don't want the drug option
+	if (IsMenuOptionAllowed(MANI_TK_DRUG, is_bot) && gpManiGameType->IsDrugAllowed())
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 638, AddParam("punish", MANI_TK_DRUG));
+	}
+
+	// Some people don't want the blind option
+	if (IsMenuOptionAllowed(MANI_TK_BLIND, is_bot))
+	{
+		MENUOPTION_CREATE_PARAM(TKPlayerItem, 635, AddParam("punish", MANI_TK_BLIND));
+	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -1481,12 +1388,10 @@ void	ProcessTKNoForgiveMode
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ProcessMaTKList(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	int	admin_index;
-
 	if (player_ptr)
 	{
 		// Check if player is admin
-		if (!gpManiClient->IsAdminAllowed(player_ptr, "ma_tklist", ALLOW_CONFIG, war_mode, &admin_index)) return PLUGIN_STOP;
+		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CONFIG, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
 	OutputToConsole(player_ptr, "Current Players in TK Violation list\nViolations needed for ban [%i]\n", mani_tk_offences_for_ban.GetInt());
@@ -1504,34 +1409,6 @@ PLUGIN_RESULT	ProcessMaTKList(player_t *player_ptr, const char	*command_name, co
 	}
 
 	return PLUGIN_STOP;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Process the ProcessTKCmd command
-//---------------------------------------------------------------------------------
-bool	ProcessTKCmd( player_t	*player_ptr)
-{
-	if (!FindPlayerByEntity(player_ptr)) return PLUGIN_STOP;
-
-	if (gpCmd->Cmd_Argc() > 2) 
-	{
-		const char *temp_command = gpCmd->Cmd_Argv(1);
-		int next_index = 0;
-		int argv_offset = 0;
-
-		if (FStrEq (temp_command, "more"))
-		{
-			// Get next index for menu
-			next_index = Q_atoi(gpCmd->Cmd_Argv(2));
-			argv_offset = 2;
-		}
-
-		// kick command selected via menu or console
-		ProcessMenuTKPlayer (player_ptr, next_index, argv_offset);
-		return true;
-	}
-
-	return false;
 }
 
 SCON_COMMAND(ma_tklist, 2155, MaTKList, false);

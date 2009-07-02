@@ -84,7 +84,7 @@ void	LoadCronTabs(void)
 	FreeCronTabs();
 
 	//Get rcon list
-	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/crontablist.txt", mani_path.GetString());
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/crontablist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
@@ -129,7 +129,7 @@ void	LoadCronTabs(void)
 					single_day[0] = day_string[i];
 					single_day[1] = '\0';
 
-					day_of_week = Q_atoi(single_day);
+					day_of_week = atoi(single_day);
 					if (day_of_week < 1 || day_of_week > 7)
 					{
 						continue;
@@ -214,7 +214,7 @@ bool	GetIntTime(char *time_section, int *time_value)
 		if (isdigit(time_section[i]) == 0) return false;
 	}
 
-	*time_value = Q_atoi(time_section);
+	*time_value = atoi(time_section);
 	return true;
 }
 
@@ -255,7 +255,7 @@ void	ExecuteCronTabs(bool post_map_config)
 
 		if (!ShallWeExecute(&(crontab_list[i]), time_now)) continue;
 
-		Q_snprintf(final_server_command, sizeof(final_server_command), "%s\n", server_command);
+		snprintf(final_server_command, sizeof(final_server_command), "%s\n", server_command);
 		engine->ServerCommand(final_server_command);
 		MMsg("Executed crontab server command [%s]", final_server_command);
 	}

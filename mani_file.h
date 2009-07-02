@@ -40,7 +40,7 @@ public:
 	ManiFile();
 	~ManiFile();
 
-	FILE		*Open(char *filename, char *attrib);
+	FILE		*Open(const char *filename, const char *attrib);
 	void		Close(FILE *fh);
 	int			Write(const void *pOutput, int size, FILE *fh);
 	char		*ReadLine(char *pOutput, int maxChars, FILE *fh);

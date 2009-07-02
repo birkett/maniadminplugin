@@ -50,6 +50,7 @@
 #include "mani_client.h"
 #include "mani_output.h"
 #include "mani_menu.h"
+#include "mani_util.h"
 #include "mani_effects.h"
 #include "mani_gametype.h"
 #include "mani_commands.h"
@@ -63,7 +64,6 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	ITempEntsSystem *temp_ents;
 
 extern	CGlobalVars *gpGlobals;
-extern	ConVar	*sv_lan;
 extern	int	max_players;
 extern	bool war_mode;
 extern	int	purplelaser_index;
@@ -177,7 +177,7 @@ bool ManiSprayRemove::SprayFired(const Vector *pos, int index)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Look for pending clients with STEAM_ID of STEAM_ID_PENDING
+// Purpose: Remove sprays that have timed out
 //---------------------------------------------------------------------------------
 void ManiSprayRemove::GameFrame(void)
 {
@@ -314,374 +314,341 @@ int ManiSprayRemove::IsSprayValid(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 // Purpose: Handle ma_spray
 //---------------------------------------------------------------------------------
-void	ManiSprayRemove::ProcessMaSprayMenu
-( 
- player_t *admin_ptr, 
- int admin_index, 
- int next_index, 
- int argv_offset,
- const char *menu_command
- )
+int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
-	const int argc = gpCmd->Cmd_Argc();
+	if (war_mode) return CLOSE_MENU;
+	if (mani_spray_tag.GetInt() == 0) return CLOSE_MENU;
 
-	if (war_mode) return;
-	if (mani_spray_tag.GetInt() == 0) return;
+	char	*menu_command;
+	char	*player_string;
+	this->params.GetParam("option", &menu_command);
+	m_page_ptr->params.GetParam("player", &player_string);
 
-	if (argc - argv_offset == 3 && !FStrEq(menu_command, "spray"))
+	char	target[128];
+	// Target could be user_id or steam id (depends on lan mode)
+	Q_strcpy(target, player_string);
+
+	if (FStrEq(menu_command, "warn"))
 	{
-		char	target[128];
-		// Target could be user_id or steam id (depends on lan mode)
-		Q_strcpy(target, gpCmd->Cmd_Argv(2 + argv_offset));
-
-		if (FStrEq(menu_command, "spraywarn"))
+		// Warn target player about offending spray
+		if (!FindTargetPlayers(player_ptr, target, NULL))
 		{
-			// Warn target player about offending spray
-			if (!FindTargetPlayers(admin_ptr, target, IMMUNITY_DONT_CARE))
-			{
-				OutputHelpText(ORANGE_CHAT, admin_ptr, "%s", Translate(M_NO_TARGET, "%s", target));
-				return;
-			}
-
-			for (int i = 0; i < target_player_list_size; i++)
-			{
-				player_t *target_player_ptr;
-		
-				target_player_ptr = (player_t *) &(target_player_list[i]);
-				OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
-				LogCommand (admin_ptr, "Warned player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
-				break;
-			}
-		}
-		else if (FStrEq(menu_command, "sprayslap") && 
-			gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAY) &&
-				gpManiGameType->IsTeleportAllowed())
-		{
-			// Warn target player about offending spray
-			if (!FindTargetPlayers(admin_ptr, target, IMMUNITY_ALLOW_SLAP))
-			{
-				OutputHelpText(ORANGE_CHAT, admin_ptr, "%s", Translate(M_NO_TARGET, "%s", target));
-				return;
-			}
-
-			for (int i = 0; i < target_player_list_size; i++)
-			{
-				player_t *target_player_ptr;
-		
-				target_player_ptr = (player_t *) &(target_player_list[i]);
-				OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
-
-				ProcessSlapPlayer(target_player_ptr, mani_spray_tag_slap_damage.GetInt(), false);
-				LogCommand (admin_ptr, "Slapped and warned player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
-				break;
-			}
-		}
-		else if (FStrEq (menu_command, "spraykick") && 
-				gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK))
-		{
-			// Kick player for offending spray
-			if (!FindTargetPlayers(admin_ptr, target, IMMUNITY_ALLOW_KICK))
-			{
-				OutputHelpText(ORANGE_CHAT, admin_ptr, "%s", Translate(M_NO_TARGET, "%s", target));
-				return;
-			}
-
-			for (int i = 0; i < target_player_list_size; i++)
-			{
-				player_t *target_player_ptr;
-				char	kick_cmd[256];
-		
-				target_player_ptr = (player_t *) &(target_player_list[i]);
-				OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_kick_message.GetString());
-				LogCommand (admin_ptr, "Kicked player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
-				Q_snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i See console for reason\n", target_player_ptr->user_id);
-				engine->ServerCommand(kick_cmd);				
-				break;
-			}
-		}
-		else if (FStrEq (menu_command, "sprayban") && 
-				gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN))
-		{
-			player_t	player;
-			char	ban_cmd[256];
-
-			if (sv_lan && sv_lan->GetInt())
-			{
-				// Lan mode
-				OutputHelpText(ORANGE_CHAT, admin_ptr, "Cannot ban in Lan mode !!", target);
-				return;
-			}
-			else
-			{
-				// Steam Mode
-				int	client_index = -1;
-				Q_strcpy(player.steam_id, target);
-				if (FindPlayerBySteamID(&player))
-				{
-					if (gpManiClient->IsImmune(&player, &client_index))
-					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_BAN))
-						{
-							OutputHelpText(ORANGE_CHAT, admin_ptr, "Player [%s] is immune from being banned", player.name);
-							return;
-						}
-					}
-
-					// Player is on server
-					OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_ban_message.GetString());
-					// Ban by user id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-										mani_spray_tag_ban_time.GetInt(), 
-										player.user_id);
-					LogCommand (admin_ptr, "Banned player [%s] [%s] for spray tag for %i minutes\n", 
-									player.name, 
-									player.steam_id, 
-									mani_spray_tag_ban_time.GetInt());
-				}
-				else
-				{
-					int found_spray = -1;
-
-					// Find player details in spray list, we need to check immunity
-					for (int i = 0; i < max_players; i++)
-					{
-						if (!spray_list[i].in_use) continue;
-
-						if (FStrEq(spray_list[i].steam_id, player.steam_id))
-						{
-							found_spray = i;
-							break;
-						}
-					}
-
-					if (found_spray == -1)
-					{
-						OutputHelpText(ORANGE_CHAT, admin_ptr, "Player [%s] is not in the spray tag list", player.name);
-						return;
-					}
-
-					Q_strcpy(player.password, spray_list[i].password);
-					Q_strcpy(player.name, spray_list[i].name);
-					Q_strcpy(player.ip_address, spray_list[i].ip_address);
-
-					// Use special version that does not dynamically get password info
-					if (gpManiClient->IsImmuneNoPlayer(&player, &client_index))
-					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_BAN))
-						{
-							OutputHelpText(ORANGE_CHAT, admin_ptr, "Player [%s] is immune from being banned", player.name);
-							return;
-						}
-					}
-
-					// Ban by steam id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i \"%s\"\n", 
-										mani_spray_tag_ban_time.GetInt(), 
-										player.steam_id);
-					LogCommand (admin_ptr, "Banned player [%s] for spray tag for %i minutes\n",  
-									player.steam_id, 
-									mani_spray_tag_ban_time.GetInt());
-				}
-
-
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
-			}
-		}
-		else if (FStrEq (menu_command, "spraypermban") && 
-				gpManiClient->IsAdminAllowed(admin_index, ALLOW_PERM_BAN))
-		{
-
-			player_t	player;
-			char	ban_cmd[256];
-
-			if (sv_lan && sv_lan->GetInt())
-			{
-				// Lan mode
-				OutputHelpText(ORANGE_CHAT, admin_ptr, "Cannot ban in Lan mode !!", target);
-				return;
-
-			}
-			else
-			{
-				// Steam Mode
-				int	client_index = -1;
-				Q_strcpy(player.steam_id, target);
-				if (FindPlayerBySteamID(&player))
-				{
-					if (gpManiClient->IsImmune(&player, &client_index))
-					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_BAN))
-						{
-							OutputHelpText(ORANGE_CHAT, admin_ptr, "Player [%s] is immune from being banned", player.name);
-							return;
-						}
-					}
-
-					// Player is on server
-					OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_perm_ban_message.GetString());
-					// Ban by user id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-										0, 
-										player.user_id);
-					LogCommand (admin_ptr, "Banned player [%s] [%s] for spray tag permanently\n", 
-									player.name, 
-									player.steam_id);
-				}
-				else
-				{
-					int found_spray = -1;
-
-					// Find player details in spray list, we need to check immunity
-					for (int i = 0; i < max_players; i++)
-					{
-						if (!spray_list[i].in_use) continue;
-
-						if (FStrEq(spray_list[i].steam_id, player.steam_id))
-						{
-							found_spray = i;
-							break;
-						}
-					}
-
-					if (found_spray == -1)
-					{
-						OutputHelpText(ORANGE_CHAT, admin_ptr, "Player [%s] is not in the spray tag list", player.name);
-						return;
-					}
-
-					Q_strcpy(player.password, spray_list[i].password);
-					Q_strcpy(player.name, spray_list[i].name);
-					Q_strcpy(player.ip_address, spray_list[i].ip_address);
-
-					// Use special version that does not dynamically get password info
-					if (gpManiClient->IsImmuneNoPlayer(&player, &client_index))
-					{
-						if (gpManiClient->IsImmunityAllowed(client_index, IMMUNITY_ALLOW_BAN))
-						{
-							OutputHelpText(ORANGE_CHAT, admin_ptr, "Player [%s] is immune from being banned", player.name);
-							return;
-						}
-					}
-
-					// Ban by steam id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i \"%s\"\n", 
-										0, 
-										player.steam_id);
-					LogCommand (admin_ptr, "Banned player [%s] for spray tag for permanently\n",  
-									player.steam_id);
-				}
-
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
-			}
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target));
+			return CLOSE_MENU;
 		}
 
-		return;
+		for (int i = 0; i < target_player_list_size; i++)
+		{
+			player_t *target_player_ptr;
+	
+			target_player_ptr = (player_t *) &(target_player_list[i]);
+			OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
+			OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_warning_message.GetString());
+			LogCommand (player_ptr, "Warned player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
+			break;
+		}
 	}
-	else
+	else if (FStrEq(menu_command, "slap") && 
+		gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SLAY) &&
+			gpManiGameType->IsTeleportAllowed())
 	{
-		int spray_index = this->IsSprayValid(admin_ptr);
-
-		if (spray_index == -1)
+		// Warn target player about offending spray
+		if (!FindTargetPlayers(player_ptr, target, IMMUNITY_SLAP))
 		{
-			OutputHelpText(ORANGE_CHAT, admin_ptr, false, Translate(1250));
-			return ;
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target));
+			return CLOSE_MENU;
 		}
 
-		// Setup player list
-		FreeMenu();
+		for (int i = 0; i < target_player_list_size; i++)
+		{
+			player_t *target_player_ptr;
+	
+			target_player_ptr = (player_t *) &(target_player_list[i]);
+			OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_warning_message.GetString());
+			OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_warning_message.GetString());
 
-		char	player_string[64];
-		bool	lan_mode = false;
+			ProcessSlapPlayer(target_player_ptr, mani_spray_tag_slap_damage.GetInt(), false);
+			LogCommand (player_ptr, "Slapped and warned player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
+			break;
+		}
+	}
+	else if (FStrEq (menu_command, "kick") && 
+			gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_KICK))
+	{
+		// Kick player for offending spray
+		if (!FindTargetPlayers(player_ptr, target, IMMUNITY_KICK))
+		{
+			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target));
+			return CLOSE_MENU;
+		}
 
-		if (sv_lan && sv_lan->GetInt())
+		for (int i = 0; i < target_player_list_size; i++)
+		{
+			player_t *target_player_ptr;
+			char	kick_cmd[256];
+	
+			target_player_ptr = (player_t *) &(target_player_list[i]);
+			OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_kick_message.GetString());
+			OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_kick_message.GetString());
+			LogCommand (player_ptr, "Kicked player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i See console for reason\n", target_player_ptr->user_id);
+			engine->ServerCommand(kick_cmd);				
+			break;
+		}
+	}
+	else if (FStrEq (menu_command, "ban") && 
+			gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN))
+	{
+		player_t	player;
+		char	ban_cmd[256];
+
+		if (IsLAN())
 		{
 			// Lan mode
-			lan_mode = true;
-			Q_snprintf(player_string, sizeof(player_string), "%i", spray_list[spray_index].user_id);
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Cannot ban in Lan mode!");
+			return CLOSE_MENU;
 		}
 		else
 		{
 			// Steam Mode
-			Q_snprintf(player_string, sizeof(player_string), "%s", spray_list[spray_index].steam_id);
+			Q_strcpy(player.steam_id, target);
+			if (FindPlayerBySteamID(&player))
+			{
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Player [%s] is immune from being banned", player.name);
+					return CLOSE_MENU;
+				}
+
+				// Player is on server
+				OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_ban_message.GetString());
+				OutputHelpText(GREEN_CHAT, player_ptr, "%s", mani_spray_tag_ban_message.GetString());
+				// Ban by user id
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
+									mani_spray_tag_ban_time.GetInt(), 
+									player.user_id);
+				LogCommand (player_ptr, "Banned player [%s] [%s] for spray tag for %i minutes\n", 
+								player.name, 
+								player.steam_id, 
+								mani_spray_tag_ban_time.GetInt());
+			}
+			else
+			{
+				int found_spray = -1;
+
+				// Find player details in spray list, we need to check immunity
+				for (int i = 0; i < max_players; i++)
+				{
+					if (!gpManiSprayRemove->spray_list[i].in_use) continue;
+
+					if (FStrEq(gpManiSprayRemove->spray_list[i].steam_id, player.steam_id))
+					{
+						found_spray = i;
+						break;
+					}
+				}
+
+				if (found_spray == -1)
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Player [%s] is not in the spray tag list", player.name);
+					return CLOSE_MENU;
+				}
+
+				Q_strcpy(player.password, gpManiSprayRemove->spray_list[found_spray].password);
+				Q_strcpy(player.name, gpManiSprayRemove->spray_list[found_spray].name);
+				Q_strcpy(player.ip_address, gpManiSprayRemove->spray_list[found_spray].ip_address);
+
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Player [%s] is immune from being banned", player.name);
+					return CLOSE_MENU;
+				}
+
+				// Ban by steam id
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i \"%s\"\n", 
+									mani_spray_tag_ban_time.GetInt(), 
+									player.steam_id);
+				LogCommand (player_ptr, "Banned player [%s] for spray tag for %i minutes\n",  
+								player.steam_id, 
+								mani_spray_tag_ban_time.GetInt());
+			}
+
+
+			engine->ServerCommand(ban_cmd);
+			engine->ServerCommand("writeid\n");
 		}
+	}
+	else if (FStrEq (menu_command, "pban") && 
+			gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN))
+	{
 
-		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1251));
-		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spraywarn \"%s\"", player_string);
+		player_t	player;
+		char	ban_cmd[256];
 
-		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) && gpManiGameType->IsTeleportAllowed())
+		if (IsLAN())
 		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1252));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin sprayslap \"%s\"", player_string);
-		}
+			// Lan mode
+			OutputHelpText(ORANGE_CHAT, player_ptr, "Cannot ban in Lan mode!");
+			return CLOSE_MENU;
 
-		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK))
+		}
+		else
 		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1253));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spraykick \"%s\"", player_string);
+			// Steam Mode
+			Q_strcpy(player.steam_id, target);
+			if (FindPlayerBySteamID(&player))
+			{
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Player [%s] is immune from being banned", player.name);
+					return CLOSE_MENU;
+				}
+
+				// Player is on server
+				OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_perm_ban_message.GetString());
+				OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_perm_ban_message.GetString());
+				// Ban by user id
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
+									0, 
+									player.user_id);
+				LogCommand (player_ptr, "Banned player [%s] [%s] for spray tag permanently\n", 
+								player.name, 
+								player.steam_id);
+			}
+			else
+			{
+				int found_spray = -1;
+
+				// Find player details in spray list, we need to check immunity
+				for (int i = 0; i < max_players; i++)
+				{
+					if (!gpManiSprayRemove->spray_list[i].in_use) continue;
+
+					if (FStrEq(gpManiSprayRemove->spray_list[i].steam_id, player.steam_id))
+					{
+						found_spray = i;
+						break;
+					}
+				}
+
+				if (found_spray == -1)
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Player [%s] is not in the spray tag list", player.name);
+					return CLOSE_MENU;
+				}
+
+				Q_strcpy(player.password, gpManiSprayRemove->spray_list[found_spray].password);
+				Q_strcpy(player.name, gpManiSprayRemove->spray_list[found_spray].name);
+				Q_strcpy(player.ip_address, gpManiSprayRemove->spray_list[found_spray].ip_address);
+
+				if (gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
+				{
+					OutputHelpText(ORANGE_CHAT, player_ptr, "Player [%s] is immune from being banned", player.name);
+					return CLOSE_MENU;
+				}
+
+				// Ban by steam id
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i \"%s\"\n", 
+									0, 
+									player.steam_id);
+				LogCommand (player_ptr, "Banned player [%s] for spray tag for permanently\n",  
+								player.steam_id);
+			}
+
+			engine->ServerCommand(ban_cmd);
+			engine->ServerCommand("writeid\n");
 		}
-
-		// No bans in lan mode !!!
-		if (!lan_mode && gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1254, "%i", mani_spray_tag_ban_time.GetInt()));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin sprayban \"%s\"", player_string);
-		}
-
-		// No bans in lan mode !!!
-		if (!lan_mode && gpManiClient->IsAdminAllowed(admin_index, ALLOW_PERM_BAN))
-		{
-			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1255));
-			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spraypermban  \"%s\"", player_string);
-		}
-
-		if (menu_list_size == 0)
-		{
-			return;
-		}
-
-		// List size may have changed
-		if (next_index > menu_list_size)
-		{
-			// Reset index
-			next_index = 0;
-		}
-
-		char	temp_title[1024];
-
-		Q_snprintf (temp_title, sizeof (temp_title), "%s", Translate(1256, "%s%s%s",
-					spray_list[spray_index].name,
-					spray_list[spray_index].steam_id,
-					spray_list[spray_index].ip_address));
-
-										
-		DrawSubMenu (admin_ptr, Translate(1257), temp_title, next_index, "admin", "spray", true, -1);
-		// Draw menu list
 	}
 
-	return;
+	return CLOSE_MENU;
 }
+
+bool SprayPage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 1257));
+
+	int spray_index = gpManiSprayRemove->IsSprayValid(player_ptr);
+
+	if (spray_index == -1)
+	{
+		OutputHelpText(ORANGE_CHAT, player_ptr, Translate(player_ptr, 1250));
+		return false;
+	}
+
+	bool	lan_mode = false;
+
+	if (IsLAN())
+	{
+		// Lan mode
+		lan_mode = true;
+		this->params.AddParamVar("player", "%i", gpManiSprayRemove->spray_list[spray_index].user_id);
+	}
+	else
+	{
+		// Steam Mode
+		this->params.AddParam("player", gpManiSprayRemove->spray_list[spray_index].steam_id);
+	}
+
+	MenuItem *ptr = NULL;
+	ptr = new SprayItem;
+	ptr->SetDisplayText("%s", Translate(player_ptr, 1251));
+	ptr->params.AddParam("option", "warn");
+	this->AddItem(ptr);
+
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SLAP) && gpManiGameType->IsTeleportAllowed())
+	{
+		ptr = new SprayItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1252));
+		ptr->params.AddParam("option", "slap");
+		this->AddItem(ptr);
+	}
+
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_KICK))
+	{
+		ptr = new SprayItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1253));
+		ptr->params.AddParam("option", "kick");
+		this->AddItem(ptr);
+	}
+
+	// No bans in lan mode !!!
+	if (!lan_mode && (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN) ||
+					  gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN)))
+	{
+		ptr = new SprayItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1254, "%i", mani_spray_tag_ban_time.GetInt()));
+		ptr->params.AddParam("option", "ban");
+		this->AddItem(ptr);
+	}
+
+	// No bans in lan mode !!!
+	if (!lan_mode && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN))
+	{
+		ptr = new SprayItem;
+		ptr->SetDisplayText("%s", Translate(player_ptr, 1255));
+		ptr->params.AddParam("option", "pban");
+		this->AddItem(ptr);
+	}
+
+	this->SetTitle("%s", Translate(player_ptr, 1256, "%s%s%s", 
+					gpManiSprayRemove->spray_list[spray_index].name, 
+					gpManiSprayRemove->spray_list[spray_index].steam_id, 
+					gpManiSprayRemove->spray_list[spray_index].ip_address));
+	return true;
+}
+
 
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_spray command
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiSprayRemove::ProcessMaSpray(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	int	admin_index;
-
 	if (!player_ptr) return PLUGIN_CONTINUE;
 
 	// Check if player is admin
-	if (!gpManiClient->IsAdminAllowed(player_ptr, command_name, ALLOW_SPRAY_TAG, war_mode, &admin_index)) return PLUGIN_STOP;
+	if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SPRAY_TAG, war_mode)) return PLUGIN_BAD_ADMIN;
 
-	// Cheat by getting the client to fire up the menu using raw commands
-	engine->ClientCommand(player_ptr->entity, "admin spray\n");
+	MENUPAGE_CREATE_FIRST(SprayPage, player_ptr, 0, -1);
 	return PLUGIN_STOP;
 }
 

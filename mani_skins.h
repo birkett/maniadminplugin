@@ -34,6 +34,8 @@
 #define MANI_RESERVE_T_SKIN (5)
 #define MANI_RESERVE_CT_SKIN (6)
 
+#include "mani_menu.h"
+
 struct	skin_resource_t
 {
 	char	resource[256];
@@ -98,11 +100,11 @@ extern	int		skin_list_size;
 extern	void SkinTeamJoin( player_t	*player_ptr);
 extern	void ForceSkinType( player_t	*player_ptr );
 extern	PLUGIN_RESULT	ProcessMaSetSkin(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-extern	void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset );
-extern	void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset );
 extern  void SkinPlayerDisconnect (player_t	*player_ptr);
 extern	void SkinResetTeamID(void);
-extern	void ProcessJoinSkinChoiceMenu(   player_t *player_ptr,   int next_index,   int argv_offset,   char *menu_command );
 
+MENUALL_DEC(JoinSkinChoice);
+MENUALL_DEC(SkinOptions);
+MENUALL_DEC(SetSkin);
 
 #endif

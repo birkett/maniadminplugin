@@ -62,7 +62,7 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
-ManiKeyValues::ManiKeyValues(char *title_str)
+ManiKeyValues::ManiKeyValues(const char *title_str)
 {
 	strcpy(title, title_str);
 	indent_level = 1;
@@ -119,10 +119,10 @@ void	ManiKeyValues::SetupIndentLevels(void)
 //---------------------------------------------------------------------------------
 // Purpose: Open up a file for writing
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteStart(char *filename)
+bool	ManiKeyValues::WriteStart(const char *filename)
 {
 	current_indent = 0;
-	fh = gpManiFile->Open(filename,"wb");
+	fh = gpManiFile->Open(filename, "wb");
 	if (fh == NULL) return false;
 
 	if (!this->WriteNewSubKey(title))
@@ -137,11 +137,11 @@ bool	ManiKeyValues::WriteStart(char *filename)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new sub key
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteNewSubKey(char *sub_key)
+bool	ManiKeyValues::WriteNewSubKey(const char *sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -158,11 +158,11 @@ bool	ManiKeyValues::WriteNewSubKey(char *sub_key)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new sub key
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteNewSubKey(int sub_key)
+bool	ManiKeyValues::WriteNewSubKey(const int sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -179,11 +179,11 @@ bool	ManiKeyValues::WriteNewSubKey(int sub_key)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new sub key
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteNewSubKey(unsigned int sub_key)
+bool	ManiKeyValues::WriteNewSubKey(const unsigned int sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%i\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -200,11 +200,11 @@ bool	ManiKeyValues::WriteNewSubKey(unsigned int sub_key)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new sub key
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteNewSubKey(float sub_key)
+bool	ManiKeyValues::WriteNewSubKey(const float sub_key)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%f\"\n%s{\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%f\"\n%s{\n", 
 							indent_levels[current_indent], 
 							sub_key, 
 							indent_levels[current_indent]);
@@ -226,7 +226,7 @@ bool	ManiKeyValues::WriteEndSubKey(void)
 	int	bytes;
 
 	current_indent -= indent_level;
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s}\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s}\n", 
 							indent_levels[current_indent]);
 	if (bytes == 0) 
 	{
@@ -240,13 +240,13 @@ bool	ManiKeyValues::WriteEndSubKey(void)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new key and name
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteKey(char *key_name, char *value)
+bool	ManiKeyValues::WriteKey(const char *key_name, const char *value)
 {
 	int	bytes;
 
 	if (value[0] == '\0') return true;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%s\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%s\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -263,11 +263,11 @@ bool	ManiKeyValues::WriteKey(char *key_name, char *value)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new key and name
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteKey(char *key_name, int value)
+bool	ManiKeyValues::WriteKey(const char *key_name, const int value)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -284,11 +284,11 @@ bool	ManiKeyValues::WriteKey(char *key_name, int value)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new key and name
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteKey(char *key_name, unsigned int value)
+bool	ManiKeyValues::WriteKey(const char *key_name, const unsigned int value)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%i\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -305,11 +305,11 @@ bool	ManiKeyValues::WriteKey(char *key_name, unsigned int value)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new key and name
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteKey(char *key_name, float value)
+bool	ManiKeyValues::WriteKey(const char *key_name, const float value)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%f\"\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s\"%s\"\t\"%f\"\n", 
 							indent_levels[current_indent], 
 							key_name, 
 							value
@@ -326,11 +326,11 @@ bool	ManiKeyValues::WriteKey(char *key_name, float value)
 //---------------------------------------------------------------------------------
 // Purpose: Write a new comment
 //---------------------------------------------------------------------------------
-bool	ManiKeyValues::WriteComment(char *comment)
+bool	ManiKeyValues::WriteComment(const char *comment)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "%s// %s\n", 
+	bytes = snprintf(buffer,sizeof(buffer), "%s// %s\n", 
 							indent_levels[current_indent], 
 							comment
 							);
@@ -350,7 +350,7 @@ bool	ManiKeyValues::WriteCR(void)
 {
 	int	bytes;
 
-	bytes = Q_snprintf(buffer,sizeof(buffer), "\n");
+	bytes = snprintf(buffer,sizeof(buffer), "\n");
 	if (bytes == 0) 
 	{
 		return false;
@@ -445,7 +445,7 @@ float	ManiKeyValues::GetFloat(char *name, float init)
 		return init;
 	}
 	
-	return Q_atof(ptr->key_value);
+	return atof(ptr->key_value);
 }
 
 //---------------------------------------------------------------------------------
@@ -460,7 +460,7 @@ int	ManiKeyValues::GetInt(char *name, int init)
 		return init;
 	}
 	
-	return Q_atoi(ptr->key_value);
+	return atoi(ptr->key_value);
 }
 
 //---------------------------------------------------------------------------------
@@ -476,6 +476,27 @@ char *ManiKeyValues::GetString(char *name, char *init)
 	}
 	
 	return ptr->key_value;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Find next key value and key name
+//---------------------------------------------------------------------------------
+char *ManiKeyValues::GetNextKeyValue(char **name)
+{
+	if (current_read->current_key == current_read->key_list_size) return NULL;
+
+	*name = current_read->key_list[current_read->current_key].key_name;
+	current_read->current_key++;
+
+	return current_read->key_list[current_read->current_key - 1].key_value;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Reset key list index on current read ptr
+//---------------------------------------------------------------------------------
+void ManiKeyValues::ResetKeyIndex(void)
+{
+	current_read->current_key = 0;
 }
 
 //---------------------------------------------------------------------------------

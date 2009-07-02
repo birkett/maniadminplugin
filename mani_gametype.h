@@ -47,48 +47,75 @@ class CBaseEntity;
 #define MANI_GAME_DOD (7)
 
 // VFunc defs
-#define MANI_VFUNC_EYE_ANGLES (0)
-#define MANI_VFUNC_TELEPORT (1)
-#define MANI_VFUNC_SET_MODEL_INDEX (2)
-#define MANI_VFUNC_EYE_POSITION (3)
-#define MANI_VFUNC_MY_COMBAT_CHARACTER (4)
-#define MANI_VFUNC_IGNITE (5)
-#define MANI_VFUNC_REMOVE_PLAYER_ITEM (6)
-#define MANI_VFUNC_GET_WEAPON_SLOT (7)
-#define MANI_VFUNC_GIVE_AMMO (8)
-#define MANI_VFUNC_WEAPON_DROP (9)
-#define MANI_VFUNC_GET_PRIMARY_AMMO_TYPE (10)
-#define MANI_VFUNC_GET_SECONDARY_AMMO_TYPE (11)
-#define MANI_VFUNC_WEAPON_GET_NAME (12)
-//#define MANI_VFUNC_GET_TEAM_NUMBER (13)
-//#define MANI_VFUNC_GET_TEAM_NAME (14)
-#define MANI_VFUNC_GET_VELOCITY (15)
-#define MANI_VFUNC_WEAPON_SWITCH (16)
-#define MANI_VFUNC_USER_CMDS (17)
-#define MANI_VFUNC_GIVE_ITEM (18)
-#define MANI_VFUNC_MAP (19)
+enum
+{
+	MANI_VFUNC_EYE_ANGLES = 0,
+	MANI_VFUNC_TELEPORT,
+	MANI_VFUNC_SET_MODEL_INDEX,
+	MANI_VFUNC_EYE_POSITION,
+	MANI_VFUNC_MY_COMBAT_CHARACTER,
+	MANI_VFUNC_IGNITE,
+	MANI_VFUNC_REMOVE_PLAYER_ITEM,
+	MANI_VFUNC_GET_WEAPON_SLOT,
+	MANI_VFUNC_GIVE_AMMO,
+	MANI_VFUNC_WEAPON_DROP,
+	MANI_VFUNC_GET_PRIMARY_AMMO_TYPE,
+	MANI_VFUNC_GET_SECONDARY_AMMO_TYPE,
+	MANI_VFUNC_WEAPON_GET_NAME,
+	MANI_VFUNC_GET_VELOCITY,
+	MANI_VFUNC_WEAPON_SWITCH,
+	MANI_VFUNC_USER_CMDS,
+	MANI_VFUNC_GIVE_ITEM,
+	MANI_VFUNC_MAP,
+	MANI_VFUNC_COMMIT_SUICIDE,
+	MANI_VFUNC_SIZE
+};
 
 //Property defs
-#define MANI_PROP_HEALTH		(0)
-#define MANI_PROP_RENDER_MODE	(1)
-#define MANI_PROP_RENDER_FX		(2)
-#define MANI_PROP_COLOUR		(3)
-#define MANI_PROP_ACCOUNT		(4)
-#define MANI_PROP_MOVE_TYPE		(5)
-//#define MANI_PROP_DEATHS		(6)
-#define MANI_PROP_ARMOR			(7)
-//#define MANI_PROP_SCORE			(8)
-#define MANI_PROP_MODEL_INDEX	(9)
-#define MANI_PROP_VEC_ORIGIN	(10)
-#define MANI_PROP_ANG_ROTATION	(11)
+enum {
+MANI_PROP_HEALTH = 0,
+MANI_PROP_RENDER_MODE,
+MANI_PROP_RENDER_FX	,
+MANI_PROP_COLOUR,
+MANI_PROP_ACCOUNT,
+MANI_PROP_MOVE_TYPE,
+MANI_PROP_ARMOR,
+MANI_PROP_MODEL_INDEX,
+MANI_PROP_VEC_ORIGIN,
+MANI_PROP_ANG_ROTATION,
+MANI_PROP_TEAM_NUMBER,
+MANI_PROP_TEAM_SCORE,
+MANI_PROP_TEAM_NAME,
+MANI_PROP_SIZE
+};
 
 // Var indexes
-#define MANI_VAR_DEATHS			(0)
-#define MANI_VAR_FRAGS			(1)
-#define MANI_VAR_GRAVITY		(2)
-#define MANI_VAR_FRICTION		(3)
-#define MANI_VAR_ELASTICITY		(4)
+enum {
 
+MANI_VAR_DEATHS = 0,
+MANI_VAR_FRAGS,
+MANI_VAR_GRAVITY,
+MANI_VAR_FRICTION,
+MANI_VAR_ELASTICITY,
+MANI_VAR_SIZE
+};
+
+enum
+{
+	PROP_INT=1,
+	PROP_UNSIGNED_CHAR,
+	PROP_CHAR_PTR,
+	PROP_CHAR,
+	PROP_SHORT,
+	PROP_UNSIGNED_SHORT,
+	PROP_BOOL,
+	PROP_UNSIGNED_INT,
+	PROP_FLOAT,
+	PROP_UNSIGNED_CHAR_PTR,
+	PROP_QANGLE,
+	PROP_VECTOR,
+	PROP_COLOUR
+};
 
 class ManiGameType
 {
@@ -98,6 +125,7 @@ public:
 	~ManiGameType();
 
 	void		Init(void);
+	void		GameFrame(void);
 	const char	*GetGameType(void);
 	bool		IsGameType(const char *game_str);
 	bool		IsGameType(int game_index) {return ((game_index == game_type_index) ? true:false);}
@@ -105,6 +133,8 @@ public:
 	void		SetAdvancedEffectsAllowed(bool allowed);
 	int			GetAdvancedEffectsVFuncOffset(void);
 	int			GetAdvancedEffectsCodeOffset(void);
+	void		GetWeaponDetails(KeyValues *kv_ptr);
+
 	const char	*GetLinuxBin(void);
 
 	bool		IsTeamPlayAllowed(void);
@@ -136,6 +166,7 @@ public:
 	bool		IsAdvertDecalAllowed(void);
 
 	int			GetMaxMessages(void);
+	const char *GetTeamManagerPattern(void) { return team_manager;}
 //	bool		IsClientSuicide(void);
 	int			DebugOn() { return debug_log; }
 
@@ -155,11 +186,31 @@ public:
 	bool		CanUseProp(int index);
 	int			GetPtrIndex(CBaseEntity *pCBE, int index);
 
+	struct prop_t
+	{
+		char	name[128];
+		int		offset;
+		int		type;
+	};
+
+	prop_t			prop_index[200];
+
+	struct	var_t
+	{
+		int		index;
+		int		type;
+		char	name[64];
+	};
+
+	var_t		var_index[200];
+	int			vfunc_index[200];
+
 private:
 	void		GetProps(KeyValues *kv_ptr);
 	void		GetVFuncs(KeyValues *kv_ptr);
 	void		DefaultValues(void);
 	bool		FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr);
+
 
 	struct team_class_t
 	{
@@ -216,17 +267,10 @@ private:
 //	int			client_suicide;
 	// Dystopia requires this
 	int			browse_allowed;
+	char		team_manager[256];
 
-	int			vfunc_index[200];
-	int			prop_index[200];
-
-	struct	var_t
-	{
-		int		index;
-		char	name[64];
-	};
-
-	var_t		var_index[200];
+	bool		show_out_of_date;
+	time_t		next_time_check;
 
 	FILE *fh;
 

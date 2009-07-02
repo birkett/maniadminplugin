@@ -94,7 +94,7 @@ void ManiDownloads::Init(void)
 
 	for (;;)
 	{
-		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/downloads.txt", mani_path.GetString());
+		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/downloads.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
 //			MMsg("Failed to load downloads.txt\n");
@@ -180,7 +180,7 @@ void ManiDownloads::AddToDownloads(char *filename)
 	// Set up .res downloadables
 	if (pDownloadablesTable)
 	{
-		Q_snprintf(res_string, sizeof(res_string), "%s", filename);
+		snprintf(res_string, sizeof(res_string), "%s", filename);
 		pDownloadablesTable->AddString(res_string, sizeof(res_string));
 	}
 

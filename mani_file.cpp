@@ -72,7 +72,7 @@ ManiFile::~ManiFile()
 	// Cleanup
 }
 
-FILE *ManiFile::Open(char *filename, char *attrib)
+FILE *ManiFile::Open(const char *filename, const char *attrib)
 {
 	char	unformatted_filename[1024];
 	char	formatted_filename[1024];
@@ -105,7 +105,7 @@ void ManiFile::PathFormat(char *buffer, size_t len, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap,fmt);
-	size_t mylen = Q_vsnprintf(buffer, len, fmt, ap);
+	size_t mylen = vsnprintf(buffer, len, fmt, ap);
 	va_end(ap);
 
 	for (size_t i=0; i<mylen; i++)

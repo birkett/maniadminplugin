@@ -260,8 +260,6 @@
 //*******************************************************************
 //*******************************************************************
 
-#define IMMUNITY_DONT_CARE (-1)
-
 #define	IMMUNITY_ALLOW_GIMP (0)				//j flag
 #define IMMUNITY_ALLOW_GIMP_FLAG ("j")
 #define IMMUNITY_ALLOW_GIMP_DESC ("Gimp")
@@ -377,5 +375,94 @@
 #define	IMMUNITY_ALLOW_AFK (28)			//immunity flag
 #define	IMMUNITY_ALLOW_AFK_FLAG ("afk")		
 #define	IMMUNITY_ALLOW_AFK_DESC ("AFK")
+
+
+#define ADMIN_GIMP			("j")
+#define ADMIN_KICK			("k")
+#define ADMIN_RCON			("r")
+#define ADMIN_RCON_MENU1	("q")
+#define ADMIN_RCON_MENU2	("q2")
+#define ADMIN_RCON_MENU3	("q3")
+#define	ADMIN_EXPLODE		("e")	//e flag
+#define	ADMIN_SLAY			("m")		//m flag
+#define	ADMIN_BAN			("b")		//b flag
+#define	ADMIN_SAY			("s")		//s flag
+#define	ADMIN_CHAT			("o")		//o flag
+#define	ADMIN_PSAY			("a")		//a flag
+#define	ADMIN_CHANGEMAP		("c")	//c flag
+#define	ADMIN_PLAYSOUND		("p")	//p	flag
+#define	ADMIN_RESTRICT_WEAPON ("w")	//w flag
+#define	ADMIN_CONFIG		("z")			//z flag
+#define	ADMIN_CEXEC			("x")			//x flag
+#define	ADMIN_CEXEC_MENU	("y")		//y flag
+#define	ADMIN_BLIND			("i")			//i flag
+#define	ADMIN_SLAP			("l")			//l flag
+#define	ADMIN_FREEZE		("f")			//f flag
+#define	ADMIN_TELEPORT		("t")		//t flag
+#define	ADMIN_DRUG			("d")			//d flag
+#define	ADMIN_SWAP			("g")			//g flag
+#define	ADMIN_RCON_VOTE		("R")
+#define	ADMIN_MENU_RCON_VOTE	("B")
+#define	ADMIN_RANDOM_MAP_VOTE	("v")
+#define	ADMIN_MAP_VOTE		("V")
+#define	ADMIN_QUESTION_VOTE	("Q")
+#define	ADMIN_MENU_QUESTION_VOTE	("D")
+#define	ADMIN_CANCEL_VOTE	("C")
+#define	ADMIN_ACCEPT_VOTE	("A")
+#define ADMIN_MA_RATES		("E")
+#define	ADMIN_BURN			("F")
+#define	ADMIN_NO_CLIP		("G")
+#define	ADMIN_WAR			("H")
+#define	ADMIN_MUTE			("I")
+#define	ADMIN_RESET_ALL_RANKS	("J")
+#define	ADMIN_CASH			("K")
+#define	ADMIN_RCONSAY		("L")
+#define	ADMIN_SKINS			("M")
+#define	ADMIN_SETSKINS		("N")
+#define	ADMIN_DROPC4		("O")
+#define	ADMIN_SET_FLAG		("P")
+#define	ADMIN_COLOUR		("S")
+#define	ADMIN_TIMEBOMB		("T")
+#define	ADMIN_FIREBOMB		("U")
+#define	ADMIN_FREEZEBOMB	("W")
+#define	ADMIN_HEALTH		("X")
+#define	ADMIN_BEACON		("Y")
+#define	ADMIN_GIVE			("Z")
+#define	ADMIN_BASIC_ADMIN	("admin")
+#define	ADMIN_CLIENT_ADMIN	("client")
+#define	ADMIN_PERM_BAN		("pban")
+#define	ADMIN_SPRAY_TAG		("spray")
+#define	ADMIN_GRAVITY		("grav")
+
+#define IMMUNITY_GIMP		("j")
+#define IMMUNITY_KICK		("k")
+#define	IMMUNITY_SLAY		("m")		
+#define	IMMUNITY_BAN		("b")		
+#define	IMMUNITY_CEXEC		("x")		
+#define	IMMUNITY_BLIND		("i")		
+#define	IMMUNITY_SLAP		("l")		
+#define	IMMUNITY_FREEZE		("f")		
+#define	IMMUNITY_TELEPORT	("t")		
+#define	IMMUNITY_DRUG		("d")			
+#define	IMMUNITY_SWAP		("g")		
+#define	IMMUNITY_TAG		("a")		
+#define	IMMUNITY_BALANCE	("c")		
+#define	IMMUNITY_BURN		("e")		
+#define	IMMUNITY_MUTE		("h")		
+#define	IMMUNITY_RESERVE	("n")		
+#define	IMMUNITY_SETSKIN	("o")		
+#define	IMMUNITY_RESERVE_SKIN ("p")		
+#define	IMMUNITY_TIMEBOMB	("q")		
+#define	IMMUNITY_FIREBOMB	("r")		
+#define	IMMUNITY_FREEZEBOMB ("s")		
+#define	IMMUNITY_BEACON		("u")		
+#define	IMMUNITY_GHOST		("v")		
+#define	IMMUNITY_GIVE		("w")		
+#define	IMMUNITY_COLOUR		("y")		
+#define	IMMUNITY_BASIC_IMMUNITY ("Immunity")		
+#define	IMMUNITY_GRAVITY	("grav")		
+#define	IMMUNITY_AUTOJOIN	("autojoin")		
+#define	IMMUNITY_AFK		("afk")		
+#define	IMMUNITY_PING		("ping")		
 
 #endif
