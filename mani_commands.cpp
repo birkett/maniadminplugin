@@ -185,7 +185,7 @@ void ManiCommands::Load(void)
 	this->RegisterCommand("ma_cexec_all", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExecAll);
 	this->RegisterCommand("ma_cexec_spec", 0, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaCExecSpec);
 	this->RegisterCommand("ma_slap", 2025, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSlap);
-	this->RegisterCommand("ma_setflag", /*admin?*/ true, 0, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetFlag);
+	this->RegisterCommand("ma_setflag", 0, /*admin?*/ true, /*war ?*/ true, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetFlag);
 	this->RegisterCommand("ma_setskin", 2027, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetSkin);
 	this->RegisterCommand("ma_setcash", 2029, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaSetCash);
 	this->RegisterCommand("ma_givecash", 2031, /*admin?*/ true, /*war ?*/ false, /*server ?*/ true, /*client con ?*/ true, /*tsay ?*/ true, /*say ?*/ true, &ManiCommands::MaGiveCash);

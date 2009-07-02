@@ -605,6 +605,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_mp_restartgame.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mani_mutex.cpp"
 					>
 				</File>
@@ -906,6 +910,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_mostdestructive.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_mp_restartgame.h"
 					>
 				</File>
 				<File
@@ -1227,10 +1235,6 @@
 							Name="VCCLCompilerTool"
 						/>
 					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\sdk\tier1\KeyValues.cpp"
-					>
 				</File>
 				<File
 					RelativePath="..\sdk\public\tier0\memoverride.cpp"

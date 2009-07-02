@@ -5615,10 +5615,10 @@ void	ManiClient::GetAdminGroupsBeta(KeyValues *ptr)
 		Q_memset(&admin_group, 0, sizeof(admin_group_t));
 
 		Q_strcpy(group_name, kv_ptr->GetName());
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+		Q_strcpy(flag_string, kv_ptr->GetString());
 		Q_strcpy(admin_group.group_id, group_name);
 
-		if (!FStrEq("NULL", flag_string))
+		if (!FStrEq("", flag_string))
 		{
 			int flag_string_index = 0;
 
@@ -5668,10 +5668,10 @@ void	ManiClient::GetImmunityGroupsBeta(KeyValues *ptr)
 		Q_memset(&immunity_group, 0, sizeof(immunity_group_t));
 
 		Q_strcpy(group_name, kv_ptr->GetName());
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+		Q_strcpy(flag_string, kv_ptr->GetString());
 		Q_strcpy(immunity_group.group_id, group_name);
 
-		if (!FStrEq("NULL", flag_string))
+		if (!FStrEq("", flag_string))
 		{
 			int flag_string_index = 0;
 
@@ -5716,9 +5716,9 @@ void	ManiClient::GetAdminLevelsBeta(KeyValues *ptr)
 
 	for (;;)
 	{
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+		Q_strcpy(flag_string, kv_ptr->GetString());
 
-		if (!FStrEq("NULL", flag_string))
+		if (!FStrEq("", flag_string))
 		{
 			int flag_string_index = 0;
 
@@ -5763,9 +5763,9 @@ void	ManiClient::GetImmunityLevelsBeta(KeyValues *ptr)
 
 	for (;;)
 	{
-		Q_strcpy(flag_string, kv_ptr->GetString(NULL, "NULL"));
+		Q_strcpy(flag_string, kv_ptr->GetString());
 
-		if (!FStrEq("NULL", flag_string))
+		if (!FStrEq("", flag_string))
 		{
 			int flag_string_index = 0;
 
@@ -5988,8 +5988,8 @@ void	ManiClient::GetClientsBeta(KeyValues *ptr)
 			{
 				for (;;)
 				{
-					Q_strcpy(flag_string, temp_ptr->GetString(NULL, "NULL"));
-					if (!FStrEq("NULL", flag_string))
+					Q_strcpy(flag_string, temp_ptr->GetString());
+					if (!FStrEq("", flag_string))
 					{
 						int flag_string_index = 0;
 
@@ -6025,8 +6025,8 @@ void	ManiClient::GetClientsBeta(KeyValues *ptr)
 			{
 				for (;;)
 				{
-					Q_strcpy(flag_string, temp_ptr->GetString(NULL, "NULL"));
-					if (!FStrEq("NULL", flag_string))
+					Q_strcpy(flag_string, temp_ptr->GetString());
+					if (!FStrEq("", flag_string))
 					{
 						int flag_string_index = 0;
 

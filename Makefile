@@ -56,6 +56,7 @@ SRC_FILES =     cvars.cpp \
                 mani_memory.cpp \
                 mani_messagemode.cpp \
 		mani_mostdestructive.cpp \
+		mani_mp_restartgame.cpp \
 		mani_mutex.cpp \
                 mani_mysql.cpp \
 		mani_netidvalid.cpp \
@@ -182,7 +183,7 @@ PLUGIN_OBJS := $(SRC_FILES:%.cpp=$(PLUGIN_OBJ_DIR)/%.o)
 TIER1_OBJS = \
 	$(TIER1_OBJ_DIR)/convar.o \
 	$(TIER1_OBJ_DIR)/interface.o \
-	$(TIER1_OBJ_DIR)/KeyValues.o \
+#	$(TIER1_OBJ_DIR)/KeyValues.o \
 	$(TIER1_OBJ_DIR)/utlbuffer.o \
 	$(TIER1_OBJ_DIR)/bitbuf.o \
 

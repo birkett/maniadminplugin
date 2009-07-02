@@ -365,8 +365,7 @@ void ManiChatTriggers::ProcessLoadIgnore(KeyValues *kv_parent_ptr)
 		Q_memset(&chat_trigger, 0, sizeof(chat_trigger));
 		chat_trigger.trigger_type = MANI_CT_IGNORE;
 
-		Q_strcpy(chat_trigger.say_command, kv_ignore_ptr->GetString(NULL, ""));
-
+		Q_strcpy(chat_trigger.say_command, kv_ignore_ptr->GetString());
 		if (chat_trigger.say_command && !FStrEq(chat_trigger.say_command, ""))
 		{
 			AddToList((void **) &(chat_trigger_list), sizeof(chat_trigger_t), &(chat_trigger_list_size));
@@ -401,7 +400,7 @@ void ManiChatTriggers::ProcessLoadIgnoreX(KeyValues *kv_parent_ptr)
 		chat_trigger.trigger_type = MANI_CT_IGNORE_X;
 
 		Q_strcpy(chat_trigger.say_command, kv_ignore_ptr->GetName());
-		chat_trigger.ignore_count = atoi(kv_ignore_ptr->GetString(NULL, ""));
+		chat_trigger.ignore_count = atoi(kv_ignore_ptr->GetString());
 
 		if (chat_trigger.say_command && !FStrEq(chat_trigger.say_command, ""))
 		{

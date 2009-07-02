@@ -50,8 +50,6 @@ struct disconnected_player_t
 	bool	in_use;
 };
 
-extern	disconnected_player_t	disconnected_player_list[MANI_MAX_PLAYERS];
-
 class ManiReservedSlot
 {
 
@@ -62,8 +60,6 @@ public:
 	void		Load(void); // Run at level init
 	void		LevelInit(void); // Run at level init
 	bool		NetworkIDValidated(player_t *player_ptr);
-	void		ClientDisconnect(player_t *player_ptr);
-	void		GameFrame(void);
 
 private:
 
@@ -78,17 +74,6 @@ private:
 	reserve_slot_t	*reserve_slot_list;
 	int	reserve_slot_list_size;
 
-	struct waiting_player_t
-	{
-		int		user_id;
-		float	timeout;
-	};
-
-	// Create our circular buffer
-	waiting_player_t	waiting_list[MANI_MAX_PLAYERS];
-	int					in_index;
-	int					out_index;
-	int					wait_size;
 };
 
 extern	ManiReservedSlot *gpManiReservedSlot;

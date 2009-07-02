@@ -113,6 +113,7 @@ typedef unsigned long DWORD;
 #include "mani_anti_rejoin.h"
 #include "mani_save_scores.h"
 #include "mani_team_join.h"
+#include "mani_mp_restartgame.h"
 #include "mani_automap.h"
 #include "mani_afk.h"
 #include "mani_vote.h"
@@ -192,6 +193,12 @@ ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set 
 ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal CSS mode, 1 = Grenades replenished after throw (CSS Only)", true, 0, true, 1, ManiUnlimitedGrenades);
 ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1); 
 
+ConVar mani_exec_default_file1 ("mani_exec_default_file1", "mani_server.cfg", 0, "Run a default .cfg file on level change after server.cfg"); 
+ConVar mani_exec_default_file2 ("mani_exec_default_file2", "./mani_admin_plugin/defaults.cfg", 0, "Run a default .cfg file on level change after server.cfg"); 
+ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg"); 
+ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg"); 
+ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg"); 
+
 bool war_mode = false;
 float	next_ping_check;
 int	max_players = 0;
@@ -214,6 +221,7 @@ bool		get_new_timeleft_offset;
 bool		round_end_found;
 bool		first_map_loaded = false;
 char		custom_map_config[512]="";
+char		map_type_config[512]="";
 bool		just_loaded;
 float		end_spawn_protection_time;
 int			round_number;
@@ -608,6 +616,7 @@ bool CAdminPlugin::Load(void)
 	last_slapped_time = 0;
 	trigger_changemap = false;
 	Q_strcpy(custom_map_config,"");
+	Q_strcpy(map_type_config,"");
 
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 
@@ -766,6 +775,7 @@ bool CAdminPlugin::Load(void)
 	g_PluginLoadedOnce = true;
 
 	this->InitEvents();
+	gpManiMPRestartGame->Load();
 	return true;
 }
 
@@ -865,7 +875,7 @@ void CAdminPlugin::Unload( void )
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
 	gpManiAutoMap->Unload();
 	gpManiAntiRejoin->Unload();
-
+	gpManiMPRestartGame->Unload();
 }
 
 //---------------------------------------------------------------------------------
@@ -1008,7 +1018,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
-		gpManiWeaponMgr->LevelInit();
 		gpManiLogCSSStats->LevelInit();
 	}
 	else if (gpManiGameType->IsGameType(MANI_GAME_DOD))
@@ -1158,6 +1167,38 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		Q_strcpy(custom_map_config,"");
 	}
 
+	char map_type[512] = "";
+	int  char_index = 0;
+
+	while (pMapName[char_index] != '\0')
+	{
+		if (pMapName[char_index] == '_')
+		{
+			map_type[char_index] = '\0';
+			break;
+		}
+
+		char_index ++;
+	}
+
+
+	if (pMapName[char_index] == '\0')
+	{
+		Q_strcpy(map_type_config,"");
+	}
+	else
+	{
+		snprintf( map_config_filename, sizeof(map_config_filename), "./cfg/%s/map_config/%s_.cfg", mani_path.GetString(), map_type);
+		if (filesystem->FileExists(map_config_filename))
+		{
+			snprintf(map_type_config, sizeof(map_type_config), "exec ./%s/map_config/%s_.cfg\n", mani_path.GetString(), map_type);
+		}
+		else
+		{
+			Q_strcpy(map_type_config,"");
+		}
+	}
+	
 	//Get rcon list
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/rconlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
@@ -1332,7 +1373,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	ProcessPlayerSettings();
 	MMsg("Player Lists Loaded in %.4f seconds\n", ManiGetTimerDuration(timer_index));
 	gpManiAutoMap->LevelInit();
-
+	gpManiMPRestartGame->LevelInit();
 	this->InitEvents();
 	time_t current_time;
 
@@ -1357,6 +1398,22 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 	// MMsg("Activated\n");
 	// Get team manager pointers
 	gpManiTeam->Init(edictCount);
+	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		gpManiWeaponMgr->LevelInit();
+	}
+
+	char	file_execute[512]="";
+	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file1.GetString());
+	engine->ServerCommand(file_execute);
+	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file2.GetString());
+	engine->ServerCommand(file_execute);
+	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file3.GetString());
+	engine->ServerCommand(file_execute);
+	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file4.GetString());
+	engine->ServerCommand(file_execute);
+	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file5.GetString());
+	engine->ServerCommand(file_execute);
 }
 
 //---------------------------------------------------------------------------------
@@ -1386,7 +1443,6 @@ void CAdminPlugin::GameFrame( bool simulating )
 		PROFILE(CLIENT_SQL_MANAGER, client_sql_manager->GameFrame())
 	}
 
-	PROFILE(RESERVED_SLOT, gpManiReservedSlot->GameFrame())
 	PROFILE(SPRAY_REMOVE,gpManiSprayRemove->GameFrame())
 	PROFILE(WARMUP_TIMER,gpManiWarmupTimer->GameFrame())
 	PROFILE(AFK,gpManiAFK->GameFrame())
@@ -1430,6 +1486,7 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 	gpManiSpawnPoints->LevelShutdown();
 	gpManiAFK->LevelShutdown();
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
+	gpManiMPRestartGame->LevelShutdown();
 	WriteProfiles();
 }
 
@@ -1504,7 +1561,6 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 
 	g_menu_mgr.ClientDisconnect(&player);
 	gpManiNetIDValid->ClientDisconnect(&player);
-	gpManiReservedSlot->ClientDisconnect(&player);
 	gpManiSprayRemove->ClientDisconnect(&player);
 	gpManiSaveScores->ClientDisconnect(&player);
 	gpManiAFK->ClientDisconnect(&player);
@@ -1619,6 +1675,15 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 		// Execute any pre-map configs
 		ExecuteCronTabs(false);
 
+		if (map_type_config)
+		{
+			if (!FStrEq(map_type_config,""))
+			{
+				MMsg("Executing %s\n", map_type_config);
+				engine->ServerCommand(map_type_config);
+			}
+		}
+
 		if (custom_map_config)
 		{
 			if (!FStrEq(custom_map_config,""))
@@ -1635,13 +1700,7 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 		{
 			mp_dynamicpricing->AddFlags(FCVAR_REPLICATED | FCVAR_NOTIFY);
 		}
-
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
-		{
-			gpManiWeaponMgr->LevelInit();
-		}
 	}	
-
 }
 
 //---------------------------------------------------------------------------------

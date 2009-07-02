@@ -99,6 +99,32 @@ void ManiAntiRejoin::ClientDisconnect(player_t	*player_ptr)
 	if (mani_anti_rejoin.GetInt() == 0) return;
 	if (player_ptr->is_bot) return;
 
+	int ct = 0;
+	int t = 0;
+	for (int i = 0; i < max_players; i++)
+	{
+		player_t player;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.team == 2) 
+		{
+			t ++;
+		}
+		else if (player.team == 3)
+		{
+			ct ++;
+		}
+
+		if (ct != 0 && t != 0) 
+		{
+			break;
+		}
+	}
+
+	if (ct == 0 || t == 0)
+	{
+		return;
+	}
+
 	rejoin_list[player_ptr->steam_id] = gpManiTeam->GetTeamScore(2) + gpManiTeam->GetTeamScore(3);
 }
 
