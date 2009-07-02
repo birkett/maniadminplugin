@@ -34,6 +34,7 @@
 #include "Color.h"
 #include "mani_player.h"
 #include "mani_maps.h"
+#include "mani_main.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 
@@ -44,6 +45,7 @@
 extern	int	server_tickrate;
 extern	ConVar	*mp_friendlyfire;
 extern	ConVar	*hostname;
+extern  system_vote_t system_vote;
 
 static	char	*GetSubToken( const char *in_string, int *token_length);
 static	char	*TranslateToken( player_t *player, const char *token_string);
@@ -477,14 +479,14 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 	}
 	else
 	{
-		Msg("Alias string missing !!\n");
+//		Msg("Alias string missing !!\n");
 		return false;
 	}
 
 	if (!found_alias)
 	{
 		// Didn't find end marker
-		Msg("Alias string not formed correctly !!\n");
+//		Msg("Alias string not formed correctly !!\n");
 		return false;
 	}
 
@@ -502,7 +504,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index + 1] == '\0')
 	{
 		// Only alias string found
-		Msg("Must have question and command in string !!\n");
+//		Msg("Must have question and command in string !!\n");
 		return false;
 	}
 
@@ -514,7 +516,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-			Msg("Must have question and command in string !!\n");
+//			Msg("Must have question and command in string !!\n");
 			return false;
 		}
 	}			
@@ -523,7 +525,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index] == '\0')
 	{
 		// Only alias string found
-		Msg("Must have question and command in string !!\n");
+//		Msg("Must have question and command in string !!\n");
 		return false;
 	}
 
@@ -544,7 +546,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-			Msg("Must have question and command in string !!\n");
+//			Msg("Must have question and command in string !!\n");
 			return false;
 		}
 	}
@@ -701,14 +703,14 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 	}
 	else
 	{
-		Msg("Alias string missing !!\n");
+//		Msg("Alias string missing !!\n");
 		return false;
 	}
 
 	if (!found_alias)
 	{
 		// Didn't find end marker
-		Msg("Alias string not formed correctly !!\n");
+//		Msg("Alias string not formed correctly !!\n");
 		return false;
 	}
 
@@ -726,7 +728,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index + 1] == '\0')
 	{
 		// Only alias string found
-		Msg("Must have question in string !!\n");
+//		Msg("Must have question in string !!\n");
 		return false;
 	}
 
@@ -738,7 +740,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-			Msg("Must have question in string !!\n");
+//			Msg("Must have question in string !!\n");
 			return false;
 		}
 	}			
@@ -747,7 +749,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index] == '\0')
 	{
 		// Only alias string found
-		Msg("Must have question in string !!\n");
+//		Msg("Must have question in string !!\n");
 		return false;
 	}
 
@@ -768,7 +770,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-			Msg("Must have question in string !!\n");
+//			Msg("Must have question in string !!\n");
 			return false;
 		}
 	}
@@ -882,14 +884,14 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 	}
 	else
 	{
-		Msg("Alias string missing !!\n");
+//		Msg("Alias string missing !!\n");
 		return false;
 	}
 
 	if (!found_alias)
 	{
 		// Didn't find end marker
-		Msg("Alias string not formed correctly !!\n");
+//		Msg("Alias string not formed correctly !!\n");
 		return false;
 	}
 
@@ -907,7 +909,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 	if (in[end_alias_index + 1] == '\0')
 	{
 		// Only alias string found
-		Msg("Must have command type in string !!\n");
+//		Msg("Must have command type in string !!\n");
 		return false;
 	}
 
@@ -918,7 +920,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-			Msg("Must have command type in string !!\n");
+//			Msg("Must have command type in string !!\n");
 			return false;
 		}
 
@@ -933,7 +935,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 		!FStrEq(command_type, "C") && // Client
 		!FStrEq(command_type, "S")) // Say
 	{
-		Msg("Invalid command\n");
+//		Msg("Invalid command\n");
 		return false;
 	}
 
@@ -944,7 +946,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-			Msg("Must have command in string !!\n");
+//			Msg("Must have command in string !!\n");
 			return false;
 		}
 
@@ -1103,7 +1105,17 @@ char	*TranslateToken
 			Q_strcpy(translated_string, hostname->GetString());
 		}
 	}	
-	else if (FStrEq(token_string, "{NEXTMAP}"))	Q_strcpy(translated_string, next_map);
+	else if (FStrEq(token_string, "{NEXTMAP}"))
+	{
+		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && system_vote.map_decided == false)
+		{
+			Q_strcpy(translated_string, "Map decided by vote");
+		}
+		else
+		{
+			Q_strcpy(translated_string, next_map);
+		}
+	}
 	else if (FStrEq(token_string, "{CURRENTMAP}")) Q_strcpy(translated_string, current_map);
 	else if (FStrEq(token_string, "{TICKRATE}")) Q_snprintf(translated_string, sizeof(translated_string), "%i", server_tickrate);
 	else if (FStrEq(token_string, "{FF}"))

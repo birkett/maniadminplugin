@@ -47,6 +47,7 @@ private:
 	struct net_id_t
 	{
 		int	player_index;
+		time_t	timer;
 	};
 
 	net_id_t	*net_id_list;

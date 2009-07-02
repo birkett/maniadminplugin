@@ -27,7 +27,7 @@
 #define MANI_CLIENT_H
 
 #define MAX_ADMIN_FLAGS (54)
-#define MAX_IMMUNITY_FLAGS (27)
+#define MAX_IMMUNITY_FLAGS (28)
 
 #define MANI_ADMIN_TYPE (0)
 #define MANI_IMMUNITY_TYPE (1)

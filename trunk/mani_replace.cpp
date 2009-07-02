@@ -104,11 +104,11 @@ void	LoadCommandList(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load commandlist.txt\n");
+//		Msg ("Failed to load commandlist.txt\n");
 	}
 	else
 	{
-		Msg("Replacement command list\n");
+//		Msg("Replacement command list\n");
 		while (filesystem->ReadLine (data_in, sizeof(data_in), file_handle) != NULL)
 		{
 			if (!ParseCommandReplace(data_in, alias, command_type, command_string))
@@ -122,7 +122,7 @@ void	LoadCommandList(void)
 			Q_strcpy(command_list[command_list_size - 1].command_string, command_string);
 			Q_strcpy(command_list[command_list_size - 1].command_alias, alias);
 
-			Msg("Alias [%s] Type [%s] Command [%s]\n", alias, command_type, command_string);
+//			Msg("Alias [%s] Type [%s] Command [%s]\n", alias, command_type, command_string);
 		}
 
 		filesystem->Close(file_handle);

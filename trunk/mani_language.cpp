@@ -148,7 +148,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 		}
 	}
 
-	Msg("Attempting to load %s.cfg\n", language_type);
+//	Msg("Attempting to load %s.cfg\n", language_type);
 
 	// Get the language type we are trying to load
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/language/%s.cfg", mani_path.GetString(), language_type);
@@ -217,7 +217,7 @@ bool GetLanguageIntoMemory(char *language_type, bool overwrite_old)
 		}
 
 		filesystem->Close(file_handle);
-		Msg("Processed %i translations for file [%s.cfg]\n", translations_processed, language_type);
+//		Msg("Processed %i translations for file [%s.cfg]\n", translations_processed, language_type);
 		if (failed_translation)
 		{
 			return false;

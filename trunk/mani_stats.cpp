@@ -117,12 +117,11 @@ void	LoadStats(void)
 
 	if (!just_loaded)
 	{
-		Msg("Discarding players who haven't connected for stats in %i days\n", mani_stats_drop_player_days.GetInt());
+//		Msg("Discarding players who haven't connected for stats in %i days\n", mani_stats_drop_player_days.GetInt());
 	}
 
 	ReBuildStatsPlayerList();
 	ReBuildStatsPlayerNameList();
-	Msg("Calculating current stats list\n");
 	CalculateStats(false);
 	CalculateNameStats(false);
 	WriteStats();
@@ -343,7 +342,7 @@ void CalculateStats(bool round_end)
 
 	if (rank_player_waiting_list_size != 0)
 	{
-		Msg("Added %i new players to the ranks\n", rank_player_waiting_list_size);
+//		Msg("Added %i new players to the ranks\n", rank_player_waiting_list_size);
 		// Re-sort the list
 		qsort(rank_player_list, rank_player_list_size, sizeof(rank_t *), sort_by_steam_id); 
 		FreeList((void **) &rank_player_waiting_list, &rank_player_waiting_list_size);
@@ -442,7 +441,7 @@ void CalculateNameStats(bool round_end)
 
 	if (rank_player_name_waiting_list_size != 0)
 	{
-		Msg("Added %i new players to the name ranks\n", rank_player_name_waiting_list_size);
+//		Msg("Added %i new players to the name ranks\n", rank_player_name_waiting_list_size);
 		// Re-sort the list
 		qsort(rank_player_name_list, rank_player_name_list_size, sizeof(rank_t *), sort_by_name); 
 		FreeList((void **) &rank_player_name_waiting_list, &rank_player_name_waiting_list_size);
@@ -1452,11 +1451,11 @@ void ResetStats(void)
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File mani_stats.dat exists, preparing to delete stats\n");
+//		Msg("File mani_stats.dat exists, preparing to delete stats\n");
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete mani_stats.dat\n");
+//			Msg("Failed to delete mani_stats.dat\n");
 		}
 	}
 
@@ -1464,11 +1463,11 @@ void ResetStats(void)
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File mani_name_stats.dat exists, preparing to delete stats\n");
+//		Msg("File mani_name_stats.dat exists, preparing to delete stats\n");
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete mani_name_stats.dat\n");
+//			Msg("Failed to delete mani_name_stats.dat\n");
 		}
 	}
 
@@ -1522,18 +1521,18 @@ void WriteStats(void)
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File mani_stats.dat exists, preparing to delete then write new updated stats\n");
+//		Msg("File mani_stats.dat exists, preparing to delete then write new updated stats\n");
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete mani_stats.dat\n");
+//			Msg("Failed to delete mani_stats.dat\n");
 		}
 	}
 
 	file_handle = filesystem->Open (base_filename,"wb", NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open mani_stats.dat for writing\n");
+//		Msg ("Failed to open mani_stats.dat for writing\n");
 		return;
 	}
 
@@ -1541,7 +1540,7 @@ void WriteStats(void)
 
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write version info to mani_stats.dat\n");
+//		Msg ("Failed to write version info to mani_stats.dat\n");
 		filesystem->Close(file_handle);
 		return;
 	}
@@ -1551,13 +1550,13 @@ void WriteStats(void)
 	{
 		if (filesystem->Write((void *) rank_player_list[i], sizeof(rank_t), file_handle) == 0)
 		{
-			Msg("Failed to write rank player index %i to mani_stats.dat!!\n", i);
+//			Msg("Failed to write rank player index %i to mani_stats.dat!!\n", i);
 			filesystem->Close(file_handle);
 			return;
 		}
 	}
 
-	Msg("Wrote %i ranked players to mani_stats.dat\n", rank_player_list_size);
+//	Msg("Wrote %i ranked players to mani_stats.dat\n", rank_player_list_size);
 	filesystem->Close(file_handle);
 
 	if (mani_stats_write_text_file.GetInt() == 0)
@@ -1570,25 +1569,25 @@ void WriteStats(void)
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File mani_ranks.txt exists, preparing to delete then write new updated stats\n");
+//		Msg("File mani_ranks.txt exists, preparing to delete then write new updated stats\n");
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete mani_ranks.txt\n");
+//			Msg("Failed to delete mani_ranks.txt\n");
 		}
 	}
 
 	file_handle = filesystem->Open(base_filename,"wb",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open mani_ranks.txt for writing\n");
+//		Msg ("Failed to open mani_ranks.txt for writing\n");
 		return;
 	}
 
 	temp_length = Q_snprintf(temp_string, sizeof(temp_string), PLUGIN_VERSION_ID);
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write version info to mani_ranks.txt\n");
+//		Msg ("Failed to write version info to mani_ranks.txt\n");
 		filesystem->Close(file_handle);
 		return;
 	}
@@ -1608,20 +1607,20 @@ void WriteStats(void)
 		
 		if (temp_length == 0)
 		{
-			Msg("Failed to write rank index %i to mani_ranks.txt!!\n", i);
+//			Msg("Failed to write rank index %i to mani_ranks.txt!!\n", i);
 			filesystem->Close(file_handle);
 			return;
 		}
 
 		if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 		{
-			Msg("Failed to write rank index %i to mani_ranks.txt!!\n", i);
+//			Msg("Failed to write rank index %i to mani_ranks.txt!!\n", i);
 			filesystem->Close(file_handle);
 			return;
 		}
 	}
 
-	Msg("Wrote %i ranked players to mani_ranks.txt\n", rank_list_size);
+//	Msg("Wrote %i ranked players to mani_ranks.txt\n", rank_list_size);
 	filesystem->Close(file_handle);
 
 	return;
@@ -1644,25 +1643,25 @@ void WriteNameStats(void)
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File mani_name_stats.dat exists, preparing to delete then write new updated stats\n");
+//		Msg("File mani_name_stats.dat exists, preparing to delete then write new updated stats\n");
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete mani_name_stats.dat\n");
+//			Msg("Failed to delete mani_name_stats.dat\n");
 		}
 	}
 
 	file_handle = filesystem->Open (base_filename,"wb",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open mani_name_stats.dat for writing\n");
+//		Msg ("Failed to open mani_name_stats.dat for writing\n");
 		return;
 	}
 
 	temp_length = Q_snprintf(temp_string, sizeof(temp_string), PLUGIN_VERSION_ID);
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write version info to mani_name_stats.dat\n");
+//		Msg ("Failed to write version info to mani_name_stats.dat\n");
 		filesystem->Close(file_handle);
 		return;
 	}
@@ -1672,13 +1671,13 @@ void WriteNameStats(void)
 	{
 		if (filesystem->Write((void *) rank_player_name_list[i], sizeof(rank_t), file_handle) == 0)
 		{
-			Msg("Failed to write rank player name index %i to mani_name_stats.dat!!\n", i);
+//			Msg("Failed to write rank player name index %i to mani_name_stats.dat!!\n", i);
 			filesystem->Close(file_handle);
 			return;
 		}
 	}
 
-	Msg("Wrote %i ranked players to mani_name_stats.dat\n", rank_player_name_list_size);
+//	Msg("Wrote %i ranked players to mani_name_stats.dat\n", rank_player_name_list_size);
 	filesystem->Close(file_handle);
 
 	if (mani_stats_write_text_file.GetInt() == 0)
@@ -1691,25 +1690,25 @@ void WriteNameStats(void)
 
 	if (filesystem->FileExists( base_filename))
 	{
-		Msg("File mani_name_ranks.txt exists, preparing to delete then write new updated stats\n");
+//		Msg("File mani_name_ranks.txt exists, preparing to delete then write new updated stats\n");
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete mani_name_ranks.txt\n");
+//			Msg("Failed to delete mani_name_ranks.txt\n");
 		}
 	}
 
 	file_handle = filesystem->Open(base_filename,"wb",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open mani_name_ranks.txt for writing\n");
+//		Msg ("Failed to open mani_name_ranks.txt for writing\n");
 		return;
 	}
 
 	temp_length = Q_snprintf(temp_string, sizeof(temp_string), PLUGIN_VERSION_ID);
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write version info to mani_name_ranks.txt\n");
+//		Msg ("Failed to write version info to mani_name_ranks.txt\n");
 		filesystem->Close(file_handle);
 		return;
 	}
@@ -1729,20 +1728,20 @@ void WriteNameStats(void)
 		
 		if (temp_length == 0)
 		{
-			Msg("Failed to write rank index %i to mani_name_ranks.txt!!\n", i);
+//			Msg("Failed to write rank index %i to mani_name_ranks.txt!!\n", i);
 			filesystem->Close(file_handle);
 			return;
 		}
 
 		if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 		{
-			Msg("Failed to write rank index %i to mani_name_ranks.txt!!\n", i);
+//			Msg("Failed to write rank index %i to mani_name_ranks.txt!!\n", i);
 			filesystem->Close(file_handle);
 			return;
 		}
 	}
 
-	Msg("Wrote %i ranked players to mani_name_ranks.txt\n", rank_name_list_size);
+//	Msg("Wrote %i ranked players to mani_name_ranks.txt\n", rank_name_list_size);
 	filesystem->Close(file_handle);
 
 	return;
@@ -1771,32 +1770,32 @@ void ReadStats(void)
 	FreeList((void **) &rank_player_list, &rank_player_list_size);
 	FreeList((void **) &rank_list, &rank_list_size);
 
-	Msg("Attempting to read mani_stats.dat file\n");
+//	Msg("Attempting to read mani_stats.dat file\n");
 
 	//Get stats into memory
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/mani_stats.dat", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rb",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load mani_stats.dat, did not find file\n");
+//		Msg ("Failed to load mani_stats.dat, did not find file\n");
 		return;
 	}
 
 	if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
 	{
-		Msg("Failed to get version string for mani_stats.dat!!\n");
+//		Msg("Failed to get version string for mani_stats.dat!!\n");
 		filesystem->Close(file_handle);
 		return;
 	}
 
 	if (!ParseLine(stats_version, true))
 		{
-		Msg("Failed to get version string for mani_stats.dat, top line empty !!\n");
+//		Msg("Failed to get version string for mani_stats.dat, top line empty !!\n");
 		filesystem->Close(file_handle);
 		return;
 		}
 
-	Msg("mani_stats.dat version [%s]\n",stats_version);
+//	Msg("mani_stats.dat version [%s]\n",stats_version);
 
 	rank_t player_rank;
 
@@ -1808,7 +1807,7 @@ void ReadStats(void)
 		*(rank_player_list[rank_player_list_size - 1]) = player_rank;
 	}
 
-	Msg("Read %i player ranks into memory\n", rank_player_list_size);
+//	Msg("Read %i player ranks into memory\n", rank_player_list_size);
 
 	filesystem->Close(file_handle);
 	return;
@@ -1835,32 +1834,32 @@ void ReadNameStats(void)
 	FreeList((void **) &rank_player_name_list, &rank_player_name_list_size);
 	FreeList((void **) &rank_name_list, &rank_name_list_size);
 
-	Msg("Attempting to read mani_name_stats.dat file\n");
+//	Msg("Attempting to read mani_name_stats.dat file\n");
 
 	//Get stats into memory
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/mani_name_stats.dat", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rb",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load mani_name_stats.dat, did not find file\n");
+//		Msg ("Failed to load mani_name_stats.dat, did not find file\n");
 		return;
 	}
 
 	if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
 	{
-		Msg("Failed to get version string for mani_name_stats.dat!!\n");
+//		Msg("Failed to get version string for mani_name_stats.dat!!\n");
 		filesystem->Close(file_handle);
 		return;
 	}
 
 	if (!ParseLine(stats_version, true))
 		{
-		Msg("Failed to get version string for mani_name_stats.dat, top line empty !!\n");
+//		Msg("Failed to get version string for mani_name_stats.dat, top line empty !!\n");
 		filesystem->Close(file_handle);
 		return;
 		}
 
-	Msg("mani_name_stats.dat version [%s]\n",stats_version);
+//	Msg("mani_name_stats.dat version [%s]\n",stats_version);
 
 	rank_t player_rank;
 
@@ -1872,7 +1871,7 @@ void ReadNameStats(void)
 		*(rank_player_name_list[rank_player_name_list_size - 1]) = player_rank;
 	}
 
-	Msg("Read %i player name ranks into memory\n", rank_player_name_list_size);
+//	Msg("Read %i player name ranks into memory\n", rank_player_name_list_size);
 
 	filesystem->Close(file_handle);
 	return;

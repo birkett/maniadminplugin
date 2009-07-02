@@ -73,7 +73,9 @@ bool RemoveIndexFromList
  void **list_ptr, 
  size_t size_of_structure, 
  int *list_size_ptr,
- int index
+ int index,
+ void *index_ptr,
+ void *end_ptr
 )
 {
 	void *temp_ptr;
@@ -96,7 +98,8 @@ bool RemoveIndexFromList
 	if (index != *list_size_ptr - 1)
 	{
 		// Copy end of list to index 
-		Q_memcpy(&(list_ptr[index]), &(list_ptr[*list_size_ptr-1]), size_of_structure);
+		Q_memcpy(index_ptr, end_ptr, size_of_structure);
+		//list_ptr[index] = list_ptr[*list_size_ptr-1];
 	}
 
 	// List already created, use realloc to remove one

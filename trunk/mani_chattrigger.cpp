@@ -156,22 +156,6 @@ bool		ManiChatTriggers::PlayerSay
 //---------------------------------------------------------------------------------
 // Purpose: Player has said something
 //---------------------------------------------------------------------------------
-void ManiChatTriggers::UTIL_LogPrintf( char *fmt, ... )
-{
-	va_list		argptr;
-	char		tempString[1024];
-	
-	va_start ( argptr, fmt );
-	Q_vsnprintf( tempString, sizeof(tempString), fmt, argptr );
-	va_end   ( argptr );
-
-	// Print to server console
-	engine->LogPrint( tempString );
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Player has said something
-//---------------------------------------------------------------------------------
 bool		ManiChatTriggers::ProcessIgnore
 (
  player_t *player_ptr, 
@@ -196,11 +180,11 @@ bool		ManiChatTriggers::ProcessIgnore
 
 	if ( teamonly )
 	{
-		this->UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
+		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
 	}
 	else
 	{
-		this->UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
+		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
 	}
 
 	// Fire the event so other plugins can see it
@@ -249,14 +233,14 @@ void ManiChatTriggers::LoadData(void)
 {
 	char	core_filename[256];
 
-	Msg("*********** Loading chattriggers.txt ************\n");
+//	Msg("*********** Loading chattriggers.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("chattriggers.txt");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/chattriggers.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-		Msg("Failed to load chattriggers.txt\n");
+//		Msg("Failed to load chattriggers.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -266,7 +250,7 @@ void ManiChatTriggers::LoadData(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-		Msg("No true subkey found\n");
+//		Msg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -291,7 +275,7 @@ void ManiChatTriggers::LoadData(void)
 
 	qsort(chat_trigger_list, chat_trigger_list_size, sizeof(chat_trigger_t), sort_chat_triggers); 
 
-	Msg("*********** chattriggers.txt loaded ************\n");
+//	Msg("*********** chattriggers.txt loaded ************\n");
 }
 
 //---------------------------------------------------------------------------------

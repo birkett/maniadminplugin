@@ -81,17 +81,17 @@ void	InitPanels(void)
 {
 
 	return;
-	Msg("Number of Tables [%i]\n", networkstringtable->GetNumTables());
+//	Msg("Number of Tables [%i]\n", networkstringtable->GetNumTables());
 
 	g_pStringTableManiScreen = networkstringtable->FindTable("InfoPanel");
 	if (!g_pStringTableManiScreen)
 	{
-		Msg("Did not find InfoPanel\n");
+//		Msg("Did not find InfoPanel\n");
 	}
 	else
 	{
 		g_pStringTableManiScreen->AddString( MANI_WEB_STATS_PANEL, 5, "INIT");
-		Msg("Added 1 new network string\n");
+//		Msg("Added 1 new network string\n");
 	}
 }
 
@@ -109,14 +109,14 @@ void	LoadWebShortcuts(void)
 
 	FreeWebShortcuts();
 
-	Msg("********** LOADING WEB SHORTCUTS ***********\n");
+//	Msg("********** LOADING WEB SHORTCUTS ***********\n");
 
 	//Get rcon list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/webshortcutlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load webshortcutlist.txt\n");
+//		Msg ("Failed to load webshortcutlist.txt\n");
 	}
 	else
 	{
@@ -133,13 +133,13 @@ void	LoadWebShortcuts(void)
 			AddToList((void **) &web_shortcut_list, sizeof(web_shorcut_t), &web_shortcut_list_size);
 			web_shortcut_list[web_shortcut_list_size - 1] = web_shortcut;
 
-			Msg("command [%s] url [%s]\n", web_shortcut_string, url_string);
+//			Msg("command [%s] url [%s]\n", web_shortcut_string, url_string);
 		}
 
 		filesystem->Close(file_handle);
 	}
 
-	Msg("********** WEB SHORTCUTS LOADED ***********\n");
+//	Msg("********** WEB SHORTCUTS LOADED ***********\n");
 
 }
 

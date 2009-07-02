@@ -113,7 +113,6 @@ bool VFUNC myLevelInit(IServerGameDLL *pServerGameDLL, char const *pMapName, cha
 	}
 
 	bool result = org_LevelInit(pServerGameDLL, pMapName, pReplaceEnts, pOldLevel, pLandmarkName, loadGame, background);
-	free(pReplaceEnts);
 	return result;
 }
 
@@ -138,19 +137,19 @@ void	HookVFuncs(void)
 {
 	if (voiceserver && gpManiGameType->IsVoiceAllowed() && !g_PluginLoadedOnce)
 	{
-		Msg("Hooking voiceserver\n");
+//		Msg("Hooking voiceserver\n");
 		HOOKVFUNC(voiceserver, gpManiGameType->GetVoiceOffset(), voiceserver_SetClientListening, mysetclientlistening);
 	}
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed() && !g_PluginLoadedOnce)
 	{
-		Msg("Hooking decals\n");
+//		Msg("Hooking decals\n");
 		HOOKVFUNC(temp_ents, gpManiGameType->GetSprayHookOffset(), te_PlayerDecal, myplayerdecal);
 	}
 
 	if (!g_PluginLoadedOnce && gpManiGameType->IsSpawnPointHookAllowed())
 	{
-		Msg("Hooking spawnpoints\n");
+//		Msg("Hooking spawnpoints\n");
 		HOOKVFUNC(serverdll, gpManiGameType->GetSpawnPointHookOffset(), org_LevelInit, myLevelInit);
 	}
 }

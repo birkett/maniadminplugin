@@ -134,11 +134,11 @@ void ManiReservedSlot::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load reserveslots.txt\n");
+//		Msg ("Failed to load reserveslots.txt\n");
 	}
 	else
 	{
-		Msg("Reserve Slot list\n");
+//		Msg("Reserve Slot list\n");
 		while (filesystem->ReadLine (steam_id, sizeof(steam_id), file_handle) != NULL)
 		{
 			if (!ParseLine(steam_id, true))
@@ -149,7 +149,7 @@ void ManiReservedSlot::LevelInit(void)
 
 			AddToList((void **) &reserve_slot_list, sizeof(reserve_slot_t), &reserve_slot_list_size);
 			Q_strcpy(reserve_slot_list[reserve_slot_list_size - 1].steam_id, steam_id);
-			Msg("[%s]\n", steam_id);
+//			Msg("[%s]\n", steam_id);
 		}
 
 		qsort(reserve_slot_list, reserve_slot_list_size, sizeof(reserve_slot_t), sort_reserve_slots_by_steam_id); 
@@ -184,11 +184,11 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	}
 
 	total_players = GetNumberOfActivePlayers() - 1;
-//DirectLogCommand("[DEBUG] Total players on server [%i]\n", total_players);
+// DirectLogCommand("[DEBUG] Total players on server [%i]\n", total_players);
 
 	if (total_players < max_players - mani_reserve_slots_number_of_slots.GetInt())
 	{
-//DirectLogCommand("[DEBUG] No reserve slot action required\n");
+// DirectLogCommand("[DEBUG] No reserve slot action required\n");
 		return true;
 	}
 
@@ -205,14 +205,14 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		Q_strcpy(player_ptr->name,"");
 	}
 
-//DirectLogCommand("[DEBUG] Index = [%i] IP Address [%s] Steam ID [%s]\n",
+// DirectLogCommand("[DEBUG] Index = [%i] IP Address [%s] Steam ID [%s]\n",
 //									player_ptr->index, player_ptr->ip_address, player_ptr->steam_id);
 
-//DirectLogCommand("[DEBUG] Processing player\n");
+// DirectLogCommand("[DEBUG] Processing player\n");
 
 	if (FStrEq("BOT", player_ptr->steam_id))
 	{
-//DirectLogCommand("[DEBUG] Player joining is bot, ignoring\n");
+// DirectLogCommand("[DEBUG] Player joining is bot, ignoring\n");
 		return true;
 	}
 
@@ -221,18 +221,18 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 
 	if (IsPlayerInReserveList(player_ptr))
 	{
-//DirectLogCommand("[DEBUG] Player is on reserve slot list\n");
+// DirectLogCommand("[DEBUG] Player is on reserve slot list\n");
 		is_reserve_player = true;
 	}
 	else if (mani_reserve_slots_include_admin.GetInt() == 1 && gpManiClient->IsAdmin(player_ptr, &admin_index))
 	{
-//DirectLogCommand("[DEBUG] Player is admin\n");
+// DirectLogCommand("[DEBUG] Player is admin\n");
 		is_reserve_player = true;
 	}
 
-//DirectLogCommand("[DEBUG] Building players who can be kicked list\n");
-
-/*	if (active_player_list_size != 0)
+// DirectLogCommand("[DEBUG] Building players who can be kicked list\n");
+/*
+	if (active_player_list_size != 0)
 	{
 		DirectLogCommand("[DEBUG] Players that can be kicked list\n");
 
@@ -257,6 +257,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		BuildPlayerKickList(player_ptr, &players_on_server);
 		// Allow reserve slots to fill first
 		allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
+// DirectLogCommand("[DEBUG] Allowed players = [%i]\n", allowed_players);
 		if (active_player_list_size >= allowed_players)
 		{
 			// standard players are exceeding slot allocation
@@ -269,7 +270,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 				}
 
 				// Disconnect other players that got on (safe guard)
-				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
+// DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
 				temp_player.entity = active_player_list[i].entity;
 				DisconnectPlayer(&temp_player);
 				disconnected_player_list[active_player_list[i].index - 1].in_use = true;
@@ -277,7 +278,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 
 			if (!is_reserve_player)
 			{
-				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
+// DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
 				temp_player.entity = player_ptr->entity;
 				DisconnectPlayer(&temp_player);
 				disconnected_player_list[player_ptr->index - 1].in_use = true;
@@ -299,7 +300,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 			else
 			{
 				// Disconnect this player as they are not allowed on and redirect them
-				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
+//DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
 				temp_player.entity = player_ptr->entity;
 				DisconnectPlayer(&temp_player);
 				disconnected_player_list[player_ptr->index - 1].in_use = true;
@@ -318,7 +319,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 				}
 
 				// Disconnect other players that got on (safe guard)
-				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
+//DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
 				temp_player.entity = active_player_list[i].entity;
 				DisconnectPlayer(&temp_player);
 				disconnected_player_list[active_player_list[i].index - 1].in_use = true;
@@ -331,7 +332,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		}
 	}
 
-	//DirectLogCommand("[DEBUG] Player [%s] is allowed to join\n", player_ptr->steam_id);
+// DirectLogCommand("[DEBUG] Player [%s] is allowed to join\n", player_ptr->steam_id);
 
 	return true;
 }

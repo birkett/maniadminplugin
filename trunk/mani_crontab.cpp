@@ -87,11 +87,11 @@ void	LoadCronTabs(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load crontablist.txt\n");
+//		Msg ("Failed to load crontablist.txt\n");
 	}
 	else
 	{
-		Msg("Crontab list\n");
+//		Msg("Crontab list\n");
 		while (filesystem->ReadLine (server_command, sizeof(server_command), file_handle) != NULL)
 		{
 			if (!ParseAliasLine2(server_command, day_string, time_string, true))
@@ -171,22 +171,22 @@ void	LoadCronTabs(void)
 
 			if (all_days)
 			{
-				Msg("[ALL DAYS] %02d:%02d to %02d:%02d [%s]\n", 
-								crontab.start_hour,
-								crontab.start_minute,
-								crontab.end_hour,
-								crontab.end_minute,
-								crontab.server_command);
+//				Msg("[ALL DAYS] %02d:%02d to %02d:%02d [%s]\n", 
+//								crontab.start_hour,
+//								crontab.start_minute,
+//								crontab.end_hour,
+//								crontab.end_minute,
+//								crontab.server_command);
 			}
 			else
 			{
-				Msg("Days [%s] %02d:%02d to %02d:%02d [%s]\n", 
-								day_string,
-								crontab.start_hour,
-								crontab.start_minute,
-								crontab.end_hour,
-								crontab.end_minute,
-								crontab.server_command);
+//				Msg("Days [%s] %02d:%02d to %02d:%02d [%s]\n", 
+//								day_string,
+//								crontab.start_hour,
+//								crontab.start_minute,
+//								crontab.end_hour,
+//								crontab.end_minute,
+//								crontab.server_command);
 			}
 		}
 

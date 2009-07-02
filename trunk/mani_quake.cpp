@@ -126,11 +126,11 @@ void	LoadQuakeSounds(void)
 	file_handle = filesystem->Open(base_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to load quakesoundlist.txt\n");
+//		Msg ("Failed to load quakesoundlist.txt\n");
 	}
 	else
 	{
-		Msg("Quake Style Sound list\n");
+//		Msg("Quake Style Sound list\n");
 		while (filesystem->ReadLine (sound_id, sizeof(sound_id), file_handle) != NULL)
 		{
 			if (!ParseAliasLine(sound_id, sound_name, true))
@@ -161,15 +161,15 @@ void	LoadQuakeSounds(void)
 
 			if (!found_id)
 			{
-				Msg("WARNING Quake Sound Name [%s] for sound file [%s] is not valid !!\n",
-								sound_name,
-								sound_id);
+//				Msg("WARNING Quake Sound Name [%s] for sound file [%s] is not valid !!\n",
+//								sound_name,
+//								sound_id);
 			}
 			else
 			{
-				Msg("Loaded Quake Sound Name [%s] for file [%s]\n", 
-								sound_name,
-								sound_id);
+//				Msg("Loaded Quake Sound Name [%s] for file [%s]\n", 
+//								sound_name,
+//								sound_id);
 			}
 		}
 

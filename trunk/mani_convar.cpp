@@ -340,7 +340,6 @@ ConVar mani_map_adverts ("mani_map_adverts", "0", 0, "0 = disabled, 1 = enabled"
 ConVar mani_map_adverts_in_war ("mani_map_adverts_in_war", "0", 0, "Allow adverts in war mode, 0 = disabled, 1 = enabled", true, 0, true, 1);
 
 ConVar mani_spawnpoints_mode ("mani_spawnpoints_mode", "0", 0, "Extra spawnpoints mode, 0 = Disabled, 1 = Enabled (Uses spawnpoints.txt)", true, 0, true, 1);
-ConVar mani_spawnpoints_radius_limit ("mani_spawnpoints_radius_limit", "128", 0, "Radius to check for other players when spawning", true, 50, true, 1000);
 
 ConVar mani_spray_tag ("mani_spray_tag", "0", 0, "Tracking of player sprays, 0 = Disabled, 1 = Enabled", true, 0, true, 1);
 ConVar mani_spray_tag_block_mode ("mani_spray_tag_block_mode", "0", 0, "0 = Allow all sprays to be shown, 1 = Block all sprays from being shown", true, 0, true, 1);
@@ -354,4 +353,9 @@ ConVar mani_spray_tag_kick_message ("mani_spray_tag_kick_message", "You have bee
 ConVar mani_spray_tag_ban_message ("mani_spray_tag_ban_message", "You have been banned for 60 minutes through using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking ban option"); 
 ConVar mani_spray_tag_perm_ban_message ("mani_spray_tag_perm_ban_message", "You have been permanently banned for using an offensive spray", 0, "This phrase is said to player when using Spray Tag tracking permanent ban option"); 
 ConVar mani_spray_tag_slap_damage ("mani_spray_tag_slap_damage", "0", 0, "Slap damage given to play for spray slap warn (0-100)", true, 0, true, 100);
+
+ConVar mani_external_stats_log ("mani_external_stats_log", "0", 0, "1 = enable external stats logging, 0 = disable", true, 0, true, 1);
+ConVar mani_external_stats_log_allow_war_logs ("mani_external_stats_log_allow_war_logs", "0", 0, "1 = enable external stats logging whilst in war mode, 0 = disable stats in war mode", true, 0, true, 1);
+
+ConVar mani_hostage_follow_warning ("mani_hostage_follow_warning", "0", 0, "1 = player will be warned in console if a hostage stops following on CSS, 0 = disable warning", true, 0, true, 1);
 

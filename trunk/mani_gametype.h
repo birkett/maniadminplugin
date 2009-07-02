@@ -61,6 +61,7 @@
 //#define MANI_VFUNC_GET_TEAM_NUMBER (13)
 //#define MANI_VFUNC_GET_TEAM_NAME (14)
 #define MANI_VFUNC_GET_VELOCITY (15)
+#define MANI_VFUNC_WEAPON_SWITCH (16)
 
 //Property defs
 #define MANI_PROP_HEALTH		(0)
@@ -110,7 +111,6 @@ public:
 
 	bool		IsAMXMenuAllowed(void);
 
-	// Dod requires next 5
 	bool		IsSlapAllowed(void);
 	bool		IsTeleportAllowed(void);
 	bool		IsFireAllowed(void);
@@ -126,6 +126,9 @@ public:
 //	bool		IsClientSuicide(void);
 	bool		IsKillsAllowed(void);
 	int			GetKillsOffset(void);
+
+	bool		IsDeathsAllowed(void);
+	int			GetDeathsOffset(void);
 
 	bool		IsGravityAllowed(void);
 	int			GetGravityOffset(void);
@@ -183,6 +186,9 @@ private:
 
 	int			kills_allowed;
 	int			kills_offset;
+
+	int			deaths_allowed;
+	int			deaths_offset;
 
 	int			gravity_allowed;
 	int			gravity_offset;

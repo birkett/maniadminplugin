@@ -252,6 +252,7 @@ int ManiSprayRemove::IsSprayValid(player_t *player_ptr)
 
 	for (int i = 0; i < max_players; i++)
 	{
+		if (!spray_list[i].in_use) continue;
 //		if (player_ptr->index -1 == i) continue;
 		Vector	v = p_pos - spray_list[i].position;
 		distance = v.Length();
