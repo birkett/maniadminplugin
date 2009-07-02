@@ -44,8 +44,8 @@ private:
 
 	struct		spray_t
 	{
-		char	name[64];
-		char	steam_id[64];
+		char	name[MAX_PLAYER_NAME_LENGTH];
+		char	steam_id[MAX_NETWORKID_LENGTH];
 		char	password[128];
 		char	ip_address[128];
 		int		user_id;

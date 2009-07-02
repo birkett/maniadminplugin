@@ -88,7 +88,7 @@ void ManiDownloads::Init(void)
 	char	core_filename[256];
 
 	// Read the downloads.txt file
-//	Msg("*********** Loading downloads.txt ************\n");
+//	MMsg("*********** Loading downloads.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("downloads.txt");
 
@@ -97,7 +97,7 @@ void ManiDownloads::Init(void)
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/downloads.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
-//			Msg("Failed to load downloads.txt\n");
+//			MMsg("Failed to load downloads.txt\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -108,7 +108,7 @@ void ManiDownloads::Init(void)
 		base_key_ptr = kv_ptr->GetFirstSubKey();
 		if (!base_key_ptr)
 		{
-//			Msg("Nothing found\n");
+//			MMsg("Nothing found\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -130,7 +130,7 @@ void ManiDownloads::Init(void)
 
 		kv_ptr->deleteThis();
 
-//		Msg("*********** downloads.txt loaded ************\n");
+//		MMsg("*********** downloads.txt loaded ************\n");
 		break;
 	}
 }
@@ -154,9 +154,9 @@ void ManiDownloads::AddDownloadsKeyValues(KeyValues *kv_ptr)
 		Q_strcpy(download_name, kv_downloads_ptr->GetString(NULL, "NULL"));
 		if (!FStrEq("NULL", download_name))
 		{
-//			Msg("Adding %s to download list.... ", download_name);
+//			MMsg("Adding %s to download list.... ", download_name);
 			AddToDownloads(download_name);
-//			Msg("Done.\n");
+//			MMsg("Done.\n");
 		}
 
 		kv_downloads_ptr = kv_downloads_ptr->GetNextValue();

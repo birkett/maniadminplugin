@@ -142,7 +142,7 @@ void	LoadSkins(void)
 	FreeSkins();
 	FreeActionModels();
 
-//	Msg("************ LOADING SKINS *************\n");
+//	MMsg("************ LOADING SKINS *************\n");
 
 	// Do Admin T load first
 	if (!gpManiGameType->IsTeamPlayAllowed())
@@ -160,7 +160,7 @@ void	LoadSkins(void)
 	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 	if(!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_ADMIN_T_SKIN))
 	{
-//		Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
+//		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 		// Do Admin T load first
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir );
@@ -177,7 +177,7 @@ void	LoadSkins(void)
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 		if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_ADMIN_CT_SKIN))
 		{
-//			Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
+//			MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 			// Do Admin CT load
 			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
 			Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
@@ -201,7 +201,7 @@ void	LoadSkins(void)
 	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 	if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_RESERVE_T_SKIN))
 	{
-//		Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
+//		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 		// Do Reserved T load first
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
@@ -218,7 +218,7 @@ void	LoadSkins(void)
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 		if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_RESERVE_CT_SKIN))
 		{
-//			Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
+//			MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 			// Do Reserved CT load
 			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
 			Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
@@ -242,7 +242,7 @@ void	LoadSkins(void)
 	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 	if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_T_SKIN))
 	{
-//		Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
+//		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 		// Do Public T load 
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
@@ -259,7 +259,7 @@ void	LoadSkins(void)
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/%s/", mani_path.GetString(), current_map, skin_short_dir);
 		if (!LoadSkinType (skin_directory, skin_config_file, core_filename, MANI_CT_SKIN))
 		{
-//			Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
+//			MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/%s\n", mani_path.GetString(), current_map, skin_config_file);
 			// Do Public CT load 
 			Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/%s", mani_path.GetString(), skin_config_file);
 			Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/%s/", mani_path.GetString(), skin_short_dir);
@@ -272,7 +272,7 @@ void	LoadSkins(void)
 	Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/maps/%s/misc/", mani_path.GetString(), current_map);
 	if (!LoadSkinType (skin_directory, "misc.txt", core_filename, MANI_MISC_SKIN))
 	{
-//		Msg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/misc.txt\n", mani_path.GetString(), current_map);
+//		MMsg("Above warning due to failed attempt to load custom map skin ./cfg/%s/skins/maps/%s/misc.txt\n", mani_path.GetString(), current_map);
 		// Do Misc load 
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/skins/misc.txt", mani_path.GetString());
 		Q_snprintf(skin_directory, sizeof (skin_directory), "./cfg/%s/skins/misc/", mani_path.GetString());
@@ -281,15 +281,15 @@ void	LoadSkins(void)
 
 	SetupSkinsAutoDownloads();
 
-//	Msg("************ SKINS LOADED *************\n");
+//	MMsg("************ SKINS LOADED *************\n");
 
-//	Msg("**** LOADING CUSTOM MODEL ACTIONS *****\n");
+//	MMsg("**** LOADING CUSTOM MODEL ACTIONS *****\n");
 
 	KeyValues * kv = new KeyValues("modelconfig.txt");
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/modelconfig.txt", mani_path.GetString());
 	if (!kv->LoadFromFile( filesystem, core_filename, NULL))
 	{
-//		Msg("Failed to load modelconfig.txt\n");
+//		MMsg("Failed to load modelconfig.txt\n");
 	}
 
 	KeyValues *temp_kv;
@@ -306,7 +306,7 @@ void	LoadSkins(void)
 	{
 		if (IsValidSkinName(temp_kv->GetName()) != -1)
 		{
-//			Msg("Adding action model %s\n", temp_kv->GetName());
+//			MMsg("Adding action model %s\n", temp_kv->GetName());
 			AddModelActions(temp_kv);
 		}
 
@@ -321,7 +321,7 @@ void	LoadSkins(void)
 
 	SetupActionModelsAutoDownloads();
 
-//	Msg("**** CUSTOM MODEL ACTIONS LOADED *****\n");
+//	MMsg("**** CUSTOM MODEL ACTIONS LOADED *****\n");
 
 }
 
@@ -350,7 +350,7 @@ void AddModelActions(KeyValues *kv_ptr)
 	temp_key_ptr = kv_ptr->FindKey("colour", false);
 	if (temp_key_ptr)
 	{
-//		Msg("Found colour\n");
+//		MMsg("Found colour\n");
 		action_model.red = temp_key_ptr->GetInt("red", 255);
 		action_model.green = temp_key_ptr->GetInt("green", 255);
 		action_model.blue = temp_key_ptr->GetInt("blue", 255);
@@ -365,7 +365,7 @@ void AddModelActions(KeyValues *kv_ptr)
 	temp_key_ptr = kv_ptr->FindKey("sound", false);
 	if (temp_key_ptr)
 	{
-//		Msg("Found sound structure \n");
+//		MMsg("Found sound structure \n");
 		action_model.intermission_max = temp_key_ptr->GetFloat("intermission_max", 20);
 		action_model.intermission_min = temp_key_ptr->GetFloat("intermission_min", 10);
 
@@ -390,7 +390,7 @@ void AddModelActions(KeyValues *kv_ptr)
 					esounds->PrecacheSound(model_sound.sound_file, true);
 					AddToList((void **) &action_model.sound_list, sizeof(action_model_sound_t), &action_model.sound_list_size);
 					action_model.sound_list[action_model.sound_list_size - 1] = model_sound;
-//					Msg("Adding sound %s\n", temp_key_ptr->GetName());
+//					MMsg("Adding sound %s\n", temp_key_ptr->GetName());
 				}
 				temp_key_ptr = temp_key_ptr->GetNextKey();
 				i++;
@@ -462,15 +462,15 @@ bool LoadSkinType
 	file_handle = filesystem->Open (core_filename, "rt", NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load [%s]\n", filename);
+//		MMsg("Failed to load [%s]\n", filename);
 		result = false;
 	}
 	else
 	{
-//		Msg("%s\n", filename);
+//		MMsg("%s\n", filename);
 		while (filesystem->ReadLine (skin_details, 512, file_handle) != NULL)
 		{
-			if (!ParseAliasLine(skin_details, skin_name, true))
+			if (!ParseAliasLine(skin_details, skin_name, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -482,7 +482,7 @@ bool LoadSkinType
 			Q_snprintf(exists_string, sizeof(exists_string), "%s%s", skin_directory, skin_details);
 			if (!filesystem->FileExists(exists_string))
 			{
-//				Msg("Warning did not find [%s%s]\n", skin_directory, skin_details);
+//				MMsg("Warning did not find [%s%s]\n", skin_directory, skin_details);
 				continue;
 			}
 
@@ -494,18 +494,18 @@ bool LoadSkinType
 			skin_list[skin_list_size - 1].resource_list_size = 0;
 			Q_strcpy(skin_list[skin_list_size - 1].precache_name, "");
 
-//			Msg("Resource file [%s]\n", exists_string);
+//			MMsg("Resource file [%s]\n", exists_string);
 
 			file_handle2 = filesystem->Open (exists_string, "rt", NULL);
 			if (file_handle2 == NULL)
 			{
-//				Msg ("Failed to load [%s]\n", exists_string);
+//				MMsg("Failed to load [%s]\n", exists_string);
 			}
 			else
 			{
 				while (filesystem->ReadLine (resource_details, 512, file_handle2) != NULL)
 				{				
-					if (!ParseLine(resource_details, true))
+					if (!ParseLine(resource_details, true, false))
 					{
 						// String is empty after parsing
 						continue;
@@ -514,7 +514,7 @@ bool LoadSkinType
 					Q_snprintf(exists_string, sizeof(exists_string), "%s", resource_details);
 					if (!filesystem->FileExists(exists_string))
 					{
-//						Msg("ERROR !!! Did not find resource file [%s]\n", resource_details);
+//						MMsg("ERROR !!! Did not find resource file [%s]\n", resource_details);
 						continue;
 					}
 
@@ -565,7 +565,7 @@ bool LoadSkinType
 				skin_list[skin_list_size - 1].model_index = found_index;
 			}
 
-//			Msg("Loaded model [%s] Precached [%s] with %i resources\n", 
+//			MMsg("Loaded model [%s] Precached [%s] with %i resources\n", 
 //								skin_list[skin_list_size - 1].skin_name,
 //								skin_list[skin_list_size - 1].precache_name,
 //								skin_list[skin_list_size - 1].resource_list_size);
@@ -1320,7 +1320,7 @@ void	SetupActionModelsAutoDownloads(void)
 				}
 				else
 				{
-//					Msg("Sound file [%s] does not exist on server !!\n", res_string);
+//					MMsg("Sound file [%s] does not exist on server !!\n", res_string);
 				}
 			}
 		}
@@ -1404,7 +1404,7 @@ void ProcessMenuSkinOptions (player_t *admin, int next_index, int argv_offset )
 		}
 
 		// Draw menu list
-		DrawSubMenu (admin, Translate(M_SKINOPTIONS_MENU_ESCAPE), Translate(M_SKINOPTIONS_MENU_TITLE), next_index, "admin", "skinoptions", true, -1);
+		DrawSubMenu (admin, Translate(782), Translate(783), next_index, "admin", "skinoptions", true, -1);
 	}
 
 	return;
@@ -1466,7 +1466,7 @@ void ProcessMenuSetSkin (player_t *admin, int next_index, int argv_offset )
 		Q_snprintf( more_cmd, sizeof(more_cmd), "setskin \"%s\"", engine->Cmd_Argv(2 + argv_offset));
 
 		// Draw menu list
-		DrawSubMenu (admin, Translate(M_SETSKIN_MENU_ESCAPE), Translate(M_SETSKIN_MENU_TITLE), next_index, "admin", more_cmd, true, -1);
+		DrawSubMenu (admin, Translate(780), Translate(781), next_index, "admin", more_cmd, true, -1);
 	}
 
 	return;
@@ -1628,7 +1628,7 @@ CON_COMMAND(ma_setskin, "Changes a players skin to the requested model")
 CON_COMMAND( EntityList, "Liste des entites sur le serveur" )
 {   edict_t *zEntity;
    int edictCount = engine->GetEntityCount();
-   Msg("Nombre d'entite : %d\n",edictCount);
+   MMsg("Nombre d'entite : %d\n",edictCount);
    for(int i=0;i<edictCount;i++)
    {   zEntity = engine->PEntityOfEntIndex(i);
       if(zEntity)
@@ -1637,14 +1637,14 @@ CON_COMMAND( EntityList, "Liste des entites sur le serveur" )
 			{
 				CBaseEntity *pTeam = zEntity->GetUnknown()->GetBaseEntity();
 				CTeam *team_a = (CTeam *) pTeam;
-				Msg("Team [%i] = [%s]\n", i, team_a->GetClassname());
-				Msg("Team number [%i]\n", team_a->GetTeamNumber());
-				Msg("Team name = [%s]\n", team_a->GetName());
+				MMsg("Team [%i] = [%s]\n", i, team_a->GetClassname());
+				MMsg("Team number [%i]\n", team_a->GetTeamNumber());
+				MMsg("Team name = [%s]\n", team_a->GetName());
 			}
 
 			if (FStrEq("cs_gamerules", zEntity->GetClassName()))
 			{
-				Msg("Gamerules\n");
+				MMsg("Gamerules\n");
 			}
 	  }
    }   

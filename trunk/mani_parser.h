@@ -38,10 +38,10 @@ struct mani_colour_t
 	float	blue;
 };
 
-extern bool	ParseLine(char *in, bool strip_comments);
-extern bool	ParseAliasLine(char *in, char *alias, bool strip_comments);
-extern bool	ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments);
-extern bool	ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments);
+extern bool	ParseLine(char *in, bool strip_comments, bool strip_start_comments);
+extern bool	ParseAliasLine(char *in, char *alias, bool strip_comments, bool strip_start_comments);
+extern bool	ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments, bool strip_start_comments);
+extern bool	ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments, bool strip_start_comments);
 extern bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replacement);
 extern void	ParseSubstituteStrings(player_t *player, const char *in_string, char *out_string);
 extern void	ParseColourStrings( const char	*in_string, char	*out_string, Color	*out_colour);

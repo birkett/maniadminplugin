@@ -123,6 +123,7 @@ extern ConVar mani_admin_burn_time;
 
 extern ConVar mani_adminsay_top_left;
 extern ConVar mani_adminsay_chat_area;
+extern ConVar mani_adminsay_bottom_area;
 
 extern ConVar mani_stats;
 extern ConVar mani_stats_mode;
@@ -133,8 +134,10 @@ extern ConVar mani_stats_top_display_time;
 extern ConVar mani_stats_show_rank_to_all;
 extern ConVar mani_stats_alternative_rank_message;
 extern ConVar mani_stats_write_text_file;
-extern ConVar mani_stats_write_to_disk_frequency;
+extern ConVar mani_stats_calculate_frequency;
+extern ConVar mani_stats_write_frequency_to_disk;
 extern ConVar mani_stats_include_bot_kills;
+extern ConVar mani_stats_most_destructive;
 
 extern ConVar mani_adverts_top_left;
 extern ConVar mani_adverts_chat_area;
@@ -154,9 +157,6 @@ extern ConVar mani_reserve_slots_redirect;
 extern ConVar mani_reserve_slots_allow_slot_fill;
 extern ConVar mani_reserve_slots_kick_method;
 extern ConVar mani_reserve_slots_include_admin;
-
-extern ConVar mani_high_ping_kick_ping_limit;
-extern ConVar mani_high_ping_kick_message;
 
 extern ConVar mani_reverse_admin_flags;
 extern ConVar mani_reverse_immunity_flags;
@@ -317,6 +317,7 @@ extern ConVar mani_player_settings_quake;
 extern ConVar mani_player_settings_sounds;
 extern ConVar mani_player_settings_damage;
 extern ConVar mani_player_settings_death_beam;
+extern ConVar mani_player_settings_destructive;
 
 extern ConVar mani_mute_con_command_spam;
 
@@ -356,5 +357,7 @@ extern ConVar mani_external_stats_log;
 extern ConVar mani_external_stats_log_allow_war_logs;
 
 extern ConVar mani_hostage_follow_warning;
+
+extern ConVar mani_afk_kicker;
 
 #endif

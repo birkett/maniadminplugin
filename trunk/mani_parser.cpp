@@ -80,7 +80,7 @@ mani_colour_t	mani_colour_list[MANI_MAX_COLOURS] =
 // Purpose: Take a string, remove carriage return, remove comments, strips leading
 //          and ending spaces
 //---------------------------------------------------------------------------------
-bool ParseLine(char *in, bool strip_comments)
+bool ParseLine(char *in, bool strip_comments, bool strip_start_comments)
 {
 	int	i;
 	int length;
@@ -113,7 +113,16 @@ bool ParseLine(char *in, bool strip_comments)
 			if (length == 0) return false;
 		}
 	}
-
+	else if (strip_start_comments)
+	{
+		if (length > 1)
+		{
+			if (in[0] == '/' && in[1] == '/')
+			{
+				return false;
+			}
+		}
+	}
 	for (;;)
 	{
 		if (in[length - 1] == '\n' 
@@ -182,7 +191,7 @@ bool ParseLine(char *in, bool strip_comments)
 // Format of string is 
 // "alias name" command here //comments here
 //---------------------------------------------------------------------------------
-bool ParseAliasLine(char *in, char *alias, bool strip_comments)
+bool ParseAliasLine(char *in, char *alias, bool strip_comments, bool strip_start_comments)
 {
 	int	i;
 	int length;
@@ -218,6 +227,17 @@ bool ParseAliasLine(char *in, char *alias, bool strip_comments)
 			if (length == 0) return false;
 		}
 	}
+	else if (strip_start_comments)
+	{
+		if (length > 1)
+		{
+			if (in[0] == '/' && in[1] == '/')
+			{
+				return false;
+			}
+		}
+	}
+
 
 	// Strip end carriage returns
 
@@ -363,7 +383,7 @@ bool ParseAliasLine(char *in, char *alias, bool strip_comments)
 // Format of string is 
 // "alias name" "question" command here //comments here
 //---------------------------------------------------------------------------------
-bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
+bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments, bool strip_start_comments)
 {
 	int	i;
 	int length;
@@ -400,7 +420,16 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 			if (length == 0) return false;
 		}
 	}
-
+	else if (strip_start_comments)
+	{
+		if (length > 1)
+		{
+			if (in[0] == '/' && in[1] == '/')
+			{
+				return false;
+			}
+		}
+	}
 	// Strip end carriage returns
 
 	for (;;)
@@ -479,14 +508,14 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 	}
 	else
 	{
-//		Msg("Alias string missing !!\n");
+//		MMsg("Alias string missing !!\n");
 		return false;
 	}
 
 	if (!found_alias)
 	{
 		// Didn't find end marker
-//		Msg("Alias string not formed correctly !!\n");
+//		MMsg("Alias string not formed correctly !!\n");
 		return false;
 	}
 
@@ -504,7 +533,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index + 1] == '\0')
 	{
 		// Only alias string found
-//		Msg("Must have question and command in string !!\n");
+//		MMsg("Must have question and command in string !!\n");
 		return false;
 	}
 
@@ -516,7 +545,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-//			Msg("Must have question and command in string !!\n");
+//			MMsg("Must have question and command in string !!\n");
 			return false;
 		}
 	}			
@@ -525,7 +554,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index] == '\0')
 	{
 		// Only alias string found
-//		Msg("Must have question and command in string !!\n");
+//		MMsg("Must have question and command in string !!\n");
 		return false;
 	}
 
@@ -546,7 +575,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-//			Msg("Must have question and command in string !!\n");
+//			MMsg("Must have question and command in string !!\n");
 			return false;
 		}
 	}
@@ -587,7 +616,7 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments)
 // Format of string is 
 // "alias name" "question" //comments here
 //---------------------------------------------------------------------------------
-bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
+bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments, bool strip_start_comments)
 {
 	int	i;
 	int length;
@@ -624,7 +653,16 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 			if (length == 0) return false;
 		}
 	}
-
+	else if (strip_start_comments)
+	{
+		if (length > 1)
+		{
+			if (in[0] == '/' && in[1] == '/')
+			{
+				return false;
+			}
+		}
+	}
 	// Strip end carriage returns
 
 	for (;;)
@@ -703,14 +741,14 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 	}
 	else
 	{
-//		Msg("Alias string missing !!\n");
+//		MMsg("Alias string missing !!\n");
 		return false;
 	}
 
 	if (!found_alias)
 	{
 		// Didn't find end marker
-//		Msg("Alias string not formed correctly !!\n");
+//		MMsg("Alias string not formed correctly !!\n");
 		return false;
 	}
 
@@ -728,7 +766,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index + 1] == '\0')
 	{
 		// Only alias string found
-//		Msg("Must have question in string !!\n");
+//		MMsg("Must have question in string !!\n");
 		return false;
 	}
 
@@ -740,7 +778,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-//			Msg("Must have question in string !!\n");
+//			MMsg("Must have question in string !!\n");
 			return false;
 		}
 	}			
@@ -749,7 +787,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 	if (in[end_alias_index] == '\0')
 	{
 		// Only alias string found
-//		Msg("Must have question in string !!\n");
+//		MMsg("Must have question in string !!\n");
 		return false;
 	}
 
@@ -770,7 +808,7 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments)
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-//			Msg("Must have question in string !!\n");
+//			MMsg("Must have question in string !!\n");
 			return false;
 		}
 	}
@@ -884,14 +922,14 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 	}
 	else
 	{
-//		Msg("Alias string missing !!\n");
+//		MMsg("Alias string missing !!\n");
 		return false;
 	}
 
 	if (!found_alias)
 	{
 		// Didn't find end marker
-//		Msg("Alias string not formed correctly !!\n");
+//		MMsg("Alias string not formed correctly !!\n");
 		return false;
 	}
 
@@ -909,7 +947,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 	if (in[end_alias_index + 1] == '\0')
 	{
 		// Only alias string found
-//		Msg("Must have command type in string !!\n");
+//		MMsg("Must have command type in string !!\n");
 		return false;
 	}
 
@@ -920,7 +958,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-//			Msg("Must have command type in string !!\n");
+//			MMsg("Must have command type in string !!\n");
 			return false;
 		}
 
@@ -935,7 +973,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 		!FStrEq(command_type, "C") && // Client
 		!FStrEq(command_type, "S")) // Say
 	{
-//		Msg("Invalid command\n");
+//		MMsg("Invalid command\n");
 		return false;
 	}
 
@@ -946,7 +984,7 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 		if (in[end_alias_index] == '\0')
 		{
 			// Only alias string found
-//			Msg("Must have command in string !!\n");
+//			MMsg("Must have command in string !!\n");
 			return false;
 		}
 

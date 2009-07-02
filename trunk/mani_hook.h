@@ -8,6 +8,8 @@ oh and go play in traffic trimbo - real mature eh - I blame the drugs.
 #ifndef _VFNHOOK_H
 #define _VFNHOOK_H
 
+#include "cbaseentity.h"
+
 #define ADDRTYPE unsigned long
 
 #define VTBL( classptr ) (*(ADDRTYPE*)classptr)
@@ -133,7 +135,7 @@ inline bool DeProtect(void* pMemory, unsigned int uiLen, bool bLock = false)
 	*(ADDRTYPE*)PVFN( classptr , index ) = (ADDRTYPE)newfunc ; \
 	DeProtect((void*)VTBL( classptr ), ( ( index + 1 ) * sizeof(void*)), true );
 
-#define UNHOOKVFUNC( classptr , index , funcname , newfunc ) \
+#define UNHOOKVFUNC( classptr , index , funcname) \
 	DeProtect((void*)VTBL( classptr ), ( ( index + 1 ) * sizeof(void*)), false ); \
 	*(ADDRTYPE*)PVFN( classptr , index ) = (ADDRTYPE)funcname ; \
 	DeProtect((void*)VTBL( classptr ), ( ( index + 1 ) * sizeof(void*)), true );
@@ -148,5 +150,7 @@ inline bool DeProtect(void* pMemory, unsigned int uiLen, bool bLock = false)
 	DEFVFUNC(funcname, returntype, proto)
 
 extern	void	HookVFuncs(void);
+extern	void	HookProcessUsercmds(CBasePlayer *pPlayer, int offset);
+extern  void	UnHookProcessUsercmds(CBasePlayer *pPlayer, int offset);
 
 #endif // _VFNHOOK_H

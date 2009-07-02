@@ -732,9 +732,9 @@ bool ManiClient::OldAddClient
  bool	is_admin
  )
 {
-	char	steam_id[128]="";
+	char	steam_id[MAX_NETWORKID_LENGTH]="";
 	char	ip_address[128]="";
-	char	name[128]="";
+	char	name[MAX_PLAYER_NAME_LENGTH]="";
 	char	password[128]="";
 	int	i,j;
 
@@ -806,7 +806,7 @@ bool ManiClient::OldAddClient
 		Q_strcpy(client_ptr->steam_id, steam_id);
 	}
 
-	Msg("%s ", steam_id);
+	MMsg("%s ", steam_id);
 
 	if (file_details[i] == ';')
 	{
@@ -840,7 +840,7 @@ bool ManiClient::OldAddClient
 		Q_strcpy(client_ptr->ip_address, ip_address);
 	}
 
-	Msg("%s ", ip_address);
+	MMsg("%s ", ip_address);
 
 	if (file_details[i] == ';' && file_details[i + 1] == '\"')
 	{
@@ -873,7 +873,7 @@ bool ManiClient::OldAddClient
 		Q_strcpy(client_ptr->name, name);
 	}
 
-	Msg("%s ", name);
+	MMsg("%s ", name);
 
 	if (file_details[i] == ';')
 	{
@@ -916,7 +916,7 @@ bool ManiClient::OldAddClient
 		Q_strcpy(client_ptr->password, password);
 	}
 
-	Msg("%s ", password);
+	MMsg("%s ", password);
 
 	i++;
 
@@ -1018,7 +1018,7 @@ bool ManiClient::OldAddClient
 		}
 	}
 
-	Msg("\n");
+	MMsg("\n");
 	return true;
 }
 
@@ -1083,7 +1083,7 @@ void ManiClient::OldAddAdminGroup(char *file_details)
 
 	Q_strcpy(admin_group.group_id, group_id);
 
-	Msg("%s ", group_id);
+	MMsg("%s ", group_id);
 
 	i++;
 
@@ -1109,7 +1109,7 @@ void ManiClient::OldAddAdminGroup(char *file_details)
 		i++;
 	}
 
-	Msg("\n");
+	MMsg("\n");
 	admin_group_list[admin_group_list_size - 1] = admin_group;
 }
 
@@ -1174,7 +1174,7 @@ void ManiClient::OldAddImmunityGroup(char *immunity_details)
 
 	Q_strcpy(immunity_group.group_id, group_id);
 
-	Msg("%s ", group_id);
+	MMsg("%s ", group_id);
 
 	i++;
 
@@ -1201,7 +1201,7 @@ void ManiClient::OldAddImmunityGroup(char *immunity_details)
 		i++;
 	}
 
-	Msg("\n");
+	MMsg("\n");
 	immunity_group_list[immunity_group_list_size - 1] = immunity_group;
 }
 
@@ -1269,14 +1269,14 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Old style admingroups.txt file does not exist, using V1.2+ style\n");
+//		MMsg("Old style admingroups.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
-		Msg("Admin Group list\n");
+		MMsg("Admin Group list\n");
 		while (filesystem->ReadLine (data_in, sizeof(data_in), file_handle) != NULL)
 		{
-			if (!ParseLine(data_in, true))
+			if (!ParseLine(data_in, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -1297,14 +1297,14 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Old style immunitygroups.txt file does not exist, using V1.2+ style\n");
+//		MMsg("Old style immunitygroups.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
-		Msg("Immunity Group list\n");
+		MMsg("Immunity Group list\n");
 		while (filesystem->ReadLine (data_in, sizeof(data_in), file_handle) != NULL)
 		{
-			if (!ParseLine(data_in, true))
+			if (!ParseLine(data_in, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -1325,14 +1325,14 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Old style adminlist.txt file does not exist, using V1.2+ style\n");
+//		MMsg("Old style adminlist.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
-		Msg("Admin steam id list\n");
+		MMsg("Admin steam id list\n");
 		while (filesystem->ReadLine (data_in, sizeof(data_in), file_handle) != NULL)
 		{
-			if (!ParseLine(data_in, true))
+			if (!ParseLine(data_in, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -1358,14 +1358,14 @@ bool	ManiClient::LoadOldStyle(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Old style immunitylist.txt file does not exist, using V1.2+ style\n");
+//		MMsg("Old style immunitylist.txt file does not exist, using V1.2+ style\n");
 	}
 	else
 	{
-		Msg("Immunity list\n");
+		MMsg("Immunity list\n");
 		while (filesystem->ReadLine (data_in, sizeof(data_in), file_handle) != NULL)
 		{
-			if (!ParseLine(data_in, true))
+			if (!ParseLine(data_in, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -1393,8 +1393,8 @@ bool	ManiClient::LoadOldStyle(void)
 		if (gpManiDatabase->GetDBEnabled())
 		{
 			/* Need unique name !! */
-			Q_snprintf(client_list[i].name, sizeof(client_list[i].name), "Client_%i_%i", i+1, 
-				gpManiDatabase->GetServerID());
+			Q_snprintf(client_list[i].name, sizeof(client_list[i].name), "Client_%i_%s", i+1, 
+				gpManiDatabase->GetServerGroupID());
 		}
 		else
 		{
@@ -1533,13 +1533,13 @@ void	ManiClient::ConvertOldClientToNewClient
 		AddToList((void **) &client_list, sizeof(client_t), &client_list_size);
 		client_ptr = &(client_list[client_list_size - 1]);
 		Q_memset (client_ptr, 0, sizeof(client_t));
-		Msg("Adding client *********\n");
+		MMsg("Adding client *********\n");
 	}
 	else
 	{
 		// We found a client so point there
 		client_ptr = &(client_list[client_index]);
-		Msg("Found client *********\n");
+		MMsg("Found client *********\n");
 	}
 
 	if (is_admin)
@@ -1629,7 +1629,7 @@ void	ManiClient::LoadClients(void)
 	bool found_match;
 	KeyValues *base_key_ptr;
 
-//	Msg("*********** Loading admin section of clients.txt ************\n");
+//	MMsg("*********** Loading admin section of clients.txt ************\n");
 	// Read the clients.txt file
 
 	KeyValues *kv_ptr = new KeyValues("clients.txt");
@@ -1637,7 +1637,7 @@ void	ManiClient::LoadClients(void)
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-		Msg("Failed to load clients.txt\n");
+		MMsg("Failed to load clients.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1646,7 +1646,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1679,7 +1679,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1712,7 +1712,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1745,7 +1745,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1778,7 +1778,7 @@ void	ManiClient::LoadClients(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -1851,7 +1851,7 @@ void	ManiClient::GetAdminGroups(KeyValues *ptr)
 
 			AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
 			admin_group_list[admin_group_list_size - 1] = admin_group;
-//			Msg("Admin Group [%s]\n", admin_group.group_id);
+//			MMsg("Admin Group [%s]\n", admin_group.group_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -1902,7 +1902,7 @@ void	ManiClient::GetImmunityGroups(KeyValues *ptr)
 
 			AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
 			immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-//			Msg("Immunity Group [%s]\n", immunity_group.group_id);
+//			MMsg("Immunity Group [%s]\n", immunity_group.group_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -1951,7 +1951,7 @@ void	ManiClient::GetAdminLevels(KeyValues *ptr)
 
 			AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
 			admin_level_list[admin_level_list_size - 1] = admin_level;
-//			Msg("Admin Level [%i]\n", admin_level.level_id);
+//			MMsg("Admin Level [%i]\n", admin_level.level_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -2007,7 +2007,7 @@ void	ManiClient::GetImmunityLevels(KeyValues *ptr)
 
 			AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
 			immunity_level_list[immunity_level_list_size - 1] = immunity_level;
-//			Msg("Immunity Level [%i]\n", immunity_level.level_id);
+//			MMsg("Immunity Level [%i]\n", immunity_level.level_id);
 		}
 
 		kv_ptr = kv_ptr->GetNextValue();
@@ -2021,16 +2021,16 @@ void	ManiClient::GetImmunityLevels(KeyValues *ptr)
 
 	/*	for (int i = 0; i < immunity_level_list_size; i++)
 	{
-	Msg("Im Lev [%i]\n", immunity_level_list[i].level_id);
+	MMsg("Im Lev [%i]\n", immunity_level_list[i].level_id);
 	for (int j = 0; j < MAX_IMMUNITY_FLAGS; j ++)
 	{
 	if (immunity_level_list[i].flags[j])
 	{
-	Msg("%s ", immunity_flag_list[j].flag_desc);
+	MMsg("%s ", immunity_flag_list[j].flag_desc);
 	}
 	}
 
-	Msg("\n");
+	MMsg("\n");
 	}*/
 }
 
@@ -2101,7 +2101,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 		{
 			AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
 			Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_string);
-//			Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+//			MMsg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
 		}
 
 		/* Handle single immunity group */
@@ -2110,7 +2110,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 		{
 			AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
 			Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_string);
-//			Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+//			MMsg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
 		}
 
 		// Steam IDs
@@ -2124,7 +2124,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
 					Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, temp_ptr->GetString());
-//					Msg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
+//					MMsg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2145,7 +2145,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
 					Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, temp_ptr->GetString());
-//					Msg("IP Address [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
+//					MMsg("IP Address [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2166,7 +2166,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
 					Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, temp_ptr->GetString());
-//					Msg("Nick Name [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
+//					MMsg("Nick Name [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2187,7 +2187,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
 					Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, temp_ptr->GetString());
-//					Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+//					MMsg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2208,7 +2208,7 @@ void	ManiClient::GetClients(KeyValues *ptr)
 				{
 					AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
 					Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, temp_ptr->GetString());
-//					Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+//					MMsg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
 					temp_ptr = temp_ptr->GetNextValue();
 					if (!temp_ptr)
 					{
@@ -2360,7 +2360,7 @@ int		ManiClient::GetNextFlag(char *flags_ptr, int *index, int type)
 		}
 	}
 
-//	Msg("Flag [%s] is invalid !!\n", flag_name);
+//	MMsg("Flag [%s] is invalid !!\n", flag_name);
 	return -1;
 }
 
@@ -2371,14 +2371,14 @@ void		ManiClient::DumpClientsToConsole(void)
 {
 	for (int i = 0; i < client_list_size; i ++)
 	{
-		Msg("Name [%s]\n", client_list[i].name);
-		Msg("Email [%s]\n", client_list[i].email_address);
-		Msg("Admin Level [%i]\n", client_list[i].admin_level_id);
-		Msg("Immunity Level [%i]\n", client_list[i].immunity_level_id);
+		MMsg("Name [%s]\n", client_list[i].name);
+		MMsg("Email [%s]\n", client_list[i].email_address);
+		MMsg("Admin Level [%i]\n", client_list[i].admin_level_id);
+		MMsg("Immunity Level [%i]\n", client_list[i].immunity_level_id);
 
 		for (int j = 0; j < client_list[i].steam_list_size; j++)
 		{
-			Msg("Steam : [%s]\n", client_list[i].steam_list[j].steam_id);
+			MMsg("Steam : [%s]\n", client_list[i].steam_list[j].steam_id);
 		}
 	}
 }
@@ -2395,7 +2395,7 @@ void		ManiClient::WriteClients(void)
 	KeyValues *client;
 	bool	found_flag;
 
-//	Msg("*********** Writing clients.txt ************\n");
+//	MMsg("*********** Writing clients.txt ************\n");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/clients.txt", mani_path.GetString());
 
@@ -2403,7 +2403,7 @@ void		ManiClient::WriteClients(void)
 
 	KeyValues *players = kv->FindKey("players", true);
 
-//	Msg("Writing %i client(s)\n",  client_list_size);
+//	MMsg("Writing %i client(s)\n",  client_list_size);
 	// Loop through all clients
 	for (int i = 0; i < client_list_size; i ++)
 	{
@@ -2413,8 +2413,8 @@ void		ManiClient::WriteClients(void)
 			if (gpManiDatabase->GetDBEnabled())
 			{
 				/* Need unique name !! */
-				Q_snprintf(temp_string, sizeof(temp_string), "Client_%i_%i", i+1, 
-					gpManiDatabase->GetServerID());
+				Q_snprintf(temp_string, sizeof(temp_string), "Client_%i_%s", i+1, 
+					gpManiDatabase->GetServerGroupID());
 			}
 			else
 			{
@@ -2709,7 +2709,7 @@ void		ManiClient::WriteClients(void)
 
 	if (!kv->SaveToFile( filesystem, core_filename, NULL))
 	{
-		Msg("Failed to write clients.txt\n");
+		MMsg("Failed to write clients.txt\n");
 	}
 
 	kv->deleteThis();
@@ -2830,16 +2830,16 @@ bool ManiClient::CreateDBTables(void)
 {
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
-	Msg("Creating DB tables if not existing....\n");
+	MMsg("Creating DB tables if not existing....\n");
 	if (!mani_mysql->Init())
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sclient\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sclient ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL auto_increment, "
 		"name varchar(32) NOT NULL, "
 		"password varchar(32) default '', "
@@ -2848,52 +2848,56 @@ bool ManiClient::CreateDBTables(void)
 		"PRIMARY KEY (user_id), "
 		"UNIQUE KEY (name) "
 		") TYPE=MyISAM AUTO_INCREMENT=1", 
-		gpManiDatabase->GetDBTablePrefix()))
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBClient()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %ssteam\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %ssteam ( "
+		"CREATE TABLE IF NOT EXISTS %s%s( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"steam_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, steam_id) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBSteam()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %snick\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %snick ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"nick varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, nick) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBNick()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sip\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sip ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"ip_address varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, ip_address) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBIP()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sflag\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %sflag\n", gpManiDatabase->GetDBTablePrefix());
 	if (!mani_mysql->ExecuteQuery(
 		"CREATE TABLE IF NOT EXISTS %sflag ( "
 		"flag_id varchar(20) BINARY NOT NULL default '', "
@@ -2907,9 +2911,9 @@ bool ManiClient::CreateDBTables(void)
 		return false;
 	}
 
-	Msg("Creating %sserver\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%sn", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sserver ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"server_id mediumint(8) NOT NULL default '0', "
 		"name varchar(128) NOT NULL default '', "
 		"ip_address varchar(32) NOT NULL default '', "
@@ -2919,122 +2923,131 @@ bool ManiClient::CreateDBTables(void)
 		"PRIMARY KEY (server_id), "
 		"UNIQUE KEY (name) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBServer()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sgroup\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBGroup());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sgroup ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"group_id varchar(32) NOT NULL default '', "
 		"flag_string text, "
 		"type varchar(1) NOT NULL default '', "
-		"server_id mediumint(8) NOT NULL default '0', "
-		"PRIMARY KEY (group_id, type, server_id) "
+		"server_group_id varchar(32) NOT NULL default '', "
+		"PRIMARY KEY (group_id, type, server_group_id) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBGroup()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sclient_group\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sclient_group ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"group_id varchar(32) NOT NULL default '', "
 		"type varchar(1) NOT NULL default '', "
-		"server_id mediumint(8) NOT NULL default '0', "
-		"PRIMARY KEY (user_id, group_id, type, server_id) "
-		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		"server_group_id varchar(32) NOT NULL default '', "
+		"PRIMARY KEY (user_id, group_id, type, server_group_id) "
+		") TYPE=MyISAM",
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBClientGroup()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sclient_flag\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sclient_flag ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"flag_string text, "
 		"type varchar(1) NOT NULL default '', "
-		"server_id mediumint(8) NOT NULL default '0', "
-		"PRIMARY KEY (user_id, type, server_id) "
+		"server_group_id varchar(32) NOT NULL default '', "
+		"PRIMARY KEY (user_id, type, server_group_id) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBClientFlag()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sclient_level\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sclient_level ( "
+		"CREATE TABLE IF NOT EXISTS %s%s( "
 		"user_id mediumint(8) NOT NULL default '0', "
 		"level_id mediumint(8) NOT NULL default '-1', "
 		"type varchar(1) NOT NULL default '', "
-		"server_id mediumint(8) NOT NULL default '0', "
-		"PRIMARY KEY (user_id, level_id, type, server_id) "
+		"server_group_id varchar(32) NOT NULL default '', "
+		"PRIMARY KEY (user_id, level_id, type, server_group_id) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBClientLevel()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %slevel\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBLevel());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %slevel ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"level_id mediumint(8) NOT NULL default '-1', "
 		"type varchar(1) NOT NULL default '', "
 		"flag_string text, "
-		"server_id mediumint(8) NOT NULL default '0', "
-		"PRIMARY KEY (level_id, type, server_id) "
+		"server_group_id varchar(32) NOT NULL default '', "
+		"PRIMARY KEY (level_id, type, server_group_id) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBLevel()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sclient_server\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sclient_server ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"user_id mediumint(8) NOT NULL default '0', "
-		"server_id mediumint(8) NOT NULL default '0', "
-		"PRIMARY KEY (user_id, server_id) "
+		"server_group_id varchar(32) NOT NULL default '0', "
+		"PRIMARY KEY (user_id, server_group_id) "
 		") TYPE=MyISAM"
-		, gpManiDatabase->GetDBTablePrefix()))
+		, gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBClientServer()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Creating %sversion\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Creating %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
 	if (!mani_mysql->ExecuteQuery(
-		"CREATE TABLE IF NOT EXISTS %sversion ( "
+		"CREATE TABLE IF NOT EXISTS %s%s ( "
 		"version_id varchar(20) NOT NULL)",
-		gpManiDatabase->GetDBTablePrefix()))
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBVersion()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Checking %sversion\n", gpManiDatabase->GetDBTablePrefix());
+	MMsg("Checking %s%s\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
 
 	int row_count;
-	if (mani_mysql->ExecuteQuery(&row_count, "SELECT 1 FROM %sversion", gpManiDatabase->GetDBTablePrefix()))
+	if (mani_mysql->ExecuteQuery(&row_count, "SELECT 1 FROM %s%s", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion()))
 	{
 		if (row_count == 0)
 		{
-			Msg("No rows found, inserting into %sversion\n",  gpManiDatabase->GetDBTablePrefix());
+			MMsg("No rows found, inserting into %s%s\n",  gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
 			// No rows so insert one
-			if (!mani_mysql->ExecuteQuery("INSERT INTO %sversion VALUES ('%s')", 
+			if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES ('%s')", 
 				gpManiDatabase->GetDBTablePrefix(),
-				PLUGIN_CORE_VERSION))
+				gpManiDatabase->GetDBTBVersion(),
+				PLUGIN_VERSION_ID2))
 			{
 				delete mani_mysql;
 				return false;
@@ -3042,10 +3055,11 @@ bool ManiClient::CreateDBTables(void)
 		}
 		else
 		{
-			Msg("Row found, updating %sversion\n",  gpManiDatabase->GetDBTablePrefix());
-			if (!mani_mysql->ExecuteQuery("UPDATE %sversion SET version_id = '%s'",
+			MMsg("Row found, updating %s%s\n",  gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBVersion());
+			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET version_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
-				PLUGIN_CORE_VERSION))
+				gpManiDatabase->GetDBTBVersion(),
+				PLUGIN_VERSION_ID2))
 			{
 				delete mani_mysql;
 				return false;
@@ -3070,7 +3084,7 @@ bool ManiClient::CreateDBFlags(void)
 {
 	char	temp_sql[8192];
 
-	Msg("Generating DB access flags if not existing....\n");
+	MMsg("Generating DB access flags if not existing....\n");
 
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
@@ -3086,7 +3100,7 @@ bool ManiClient::CreateDBFlags(void)
 	{
 		char	temp_flags[256];
 
-		Q_snprintf(temp_flags, sizeof(temp_flags), "('%s', 'A', '%s'),", 
+		Q_snprintf(temp_flags, sizeof(temp_flags), "('%s', 'Admin', '%s'),", 
 			admin_flag_list[i].flag,
 			admin_flag_list[i].flag_desc
 			);
@@ -3098,7 +3112,7 @@ bool ManiClient::CreateDBFlags(void)
 	{
 		char	temp_flags[256];
 
-		Q_snprintf(temp_flags, sizeof(temp_flags), "('%s', 'I', '%s'),", 
+		Q_snprintf(temp_flags, sizeof(temp_flags), "('%s', 'Immunity', '%s'),", 
 			immunity_flag_list[i].flag,
 			immunity_flag_list[i].flag_desc
 			);
@@ -3106,14 +3120,15 @@ bool ManiClient::CreateDBFlags(void)
 		Q_strcat(temp_sql, temp_flags);
 	}
 
-	Msg("Updating version id..\n");
+	MMsg("Updating version id..\n");
 
 	temp_sql[Q_strlen(temp_sql) - 1] = '\0';
 	if (mani_mysql->ExecuteQuery("%s", temp_sql))
 	{
-		mani_mysql->ExecuteQuery("UPDATE %sversion "
+		mani_mysql->ExecuteQuery("UPDATE %s%s "
 			"SET version_id = '%s'",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBVersion(),
 			PLUGIN_CORE_VERSION);
 	}
 
@@ -3130,7 +3145,7 @@ bool ManiClient::ExportDataToDB(void)
 	char	flag_string[1024];
 	bool	found_flag;
 
-	Msg("Exporting data from clients.txt to DB....\n");
+	MMsg("Exporting data from clients.txt to DB....\n");
 
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
@@ -3141,53 +3156,54 @@ bool ManiClient::ExportDataToDB(void)
 	}
 
 	// Clean out tables for this server id
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %sgroup WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBGroup(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %sclient_group WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %slevel WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBLevel(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %sclient_level WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %sclient_flag WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %sclient_server WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_group_id = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(), gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	if (!mani_mysql->ExecuteQuery("DELETE FROM %sserver WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetServerID()))
+	if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE server_id = %i", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer(), gpManiDatabase->GetServerID()))
 	{
 		delete mani_mysql;
 		return false;
 	}
 
-	Msg("Deleted existing DB data for this server....\n");
+	MMsg("Deleted existing DB data for this server....\n");
 
 	// Do server details
-	if (!mani_mysql->ExecuteQuery("INSERT INTO %sserver VALUES (%i, '%s', '%s', %i, '%s', '%s')",
+	if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s', '%s', %i, '%s', '%s')",
 		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBServer(),
 		gpManiDatabase->GetServerID(),
 		gpManiDatabase->GetServerName(),
 		gpManiDatabase->GetServerIPAddress(),
@@ -3200,7 +3216,7 @@ bool ManiClient::ExportDataToDB(void)
 		return false;
 	}
 
-	Msg("Generated server details....\n");
+	MMsg("Generated server details....\n");
 
 	// Do the level groups next
 
@@ -3219,11 +3235,12 @@ bool ManiClient::ExportDataToDB(void)
 			}
 		}
 
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %slevel VALUES ('%s', '%s', 'A', %i)", 
+		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Admin', '%s')", 
 						gpManiDatabase->GetDBTablePrefix(),
+						gpManiDatabase->GetDBTBLevel(),
 						admin_level_list[i].level_id,
 						flag_string,
-						gpManiDatabase->GetServerID()))
+						gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return false;
@@ -3246,18 +3263,19 @@ bool ManiClient::ExportDataToDB(void)
 			}
 		}
 
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %slevel VALUES ('%s', '%s', 'I', %i)", 
+		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Immunity', '%s')", 
 						gpManiDatabase->GetDBTablePrefix(),
+						gpManiDatabase->GetDBTBLevel(),
 						immunity_level_list[i].level_id,
 						flag_string,
-						gpManiDatabase->GetServerID()))
+						gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return false;
 		}
 	}
 
-	Msg("Generated level groups....\n");
+	MMsg("Generated level groups....\n");
 
 	// Do the flag groups next
 
@@ -3276,11 +3294,12 @@ bool ManiClient::ExportDataToDB(void)
 			}
 		}
 
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sgroup VALUES ('%s', '%s', 'A', %i)", 
+		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Admin', '%s')", 
 						gpManiDatabase->GetDBTablePrefix(),
+						gpManiDatabase->GetDBTBGroup(),
 						admin_group_list[i].group_id,
 						flag_string,
-						gpManiDatabase->GetServerID()))
+						gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return false;
@@ -3303,31 +3322,32 @@ bool ManiClient::ExportDataToDB(void)
 			}
 		}
 
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sgroup VALUES ('%s', '%s', 'I', %i)", 
+		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES ('%s', '%s', 'Immunity', '%s')", 
 						gpManiDatabase->GetDBTablePrefix(),
+						gpManiDatabase->GetDBTBGroup(),
 						immunity_group_list[i].group_id,
 						flag_string,
-						gpManiDatabase->GetServerID()))
+						gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return false;
 		}
 	}
 
-	Msg("Generated DB admin/immunity groups....\n");
+	MMsg("Generated DB admin/immunity groups....\n");
 
-	Msg("Building DB client data\n");
+	MMsg("Building DB client data for %i clients\n", client_list_size);
 	// Populate client list for players that already exist on the server
 	// and generate new clients if necessary with user ids
 	for (int i = 0; i < client_list_size; i ++)
 	{
 		int	row_count;
 
-		Msg(".");
+		MMsg(".");
 
 		client_list[i].user_id = -1;
 
-		if (!mani_mysql->ExecuteQuery(&row_count, "SELECT user_id FROM %sclient WHERE name = '%s'", gpManiDatabase->GetDBTablePrefix(), client_list[i].name))
+		if (!mani_mysql->ExecuteQuery(&row_count, "SELECT user_id FROM %s%s WHERE name = '%s'", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(), client_list[i].name))
 		{
 			delete mani_mysql;
 			return false;
@@ -3346,11 +3366,12 @@ bool ManiClient::ExportDataToDB(void)
 		}
 		else
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient "
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s "
 				"(name, password, email, notes) "
 				"VALUES "
 				"('%s', '%s', '%s', '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClient(),
 				client_list[i].name,
 				client_list[i].password,
 				client_list[i].email_address,
@@ -3364,8 +3385,9 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup steam ids
-		if (!mani_mysql->ExecuteQuery("DELETE FROM %ssteam WHERE user_id = %i",
+		if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE user_id = %i",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBSteam(),
 			client_list[i].user_id))
 		{
 			delete mani_mysql;
@@ -3374,8 +3396,9 @@ bool ManiClient::ExportDataToDB(void)
 
 		for (int j = 0; j < client_list[i].steam_list_size; j++)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %ssteam VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBSteam(),
 				client_list[i].user_id,
 				client_list[i].steam_list[j].steam_id))
 			{
@@ -3385,8 +3408,9 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup ip addresses
-		if (!mani_mysql->ExecuteQuery("DELETE FROM %sip WHERE user_id = %i",
+		if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE user_id = %i",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBIP(),
 			client_list[i].user_id))
 		{
 			delete mani_mysql;
@@ -3395,8 +3419,9 @@ bool ManiClient::ExportDataToDB(void)
 
 		for (int j = 0; j < client_list[i].ip_address_list_size; j++)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sip VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBIP(),
 				client_list[i].user_id,
 				client_list[i].ip_address_list[j].ip_address))
 			{
@@ -3406,8 +3431,9 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup nickname ids
-		if (!mani_mysql->ExecuteQuery("DELETE FROM %snick WHERE user_id = %i",
+		if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s WHERE user_id = %i",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBNick(),
 			client_list[i].user_id))
 		{
 			delete mani_mysql;
@@ -3416,8 +3442,9 @@ bool ManiClient::ExportDataToDB(void)
 
 		for (int j = 0; j < client_list[i].nick_list_size; j++)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %snick VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBNick(),
 				client_list[i].user_id,
 				client_list[i].nick_list[j].nick))
 			{
@@ -3427,10 +3454,11 @@ bool ManiClient::ExportDataToDB(void)
 		}
 
 		// Setup client_server record
-		if (!mani_mysql->ExecuteQuery("INSERT INTO %sclient_server VALUES (%i, %i)",
+		if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s')",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBClientServer(),
 			client_list[i].user_id,
-			gpManiDatabase->GetServerID()))
+			gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return false;
@@ -3454,11 +3482,12 @@ bool ManiClient::ExportDataToDB(void)
 
 		if (found_flag)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_flag VALUES (%i,'%s','A',%i)",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Admin','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientFlag(),
 				client_list[i].user_id,
 				flag_string,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				return false;
@@ -3482,11 +3511,12 @@ bool ManiClient::ExportDataToDB(void)
 
 		if (found_flag)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_flag VALUES (%i,'%s','I',%i)",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Immunity','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientFlag(),
 				client_list[i].user_id,
 				flag_string,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				return false;
@@ -3496,11 +3526,12 @@ bool ManiClient::ExportDataToDB(void)
 		// Do the client_group flags next
 		for (int j = 0; j < client_list[i].admin_group_list_size; j++)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_group VALUES (%i,'%s','A',%i)",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Admin','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientGroup(),
 				client_list[i].user_id,
 				client_list[i].admin_group_list[j].group_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				return false;
@@ -3509,11 +3540,12 @@ bool ManiClient::ExportDataToDB(void)
 
 		for (int j = 0; j < client_list[i].immunity_group_list_size; j++)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_group VALUES (%i,'%s','I',%i)",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','Immunity','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientGroup(),
 				client_list[i].user_id,
 				client_list[i].immunity_group_list[j].group_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				return false;
@@ -3523,11 +3555,12 @@ bool ManiClient::ExportDataToDB(void)
 		// Do the client_level groups next
 		if (client_list[i].admin_level_id != -1)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_level VALUES (%i,%i,'A',%i)",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,%i,'Admin','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientLevel(),
 				client_list[i].user_id,
 				client_list[i].admin_level_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				return false;
@@ -3536,11 +3569,12 @@ bool ManiClient::ExportDataToDB(void)
 
 		if (client_list[i].immunity_level_id != -1)
 		{
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_level VALUES (%i,%i,'I',%i)",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,%i,'Immunity','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientLevel(),
 				client_list[i].user_id,
 				client_list[i].immunity_level_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{	
 				delete mani_mysql;
 				return false;
@@ -3548,7 +3582,7 @@ bool ManiClient::ExportDataToDB(void)
 		}
 	}
 
-	Msg("\nClients built on DB\n");
+	MMsg("\nClients built on DB\n");
 
 
 	return true;
@@ -3564,7 +3598,10 @@ bool ManiClient::GetClientsFromDatabase(void)
 	int	row_count;
 	char	flags_string[1024];
 
-	Msg("Getting client info from the database....\n");
+	// Upgrade the database to V1.2 Beta M functionality
+	UpgradeDB1();
+
+	MMsg("Getting client info from the database....\n");
 
 	ManiMySQL *mani_mysql = new ManiMySQL();
 
@@ -3577,10 +3614,11 @@ bool ManiClient::GetClientsFromDatabase(void)
 	// Get admin groups
 	if (!mani_mysql->ExecuteQuery(&row_count, 
 		"SELECT g.group_id, g.flag_string, g.type "
-		"FROM %sgroup g "
-		"WHERE g.server_id = %i ",
+		"FROM %s%s g "
+		"WHERE g.server_group_id = '%s' ",
 		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetServerID()))
+		gpManiDatabase->GetDBTBGroup(),
+		gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
@@ -3591,7 +3629,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 		// Found rows
 		while (mani_mysql->FetchRow())
 		{
-			if (FStrEq(mani_mysql->GetString(2), "A"))
+			if (FStrEq(mani_mysql->GetString(2), "Admin"))
 			{
 				admin_group_t   admin_group;
 				Q_memset(&admin_group, 0, sizeof(admin_group_t));
@@ -3614,7 +3652,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &admin_group_list, sizeof(admin_group_t), &admin_group_list_size);
 				admin_group_list[admin_group_list_size - 1] = admin_group;
-//				Msg("Admin Group [%s]\n", admin_group.group_id);
+//				MMsg("Admin Group [%s]\n", admin_group.group_id);
 			}
 			else
 			{
@@ -3638,7 +3676,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &immunity_group_list, sizeof(immunity_group_t), &immunity_group_list_size);
 				immunity_group_list[immunity_group_list_size - 1] = immunity_group;
-//				Msg("Immunity Group [%s]\n", immunity_group.group_id);
+//				MMsg("Immunity Group [%s]\n", immunity_group.group_id);
 			}
 		}
 	}
@@ -3647,12 +3685,13 @@ bool ManiClient::GetClientsFromDatabase(void)
 	// Get admin levels
 	if (!mani_mysql->ExecuteQuery(&row_count, 
 		"SELECT l.level_id, l.flag_string, l.type "
-		"FROM %slevel l "
-		"WHERE l.server_id = %i "
-		"AND l.type = 'A' "
+		"FROM %s%s l "
+		"WHERE l.server_group_id = '%s' "
+		"AND l.type = 'Admin' "
 		"ORDER BY l.level_id",
 		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetServerID()))
+		gpManiDatabase->GetDBTBLevel(),
+		gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
@@ -3667,7 +3706,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 			admin_level_t   admin_level;
 			Q_memset(&admin_level, 0, sizeof(admin_level_t));
 
-			if (FStrEq(mani_mysql->GetString(2), "A"))
+			if (FStrEq(mani_mysql->GetString(2), "Admin"))
 			{
 				admin_level.level_id = mani_mysql->GetInt(0);
 
@@ -3687,7 +3726,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &admin_level_list, sizeof(admin_level_t), &admin_level_list_size);
 				admin_level_list[admin_level_list_size - 1] = admin_level;
-//				Msg("Admin Level ID [%i]\n", admin_level.level_id);
+//				MMsg("Admin Level ID [%i]\n", admin_level.level_id);
 			}
 			else
 			{
@@ -3712,7 +3751,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 
 				AddToList((void **) &immunity_level_list, sizeof(immunity_level_t), &immunity_level_list_size);
 				immunity_level_list[immunity_level_list_size - 1] = immunity_level;
-//				Msg("Immunity Level [%s]\n", immunity_level.level_id);
+//				MMsg("Immunity Level [%s]\n", immunity_level.level_id);
 			}	
 		}
 	}
@@ -3730,26 +3769,26 @@ bool ManiClient::GetClientsFromDatabase(void)
 		"s.steam_id, n.nick, i.ip_address, "
 		"cg.type, cg.group_id, "
 		"cl.type, cl.level_id "
-		"from %sclient c, %sclient_server cs "
-		"LEFT JOIN %ssteam s ON s.user_id = c.user_id "
-		"LEFT JOIN %sclient_flag cf ON cf.user_id = c.user_id "
-		"LEFT JOIN %snick n ON n.user_id = c.user_id "
-		"LEFT JOIN %sip i ON i.user_id = c.user_id "
-		"LEFT JOIN %sclient_group cg ON cg.user_id = c.user_id AND cg.server_id = cs.server_id "
-		"LEFT JOIN %sclient_level cl ON cl.user_id = c.user_id AND cl.server_id = cs.server_id "
+		"from (%s%s c, %s%s cs) "
+		"LEFT JOIN (%s%s s) ON (s.user_id = c.user_id) "
+		"LEFT JOIN (%s%s cf) ON (cf.user_id = c.user_id) "
+		"LEFT JOIN (%s%s n) ON (n.user_id = c.user_id) "
+		"LEFT JOIN (%s%s i) ON (i.user_id = c.user_id) "
+		"LEFT JOIN (%s%s cg) ON (cg.user_id = c.user_id AND cg.server_group_id = cs.server_group_id) "
+		"LEFT JOIN (%s%s cl) ON (cl.user_id = c.user_id AND cl.server_group_id = cs.server_group_id) "
 		"where c.user_id = cs.user_id "
-		"and cs.server_id = %i "
+		"and cs.server_group_id = '%s' "
 		"order by c.user_id, cf.type, s.steam_id, n.nick, i.ip_address, cg.type,  "
 		"cg.group_id, cl.type, cl.level_id ",
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetDBTablePrefix(),
-		gpManiDatabase->GetServerID()))
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBSteam(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientFlag(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBNick(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBIP(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientGroup(),
+		gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientLevel(),
+		gpManiDatabase->GetServerGroupID()))
 	{
 		delete mani_mysql;
 		return false;
@@ -3789,7 +3828,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 			}
 
 			if (!done_aflags && mani_mysql->GetString(5) && 
-				FStrEq(mani_mysql->GetString(5),"A"))
+				FStrEq(mani_mysql->GetString(5),"Admin"))
 			{
 				int flags_string_index = 0;
 
@@ -3809,7 +3848,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 			}
 
 			if (!done_iflags && mani_mysql->GetString(5) && 
-				FStrEq(mani_mysql->GetString(5),"I"))
+				FStrEq(mani_mysql->GetString(5),"Immunity"))
 			{
 				int flags_string_index = 0;
 
@@ -3829,14 +3868,14 @@ bool ManiClient::GetClientsFromDatabase(void)
 			}
 
 			if (!done_alevel && mani_mysql->GetString(12) && 
-				FStrEq(mani_mysql->GetString(12),"A"))
+				FStrEq(mani_mysql->GetString(12),"Admin"))
 			{
 				client_ptr->admin_level_id = mani_mysql->GetInt(13); 
 				done_alevel = true;
 			}
 
 			if (!done_ilevel && mani_mysql->GetString(12) && 
-				FStrEq(mani_mysql->GetString(12),"I"))
+				FStrEq(mani_mysql->GetString(12),"Immunity"))
 			{
 				client_ptr->immunity_level_id = mani_mysql->GetInt(13); 
 				done_ilevel = true;
@@ -3861,7 +3900,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 					// Add steam ID to client
 					AddToList((void **) &(client_ptr->steam_list), sizeof(steam_t), &(client_ptr->steam_list_size));
 					Q_strcpy(client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id, mani_mysql->GetString(7));
-//					Msg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
+//					MMsg("Steam ID [%s]\n", client_ptr->steam_list[client_ptr->steam_list_size - 1].steam_id);
 				}
 			}
 
@@ -3884,7 +3923,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 					// Add nickname to client
 					AddToList((void **) &(client_ptr->nick_list), sizeof(nick_t), &(client_ptr->nick_list_size));
 					Q_strcpy(client_ptr->nick_list[client_ptr->nick_list_size - 1].nick, mani_mysql->GetString(8));
-//					Msg("Nick [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
+//					MMsg("Nick [%s]\n", client_ptr->nick_list[client_ptr->nick_list_size - 1].nick);
 				}
 			}
 
@@ -3907,12 +3946,12 @@ bool ManiClient::GetClientsFromDatabase(void)
 					// Add IP Address to client
 					AddToList((void **) &(client_ptr->ip_address_list), sizeof(ip_address_t), &(client_ptr->ip_address_list_size));
 					Q_strcpy(client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address, mani_mysql->GetString(9));
-//					Msg("Nick [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
+//					MMsg("Nick [%s]\n", client_ptr->ip_address_list[client_ptr->ip_address_list_size - 1].ip_address);
 				}
 			}
 
 			// Check admin groups
-			if (mani_mysql->GetString(10) && FStrEq(mani_mysql->GetString(10),"A"))
+			if (mani_mysql->GetString(10) && FStrEq(mani_mysql->GetString(10),"Admin"))
 			{
 				// Found group
 				found_flag = false;
@@ -3929,11 +3968,11 @@ bool ManiClient::GetClientsFromDatabase(void)
 				{
 					AddToList((void **) &(client_ptr->admin_group_list), sizeof(group_t), &(client_ptr->admin_group_list_size));
 					Q_strcpy(client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id, mani_mysql->GetString(11));
-//					Msg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
+//					MMsg("Group ID [%s]\n", client_ptr->admin_group_list[client_ptr->admin_group_list_size - 1].group_id);
 				}
 			}
 
-			if (mani_mysql->GetString(10) && FStrEq(mani_mysql->GetString(10),"I"))
+			if (mani_mysql->GetString(10) && FStrEq(mani_mysql->GetString(10),"Immunity"))
 			{
 				// Found group
 				found_flag = false;
@@ -3950,7 +3989,7 @@ bool ManiClient::GetClientsFromDatabase(void)
 				{
 					AddToList((void **) &(client_ptr->immunity_group_list), sizeof(group_t), &(client_ptr->immunity_group_list_size));
 					Q_strcpy(client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id, mani_mysql->GetString(11));
-//					Msg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
+//					MMsg("Group ID [%s]\n", client_ptr->immunity_group_list[client_ptr->immunity_group_list_size - 1].group_id);
 				}
 			}
 		}
@@ -4098,7 +4137,7 @@ int		ManiClient::FindClientIndex
 	// Whoever issued the commmand is authorised to do it.
 
 	int	target_user_id = Q_atoi(target_string);
-	char target_steam_id[128];
+	char target_steam_id[MAX_NETWORKID_LENGTH];
 	player_t	target_player;
 
 	if (!target_string) return -1;
@@ -4443,7 +4482,7 @@ PLUGIN_RESULT		ManiClient::ProcessMaClient
 		}
 		else if (argc == 2)
 		{
-			ProcessAllClientFlagDesc(MANI_ADMIN_TYPE, &player, svr_command);
+			ProcessAllClientFlagDesc(MANI_IMMUNITY_TYPE, &player, svr_command);
 		}
 		else
 		{	
@@ -4517,11 +4556,12 @@ void		ManiClient::ProcessAddClient
 			return;
 		}
 
-		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient "
+		if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s "
 			"(name, password, email, notes) "
 			"VALUES "
 			"('%s', '', '', '')",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBClient(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -4531,10 +4571,11 @@ void		ManiClient::ProcessAddClient
 		client_ptr->user_id = mani_mysql->GetRowID();
 
 		// Setup client_server record
-		if (!mani_mysql->ExecuteQuery("INSERT INTO %sclient_server VALUES (%i, %i)",
+		if (!mani_mysql->ExecuteQuery("INSERT INTO %s%s VALUES (%i, '%s')",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBClientServer(),
 			client_ptr->user_id,
-			gpManiDatabase->GetServerID()))
+			gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			return;
@@ -4588,13 +4629,13 @@ void		ManiClient::ProcessAddSteam
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -4606,8 +4647,9 @@ void		ManiClient::ProcessAddSteam
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %ssteam VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBSteam(),
 				client_ptr->user_id,
 				param2))
 			{
@@ -4666,13 +4708,13 @@ void		ManiClient::ProcessAddIP
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -4684,8 +4726,9 @@ void		ManiClient::ProcessAddIP
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sip VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBIP(),
 				client_ptr->user_id,
 				param2))
 			{
@@ -4744,13 +4787,13 @@ void		ManiClient::ProcessAddNick
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -4762,8 +4805,9 @@ void		ManiClient::ProcessAddNick
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %snick VALUES (%i, '%s')",
+			if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i, '%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBNick(),
 				client_ptr->user_id,
 				param2))
 			{
@@ -4852,13 +4896,13 @@ void		ManiClient::ProcessSetName
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			old_name))
 		{
 			delete mani_mysql;
@@ -4870,8 +4914,9 @@ void		ManiClient::ProcessSetName
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %sclient SET name = '%s' WHERE user_id = %i",
+			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET name = '%s' WHERE user_id = %i",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClient(),
 				param2,
 				client_ptr->user_id))
 			{
@@ -4928,13 +4973,13 @@ void		ManiClient::ProcessSetPassword
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -4946,8 +4991,9 @@ void		ManiClient::ProcessSetPassword
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %sclient SET password = '%s' WHERE user_id = %i",
+			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET password = '%s' WHERE user_id = %i",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClient(),
 				param2,
 				client_ptr->user_id))
 			{
@@ -5005,13 +5051,13 @@ void		ManiClient::ProcessSetEmail
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -5023,8 +5069,9 @@ void		ManiClient::ProcessSetEmail
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %sclient SET email = '%s' WHERE user_id = %i",
+			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET email = '%s' WHERE user_id = %i",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClient(),
 				param2,
 				client_ptr->user_id))
 			{
@@ -5082,13 +5129,13 @@ void		ManiClient::ProcessSetNotes
 		// Get clients for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -5100,8 +5147,9 @@ void		ManiClient::ProcessSetNotes
 			mani_mysql->FetchRow();
 
 			client_ptr->user_id = mani_mysql->GetInt(0);
-			if (!mani_mysql->ExecuteQuery("UPDATE %sclient SET notes = '%s' WHERE user_id = %i",
+			if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET notes = '%s' WHERE user_id = %i",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClient(),
 				param2,
 				client_ptr->user_id))
 			{
@@ -5145,11 +5193,11 @@ void		ManiClient::ProcessSetLevel
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	if (param2 == NULL || FStrEq(param2, ""))
@@ -5189,13 +5237,13 @@ void		ManiClient::ProcessSetLevel
 		// Get client for this server
 		if (!mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -5210,13 +5258,14 @@ void		ManiClient::ProcessSetLevel
 
 			// Drop level id reference
 			if (!mani_mysql->ExecuteQuery(&row_count,
-				"DELETE FROM %sclient_level "
+				"DELETE FROM %s%s "
 				"WHERE user_id = %i "
-				"AND server_id = %i "
+				"AND server_group_id = '%s' "
 				"AND type = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientLevel(),
 				client_ptr->user_id,
-				gpManiDatabase->GetServerID(),
+				gpManiDatabase->GetServerGroupID(),
 				flag_type))
 			{
 				delete mani_mysql;
@@ -5225,12 +5274,13 @@ void		ManiClient::ProcessSetLevel
 
 			if (level_id > -1)
 			{	
-				if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_level VALUES (%i,%i,'%s',%i)",
+				if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,%i,'%s','%s')",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBClientLevel(),
 					client_ptr->user_id,
 					level_id,
 					flag_type,
-					gpManiDatabase->GetServerID()))
+					gpManiDatabase->GetServerGroupID()))
 				{	
 					delete mani_mysql;
 					return;
@@ -5282,11 +5332,11 @@ void		ManiClient::ProcessAddGroup
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	if (MANI_ADMIN_TYPE == type)
@@ -5383,13 +5433,13 @@ void		ManiClient::ProcessAddGroup
 			// Get client for this server
 			if (!mani_mysql->ExecuteQuery(&row_count, 
 				"SELECT c.user_id "
-				"FROM %sclient c, %sclient_server cs "
-				"where cs.server_id = %i "
+				"FROM %s%s c, %s%s cs "
+				"where cs.server_group_id = '%s' "
 				"and cs.user_id = c.user_id "
 				"and c.name = '%s'",
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetDBTablePrefix(),
-				gpManiDatabase->GetServerID(),
+				gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+				gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+				gpManiDatabase->GetServerGroupID(),
 				client_ptr->name))
 			{
 				delete mani_mysql;
@@ -5405,13 +5455,14 @@ void		ManiClient::ProcessAddGroup
 				// Check if group actually exists
 				if (!mani_mysql->ExecuteQuery(&row_count,
 					"SELECT 1 "
-					"FROM %sgroup "
+					"FROM %s%s"
 					"WHERE group_id = '%s' "
-					"AND server_id = %i "
+					"AND server_group_id = '%s' "
 					"AND type = '%s'",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBGroup(),
 					param2,
-					gpManiDatabase->GetServerID(),
+					gpManiDatabase->GetServerGroupID(),
 					flag_type))
 				{
 					delete mani_mysql;
@@ -5427,27 +5478,29 @@ void		ManiClient::ProcessAddGroup
 
 				// Drop group id reference
 				if (!mani_mysql->ExecuteQuery(&row_count,
-					"DELETE FROM %sclient_group "
+					"DELETE FROM %s%s "
 					"WHERE group_id = '%s' "
 					"AND user_id = %i "
-					"AND server_id = %i "
+					"AND server_group_id = '%s' "
 					"AND type = '%s'",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBClientGroup(),
 					param2,
 					client_ptr->user_id,
-					gpManiDatabase->GetServerID(),
+					gpManiDatabase->GetServerGroupID(),
 					flag_type))
 				{
 					delete mani_mysql;
 					break;
 				}
 
-				if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_group VALUES (%i,'%s','%s',%i)",
+				if (!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s VALUES (%i,'%s','%s',%i)",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBClientGroup(),
 					client_ptr->user_id,
 					param2,
 					flag_type,
-					gpManiDatabase->GetServerID()))
+					gpManiDatabase->GetServerGroupID()))
 				{	
 					delete mani_mysql;
 					break;
@@ -5492,11 +5545,11 @@ void		ManiClient::ProcessAddGroupType
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	// See if group already exists
@@ -5683,12 +5736,13 @@ void		ManiClient::ProcessAddGroupType
 			{
 				// Drop group id reference
 				if (!mani_mysql->ExecuteQuery(
-					"INSERT IGNORE INTO %sgroup VALUES ('%s', '%s', '%s', %i)",
+					"INSERT IGNORE INTO %s%s VALUES ('%s', '%s', '%s', '%s')",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBGroup(),
 					param1,
 					flag_string,
 					flag_type,
-					gpManiDatabase->GetServerID()))
+					gpManiDatabase->GetServerGroupID()))
 				{
 					delete mani_mysql;
 					break;
@@ -5697,16 +5751,17 @@ void		ManiClient::ProcessAddGroupType
 			else
 			{
 				if (!mani_mysql->ExecuteQuery(
-					"UPDATE %sgroup "
+					"UPDATE %s%s "
 					"SET flag_string = '%s' "
 					"WHERE group_id = '%s' "
 					"AND type = '%s' "
-					"AND server_id = %i",
+					"AND server_group_id = '%s'",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBGroup(),
 					flag_string,
 					param1,
 					flag_type,
-					gpManiDatabase->GetServerID()))
+					gpManiDatabase->GetServerGroupID()))
 				{	
 					delete mani_mysql;
 					break;
@@ -5751,11 +5806,11 @@ void		ManiClient::ProcessRemoveGroupType
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	// See if group already exists
@@ -5839,28 +5894,30 @@ void		ManiClient::ProcessRemoveGroupType
 
 			// Drop group id reference
 			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %sgroup "
+				"DELETE FROM %s%s "
 				"WHERE group_id = '%s' "
 				"AND type = '%s' "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBGroup(),
 				param1,
 				flag_type,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				break;
 			}
 
 			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %sclient_group "
+				"DELETE FROM %s%s "
 				"WHERE group_id = '%s' "
 				"AND type = '%s' "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientGroup(),
 				param1,
 				flag_type,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{	
 				delete mani_mysql;
 				break;
@@ -5907,11 +5964,11 @@ void		ManiClient::ProcessAddLevelType
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	// See if level already exists
@@ -6098,12 +6155,13 @@ void		ManiClient::ProcessAddLevelType
 			{
 				// Insert level id reference
 				if (!mani_mysql->ExecuteQuery(
-					"INSERT IGNORE INTO %slevel VALUES (%i, '%s', '%s', %i)",
+					"INSERT IGNORE INTO %s%s VALUES (%i, '%s', '%s', '%s')",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBLevel(),
 					level_id,
 					flag_type,
 					flag_string,
-					gpManiDatabase->GetServerID()))
+					gpManiDatabase->GetServerGroupID()))
 				{
 					delete mani_mysql;
 					break;
@@ -6112,16 +6170,17 @@ void		ManiClient::ProcessAddLevelType
 			else
 			{
 				if (!mani_mysql->ExecuteQuery(
-					"UPDATE %slevel "
+					"UPDATE %s%s "
 					"SET flag_string = '%s' "
 					"WHERE level_id = %i "
 					"AND type = '%s' "
-					"AND server_id = %i",
+					"AND server_group_id = '%s'",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBLevel(),
 					flag_string,
 					level_id,
 					flag_type,
-					gpManiDatabase->GetServerID()))
+					gpManiDatabase->GetServerGroupID()))
 				{	
 					delete mani_mysql;
 					break;
@@ -6170,11 +6229,11 @@ void		ManiClient::ProcessRemoveLevelType
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	// See if level already exists
@@ -6233,28 +6292,30 @@ void		ManiClient::ProcessRemoveLevelType
 
 			// Drop level id reference
 			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %slevel "
+				"DELETE FROM %s%s "
 				"WHERE level_id = %i "
 				"AND type = '%s' "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBLevel(),
 				level_id,
 				flag_type,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				break;
 			}
 
 			if (!mani_mysql->ExecuteQuery(
-				"DELETE FROM %sclient_level "
+				"DELETE FROM %s%s "
 				"WHERE level_id = %i "
 				"AND type = '%s' "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientLevel(),
 				level_id,
 				flag_type,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{	
 				delete mani_mysql;
 				break;
@@ -6311,11 +6372,11 @@ void		ManiClient::ProcessSetFlag
 
 	if (MANI_ADMIN_TYPE	== type)
 	{
-		Q_strcpy(flag_type,	"A");
+		Q_strcpy(flag_type,	"Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type,	"I");
+		Q_strcpy(flag_type,	"Immunity");
 	}
 
 	if (gpManiDatabase->GetDBEnabled())
@@ -6333,13 +6394,13 @@ void		ManiClient::ProcessSetFlag
 		// Get client for this server
 		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count,	
 			"SELECT	c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id	= %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id	= '%s' "
 			"and cs.user_id	= c.user_id	"
 			"and c.name	= '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -6434,14 +6495,15 @@ void		ManiClient::ProcessSetFlag
 	{
 		// Remove flags
 		if (mani_mysql &&
-			!mani_mysql->ExecuteQuery("DELETE FROM %sclient_flag "
+			!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 			"WHERE user_id = %i	"
 			"AND type =	'%s' "
-			"AND server_id = %i",
+			"AND server_group_id = '%s'",
 			gpManiDatabase->GetDBTablePrefix(),
+			gpManiDatabase->GetDBTBClientFlag(),
 			client_ptr->user_id,
 			flag_type,
-			gpManiDatabase->GetServerID()))
+			gpManiDatabase->GetServerGroupID()))
 		{
 			delete mani_mysql;
 			mani_mysql = NULL;
@@ -6485,12 +6547,13 @@ void		ManiClient::ProcessSetFlag
 		{
 			// Add them
 			if (mani_mysql &&
-				!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %sclient_flag	VALUES (%i,'%s','%s',%i)",
+				!mani_mysql->ExecuteQuery("INSERT IGNORE INTO %s%s	VALUES (%i,'%s','%s','%s')",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientFlag(),
 				client_ptr->user_id,
 				flag_string,
 				flag_type,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				mani_mysql = NULL;
@@ -6559,13 +6622,13 @@ void		ManiClient::ProcessRemoveClient
 		// Get client for this server
 		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -6578,12 +6641,13 @@ void		ManiClient::ProcessRemoveClient
 			mani_mysql->FetchRow();
 			client_ptr->user_id = mani_mysql->GetInt(0);
 
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %sclient_server "
+			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientServer(),
 				client_ptr->user_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				mani_mysql = NULL;
@@ -6592,9 +6656,10 @@ void		ManiClient::ProcessRemoveClient
 			row_count = 0;
 			if (mani_mysql && 
 				!mani_mysql->ExecuteQuery(&row_count,
-				"SELECT 1 FROM %sclient_server "
+				"SELECT 1 FROM %s%s "
 				"WHERE user_id = %i",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientServer(),
 				client_ptr->user_id))
 			{
 				delete mani_mysql;
@@ -6605,9 +6670,10 @@ void		ManiClient::ProcessRemoveClient
 			{
 				// No client server records so delete unique client
 				if (mani_mysql && 
-					!mani_mysql->ExecuteQuery("DELETE FROM %sclient "
+					!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 					"WHERE user_id = %i",
 					gpManiDatabase->GetDBTablePrefix(),
+					gpManiDatabase->GetDBTBClient(),
 					client_ptr->user_id))
 				{
 					delete mani_mysql;
@@ -6617,45 +6683,49 @@ void		ManiClient::ProcessRemoveClient
 
 			// Delete rest of the crap
 			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %sclient_flag "
+				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientFlag(),
 				client_ptr->user_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				mani_mysql = NULL;
 			}
 
 			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %sclient_group "
+				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientGroup(),
 				client_ptr->user_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				mani_mysql = NULL;
 			}
 
 			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %sclient_level "
+				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
-				"AND server_id = %i",
+				"AND server_group_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientLevel(),
 				client_ptr->user_id,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				mani_mysql = NULL;
 			}
 
 			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %ssteam "
+				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i ",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBSteam(),
 				client_ptr->user_id))
 			{
 				delete mani_mysql;
@@ -6663,9 +6733,10 @@ void		ManiClient::ProcessRemoveClient
 			}
 
 			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %sip "
+				!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i ",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBIP(),
 				client_ptr->user_id))
 			{
 				delete mani_mysql;
@@ -6673,9 +6744,10 @@ void		ManiClient::ProcessRemoveClient
 			}
 
 			if (mani_mysql && 
-				!mani_mysql->ExecuteQuery("DELETE FROM %snick "
+				!mani_mysql->ExecuteQuery("DELETE FROM %s%s"
 				"WHERE user_id = %i ",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBNick(),
 				client_ptr->user_id))
 			{
 				delete mani_mysql;
@@ -6749,13 +6821,13 @@ void		ManiClient::ProcessRemoveSteam
 		// Get client for this server
 		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -6768,10 +6840,11 @@ void		ManiClient::ProcessRemoveSteam
 			mani_mysql->FetchRow();
 			client_ptr->user_id = mani_mysql->GetInt(0);
 
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %ssteam "
+			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
 				"AND steam_id = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBSteam(),
 				client_ptr->user_id,
 				param2))
 			{
@@ -6842,13 +6915,13 @@ void		ManiClient::ProcessRemoveIP
 		// Get client for this server
 		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -6861,10 +6934,11 @@ void		ManiClient::ProcessRemoveIP
 			mani_mysql->FetchRow();
 			client_ptr->user_id = mani_mysql->GetInt(0);
 
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %sip "
+			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
 				"AND ip_address = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBIP(),
 				client_ptr->user_id,
 				param2))
 			{
@@ -6935,13 +7009,13 @@ void		ManiClient::ProcessRemoveNick
 		// Get client for this server
 		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -6954,10 +7028,11 @@ void		ManiClient::ProcessRemoveNick
 			mani_mysql->FetchRow();
 			client_ptr->user_id = mani_mysql->GetInt(0);
 
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %snick "
+			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
 				"AND nick = '%s'",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBNick(),
 				client_ptr->user_id,
 				param2))
 			{
@@ -7008,11 +7083,11 @@ void		ManiClient::ProcessRemoveGroup
 
 	if (MANI_ADMIN_TYPE == type)
 	{
-		Q_strcpy(flag_type, "A");
+		Q_strcpy(flag_type, "Admin");
 	}
 	else
 	{
-		Q_strcpy(flag_type, "I");
+		Q_strcpy(flag_type, "Immunity");
 	}
 
 	if (MANI_ADMIN_TYPE == type)
@@ -7055,13 +7130,13 @@ void		ManiClient::ProcessRemoveGroup
 		// Get client for this server
 		if (mani_mysql && !mani_mysql->ExecuteQuery(&row_count, 
 			"SELECT c.user_id "
-			"FROM %sclient c, %sclient_server cs "
-			"where cs.server_id = %i "
+			"FROM %s%s c, %s%s cs "
+			"where cs.server_group_id = '%s' "
 			"and cs.user_id = c.user_id "
 			"and c.name = '%s'",
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetDBTablePrefix(),
-			gpManiDatabase->GetServerID(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClient(),
+			gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBClientServer(),
+			gpManiDatabase->GetServerGroupID(),
 			client_ptr->name))
 		{
 			delete mani_mysql;
@@ -7074,16 +7149,17 @@ void		ManiClient::ProcessRemoveGroup
 			mani_mysql->FetchRow();
 			client_ptr->user_id = mani_mysql->GetInt(0);
 
-			if (!mani_mysql->ExecuteQuery("DELETE FROM %sclient_group "
+			if (!mani_mysql->ExecuteQuery("DELETE FROM %s%s "
 				"WHERE user_id = %i "
 				"AND group_id = '%s' "
 				"AND type = '%s' "
-				"AND server_id = %i ",
+				"AND server_group_id = '%s' ",
 				gpManiDatabase->GetDBTablePrefix(),
+				gpManiDatabase->GetDBTBClientGroup(),
 				client_ptr->user_id,
 				param2,
 				flag_type,
-				gpManiDatabase->GetServerID()))
+				gpManiDatabase->GetServerGroupID()))
 			{
 				delete mani_mysql;
 				mani_mysql = NULL;
@@ -7588,6 +7664,182 @@ void		ManiClient::ProcessClientDownload
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Handle upgrade from versions prior to V1.2BetaM
+//---------------------------------------------------------------------------------
+void		ManiClient::UpgradeDB1( void )
+{
+	bool update_db = false;
+	char version_string[16];
+	int	row_count = 0;
+
+	if (!gpManiDatabase->GetDBEnabled())
+	{
+		return;
+	}
+
+	ManiMySQL *mani_mysql = new ManiMySQL();
+
+	if (!mani_mysql->Init())
+	{
+		delete mani_mysql;
+		return;
+	}
+
+	if (!mani_mysql->ExecuteQuery(&row_count, 
+		"SELECT v.version_id "
+		"FROM %s%s v",
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBVersion()))
+	{
+		delete mani_mysql;
+		return;
+	}
+
+	if (row_count)
+	{
+		// Found rows
+		while (mani_mysql->FetchRow())
+		{
+			Q_strcpy(version_string, mani_mysql->GetString(0));
+
+			if (Q_strlen(version_string) < 8)
+			{
+				delete mani_mysql;
+				return;
+			}
+
+			char v_letter = version_string[7];
+
+			if (v_letter == 'A' || 
+				v_letter == 'B' ||
+				v_letter == 'C' ||
+				v_letter == 'D' ||
+				v_letter == 'E' ||
+				v_letter == 'F' ||
+				v_letter == 'G' ||
+				v_letter == 'H' ||
+				v_letter == 'I' ||
+				v_letter == 'J' ||
+				v_letter == 'K' ||
+				v_letter == 'L')
+			{
+				update_db = true; 
+			}
+	
+			break;
+		}
+	}
+
+	if (!update_db) 
+	{
+		delete mani_mysql;
+		return;
+	}
+
+	MMsg("Updating database from pre V%s to new format\n", version_string);
+
+	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBGroup())) {delete mani_mysql; return;}
+	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientGroup())) {delete mani_mysql; return;}
+	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientFlag())) {delete mani_mysql; return;}
+	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientLevel())) {delete mani_mysql; return;}
+	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBLevel())) {delete mani_mysql; return;}
+	if (!this->UpgradeServerIDToServerGroupID(mani_mysql, gpManiDatabase->GetDBTBClientServer())) {delete mani_mysql; return;}
+
+	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientFlag())) {delete mani_mysql; return;}
+	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientGroup())) {delete mani_mysql; return;}
+	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBClientLevel())) {delete mani_mysql; return;}
+	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBGroup())) {delete mani_mysql; return;}
+	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBLevel())) {delete mani_mysql; return;}
+	if (!this->UpgradeClassTypes(mani_mysql, gpManiDatabase->GetDBTBFlag())) {delete mani_mysql; return;}
+
+	MMsg("Updating table %s%s to have column 'server_group_id'....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
+	if (!mani_mysql->ExecuteQuery("ALTER TABLE %s%s ADD server_group_id varchar(32) NOT NULL default ''", 
+		gpManiDatabase->GetDBTablePrefix(),	gpManiDatabase->GetDBTBServer()))
+	{
+		return ;
+	}
+
+	MMsg("Updating table %s%s to have 'Default' for server group id....\n", gpManiDatabase->GetDBTablePrefix(), gpManiDatabase->GetDBTBServer());
+	if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET server_group_id = 'Default'", 
+		gpManiDatabase->GetDBTablePrefix(),	gpManiDatabase->GetDBTBServer()))
+	{
+		return ;
+	}
+
+	MMsg("Updating stored database version ID to %s....\n",  PLUGIN_VERSION_ID2);
+	if (!mani_mysql->ExecuteQuery("UPDATE %s%s SET version_id = '%s'",
+		gpManiDatabase->GetDBTablePrefix(),
+		gpManiDatabase->GetDBTBVersion(),
+			PLUGIN_VERSION_ID2))
+	{
+		delete mani_mysql;
+		return;
+	}
+
+	MMsg("Update completed successfully!\n", version_string);
+
+	delete mani_mysql;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Handle upgrade from versions prior to V1.2BetaM
+//---------------------------------------------------------------------------------
+bool		ManiClient::UpgradeServerIDToServerGroupID
+(
+ ManiMySQL *mani_mysql_ptr,
+ const char	*table_name
+ )
+{
+	MMsg("Updating 'server_id' to 'server_group_id' on table '%s%s'....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery("ALTER TABLE %s%s CHANGE server_id server_group_id varchar(32) NOT NULL default ''", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name))
+	{
+		return false;
+	}
+
+	MMsg("Defaulting 'server_group_id' to 'Default' on table '%s%s'....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery("UPDATE %s%s t1 SET t1.server_group_id = 'Default'", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Handle upgrade from versions prior to V1.2BetaM
+//---------------------------------------------------------------------------------
+bool		ManiClient::UpgradeClassTypes
+(
+ ManiMySQL *mani_mysql_ptr,
+ const char	*table_name
+ )
+{
+	MMsg("Updating 'type' to be varchar(32) on table %s%s....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery("ALTER TABLE %s%s CHANGE type type varchar(32) NOT NULL default ''", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name))
+	{
+		return false;
+	}
+
+	MMsg("Updating 'A' type to be 'Admin' on table %s%s....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery("UPDATE %s%s t1 SET t1.type = 'Admin' where type = 'A'", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name))
+	{
+		return false;
+	}
+
+	MMsg("Updating 'I' type to be 'Immunity' on table %s%s....\n", gpManiDatabase->GetDBTablePrefix(), table_name);
+	if (!mani_mysql_ptr->ExecuteQuery("UPDATE %s%s t1 SET t1.type = 'Immunity' where type = 'I'", 
+		gpManiDatabase->GetDBTablePrefix(),	table_name))
+	{
+		return false;
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------------------
 // Purpose: Con command for setting admin flags
 //---------------------------------------------------------------------------------
 
@@ -7847,16 +8099,20 @@ void	ManiClient::InitImmunityFlags(void)
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GIVE].flag_desc,IMMUNITY_ALLOW_GIVE_DESC);
 
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_COLOUR].flag, IMMUNITY_ALLOW_COLOUR_FLAG);
-	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_COLOUR].flag_desc,IMMUNITY_ALLOW_COLOUR_DESC);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_COLOUR].flag_desc, IMMUNITY_ALLOW_COLOUR_DESC);
 
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_BASIC_IMMUNITY].flag, IMMUNITY_ALLOW_BASIC_IMMUNITY_FLAG);
-	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_BASIC_IMMUNITY].flag_desc,IMMUNITY_ALLOW_BASIC_IMMUNITY_DESC);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_BASIC_IMMUNITY].flag_desc, IMMUNITY_ALLOW_BASIC_IMMUNITY_DESC);
 
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag, IMMUNITY_ALLOW_GRAVITY_FLAG);
-	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag_desc,IMMUNITY_ALLOW_GRAVITY_DESC);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_GRAVITY].flag_desc, IMMUNITY_ALLOW_GRAVITY_DESC);
 
 	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AUTOJOIN].flag, IMMUNITY_ALLOW_AUTOJOIN_FLAG);
-	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AUTOJOIN].flag_desc,IMMUNITY_ALLOW_AUTOJOIN_DESC);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AUTOJOIN].flag_desc, IMMUNITY_ALLOW_AUTOJOIN_DESC);
+
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AFK].flag, IMMUNITY_ALLOW_AFK_FLAG);
+	Q_strcpy(immunity_flag_list[IMMUNITY_ALLOW_AFK].flag_desc, IMMUNITY_ALLOW_AFK_DESC);
+
 }
 
 
@@ -8062,9 +8318,9 @@ LEFT JOIN map_steam s ON s.user_id = c.user_id
 LEFT JOIN map_client_flag cf ON cf.user_id = c.user_id
 LEFT JOIN map_nick n ON n.user_id = c.user_id
 LEFT JOIN map_ip i ON i.user_id = c.user_id
-LEFT JOIN map_client_group cg ON cg.user_id = c.user_id AND cg.server_id = cs.server_id
-LEFT JOIN map_client_level cl ON cl.user_id = c.user_id AND cl.server_id = cs.server_id
+LEFT JOIN map_client_group cg ON cg.user_id = c.user_id AND cg.server_group_id = cs.server_group_id
+LEFT JOIN map_client_level cl ON cl.user_id = c.user_id AND cl.server_group_id = cs.server_group_id
 where c.user_id = cs.user_id
-and cs.server_id = 1
+and cs.server_group_id = 1
 order by 1, 4, 5,6,7,9, 8, 11, 10
 */

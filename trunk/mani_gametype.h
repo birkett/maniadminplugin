@@ -62,6 +62,8 @@
 //#define MANI_VFUNC_GET_TEAM_NAME (14)
 #define MANI_VFUNC_GET_VELOCITY (15)
 #define MANI_VFUNC_WEAPON_SWITCH (16)
+#define MANI_VFUNC_USER_CMDS (17)
+#define MANI_VFUNC_GIVE_ITEM (18)
 
 //Property defs
 #define MANI_PROP_HEALTH		(0)
@@ -87,7 +89,7 @@ public:
 	void		Init(void);
 	const char	*GetGameType(void);
 	bool		IsGameType(const char *game_str);
-	bool		IsGameType(int game_index);
+	bool		IsGameType(int game_index) {return ((game_index == game_type_index) ? true:false);}
 	bool		GetAdvancedEffectsAllowed(void);
 	void		SetAdvancedEffectsAllowed(bool allowed);
 	int			GetAdvancedEffectsVFuncOffset(void);
@@ -129,6 +131,7 @@ public:
 
 	bool		IsDeathsAllowed(void);
 	int			GetDeathsOffset(void);
+	int			DebugOn() { return debug_log; }
 
 	bool		IsGravityAllowed(void);
 	int			GetGravityOffset(void);
@@ -205,6 +208,8 @@ private:
 	int			max_messages;
 	int			set_colour;
 	int			alpha_render_mode;
+
+	int			debug_log;
 
 	// Dod requires this
 	int			slap_allowed;

@@ -73,8 +73,8 @@ extern	int			round_number;
 // it is legitimate
 struct	tk_confirm_t
 {
-	char	steam_id[128];
-	char	name[128];
+	char	steam_id[MAX_NETWORKID_LENGTH];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	int		user_id;
 	bool	confirmed;
 };
@@ -986,27 +986,27 @@ bool IsMenuSelectionValid
 //---------------------------------------------------------------------------------
 // Purpose: Handle a player death event
 //---------------------------------------------------------------------------------
-void ProcessTKDeath
+bool ProcessTKDeath
 (
  player_t	*attacker_ptr,
  player_t	*victim_ptr
  )
 {
-	if (mani_tk_protection.GetInt() == 0) return;
+	if (mani_tk_protection.GetInt() == 0) return false;
 
 	// Check TK happened outside spawn protection time
-	if (gpGlobals->curtime < end_spawn_protection_time)	return;
+	if (gpGlobals->curtime < end_spawn_protection_time)	return false;
 
 	// Killed by world ?
-	if (attacker_ptr->user_id <= 0) return;
+	if (attacker_ptr->user_id <= 0) return false;
 
 	// Are players on same team ?
-	if (!IsOnSameTeam (victim_ptr, attacker_ptr))	return;
+	if (!IsOnSameTeam (victim_ptr, attacker_ptr))	return false;
 
 	if (mani_tk_forgive.GetInt() == 0)
 	{
 		ProcessTKNoForgiveMode(attacker_ptr, victim_ptr);
-		return;
+		return false;
 	}
 
 	int tk_player_index = -1;
@@ -1048,7 +1048,7 @@ void ProcessTKDeath
 					// Check if ban required
 					if (TKBanPlayer (attacker_ptr, tk_player_index))
 					{
-						return;
+						return false;
 					}
 				}
 			}
@@ -1064,7 +1064,7 @@ void ProcessTKDeath
 				tk_player_list[tk_player_list_size - 1].violations_committed = 1;
 				if(TKBanPlayer (attacker_ptr, tk_player_list_size -1))
 				{
-					return;
+					return false;
 				}
 			}
 			else
@@ -1075,11 +1075,11 @@ void ProcessTKDeath
 	}
 
 	// No point showing to menu to player
-	if (victim_ptr->entity == NULL) return;
+	if (victim_ptr->entity == NULL) return false;
 	if (victim_ptr->is_bot && mani_tk_allow_bots_to_punish.GetInt() == 0)
 	{
 		// Dont't let bots punish players
-		return;
+		return false;
 	}
 
 	int	 bot_choice;
@@ -1087,7 +1087,7 @@ void ProcessTKDeath
 	// Handle a bot dishing out punishments
 	if (victim_ptr->is_bot)
 	{
-		if (attacker_ptr->is_dead) return;
+		if (attacker_ptr->is_dead) return false;
 
 		if (attacker_ptr->is_bot)
 		{
@@ -1101,9 +1101,9 @@ void ProcessTKDeath
 		char	log_string[512];
 		char	output_string[512];
 		GetTKPunishSayString(bot_choice, attacker_ptr, victim_ptr, output_string, log_string, false);
-// Msg("bot_choice = [%i]\nSay String [%s]\n", bot_choice, output_string);
+// MMsg("bot_choice = [%i]\nSay String [%s]\n", bot_choice, output_string);
 		ProcessTKPunishment(bot_choice, attacker_ptr, victim_ptr, output_string, log_string, false);
-		return;
+		return false;
 	}
 
 	tk_confirm_list[victim_ptr->index - 1].confirmed = true;
@@ -1113,6 +1113,7 @@ void ProcessTKDeath
 
 	// Force client to call command to show menu
 	engine->ClientCommand(victim_ptr->entity, "%s %i \"%s\"", (attacker_ptr->is_bot) ? "tkbot":"tkhuman", attacker_ptr->user_id, attacker_ptr->steam_id);
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -1160,7 +1161,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_FORGIVE, is_bot))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_FORGIVE_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(632));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FORGIVE);
 		}
 
@@ -1168,7 +1169,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_SLAY, is_bot))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_SLAY_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(633));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_SLAY);
 		}
 
@@ -1176,7 +1177,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_SLAP, is_bot) && gpManiGameType->IsSlapAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_SLAP_PLAYER), mani_tk_slap_to_damage.GetInt());
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(634, "%i", mani_tk_slap_to_damage.GetInt()));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_SLAP);
 		}
 
@@ -1184,7 +1185,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_BEACON, is_bot) && gpManiGameType->GetAdvancedEffectsAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_BEACON_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(643));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_BEACON);
 		}
 
@@ -1192,7 +1193,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_TIME_BOMB, is_bot))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_TIME_BOMB_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(640));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_TIME_BOMB);
 		}
 
@@ -1200,7 +1201,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_FIRE_BOMB, is_bot) && gpManiGameType->IsFireAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_FIRE_BOMB_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(641));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FIRE_BOMB);
 		}
 
@@ -1208,7 +1209,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_FREEZE_BOMB, is_bot))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_FREEZE_BOMB_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(642));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FREEZE_BOMB);
 		}
 
@@ -1216,7 +1217,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_FREEZE, is_bot))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_FREEZE_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(636));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_FREEZE);
 		}
 
@@ -1224,7 +1225,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_BURN, is_bot)  && gpManiGameType->IsFireAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_BURN_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(639));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_BURN);
 		}
 
@@ -1232,7 +1233,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_CASH, is_bot) && gpManiGameType->CanUseProp(MANI_PROP_ACCOUNT))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_TAKE_CASH_FROM_PLAYER), mani_tk_cash_percent.GetInt());
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(637, "%i", mani_tk_cash_percent.GetInt()));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_CASH);
 		}
 
@@ -1240,7 +1241,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_DRUG, is_bot) && gpManiGameType->IsDrugAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_DRUG_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(638));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_DRUG);
 		}
 
@@ -1248,7 +1249,7 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		if (IsMenuOptionAllowed(MANI_TK_BLIND, is_bot))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(M_FORGIVE_MENU_BLIND_PLAYER));
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(635));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "%s %i \"%s\" %i", (is_bot) ? "tkbot":"tkhuman", user_id, steam_id, MANI_TK_BLIND);
 		}
 
@@ -1260,16 +1261,16 @@ void ProcessMenuTKPlayer( player_t *player_ptr, int next_index, int argv_offset 
 		Q_snprintf( more_cmd, sizeof(more_cmd), "%i \"%s\"", user_id, steam_id);
 
 		char menu_title[512];
-		Q_snprintf( menu_title, sizeof(menu_title), Translate(M_FORGIVE_MENU_TITLE), tk_confirm_list[player_ptr->index - 1].name);
+		Q_snprintf( menu_title, sizeof(menu_title), "%s", Translate(631,"%s", tk_confirm_list[player_ptr->index - 1].name));
 
 		// Draw menu list
 		if (is_bot)
 		{
-			DrawSubMenu (player_ptr, Translate(M_FORGIVE_MENU_ESCAPE), menu_title, next_index, "tkbot", more_cmd, false, -1);
+			DrawSubMenu (player_ptr, Translate(630), menu_title, next_index, "tkbot", more_cmd, false, -1);
 		}
 		else
 		{
-			DrawSubMenu (player_ptr, Translate(M_FORGIVE_MENU_ESCAPE), menu_title, next_index, "tkhuman", more_cmd, false, -1);
+			DrawSubMenu (player_ptr, Translate(630), menu_title, next_index, "tkhuman", more_cmd, false, -1);
 		}
 		
 		tk_confirm_list[player_ptr->index - 1].confirmed = true;

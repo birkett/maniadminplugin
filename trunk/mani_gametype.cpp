@@ -46,6 +46,7 @@
 #include "mani_player.h"
 #include "mani_skins.h"
 #include "mani_client.h"
+#include "mani_output.h"
 #include "mani_gametype.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
@@ -89,7 +90,7 @@ void ManiGameType::Init(void)
 	char	core_filename[256];
 	team_class_t	temp_team;
 
-//	Msg("*********** Loading gametypes.txt ************\n");
+//	MMsg("*********** Loading gametypes.txt ************\n");
 	// Read the gametype.txt file
 
 	//Get filename
@@ -100,7 +101,7 @@ void ManiGameType::Init(void)
 	{
 		for (int i = 0; i < 100; i++)
 		{
-			Msg("WARNING! YOU ARE MISSING GAMETYPES.TXT THIS MUST BE INSTALLED!\n");
+			MMsg("WARNING! YOU ARE MISSING GAMETYPES.TXT THIS MUST BE INSTALLED!\n");
 		}
 		return;
 	}
@@ -108,7 +109,7 @@ void ManiGameType::Init(void)
 	KeyValues *kv_ptr = new KeyValues("gametypes.txt");
 
 	Q_strcpy(game_type, serverdll->GetGameDescription());
-//	Msg("Searching for game type [%s]\n", game_type);
+	MMsg("Searching for game type [%s]\n", game_type);
 
 	if (FStrEq(MANI_GAME_CSS_STR, game_type)) game_type_index = MANI_GAME_CSS;
 	else if (FStrEq(MANI_GAME_DM_STR, game_type)) game_type_index = MANI_GAME_DM;
@@ -124,7 +125,7 @@ void ManiGameType::Init(void)
 
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-		Msg("Failed to load gametypes.txt\n");
+		MMsg("Failed to load gametypes.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -136,7 +137,7 @@ void ManiGameType::Init(void)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -149,7 +150,7 @@ void ManiGameType::Init(void)
 		if (FStrEq(base_key_ptr->GetName(), game_type))
 		{
 			found_match = true;
-			Msg("Found gametypes for %s\n", game_type);
+			MMsg("Found gametypes for %s\n", game_type);
 			break;
 		}
 
@@ -173,7 +174,7 @@ void ManiGameType::Init(void)
 			if (FStrEq(base_key_ptr->GetName(), "Unknown Mod"))
 			{
 				found_match = true;
-				Msg("Using class unknown mod for defaults\n");
+				MMsg("Using class unknown mod for defaults\n");
 				break;
 			}
 
@@ -181,6 +182,7 @@ void ManiGameType::Init(void)
 			if (!base_key_ptr)
 			{
 				kv_ptr->deleteThis();
+				MMsg("Failed to find 'Unknown Mod' entry\n");
 				return;
 			}
 		}
@@ -188,6 +190,9 @@ void ManiGameType::Init(void)
 
 	//base_key_ptr should now hold our core key for our game type defaults
 	Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
+#ifdef __linux__
+	Msg("Linux binary @ %s\n", linux_game_bin);
+#endif
 	spectator_allowed = base_key_ptr->GetInt("spectator_allowed", 0);
 	spectator_index = base_key_ptr->GetInt("spectator_index", 1);
 	Q_strcpy(spectator_group, base_key_ptr->GetString("spectator_group", "#SPEC"));
@@ -205,6 +210,7 @@ void ManiGameType::Init(void)
 	advert_decal_allowed = base_key_ptr->GetInt("advert_decal_allowed", 1);
 	death_beam_allowed = base_key_ptr->GetInt("death_beam_allowed", 1);
 	browse_allowed = base_key_ptr->GetInt("browse_allowed", 1);
+	debug_log = base_key_ptr->GetInt("debug_log", 0);
 
 	KeyValues *temp_ptr;
 
@@ -216,7 +222,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("advanced_effects", false);
 	if (temp_ptr)
 	{
-//		Msg("Found advanced effects\n");
+//		MMsg("Found advanced effects\n");
 #ifdef __linux__
         advanced_effects = temp_ptr->GetInt("enable_linux", 0);
 #else
@@ -231,7 +237,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("voice_control", false);
 	if (temp_ptr)
 	{
-//		Msg("Found voice control\n");
+//		MMsg("Found voice control\n");
 
 		voice_allowed = 1;
 #ifdef __linux__
@@ -245,7 +251,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("spray_hook_control", false);
 	if (temp_ptr)
 	{
-//		Msg("Found spray hook control\n");
+//		MMsg("Found spray hook control\n");
 
 		spray_hook_allowed = 1;
 #ifdef __linux__
@@ -259,7 +265,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("spawn_point_control", false);
 	if (temp_ptr)
 	{
-//		Msg("Found spawn point control\n");
+//		MMsg("Found spawn point control\n");
 
 		spawn_point_allowed = 1;
 #ifdef __linux__
@@ -289,7 +295,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("kills_offset", false);
 	if (temp_ptr)
 	{
-//		Msg("Found kills offset\n");
+//		MMsg("Found kills offset\n");
 		kills_allowed = 1;
 
 #ifdef __linux__
@@ -305,7 +311,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("deaths_offset", false);
 	if (temp_ptr)
 	{
-//		Msg("Found kills offset\n");
+//		MMsg("Found kills offset\n");
 		deaths_allowed = 1;
 
 #ifdef __linux__
@@ -321,7 +327,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("gravity_offset", false);
 	if (temp_ptr)
 	{
-//		Msg("Found gravity offset\n");
+//		MMsg("Found gravity offset\n");
 		gravity_allowed = 1;
 
 #ifdef __linux__
@@ -335,7 +341,7 @@ void ManiGameType::Init(void)
 	temp_ptr = base_key_ptr->FindKey("teams", false);
 	if (temp_ptr)
 	{
-//		Msg ("Found teams\n");
+//		MMsg("Found teams\n");
 		KeyValues *team_ptr;
 
 		team_ptr = temp_ptr->GetFirstTrueSubKey();
@@ -377,7 +383,7 @@ void ManiGameType::Init(void)
 				}
 
 				team_class_list[temp_team.team_index] = temp_team;
-//				Msg("Found team [%s]\n", temp_team.group);
+//				MMsg("Found team [%s]\n", temp_team.group);
 
 				team_ptr = team_ptr->GetNextKey();
 				if (!team_ptr)
@@ -392,7 +398,7 @@ void ManiGameType::Init(void)
 
 	kv_ptr->deleteThis();
 
-//	Msg("*********** gametypes.txt loaded ************\n");
+//	MMsg("*********** gametypes.txt loaded ************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -441,6 +447,8 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 //	vfunc_index[MANI_VFUNC_GET_TEAM_NAME] = kv_ptr->GetInt("get_team_name", 0x9d);
 	vfunc_index[MANI_VFUNC_GET_VELOCITY] = kv_ptr->GetInt("get_velocity", 0x75);
 	vfunc_index[MANI_VFUNC_WEAPON_SWITCH] = kv_ptr->GetInt("weapon_switch", 0xcd);
+	vfunc_index[MANI_VFUNC_USER_CMDS] = kv_ptr->GetInt("user_cmds", -1); // 0x322 for windows
+	vfunc_index[MANI_VFUNC_GIVE_ITEM] = kv_ptr->GetInt("give_item", -1); // 0x133
 
 	return;
 }
@@ -470,7 +478,7 @@ int		ManiGameType::GetVFuncIndex(int	index)
 	return (vfunc_index[index]);
 #else
 	// windows is one less all the time
-	return (vfunc_index[index] - 1);
+	return (((vfunc_index[index] == -1) ? -1: vfunc_index[index] - 1));
 #endif
 }
 
@@ -497,10 +505,10 @@ bool	ManiGameType::CanUseProp(int	index)
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if passed in integer = game type we know (faster than string compare)
 //---------------------------------------------------------------------------------
-bool	ManiGameType::IsGameType(int game_index)
-{
-	return ((game_index == game_type_index) ? true:false);
-}
+//bool	ManiGameType::IsGameType(int game_index)
+//{
+//	return ((game_index == game_type_index) ? true:false);
+//}
 
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if advanced effects allowed via temp ents
@@ -945,6 +953,7 @@ void	ManiGameType::DefaultValues(void)
 	advert_decal_allowed = 1;
 	death_beam_allowed = 1;
 	browse_allowed = 1;
+	debug_log = 0;
 
 	// Default CSS offsets
 	vfunc_index[MANI_VFUNC_EYE_ANGLES] = 0x6d;
@@ -982,7 +991,7 @@ bool	ManiGameType::FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr)
 	base_key_ptr = kv->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		return false;
 	}
 
@@ -1052,7 +1061,7 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 		ServerClass *sc = serverdll->GetAllServerClasses();
 		while (sc)
 		{
-			Msg("%s\n", sc->GetName());
+			MMsg("%s\n", sc->GetName());
 			sc = sc->m_pNext;
 		}	
 	}
@@ -1066,7 +1075,7 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 				int NumProps = sc->m_pTable->GetNumProps();
 				for (int i=0; i<NumProps; i++)
 				{
-					Msg("%s\n", sc->m_pTable->GetProp(i)->GetName());
+					MMsg("%s\n", sc->m_pTable->GetProp(i)->GetName());
 				}
 
 				return ;
@@ -1084,7 +1093,7 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 			{
 				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), engine->Cmd_Argv(1)))
 				{
-					Msg("%s.%s\n", sc->GetName(), sc->m_pTable->GetProp(i)->GetName());
+					MMsg("%s.%s\n", sc->GetName(), sc->m_pTable->GetProp(i)->GetName());
 				}
 			}
 
@@ -1145,7 +1154,7 @@ static int UTIL_FindPropOffset(const char *CombinedProp)
 				if (stricmp(sc->m_pTable->GetProp(i)->GetName(), Property) == 0)
 				{
 					int offset = sc->m_pTable->GetProp(i)->GetOffset() / 4;
-//					Msg("Found %s with offset of %i\n", CombinedProp, offset); 
+//					MMsg("Found %s with offset of %i\n", CombinedProp, offset); 
 					return offset;
 				}
 			}

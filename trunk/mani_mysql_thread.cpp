@@ -170,7 +170,7 @@ bool ManiMySQLThread::Load(void)
 
 	if (thread_id == NULL) 
 	{
-		Msg("Create thread failed\n");
+		MMsg("Create thread failed\n");
 		CloseHandle(request_list_mutex);
 		return false;
 	}
@@ -185,7 +185,7 @@ bool ManiMySQLThread::Load(void)
 
 	thread_alive = true;
 	accept_requests = true;
-	Msg("Create thread success\n");
+	MMsg("Create thread success\n");
 	return true;
 }
 
@@ -589,13 +589,13 @@ bool ManiMySQLThread::Init(void)
 
 	if ((my_data = mysql_init((MYSQL*) 0)) == NULL) 
 	{
-		Msg("Failed to init database\n");
+		MMsg("Failed to init database\n");
 		return false;
 	}
 
 	if (mysql_options(my_data, MYSQL_OPT_CONNECT_TIMEOUT, (char *) &timeout))
 	{
-		Msg("mysql_options failed !!\n");
+		MMsg("mysql_options failed !!\n");
 		Msg( "%s\n", mysql_error(my_data));
 	}
 
@@ -1220,7 +1220,7 @@ void	ManiMySQLThread::MSleep(int	milliseconds)
 void	ManiMySQLThread::UnlockMutex(bool thread_call)
 {
 #ifdef MANI_SHOW_LOCKS
-	Msg("UnlockMutex Thread Called [%s]\n", (thread_call) ? "TRUE":"FALSE");
+	MMsg("UnlockMutex Thread Called [%s]\n", (thread_call) ? "TRUE":"FALSE");
 #endif
 
 #ifndef __linux__
@@ -1232,7 +1232,7 @@ void	ManiMySQLThread::UnlockMutex(bool thread_call)
 #endif
 
 #ifdef MANI_SHOW_LOCKS
-	Msg("UNLOCKED\n");
+	MMsg("UNLOCKED\n");
 #endif
 }
 
@@ -1242,7 +1242,7 @@ void	ManiMySQLThread::UnlockMutex(bool thread_call)
 void	ManiMySQLThread::LockMutexWait(bool thread_call)
 {
 #ifdef MANI_SHOW_LOCKS
-	Msg("LockMutexWait Thread Called [%s]\n", (thread_call) ? "TRUE":"FALSE");
+	MMsg("LockMutexWait Thread Called [%s]\n", (thread_call) ? "TRUE":"FALSE");
 #endif
 
 #ifndef __linux__
@@ -1263,7 +1263,7 @@ bool	ManiMySQLThread::LockMutex(bool thread_call)
 	bool status = false;
 
 #ifdef MANI_SHOW_LOCKS
-	Msg("LockMutex Thread Called [%s]\n", (thread_call) ? "TRUE":"FALSE");
+	MMsg("LockMutex Thread Called [%s]\n", (thread_call) ? "TRUE":"FALSE");
 #endif
 
 #ifndef __linux__
@@ -1286,11 +1286,11 @@ bool	ManiMySQLThread::LockMutex(bool thread_call)
 #ifdef MANI_SHOW_LOCKS
 	if (status)
 	{
-		Msg("GOT LOCK\n");
+		MMsg("GOT LOCK\n");
 	}
 	else
 	{
-		Msg("LOCK FAILED\n");
+		MMsg("LOCK FAILED\n");
 	}
 #endif
 	return status;

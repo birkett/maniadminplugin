@@ -68,6 +68,8 @@ typedef unsigned long DWORD;
 #include "networkstringtabledefs.h"
 #include "mani_callback_valve.h"
 #include "mani_main.h"
+#include "mani_sigscan.h"
+#include "mani_output.h"
 #include "mani_globals.h"
 #include "mani_mainclass.h"
 
@@ -106,156 +108,74 @@ CValveMAP::~CValveMAP()
 //---------------------------------------------------------------------------------
 bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory )
 {
-	Msg("********************************************************\n");
-	Msg(" Loading ");
-	Msg("%s\n", mani_version);
-	Msg("\n");
 
-	if ((playerinfomanager = (IPlayerInfoManager *)gameServerFactory(INTERFACEVERSION_PLAYERINFOMANAGER,NULL)))
-		Msg("Loaded playerinfomanager interface at %p\n", playerinfomanager);
-	else 
-	{
-		Msg( "Failed to load playerinfomanager\n" );
-		return false;
-	}
 
-	// get the interfaces we want to use
-	if((engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL)))
-		Msg("Loaded engine interface at %p\n", engine);
-	else 
-	{
-		Warning( "Failed to load engine interface\n" );
-		return false;
-	}
-
-	if ((gameeventmanager = (IGameEventManager2 *)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL)))
-		Msg("Loaded events manager interface at %p\n", gameeventmanager);
-	else 
-	{
-		Msg( "Failed to events manager interface\n" );
-		return false;
-	}
-
-	if ((filesystem = (IFileSystem*)interfaceFactory(FILESYSTEM_INTERFACE_VERSION, NULL)))
-		Msg("Loaded filesystem interface at %p\n", filesystem);
-	else 
-	{
-		Msg( "Failed to load filesystem interface\n" );
-		return false;
-	}
-
-	if ((helpers = (IServerPluginHelpers*)interfaceFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL)))
-		Msg("Loaded helpers interface at %p\n", helpers);
-	else 
-	{
-		Msg( "Failed to load helpers interface\n" );
-		return false;
-	}
-
-	if ((networkstringtable = (INetworkStringTableContainer *)interfaceFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL)))
-		Msg("Loaded networkstringtable interface at %p\n", networkstringtable);
-	else 
-	{
-		Msg( "Failed to load networkstringtable interface\n" );
-		return false;
-	}
-
-	if ((enginetrace = (IEngineTrace *)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL)))
-		Msg("Loaded enginetrace interface\n");
-else 
-	{
-		Msg( "Failed to load enginetrace interface\n" );
-		return false;
-	}
-
-	if ((randomStr = (IUniformRandomStream *)interfaceFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL)))
-		Msg("Loaded random stream interface at %p\n", randomStr);
-	else 
-	{
-		Msg( "Failed to load random stream interface\n" );
-		return false;
-	}
-
+	playerinfomanager = (IPlayerInfoManager *)gameServerFactory(INTERFACEVERSION_PLAYERINFOMANAGER,NULL);
+	engine = (IVEngineServer*)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
+	gameeventmanager = (IGameEventManager2 *)interfaceFactory(INTERFACEVERSION_GAMEEVENTSMANAGER2,NULL);
+	filesystem = (IFileSystem*)interfaceFactory(FILESYSTEM_INTERFACE_VERSION, NULL);
+	helpers = (IServerPluginHelpers*)interfaceFactory(INTERFACEVERSION_ISERVERPLUGINHELPERS, NULL);
+	networkstringtable = (INetworkStringTableContainer *)interfaceFactory(INTERFACENAME_NETWORKSTRINGTABLESERVER,NULL);
+	enginetrace = (IEngineTrace *)interfaceFactory(INTERFACEVERSION_ENGINETRACE_SERVER,NULL);
+	randomStr = (IUniformRandomStream *)interfaceFactory(VENGINE_SERVER_RANDOM_INTERFACE_VERSION, NULL);
 	serverents = (IServerGameEnts*)gameServerFactory(INTERFACEVERSION_SERVERGAMEENTS, NULL);
-	if(serverents) 
-		Msg("Loaded IServerGameEnts interface at %p\n", serverents);
-	else 
-	{
-		Msg( "Failed to load IServerGameEnts interface\n" );
-	}
-
 	effects = (IEffects*)gameServerFactory(IEFFECTS_INTERFACE_VERSION, NULL);
-	if(effects) 
-		Msg("Loaded effects interface at %p\n", effects);
-	else 
-	{
-		Msg( "Failed to load effects interface\n" );
-	}
-
 	esounds = (IEngineSound*)interfaceFactory(IENGINESOUND_SERVER_INTERFACE_VERSION, NULL);
-	if (esounds)
-		Msg("Loaded sounds interface at %p\n", esounds);
-	else 
-	{
-		Msg( "Failed to load sounds interface\n" );
-	}
-
-
 	cvar = (ICvar*)interfaceFactory(VENGINE_CVAR_INTERFACE_VERSION, NULL);
-	if(cvar)
-		Msg("Loaded cvar interface at %p\n", cvar);
-	else 
-	{
-		Msg( "Failed to load cvar interface\n" );
-		return false;
-	}
-
 	serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL004", NULL);
 	if(serverdll)
-		Msg("Loaded servergamedll interface at %p\n", serverdll);
+	{
+		gamedll = serverdll;
+	}
 	else 
 	{
 		// Hack for unreleased interface version
-		Msg("Falling back to ServerGameDLL003\n");
 		serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-		if(serverdll)
-			Msg("Loaded servergamedll interface at %p\n", serverdll);
-		else
+		if(!serverdll)
 		{
 			// Hack for interface 004 not working on older mods
-			Msg("Falling back to ServerGameDLL003\n");
 			serverdll = (IServerGameDLL*) gameServerFactory("ServerGameDLL003", NULL);
-			if(serverdll)
-				Msg("Loaded servergamedll interface at %p\n", serverdll);
-			else		
-			{
-				Msg( "Failed to load servergamedll interface\n" );
-				return false;
-			}
 		}
 	}
 
 	voiceserver = (IVoiceServer*)interfaceFactory(INTERFACEVERSION_VOICESERVER, NULL);
-	if (voiceserver)
-		Msg("Loaded voiceserver interface at %p\n", voiceserver);
-	else 
-	{
-		Msg( "Failed to voiceserver interface\n" );
-	}
-
 	partition = (ISpatialPartition*)interfaceFactory(INTERFACEVERSION_SPATIALPARTITION, NULL);
-	if (partition)
-		Msg("Loaded partition interface at %p\n", partition);
-	else 
-	{
-		Msg( "Failed to partition interface\n" );
-	}
-
-	Msg("********************************************************\n");
 
 	InitCVars( interfaceFactory ); // register any cvars we have defined
 
 	gpGlobals = playerinfomanager->GetGlobalVars();
+
+	if (!cvar)
+	{
+		MMsg("Failed to load cvar interface !!\n");
+		return false;
+	}
+
+	FindConPrintf();
+
+	MMsg("********************************************************\n");
+	MMsg(" Loading ");
+	MMsg("%s\n", mani_version);
+	MMsg("\n");
+
+	if (!UTIL_InterfaceMsg(playerinfomanager,"IPlayerInfoManager", INTERFACEVERSION_PLAYERINFOMANAGER)) return false;
+	if (!UTIL_InterfaceMsg(engine,"IVEngineServer", INTERFACEVERSION_VENGINESERVER)) return false;
+	if (!UTIL_InterfaceMsg(gameeventmanager,"IGameEventManager2", INTERFACEVERSION_GAMEEVENTSMANAGER2)) return false;
+	if (!UTIL_InterfaceMsg(filesystem,"IFileSystem", FILESYSTEM_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(helpers,"IServerPluginHelpers", INTERFACEVERSION_ISERVERPLUGINHELPERS)) return false;
+	if (!UTIL_InterfaceMsg(networkstringtable,"INetworkStringTableContainer", INTERFACENAME_NETWORKSTRINGTABLESERVER)) return false;
+	if (!UTIL_InterfaceMsg(enginetrace,"IEngineTrace", INTERFACEVERSION_ENGINETRACE_SERVER)) return false;
+	if (!UTIL_InterfaceMsg(randomStr,"IUniformRandomStream", VENGINE_SERVER_RANDOM_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(serverents,"IServerGameEnts", INTERFACEVERSION_SERVERGAMEENTS)) return false;
+	if (!UTIL_InterfaceMsg(effects,"IEffects", IEFFECTS_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(esounds,"IEngineSound", IENGINESOUND_SERVER_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(cvar,"ICvar", VENGINE_CVAR_INTERFACE_VERSION)) return false;
+	if (!UTIL_InterfaceMsg(serverdll,"IServerGameDLL", "ServerGameDLL003")) return false;
+	if (!UTIL_InterfaceMsg(voiceserver,"IVoiceServer", INTERFACEVERSION_VOICESERVER)) return false;
+	if (!UTIL_InterfaceMsg(partition,"ISpatialPartition", INTERFACEVERSION_SPATIALPARTITION)) return false;
+
+
+	MMsg("********************************************************\n");
 
 	return (gpManiAdminPlugin->Load());
 }

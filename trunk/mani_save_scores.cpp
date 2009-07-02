@@ -165,7 +165,7 @@ void	ManiSaveScores::NetworkIDValidated(player_t *player_ptr)
 				{	
 					SayToPlayer(player_ptr, "Saved score reloaded");
 				}
-//Msg("Restored player [%s] score to Kills [%i], Deaths [%i]\n", 
+//MMsg("Restored player [%s] score to Kills [%i], Deaths [%i]\n", 
 //	player_ptr->name, save_scores_list[i].kills, save_scores_list[i].deaths);
 			}
 
@@ -232,7 +232,7 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 	save_scores.disconnection_time = current_time + (mani_save_scores_tracking_time.GetInt() * 60);
 
 
-//Msg("Storing Player [%s], Kills [%i], Deaths [%i], Cash [%i], Current Time [%ld], Track Time [%ld]\n", 
+//MMsg("Storing Player [%s], Kills [%i], Deaths [%i], Cash [%i], Current Time [%ld], Track Time [%ld]\n", 
 //	player_ptr->name, save_scores.kills, save_scores.deaths, save_scores.cash, current_time, save_scores.disconnection_time);
 
 	AddToList((void **) &save_scores_list, sizeof(save_scores_t), &save_scores_list_size);
@@ -245,7 +245,7 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 {
-//Msg("PLAYER %s SPAWNED, SPAWN_COUNT [%i]\n", player_ptr->name, spawn_count[player_ptr->index - 1]);
+//MMsg("PLAYER %s SPAWNED, SPAWN_COUNT [%i]\n", player_ptr->name, spawn_count[player_ptr->index - 1]);
 
 	if (war_mode) return; 
 	if (mani_save_scores.GetInt() == 0 || mani_save_scores_css_cash.GetInt() == 0) return;
@@ -275,6 +275,14 @@ void ManiSaveScores::ResetScores(void)
 		save_cash_list[i].trigger = false;
 		spawn_count[i] = 0;
 	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Game Commencing
+//---------------------------------------------------------------------------------
+void	ManiSaveScores::GameCommencing(void)
+{
+	this->ResetScores();
 }
 
 ManiSaveScores	g_ManiSaveScores;

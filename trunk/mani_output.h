@@ -27,8 +27,12 @@
 #define MANI_OUTPUT_H
 
 #include "mani_player.h"
+#include "mrecipientfilter.h"
 
 #define MAX_SAY_ARGC (10)
+
+typedef void (*CONPRINTF_FUNC)(const char *, ...);
+extern CONPRINTF_FUNC MMsg;
 
 struct say_argv_t
 {
@@ -41,6 +45,7 @@ extern say_argv_t		say_argv[MAX_SAY_ARGC];
 extern void	AdminSayToAdmin(player_t *player,const char	*fmt, ...);
 extern void	SayToAdmin(player_t	*player,const char	*fmt, ...);
 extern void	AdminSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
+extern void	AdminHSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
 extern void	AdminSayToAllColoured(player_t *player,int anonymous, const char	*fmt, ...);
 extern void	AdminCSayToAll(player_t *player,int anonymous, const char	*fmt, ...);
 extern void CSayToAll(const char	*fmt, ...);
@@ -60,7 +65,11 @@ extern void	PrintToClientConsole(edict_t *pEntity, char *fmt, ... );
 extern void OutputHelpText( player_t	*player_ptr, bool		to_server_console, char		*fmt, ...);
 extern void	ParseSayString(const char *say_string, char *trimmed_string_out, int *say_argc);
 extern void UTIL_LogPrintf( char *fmt, ... );
-
+extern void WriteDebug ( char *fmt, ...);
+extern void SayHintMsg(MRecipientFilter *mrf_ptr, char *text_ptr);
+extern void SplitHintString(char *string, int width);
+extern bool UTIL_InterfaceMsg( void *ptr, char *interface_id, char *version);
+extern void FindConPrintf(void);
 
 
 #endif

@@ -38,6 +38,7 @@
 #include "mani_main.h"
 #include "mani_convar.h"
 #include "mani_memory.h"
+#include "mani_output.h"
 #include "mani_player.h"
 #include "mani_parser.h"
 #include "mani_crontab.h"
@@ -87,14 +88,14 @@ void	LoadCronTabs(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Failed to load crontablist.txt\n");
+//		MMsg("Failed to load crontablist.txt\n");
 	}
 	else
 	{
-//		Msg("Crontab list\n");
+//		MMsg("Crontab list\n");
 		while (filesystem->ReadLine (server_command, sizeof(server_command), file_handle) != NULL)
 		{
-			if (!ParseAliasLine2(server_command, day_string, time_string, true))
+			if (!ParseAliasLine2(server_command, day_string, time_string, true, false))
 			{
 				// String is empty after parsing
 				continue;
@@ -171,7 +172,7 @@ void	LoadCronTabs(void)
 
 			if (all_days)
 			{
-//				Msg("[ALL DAYS] %02d:%02d to %02d:%02d [%s]\n", 
+//				MMsg("[ALL DAYS] %02d:%02d to %02d:%02d [%s]\n", 
 //								crontab.start_hour,
 //								crontab.start_minute,
 //								crontab.end_hour,
@@ -180,7 +181,7 @@ void	LoadCronTabs(void)
 			}
 			else
 			{
-//				Msg("Days [%s] %02d:%02d to %02d:%02d [%s]\n", 
+//				MMsg("Days [%s] %02d:%02d to %02d:%02d [%s]\n", 
 //								day_string,
 //								crontab.start_hour,
 //								crontab.start_minute,
@@ -256,7 +257,7 @@ void	ExecuteCronTabs(bool post_map_config)
 
 		Q_snprintf(final_server_command, sizeof(final_server_command), "%s\n", server_command);
 		engine->ServerCommand(final_server_command);
-		Msg("Executed crontab server command [%s]", final_server_command);
+		MMsg("Executed crontab server command [%s]", final_server_command);
 	}
 }
 

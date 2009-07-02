@@ -83,6 +83,7 @@ ManiSpawnPoints::ManiSpawnPoints()
 		spawn_team[i].last_spawn_index = 0;
 	}
 
+	replacement_entities = NULL;
 	gpManiSpawnPoints = this;
 }
 
@@ -90,6 +91,11 @@ ManiSpawnPoints::~ManiSpawnPoints()
 {
 	// Cleanup
 	this->CleanUp();
+	if (replacement_entities != NULL)
+	{
+		free(replacement_entities);
+		replacement_entities = NULL;
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -228,6 +234,14 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 	// Grab some memory
 	int memory_to_get = sizeof(char) * (test_length + current_length + 100);
 
+	if (replacement_entities != NULL)
+	{
+		free(replacement_entities);
+		replacement_entities = NULL;
+	}
+
+	replacement_entities = (char *) malloc(memory_to_get);
+
 	Q_strcpy(replacement_entities, pMapEntities);
 
 	for (int i = 0; i < 10; i++)
@@ -249,7 +263,7 @@ bool		ManiSpawnPoints::AddSpawnPoints(char **pReplaceEnts, const char *pMapEntit
 				Q_strcat (replacement_entities, temp_string);
 			}
 
-//			Msg("Added %i spawnpoints for class %s\n", spawn_team[i].spawn_list_size, gpManiGameType->GetTeamSpawnPointClassName(i));
+//			MMsg("Added %i spawnpoints for class %s\n", spawn_team[i].spawn_list_size, gpManiGameType->GetTeamSpawnPointClassName(i));
 		}
 	}
 
@@ -273,6 +287,18 @@ void		ManiSpawnPoints::LevelInit(char	*map_name)
 {
 	this->CleanUp();
 	this->LoadData(map_name);
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Level has initialised
+//---------------------------------------------------------------------------------
+void		ManiSpawnPoints::LevelShutdown(void)
+{
+	if (replacement_entities != NULL)
+	{
+		free(replacement_entities);
+		replacement_entities = NULL;
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -313,14 +339,14 @@ void ManiSpawnPoints::LoadData(char *map_name)
 {
 	char	core_filename[256];
 
-//	Msg("*********** Loading spawnpoints.txt ************\n");
+//	MMsg("*********** Loading spawnpoints.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("spawnpoints.txt");
 
 	Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/spawnpoints.txt", mani_path.GetString());
 	if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 	{
-//		Msg("Failed to load spawnpoints.txt\n");
+//		MMsg("Failed to load spawnpoints.txt\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -332,7 +358,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	base_key_ptr = kv_ptr->GetFirstTrueSubKey();
 	if (!base_key_ptr)
 	{
-//		Msg("No true subkey found\n");
+//		MMsg("No true subkey found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -345,7 +371,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		if (FStrEq(base_key_ptr->GetName(), current_map))
 		{
 			found_match = true;
-//			Msg("Found record for %s\n", current_map);
+//			MMsg("Found record for %s\n", current_map);
 			break;
 		}
 
@@ -360,7 +386,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	if (!found_match)
 	{
 		kv_ptr->deleteThis();
-//		Msg("Map entry %s not found\n", current_map);
+//		MMsg("Map entry %s not found\n", current_map);
 		return;
 	}
 
@@ -369,7 +395,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 	kv_map_ptr = base_key_ptr->GetFirstTrueSubKey();
 	if (!kv_map_ptr)
 	{
-//		Msg("No team number name found\n");
+//		MMsg("No team number name found\n");
 		kv_ptr->deleteThis();
 		return;
 	}
@@ -381,7 +407,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		team_number = Q_atoi(kv_map_ptr->GetName());
 		if (team_number == 0 || !gpManiGameType->IsValidActiveTeam(team_number))
 		{
-//			Msg("Team number [%s] is invalid !!\n", kv_map_ptr->GetName());
+//			MMsg("Team number [%s] is invalid !!\n", kv_map_ptr->GetName());
 			// No decal of that name found
 			kv_map_ptr = kv_map_ptr->GetNextKey();
 			if (!kv_map_ptr)
@@ -391,7 +417,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 		}
 		else
 		{
-//			Msg("Team number [%i]\n", team_number);
+//			MMsg("Team number [%i]\n", team_number);
 			GetCoordList(kv_map_ptr, team_number);
 		}
 
@@ -404,7 +430,7 @@ void ManiSpawnPoints::LoadData(char *map_name)
 
 	kv_ptr->deleteThis();
 
-//	Msg("*********** spawnpoints.txt loaded ************\n");
+//	MMsg("*********** spawnpoints.txt loaded ************\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -428,7 +454,7 @@ void ManiSpawnPoints::GetCoordList(KeyValues *kv_ptr, int team_number)
 		char *input_string = (char *) kv_xyz_ptr->GetString(NULL, NULL);
 		if (!input_string)
 		{
-//			Msg("Failed to get part of spawnpoints.txt\n");
+//			MMsg("Failed to get part of spawnpoints.txt\n");
 		}
 		else
 		{
@@ -469,7 +495,7 @@ bool ManiSpawnPoints::DecodeString(char *input_string, spawn_vector_t *coord, in
 			// Check we got enough parameters
 			if (number_count != 6)
 			{
-//				Msg("Not enough parameters for number %i\n", coord_index);
+//				MMsg("Not enough parameters for number %i\n", coord_index);
 				return false;
 			}
 			else
@@ -530,8 +556,8 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 	int edict_count = engine->GetEntityCount();
 	bool first_time;
 
-	Msg("This command will write the default coordinates for the map to clipboard.txt\n");
-	Msg("You can then copy and paste into spawnpoints.txt for the map\n");
+	MMsg("This command will write the default coordinates for the map to clipboard.txt\n");
+	MMsg("You can then copy and paste into spawnpoints.txt for the map\n");
 
 	//Write to clipboard.txt
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/clipboard.txt", mani_path.GetString());
@@ -541,14 +567,14 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete clipboard.txt\n");
+			MMsg("Failed to delete clipboard.txt\n");
 		}
 	}
 
 	file_handle = filesystem->Open (base_filename,"wb", NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open clipboard.txt for writing\n");
+		MMsg("Failed to open clipboard.txt for writing\n");
 		return;
 	}
 
@@ -563,7 +589,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write to clipboard.txt\n");
+		MMsg("Failed to write to clipboard.txt\n");
 		filesystem->Close(file_handle);
 		return;
 	}
@@ -596,7 +622,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 
 						if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 						{
-							Msg ("Failed to write to clipboard.txt\n");
+							MMsg("Failed to write to clipboard.txt\n");
 							filesystem->Close(file_handle);
 							return;
 						}
@@ -618,7 +644,7 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 
 					if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 					{
-						Msg ("Failed to write to clipboard.txt\n");
+						MMsg("Failed to write to clipboard.txt\n");
 						filesystem->Close(file_handle);
 						return;
 					}
@@ -635,27 +661,27 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 			{
-				Msg ("Failed to write to clipboard.txt\n");
+				MMsg("Failed to write to clipboard.txt\n");
 				filesystem->Close(file_handle);
 				return;
 			}
 		}
 
-		Msg("%i coordinates for classname %s\n", count, classname);
+		MMsg("%i coordinates for classname %s\n", count, classname);
 	}
 
 	temp_length = Q_snprintf(temp_string, sizeof(temp_string), "\t}\n}\n");
 
 	if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 	{
-		Msg ("Failed to write to clipboard.txt\n");
+		MMsg("Failed to write to clipboard.txt\n");
 		filesystem->Close(file_handle);
 		return;
 	}
 
 	filesystem->Close(file_handle);
 
-	Msg("Written to clipboard.txt\n");
+	MMsg("Written to clipboard.txt\n");
 }
 
 ManiSpawnPoints	g_ManiSpawnPoints;

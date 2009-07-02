@@ -52,6 +52,8 @@
 #include "mani_client.h"
 #include "mani_client_flags.h"
 #include "mani_gametype.h"
+#include "mani_vfuncs.h"
+#include "mani_sigscan.h"
 #include "mani_hlxinterface.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
@@ -336,7 +338,25 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 	{
 		player_t *target_player = &(target_player_list[i]);
 
-		target_player_list[i].player_info->ChangeTeam(gpManiGameType->GetOpposingTeam(target_player_list[i].team));
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		{
+			if (!CCSPlayer_SwitchTeam(EdictToCBE(target_player_list[i].entity),gpManiGameType->GetOpposingTeam(target_player_list[i].team)))
+			{
+				target_player_list[i].player_info->ChangeTeam(gpManiGameType->GetOpposingTeam(target_player_list[i].team));
+			}
+			else
+			{
+				// If not dead then force model change
+				if (!target_player_list[i].player_info->IsDead())
+				{
+					CCSPlayer_SetModelFromClass(EdictToCBE(target_player_list[i].entity));
+				}
+			}
+		}
+		else
+		{
+			target_player_list[i].player_info->ChangeTeam(gpManiGameType->GetOpposingTeam(target_player_list[i].team));
+		}
 	}
 
 	return ;

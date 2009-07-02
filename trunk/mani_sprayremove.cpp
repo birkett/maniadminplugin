@@ -45,6 +45,7 @@
 #include "mani_convar.h"
 #include "mani_memory.h"
 #include "mani_player.h"
+#include "mani_language.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
 #include "mani_output.h"
@@ -451,7 +452,7 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 					// Player is on server
 					SayToPlayer(&player, "%s", mani_spray_tag_ban_message.GetString());
 					// Ban by user id
-					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", 
+					Q_snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
 										mani_spray_tag_ban_time.GetInt(), 
 										player.user_id);
 					LogCommand (admin_ptr->entity, "Banned player [%s] [%s] for spray tag for %i minutes", 
@@ -606,7 +607,7 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 
 		if (spray_index == -1)
 		{
-			OutputHelpText(admin_ptr, false, "No spray tags within range of current position !!");
+			OutputHelpText(admin_ptr, false, Translate(1250));
 			return ;
 		}
 
@@ -629,20 +630,20 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 		}
 
 		AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Warn Player");
+		Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1251));
 		Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spraywarn \"%s\"", player_string);
 
 		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_SLAP) && gpManiGameType->IsTeleportAllowed())
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Slap and warn Player");
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1252));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin sprayslap \"%s\"", player_string);
 		}
 
 		if (gpManiClient->IsAdminAllowed(admin_index, ALLOW_KICK))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Kick Player");
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1253));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spraykick \"%s\"", player_string);
 		}
 
@@ -650,7 +651,7 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 		if (!lan_mode && gpManiClient->IsAdminAllowed(admin_index, ALLOW_BAN))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Ban Player for %i minutes", mani_spray_tag_ban_time.GetInt());
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "%s", Translate(1254, "%i", mani_spray_tag_ban_time.GetInt()));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin sprayban \"%s\"", player_string);
 		}
 
@@ -658,7 +659,7 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 		if (!lan_mode && gpManiClient->IsAdminAllowed(admin_index, ALLOW_PERM_BAN))
 		{
 			AddToList((void **) &menu_list, sizeof(menu_t), &menu_list_size); 
-			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), "Ban Player permanently");
+			Q_snprintf( menu_list[menu_list_size - 1].menu_text, sizeof(menu_list[menu_list_size - 1].menu_text), Translate(1255));
 			Q_snprintf( menu_list[menu_list_size - 1].menu_command, sizeof(menu_list[menu_list_size - 1].menu_command), "admin spraypermban  \"%s\"", player_string);
 		}
 
@@ -676,13 +677,13 @@ void	ManiSprayRemove::ProcessMaSprayMenu
 
 		char	temp_title[1024];
 
-		Q_snprintf (temp_title, sizeof (temp_title), 
-					"Spray Tag Tracking\nPlayer [%s]\nSteam ID [%s]\n",
+		Q_snprintf (temp_title, sizeof (temp_title), "%s", Translate(1256, "%s%s%s",
 					spray_list[spray_index].name,
-					spray_list[spray_index].steam_id);
+					spray_list[spray_index].steam_id,
+					spray_list[spray_index].ip_address));
 
 										
-		DrawSubMenu (admin_ptr, "Press Esc to view Spray Details", temp_title, next_index, "admin", "spray", true, -1);
+		DrawSubMenu (admin_ptr, Translate(1257), temp_title, next_index, "admin", "spray", true, -1);
 		// Draw menu list
 	}
 

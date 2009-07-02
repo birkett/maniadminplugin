@@ -28,9 +28,9 @@
 
 struct player_t
 {
-	char	steam_id[128];
+	char	steam_id[MAX_NETWORKID_LENGTH];
 	char	ip_address[128];
-	char	name[128];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	char	password[128];
 	int		user_id;
 	int		team;
@@ -42,6 +42,7 @@ struct player_t
 	IPlayerInfo *player_info;
 };
 
+
 struct	teleport_coords_t
 {
 	Vector	coords;
@@ -51,9 +52,11 @@ struct	teleport_coords_t
 struct player_settings_t
 {
 	bool	active;
-	char	steam_id[50];
-	char	name[64];
+	char	steam_id[MAX_NETWORKID_LENGTH];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	char	damage_stats;
+	char	damage_stats_timeout;
+	char	show_destruction;
 	char	quake_sounds;
 	char	server_sounds;
 	time_t	last_connected;
@@ -104,10 +107,13 @@ extern	void	ShowSettingsPrimaryMenu(player_t *player, int next_index);
 extern	PLUGIN_RESULT ProcessSettingsMenu( edict_t *pEntity);
 
 extern	PLUGIN_RESULT	ProcessMaDamage( int index);
+extern	PLUGIN_RESULT	ProcessMaDamageTimeout( int index);
 extern	PLUGIN_RESULT	ProcessMaSounds( int index);
 extern	PLUGIN_RESULT	ProcessMaQuake( int index);
 extern	PLUGIN_RESULT	ProcessMaDeathBeam ( int index);
+extern	PLUGIN_RESULT	ProcessMaDestruction( int index);
 extern	int				GetNumberOfActivePlayers(void );
+extern  void UTIL_KickPlayer( player_t *player_ptr,  char *short_reason,  char *long_reason,  char *log_reason );
 
 
 

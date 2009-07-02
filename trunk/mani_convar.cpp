@@ -124,18 +124,21 @@ ConVar mani_admin_burn_time( "mani_admin_burn_time", "20", 0, "This defines how 
 
 ConVar mani_adminsay_top_left ("mani_adminsay_top_left", "1", 0, "This defines whether adminsay is shown in the top left corner of the screen (1 = on)",true, 0, true, 1 ); 
 ConVar mani_adminsay_chat_area ("mani_adminsay_chat_area", "1", 0, "This defines whether adminsay is shown in the chat area of the screen (1 = on)",true, 0, true, 1 ); 
+ConVar mani_adminsay_bottom_area ("mani_adminsay_bottom_area", "1", 0, "This defines whether adminsay is shown in the bottom area of the screen (1 = on)",true, 0, true, 1 ); 
 
 ConVar mani_stats ("mani_stats", "1", 0, "This defines whether stats are turned on (1 = on)",true, 0, true, 1 ); 
 ConVar mani_stats_mode ("mani_stats_mode", "1", 0, "This defines when the stats are re-caclulated, 0 = at map load, 1 = per new round",true, 0, true, 1 ); 
-ConVar mani_stats_calculate ("mani_stats_calculate", "1", 0, "This defines how the stats are caclulated, 0 = by player kills, 1 = by player kill death ratio, 2 = by kills - deaths",true, 0, true, 2 ); 
+ConVar mani_stats_calculate ("mani_stats_calculate", "3", 0, "This defines how the stats are caclulated, 0 = by player kills, 1 = by player kill death ratio, 2 = by kills - deaths, 3 = by points",true, 0, true, 3 ); 
 ConVar mani_stats_drop_player_days ("mani_stats_drop_player_days", "365", 0, "This defines how many days should pass before a player is dropped from the stats for not playing",true, 1, true, 365 ); 
 ConVar mani_stats_kills_required ("mani_stats_kills_required", "20", 0, "This defines how many kills are required before a player is shown in the command rank and top ",true, 0, true, 50000 ); 
 ConVar mani_stats_top_display_time ("mani_stats_top_display_time", "10", 0, "This defines the time that the 'top' information displays for 5 - 30 seconds",true, 5, true, 30 ); 
 ConVar mani_stats_show_rank_to_all ("mani_stats_show_rank_to_all", "1", 0, "This defines whether the command 'rank' is shown to all or not (1 = all players)",true, 0, true, 1 ); 
 ConVar mani_stats_alternative_rank_message ("mani_stats_alternative_rank_message", "", 0, "This defines the message to be displayed to the user when rank is typed if stats are turned off"); 
 ConVar mani_stats_write_text_file ("mani_stats_write_text_file", "1", 0, "This defines whether the ranks are written to text file (1 = yes)", true, 0, true, 1 ); 
-ConVar mani_stats_write_to_disk_frequency ("mani_stats_write_to_disk_frequency", "0", 0, "This defines how often the stats should be written in minutes (default is 0 where stats are written each map change)", true, 0, true, 1 ); 
+ConVar mani_stats_calculate_frequency ("mani_stats_calculate_frequency", "0", 0, "This defines how often the stats should be recalculated in minutes (default is 0)", true, 0, true, 86400 ); 
+ConVar mani_stats_write_frequency_to_disk ("mani_stats_write_frequency_to_disk", "0", 0, "This defines how often the stats should be recalculated AND written to disk in minutes (default is 0)", true, 0, true, 86400 ); 
 ConVar mani_stats_include_bot_kills ("mani_stats_include_bot_kills", "0", 0, "0 = Bot kills are not counted, 1 = Bot kills are counted", true, 0, true, 1 ); 
+ConVar mani_stats_most_destructive ("mani_stats_most_destructive", "0", 0, "0 = Disable most destructive display, 1 = Enable most destructive display", true, 0, true, 1); 
 
 ConVar mani_adverts_top_left ("mani_adverts_top_left", "1", 0, "This defines whether advert are shown in the top left corner of the screen (1 = on)",true, 0, true, 1 ); 
 ConVar mani_adverts_chat_area ("mani_adverts_chat_area", "1", 0, "This defines whether advert are shown in the chat area of the screen (1 = on)",true, 0, true, 1 ); 
@@ -155,9 +158,6 @@ ConVar mani_reserve_slots_redirect ("mani_reserve_slots_redirect", "", 0, "This 
 ConVar mani_reserve_slots_allow_slot_fill ("mani_reserve_slots_allow_slot_fill", "0", 0, "This defines whether reserver slots can be used up when joining or whether the reserver slots must remain free causing player kicks instead", true, 0, true, 1); 
 ConVar mani_reserve_slots_kick_method ("mani_reserve_slots_kick_method", "0", 0, "This defines how a player is kicked, 0 = by ping, 1 = by connection time", true, 0, true, 1); 
 ConVar mani_reserve_slots_include_admin ("mani_reserve_slots_include_admin", "1", 0, "This defines whether the admins setup are part of the reserve slot list (1 = yes they are)", true, 0, true, 1); 
-
-ConVar mani_high_ping_kick_ping_limit ("mani_high_ping_kick_ping_limit", "400", 0, "This defines the ping limit before a player is kicked", true, 0, true, 99999999); 
-ConVar mani_high_ping_kick_message ("mani_high_ping_kick_message", "Your ping is too high", 0, "This defines the message given to the player in their console on disconnect"); 
 
 ConVar mani_reverse_admin_flags ("mani_reverse_admin_flags", "0", 0, "Set to 1 if you want admin flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
 ConVar mani_reverse_immunity_flags ("mani_reverse_immunity_flags", "0", 0, "Set to 1 if you want immunity flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
@@ -316,8 +316,9 @@ ConVar mani_adjust_time ("mani_adjust_time", "0", 0, "Adjust time shown in minut
 
 ConVar mani_player_settings_quake ("mani_player_settings_quake", "0", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
 ConVar mani_player_settings_sounds ("mani_player_settings_sounds", "1", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
-ConVar mani_player_settings_damage ("mani_player_settings_damage", "0", 0, "0 = player settings default to off, 1 = player settings default to mode 1, 2 = player settings to mode 2", true, 0, true, 2); 
+ConVar mani_player_settings_damage ("mani_player_settings_damage", "0", 0, "0 = player settings default to off, 1 = player settings default to mode 1, 2 = player settings to mode 2, etc up to mode 3 ", true, 0, true, 3); 
 ConVar mani_player_settings_death_beam ("mani_player_settings_death_beam", "0", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
+ConVar mani_player_settings_destructive ("mani_player_settings_destructive", "0", 0, "0 = player settings default to off, 1 = player settings default to on", true, 0, true, 1); 
 
 ConVar mani_skins_admin ("mani_skins_admin", "0", 0, "0 = disallow admin skins, 1 = allow admin skins", true, 0, true, 1); 
 ConVar mani_skins_reserved ("mani_skins_reserved", "0", 0, "0 = disallow reserved skins, 1 = allow reserved skins", true, 0, true, 1); 
@@ -358,4 +359,6 @@ ConVar mani_external_stats_log ("mani_external_stats_log", "0", 0, "1 = enable e
 ConVar mani_external_stats_log_allow_war_logs ("mani_external_stats_log_allow_war_logs", "0", 0, "1 = enable external stats logging whilst in war mode, 0 = disable stats in war mode", true, 0, true, 1);
 
 ConVar mani_hostage_follow_warning ("mani_hostage_follow_warning", "0", 0, "1 = player will be warned in console if a hostage stops following on CSS, 0 = disable warning", true, 0, true, 1);
+
+ConVar mani_afk_kicker ("mani_afk_kicker", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1);
 

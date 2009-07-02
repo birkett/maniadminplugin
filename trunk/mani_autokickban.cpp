@@ -138,14 +138,14 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Did not load autokick_ip.txt\n");
+//		MMsg("Did not load autokick_ip.txt\n");
 	}
 	else
 	{
-//		Msg("autokickban IP list\n");
+//		MMsg("autokickban IP list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false)) continue;
+			if (!ParseLine(autokickban_id, false, false)) continue;
 			AddAutoKickIP(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -157,14 +157,14 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Did not load autokick_steam.txt\n");
+//		MMsg("Did not load autokick_steam.txt\n");
 	}
 	else
 	{
-//		Msg("autokickban Steam list\n");
+//		MMsg("autokickban Steam list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false)) continue;
+			if (!ParseLine(autokickban_id, false, false)) continue;
 			AddAutoKickSteamID(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -176,14 +176,14 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Did not load autokick_name.txt\n");
+//		MMsg("Did not load autokick_name.txt\n");
 	}
 	else
 	{
-//		Msg("autokickban Name list\n");
+//		MMsg("autokickban Name list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false)) continue;
+			if (!ParseLine(autokickban_id, false, false)) continue;
 			AddAutoKickName(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -194,14 +194,14 @@ void ManiAutoKickBan::LevelInit(void)
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
 	if (file_handle == NULL)
 	{
-//		Msg ("Did not load autokick_pname.txt\n");
+//		MMsg("Did not load autokick_pname.txt\n");
 	}
 	else
 	{
-//		Msg("autokickban PName list\n");
+//		MMsg("autokickban PName list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false)) continue;
+			if (!ParseLine(autokickban_id, false, false)) continue;
 			AddAutoKickPName(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -1196,14 +1196,14 @@ void	ManiAutoKickBan::WriteNameList(char *filename_string)
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete %s\n", filename_string);
+			MMsg("Failed to delete %s\n", filename_string);
 		}
 	}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open %s for writing\n", filename_string);
+		MMsg("Failed to open %s for writing\n", filename_string);
 	}
 	else
 	{
@@ -1220,7 +1220,7 @@ void	ManiAutoKickBan::WriteNameList(char *filename_string)
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 			{
-				Msg("Failed to write to %s!!\n", filename_string);
+				MMsg("Failed to write to %s!!\n", filename_string);
 				filesystem->Close(file_handle);
 				break;
 			}
@@ -1246,14 +1246,14 @@ void	ManiAutoKickBan::WritePNameList(char *filename_string)
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete %s\n", filename_string);
+			MMsg("Failed to delete %s\n", filename_string);
 		}
 	}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open %s for writing\n", filename_string);
+		MMsg("Failed to open %s for writing\n", filename_string);
 	}
 	else
 	{
@@ -1270,7 +1270,7 @@ void	ManiAutoKickBan::WritePNameList(char *filename_string)
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
 			{
-				Msg("Failed to write to %s!!\n", filename_string);
+				MMsg("Failed to write to %s!!\n", filename_string);
 				filesystem->Close(file_handle);
 				break;
 			}
@@ -1296,14 +1296,14 @@ void	ManiAutoKickBan::WriteIPList(char *filename_string)
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete %s\n", filename_string);
+			MMsg("Failed to delete %s\n", filename_string);
 		}
 	}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open %s for writing\n", filename_string);
+		MMsg("Failed to open %s for writing\n", filename_string);
 	}
 	else
 	{
@@ -1317,7 +1317,7 @@ void	ManiAutoKickBan::WriteIPList(char *filename_string)
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)											
 			{
-				Msg("Failed to write to %s!!\n", filename_string);
+				MMsg("Failed to write to %s!!\n", filename_string);
 				filesystem->Close(file_handle);
 				break;
 			}
@@ -1343,14 +1343,14 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 		filesystem->RemoveFile(base_filename);
 		if (filesystem->FileExists( base_filename))
 		{
-			Msg("Failed to delete %s\n", filename_string);
+			MMsg("Failed to delete %s\n", filename_string);
 		}
 	}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
 	{
-		Msg ("Failed to open %s for writing\n", filename_string);
+		MMsg("Failed to open %s for writing\n", filename_string);
 	}
 	else
 	{
@@ -1364,7 +1364,7 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 
 			if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)											
 			{
-				Msg("Failed to write to %s!!\n", filename_string);
+				MMsg("Failed to write to %s!!\n", filename_string);
 				filesystem->Close(file_handle);
 				break;
 			}
@@ -1405,7 +1405,7 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 			Q_strcpy(autokick_ip.ip_address, ip_address);
 			autokick_ip.kick = true;
 			autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
-			//Msg("%s Kick\n", ip_address);
+			//MMsg("%s Kick\n", ip_address);
 			return;
 		}
 
@@ -1424,7 +1424,7 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 
 	Q_strcpy(autokick_ip.ip_address, ip_address);
 
-	//Msg("%s ", ip_address);
+	//MMsg("%s ", ip_address);
 
 	i++;
 
@@ -1446,10 +1446,10 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 
 	if (autokick_ip.kick)
 	{
-		//Msg("Kick");
+		//MMsg("Kick");
 	}
 
-	//Msg("\n");
+	//MMsg("\n");
 
 	autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
 }
@@ -1460,7 +1460,7 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 
 void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 {
-	char	steam_id[128];
+	char	steam_id[MAX_NETWORKID_LENGTH];
 	autokick_steam_t	autokick_steam;
 
 	if (!AddToList((void **) &autokick_steam_list, sizeof(autokick_steam_t), &autokick_steam_list_size))
@@ -1485,7 +1485,7 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 			Q_strcpy(autokick_steam.steam_id, steam_id);
 			autokick_steam.kick = true;
 			autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
-			//Msg("%s Kick\n", steam_id);
+			//MMsg("%s Kick\n", steam_id);
 			return;
 		}
 
@@ -1504,7 +1504,7 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 
 	Q_strcpy(autokick_steam.steam_id, steam_id);
 
-	//Msg("%s ", steam_id);
+	//MMsg("%s ", steam_id);
 
 	i++;
 
@@ -1526,10 +1526,10 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 
 	if (autokick_steam.kick)
 	{
-		//Msg("Kick");
+		//MMsg("Kick");
 	}
 
-	//Msg("\n");
+	//MMsg("\n");
 
 	autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
 }
@@ -1540,7 +1540,7 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 
 void ManiAutoKickBan::AddAutoKickName(char *details)
 {
-	char	name[128];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	autokick_name_t	autokick_name;
 
 	if (!AddToList((void **) &autokick_name_list, sizeof(autokick_name_t), &autokick_name_list_size))
@@ -1580,7 +1580,7 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 			Q_strcpy(autokick_name.name, name);
 			autokick_name.kick = true;
 			autokick_name_list[autokick_name_list_size - 1] = autokick_name;
-			//Msg("%s Kick\n", name);
+			//MMsg("%s Kick\n", name);
 			return;
 		}
 
@@ -1598,7 +1598,7 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 
 	Q_strcpy(autokick_name.name, name);
 
-	//Msg("%s ", name);
+	//MMsg("%s ", name);
 
 	i++;
 
@@ -1652,19 +1652,19 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 	{
 		if (autokick_name.ban_time == 0)
 		{
-			//Msg("Ban permanent");
+			//MMsg("Ban permanent");
 		}
 		else
 		{
-			//Msg("Ban %i minutes", autokick_name.ban_time);
+			//MMsg("Ban %i minutes", autokick_name.ban_time);
 		}
 	}
 	else
 	{
-		//Msg("Kick");
+		//MMsg("Kick");
 	}
 
-	//Msg("\n");
+	//MMsg("\n");
 
 	autokick_name_list[autokick_name_list_size - 1] = autokick_name;
 }
@@ -1675,7 +1675,7 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 
 void ManiAutoKickBan::AddAutoKickPName(char *details)
 {
-	char	name[128];
+	char	name[MAX_PLAYER_NAME_LENGTH];
 	autokick_pname_t	autokick_pname;
 
 	if (!AddToList((void **) &autokick_pname_list, sizeof(autokick_pname_t), &autokick_pname_list_size))
@@ -1715,7 +1715,7 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 			Q_strcpy(autokick_pname.pname, name);
 			autokick_pname.kick = true;
 			autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
-			//Msg("%s Kick\n", name);
+			//MMsg("%s Kick\n", name);
 			return;
 		}
 
@@ -1733,7 +1733,7 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 
 	Q_strcpy(autokick_pname.pname, name);
 
-	//Msg("%s ", name);
+	//MMsg("%s ", name);
 
 	i++;
 
@@ -1787,19 +1787,19 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 	{
 		if (autokick_pname.ban_time == 0)
 		{
-			//Msg("Ban permanent");
+			//MMsg("Ban permanent");
 		}
 		else
 		{
-			//Msg("Ban %i minutes", autokick_pname.ban_time);
+			//MMsg("Ban %i minutes", autokick_pname.ban_time);
 		}
 	}
 	else
 	{
-		//Msg("Kick");
+		//MMsg("Kick");
 	}
 
-	//Msg("\n");
+	//MMsg("\n");
 
 	autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
 }
@@ -2083,7 +2083,7 @@ void ManiAutoKickBan::ProcessAutoBanPlayer( player_t *admin, const char *ban_com
 		}
 
 		Q_snprintf( more_ban_cmd, sizeof(more_ban_cmd), "%s %s", ban_command, engine->Cmd_Argv(2 + argv_offset));
-		DrawSubMenu (admin, Translate(M_AUTOBAN_NAME_MENU_ESCAPE), Translate(M_AUTOBAN_NAME_MENU_TITLE), next_index, "admin", more_ban_cmd,	true, -1);
+		DrawSubMenu (admin, Translate(510), Translate(511), next_index, "admin", more_ban_cmd,	true, -1);
 	}
 	
 	return;
@@ -2198,15 +2198,15 @@ void ManiAutoKickBan::ProcessAutoKickPlayer( player_t *admin, const char *ban_co
 
 		if (FStrEq("autokicksteam", ban_command))
 		{
-			DrawSubMenu (admin, Translate(M_AUTOKICK_MENU_ESCAPE_STEAM), Translate(M_AUTOKICK_MENU_TITLE_STEAM), next_index, "admin", more_ban_cmd,	true, -1);
+			DrawSubMenu (admin, Translate(520), Translate(523), next_index, "admin", more_ban_cmd,	true, -1);
 		}
 		else if (FStrEq("autokickip", ban_command))
 		{
-			DrawSubMenu (admin, Translate(M_AUTOKICK_MENU_ESCAPE_IP), Translate(M_AUTOKICK_MENU_TITLE_IP), next_index, "admin", more_ban_cmd, true, -1);
+			DrawSubMenu (admin, Translate(521), Translate(524), next_index, "admin", more_ban_cmd, true, -1);
 		}
 		else
 		{
-			DrawSubMenu (admin, Translate(M_AUTOKICK_MENU_ESCAPE_NAME), Translate(M_AUTOKICK_MENU_TITLE_NAME), next_index, "admin", more_ban_cmd,	true, -1);
+			DrawSubMenu (admin, Translate(522), Translate(525), next_index, "admin", more_ban_cmd,	true, -1);
 		}
 	}
 	

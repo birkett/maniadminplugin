@@ -32,6 +32,7 @@
 #include <igameevents.h>
 
 #include "mani_main.h"
+#include "cbaseentity.h"
 
 class CSourceMMMAP : public ISmmPlugin, public IMetamodListener
 {
@@ -173,6 +174,9 @@ class ManiSMMHooks
 {
 public:
 	void	HookVFuncs(void);
+	void	HookProcessUsercmds(CBasePlayer *pPlayer);
+	void	UnHookProcessUsercmds(CBasePlayer *pPlayer);
+	void	ProcessUsercmds(CUserCmd *cmds, int numcmds, int totalcmds, int dropped_packets, bool paused);
 	bool	SetClientListening(int iReceiver, int iSender, bool bListen);
 	void	PlayerDecal(IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity);
 };

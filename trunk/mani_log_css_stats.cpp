@@ -62,13 +62,14 @@ extern	bool war_mode;
 extern	ConVar	*sv_lan;
 
 // Define Weapons
-static	char	*css_weapons[MANI_MAX_CSS_WEAPONS] = 
+static	char	*css_weapons[MANI_MAX_LOG_CSS_WEAPONS] = 
 {
 "ak47","m4a1","mp5navy","awp","usp","deagle","aug","hegrenade","xm1014",
 "knife","g3sg1","sg550","galil","m3","scout","sg552","famas",
 "glock","tmp","ump45","p90","m249","elite","mac10","fiveseven",
 "p228","flashbang","smokegrenade"
 };
+
 
 ConVar mani_external_stats_css_include_bots ("mani_external_stats_css_include_bots", "0", 0, "0 = no bots kills are logged, 1 = bot kills are logged", true, 0, true, 1);
 
@@ -84,7 +85,17 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 
 ManiLogCSSStats::ManiLogCSSStats()
 {
-	// Init
+	// Setup hash table for weapon search speed improvment
+	for (int i = 0; i < 255; i ++)
+	{
+		hash_table[i] = -1;
+	}
+
+	for (int i = 0; i < MANI_MAX_LOG_CSS_WEAPONS; i++)
+	{
+		hash_table[this->GetHashIndex(css_weapons[i])] = i;
+	}
+
 	gpManiLogCSSStats = this;
 }
 
@@ -157,8 +168,8 @@ void ManiLogCSSStats::ClientDisconnect(player_t	*player_ptr)
 	if (war_mode && mani_external_stats_log_allow_war_logs.GetInt() == 0) return;
 
 	// Dump this players information to the log
-	this->DumpPlayerStats(player_ptr->index);
-	this->ResetPlayerStats(player_ptr->index);
+	this->DumpPlayerStats(player_ptr->index - 1);
+	this->ResetPlayerStats(player_ptr->index - 1);
 }
 
 //---------------------------------------------------------------------------------
@@ -197,7 +208,7 @@ void ManiLogCSSStats::PlayerDeath
 	attacker_index = attacker_ptr->index - 1;
 
 	// Get weapon index
-	int attacker_weapon = this->FindWeapon(weapon_name);
+	int attacker_weapon = hash_table[this->GetHashIndex(weapon_name)];
 	if (attacker_weapon == -1)
 	{
 		return;
@@ -243,6 +254,7 @@ void ManiLogCSSStats::PlayerHurt
 
 	if (mani_external_stats_log.GetInt() == 0) return;
 	if (war_mode && mani_external_stats_log_allow_war_logs.GetInt() == 0) return;
+	if (attacker_ptr->user_id <= 0) return;
 
 	if (mani_external_stats_css_include_bots.GetInt() == 0)
 	{
@@ -256,7 +268,7 @@ void ManiLogCSSStats::PlayerHurt
 	Q_strcpy(weapon_name, event->GetString("weapon", ""));
 
 	// Get weapon index
-	int attacker_weapon = this->FindWeapon(weapon_name);
+	int attacker_weapon = hash_table[this->GetHashIndex(weapon_name)];
 	if (attacker_weapon == -1)
 	{
 		return;
@@ -326,7 +338,7 @@ void ManiLogCSSStats::PlayerFired(int index, char *weapon_name, bool is_bot)
 	if (war_mode && mani_external_stats_log_allow_war_logs.GetInt() == 0) return;
 
 	// Get weapon index
-	int attacker_weapon = this->FindWeapon(weapon_name);
+	int attacker_weapon = hash_table[this->GetHashIndex(weapon_name)];
 	if (attacker_weapon == -1)
 	{
 		return;
@@ -343,25 +355,7 @@ void	ManiLogCSSStats::ResetStats(void)
 {
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		Q_strcpy(player_stats_list[i].name, "");
-		Q_strcpy(player_stats_list[i].steam_id, "");
-
-		for (int j = 0; j < MANI_MAX_CSS_WEAPONS; j ++)
-		{
-			Q_strcpy(player_stats_list[i].weapon_stats_list[j].weapon_name, css_weapons[j]);
-			player_stats_list[i].weapon_stats_list[j].dump = false;
-			player_stats_list[i].weapon_stats_list[j].total_shots_fired = 0;
-			player_stats_list[i].weapon_stats_list[j].total_shots_hit = 0;
-			player_stats_list[i].weapon_stats_list[j].total_kills = 0;
-			player_stats_list[i].weapon_stats_list[j].total_headshots = 0;
-			player_stats_list[i].weapon_stats_list[j].total_team_kills = 0;
-			player_stats_list[i].weapon_stats_list[j].total_deaths = 0;
-			player_stats_list[i].weapon_stats_list[j].last_hit_time = 0.0;
-			for (int k = 0; k < MANI_MAX_CSS_HITGROUPS; k++)
-			{
-				player_stats_list[i].weapon_stats_list[j].hit_groups[k] = 0;
-			}
-		}
+		this->ResetPlayerStats(i);
 	}
 }
 
@@ -373,9 +367,14 @@ void	ManiLogCSSStats::ResetPlayerStats(int index)
 	Q_strcpy(player_stats_list[index].name, "");
 	Q_strcpy(player_stats_list[index].steam_id, "");
 
-	for (int j = 0; j < MANI_MAX_CSS_WEAPONS; j ++)
+	for (int j = 0; j < MANI_MAX_LOG_CSS_WEAPONS; j ++)
 	{
 		Q_strcpy(player_stats_list[index].weapon_stats_list[j].weapon_name, css_weapons[j]);
+		if (css_weapons[j][0] == 's' && css_weapons[j][1] == 'm')
+		{
+			Q_strcpy(player_stats_list[index].weapon_stats_list[j].weapon_name, "smokegrenade_projectile");
+		}
+
 		player_stats_list[index].weapon_stats_list[j].dump = false;
 		player_stats_list[index].weapon_stats_list[j].total_shots_fired = 0;
 		player_stats_list[index].weapon_stats_list[j].total_shots_hit = 0;
@@ -383,8 +382,9 @@ void	ManiLogCSSStats::ResetPlayerStats(int index)
 		player_stats_list[index].weapon_stats_list[j].total_headshots = 0;
 		player_stats_list[index].weapon_stats_list[j].total_team_kills = 0;
 		player_stats_list[index].weapon_stats_list[j].total_deaths = 0;
+		player_stats_list[index].weapon_stats_list[j].total_damage = 0;
 		player_stats_list[index].weapon_stats_list[j].last_hit_time = 0.0;
-		for (int k = 0; k < MANI_MAX_CSS_HITGROUPS; k++)
+		for (int k = 0; k < MANI_MAX_LOG_CSS_HITGROUPS; k++)
 		{
 			player_stats_list[index].weapon_stats_list[j].hit_groups[k] = 0;
 		}
@@ -404,9 +404,14 @@ void	ManiLogCSSStats::UpdatePlayerIDInfo(player_t *player_ptr, bool reset_stats)
 
 	if (reset_stats)
 	{
-		for (int j = 0; j < MANI_MAX_CSS_WEAPONS; j ++)
+		for (int j = 0; j < MANI_MAX_LOG_CSS_WEAPONS; j ++)
 		{
 			Q_strcpy(player_stats_list[index].weapon_stats_list[j].weapon_name, css_weapons[j]);
+			if (css_weapons[j][0] == 's' && css_weapons[j][1] == 'm')
+			{
+				Q_strcpy(player_stats_list[index].weapon_stats_list[j].weapon_name, "smokegrenade_projectile");
+			}
+
 			player_stats_list[index].weapon_stats_list[j].dump = false;
 			player_stats_list[index].weapon_stats_list[j].total_shots_fired = 0;
 			player_stats_list[index].weapon_stats_list[j].total_shots_hit = 0;
@@ -414,8 +419,9 @@ void	ManiLogCSSStats::UpdatePlayerIDInfo(player_t *player_ptr, bool reset_stats)
 			player_stats_list[index].weapon_stats_list[j].total_headshots = 0;
 			player_stats_list[index].weapon_stats_list[j].total_team_kills = 0;
 			player_stats_list[index].weapon_stats_list[j].total_deaths = 0;
+			player_stats_list[index].weapon_stats_list[j].total_damage = 0;
 			player_stats_list[index].weapon_stats_list[j].last_hit_time = 0.0;
-			for (int k = 0; k < MANI_MAX_CSS_HITGROUPS; k++)
+			for (int k = 0; k < MANI_MAX_LOG_CSS_HITGROUPS; k++)
 			{
 				player_stats_list[index].weapon_stats_list[j].hit_groups[k] = 0;
 			}
@@ -436,7 +442,7 @@ void ManiLogCSSStats::DumpPlayerStats(int	index)
 	char *steam_id = player_stats_list[index].steam_id;
 	int  user_id = player_stats_list[index].user_id;
 
-	for (int i = 0; i < MANI_MAX_CSS_WEAPONS; i++)
+	for (int i = 0; i < MANI_MAX_LOG_CSS_WEAPONS; i++)
 	{
 		if (!player_stats_list[index].weapon_stats_list[i].dump) continue;
 
@@ -475,7 +481,7 @@ void ManiLogCSSStats::DumpPlayerStats(int	index)
 //---------------------------------------------------------------------------------
 int ManiLogCSSStats::FindWeapon(char *weapon_string)
 {
-	for (int i = 0; i < MANI_MAX_CSS_WEAPONS; i++)
+	for (int i = 0; i < MANI_MAX_LOG_CSS_WEAPONS; i++)
 	{
 		if (FStrEq(css_weapons[i], weapon_string))
 		{
@@ -488,6 +494,31 @@ int ManiLogCSSStats::FindWeapon(char *weapon_string)
 	return -1;
 }
 
+//---------------------------------------------------------------------------------
+// Purpose: Find the hash index based on first 5 characters of weapon name plus 
+//          a modifier for the 'm' character. This is for speed optimisation.
+//---------------------------------------------------------------------------------
+int ManiLogCSSStats::GetHashIndex(char *weapon_string)
+{
+	int total = 0;
+
+	for (int i = 0; i < 5; i++)
+	{
+		if (weapon_string[i] == '\0')
+		{
+			break;
+		}
+
+		if (weapon_string[i] == 'm')
+		{
+			total += 25;
+		}
+
+		total += weapon_string[i];
+	}
+
+	return total & 0xff;
+}
 
 ManiLogCSSStats	g_ManiLogCSSStats;
 ManiLogCSSStats	*gpManiLogCSSStats;

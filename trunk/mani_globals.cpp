@@ -73,6 +73,7 @@ IServerGameDLL	*serverdll = NULL;
 IServerGameEnts	*serverents = NULL;
 IGameEventManager2 *gameeventmanager = NULL; // game events interface
 IPlayerInfoManager *playerinfomanager = NULL; // game dll interface to interact with players
+void *gamedll = NULL;
 IServerPluginHelpers *helpers = NULL; // special 3rd party plugin helpers from the engine
 IEffects *effects = NULL; // fx
 IEngineSound *esounds = NULL; // sound

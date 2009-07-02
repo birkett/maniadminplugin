@@ -28,7 +28,7 @@
 
 struct saved_team_t
 {
-	char	steam_id[64];
+	char	steam_id[MAX_NETWORKID_LENGTH];
 	int		team_id;
 };
 

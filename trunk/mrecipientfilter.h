@@ -1,4 +1,4 @@
-#ifndef _MRECIIENT_FILTER_H
+#ifndef _MRECIPIENT_FILTER_H
 #define _MRECIPIENT_FILTER_H
 #include "irecipientfilter.h"
 #include "bitvec.h"

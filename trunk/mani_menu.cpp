@@ -53,6 +53,7 @@ extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IEngineSound *esounds; // sound
 extern	bf_write *msg_buffer;
 extern	int	menu_message_index;
+extern	CGlobalVars *gpGlobals;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -67,7 +68,7 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 menu_t			*menu_list=NULL;
 int				menu_list_size=0;
 menu_confirm_t	menu_confirm[MANI_MAX_PLAYERS];
-
+bool			g_menu_enabled[MANI_MAX_PLAYERS];
 
 static	void	DrawSubMenuAmxStyle (player_t *player, char *title, char *message, int next_index, char *root_command, char *more_command, bool sub_menu_back, int time_to_show );
 static	void	DrawSubMenuEscapeStyle (player_t *player, char *title, char *message, int next_index, char *root_command, char *more_command, bool sub_menu_back );
@@ -253,8 +254,8 @@ void DrawStandardMenuAmxStyle
 	}
 	
 	menu_confirm[index].in_use = true;
-
-
+	menu_confirm[index].timeout = -1;
+    
 	return;
 }
 
@@ -525,6 +526,14 @@ void DrawSubMenuAmxStyle
 	menu_confirm[index].menu_select[9].in_use = true;
 	
 	menu_confirm[index].in_use = true;
+	if (time_to_show == -1)
+	{
+		menu_confirm[index].timeout = -1;
+	}
+	else
+	{
+		menu_confirm[index].timeout = gpGlobals->curtime + time_to_show;
+	}
 
 	DrawMenu (player->index, time_to_show, range, use_back_key, last_item, true, menu_string, true);
 

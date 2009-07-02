@@ -50,6 +50,8 @@
 #include "mani_output.h"
 #include "mani_language.h"
 #include "mani_customeffects.h"
+#include "mani_vfuncs.h"
+#include "mani_sigscan.h"
 #include "mani_warmuptimer.h"
 #include "mani_gametype.h"
 #include "KeyValues.h"
@@ -65,14 +67,23 @@ extern	IGameEventManager2 *gameeventmanager;
 extern	bool war_mode;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
+extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 
 static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString );
 
 ConVar mani_warmup_timer_show_countdown ("mani_warmup_timer_show_countdown", "1", 0, "1 = enable center say countdown, 0 = disable", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only ("mani_warmup_timer_knives_only", "0", 0, "1 = enable knives only mode, 0 = all weapons allowed", true, 0, true, 1);
+ConVar mani_warmup_timer_knives_respawn ("mani_warmup_timer_knives_respawn", "0", 0, "1 = enable respawn in knife mode, 0 = no respawn", true, 0, true, 1);
 ConVar mani_warmup_timer ("mani_warmup_timer", "0", 0, "Time in seconds at the start of a map before performing mp_restartgame (0 = off)", true, 0, true, 180, ManiWarmupTimerCVar);
 ConVar mani_warmup_timer_ignore_tk ("mani_warmup_timer_ignore_tk", "0", 0, "0 = tk punishment still allowed, 1 = no tk punishments", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only_ignore_fyi_aim_maps ("mani_warmup_timer_knives_only_ignore_fyi_aim_maps", "0", 0, "0 = knive mode still allowed on fy/aim maps, 1 = no knive mode for fy_/aim_ maps", true, 0, true, 1);
+ConVar mani_warmup_timer_unlimited_grenades ("mani_warmup_timer_unlimited_grenades", "0", 0, "1 = enable unlimited he grenades, 0 = disable unlimited he's", true, 0, true, 1);
+ConVar mani_warmup_timer_spawn_item_1 ("mani_warmup_timer_spawn_item_1", "item_assaultsuit", 0, "Item to spawn with in warmup mode");
+ConVar mani_warmup_timer_spawn_item_2 ("mani_warmup_timer_spawn_item_2", "", 0, "Item to spawn with in warmup mode");
+ConVar mani_warmup_timer_spawn_item_3 ("mani_warmup_timer_spawn_item_3", "", 0, "Item to spawn with in warmup mode");
+ConVar mani_warmup_timer_spawn_item_4 ("mani_warmup_timer_spawn_item_4", "", 0, "Item to spawn with in warmup mode");
+ConVar mani_warmup_timer_spawn_item_5 ("mani_warmup_timer_spawn_item_5", "", 0, "Item to spawn with in warmup mode");
+ConVar mani_warmup_in_progress ("mani_warmup_in_progress", "0", 0, "Used by LDuke VIP mod to detect when warmup mode in operation", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -104,12 +115,146 @@ void		ManiWarmupTimer::LevelInit(void)
 	if (mani_warmup_timer.GetInt() == 0)
 	{
 		check_timer = false;
+		fire_restart = false;
+		mani_warmup_in_progress.SetValue(0);
 	}
 	else
 	{
 		check_timer = true;
+		fire_restart = true;
 		next_check = -999.0;
+		mani_warmup_in_progress.SetValue(1);
 	}
+
+	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
+	{
+		respawn_list[i].needs_respawn = false;
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Round Started
+//---------------------------------------------------------------------------------
+void		ManiWarmupTimer::RoundStart(void)
+{
+	if (war_mode) return;
+	if (mani_warmup_timer.GetInt() == 0) return;
+	if (!check_timer) return;
+
+	if (mani_warmup_timer_knives_only.GetInt() == 0) return;
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+
+	CBaseEntity *weaponc4 = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(NULL, "weapon_c4");
+	if (weaponc4)
+	{
+		CCSUTILRemove(weaponc4);
+	}
+
+	CUtlVector<CBaseEntity*> hostages;
+	CBaseEntity *hostage = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(NULL, "hostage_entity");
+
+	while (hostage) 
+	{
+		hostages.AddToTail(hostage);
+		hostage = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(hostage, "hostage_entity");
+	}
+
+	for (int x = 0; x < hostages.Count(); x++) 
+	{
+		CCSUTILRemove(hostages[x]);
+	}
+}	
+
+
+//---------------------------------------------------------------------------------
+// Purpose: Level has initialised
+//---------------------------------------------------------------------------------
+void		ManiWarmupTimer::PlayerSpawn(player_t *player_ptr)
+{
+	if (war_mode) return;
+	if (mani_warmup_timer.GetInt() == 0) return;
+	if (!check_timer) return;
+
+	respawn_list[player_ptr->index - 1].needs_respawn = false;
+
+	if (player_ptr->is_bot)
+	{
+		if (mani_warmup_timer_knives_only.GetInt() == 1)
+		{
+			// Set cash to zero and strip weapons
+			Prop_SetAccount(player_ptr->entity, 0); 
+			CBaseEntity *pPlayer = player_ptr->entity->GetUnknown()->GetBaseEntity();
+			CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+
+			CBaseCombatWeapon *pWeapon1 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 0);
+			CBaseCombatWeapon *pWeapon2 = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+			CBasePlayer *pBase = (CBasePlayer*) pPlayer;
+			if (pWeapon1)
+			{
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon1);
+			}
+
+			if (pWeapon2)
+			{
+				CBasePlayer_RemovePlayerItem(pBase, pWeapon2);
+			}
+
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+			if (pWeapon)
+			{
+				CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
+			}
+
+			CBaseEntity *weaponc4 = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(NULL, "weapon_c4");
+			if (weaponc4)
+			{
+				CCSUTILRemove(weaponc4);
+			}
+		}
+	}
+
+	// Unlimited grenades
+	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1 && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	{
+		GiveItem(player_ptr->entity, "weapon_hegrenade");
+	}
+
+	if (!FStrEq(mani_warmup_timer_spawn_item_1.GetString(),""))
+	{
+		if (!(FStrEq(mani_warmup_timer_spawn_item_1.GetString(), "item_assaultsuit") &&
+			!gpManiGameType->IsGameType(MANI_GAME_CSS)))
+		{
+			GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_1.GetString());
+		}
+	}
+
+	if (!FStrEq(mani_warmup_timer_spawn_item_2.GetString(),""))
+	{
+		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_2.GetString());
+	}
+
+	if (!FStrEq(mani_warmup_timer_spawn_item_3.GetString(),""))
+	{
+		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_3.GetString());
+	}
+
+	if (!FStrEq(mani_warmup_timer_spawn_item_4.GetString(),""))
+	{
+		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_4.GetString());
+	}
+
+	if (!FStrEq(mani_warmup_timer_spawn_item_5.GetString(),""))
+	{
+		GiveItem(player_ptr->entity, mani_warmup_timer_spawn_item_5.GetString());
+	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Level has initialised
+//---------------------------------------------------------------------------------
+void		ManiWarmupTimer::GiveItem(edict_t *pEntity, const char	*item_name)
+{
+	CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(pEntity), item_name);
 }
 
 //---------------------------------------------------------------------------------
@@ -122,16 +267,31 @@ void		ManiWarmupTimer::GameFrame(void)
 	if (!check_timer) return;
 	if (ProcessPluginPaused()) return;
 
+
 	if (gpGlobals->curtime > next_check)
 	{
 		if (mani_warmup_timer_show_countdown.GetInt())
 		{
 			int time_left = mani_warmup_timer.GetInt() - ((int) gpGlobals->curtime);
 
-			if (mani_warmup_timer_knives_only.GetInt() == 1 && 
+			bool	knives = mani_warmup_timer_knives_only.GetBool();
+			bool	he = mani_warmup_timer_unlimited_grenades.GetBool();
+
+			if ((knives || he) &&
 				time_left % 5 == 0)
 			{
-				CSayToAll("Knives Only !!");
+				if (knives && !he)
+				{
+					CSayToAll("Knives Only!");
+				}
+				else if (!knives && he)
+				{
+					CSayToAll("Unlimited HE Grenades!");
+				}
+				else if (knives && he)
+				{
+					CSayToAll("Knives and Unlimited HE Grenades!");
+				}
 			}
 			else 
 			{
@@ -143,9 +303,122 @@ void		ManiWarmupTimer::GameFrame(void)
 		if (gpGlobals->curtime > mani_warmup_timer.GetFloat())
 		{
 			check_timer = false;
+			mani_warmup_in_progress.SetValue(0);
+		}
+
+		if (fire_restart && gpGlobals->curtime > mani_warmup_timer.GetFloat() - 1)
+		{
 			engine->ServerCommand("mp_restartgame 1\n");
+			fire_restart = false;
+		}
+
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+			mani_warmup_timer_knives_only.GetInt() != 0 && 
+			mani_warmup_timer_knives_respawn.GetInt() == 1 &&
+			mani_warmup_timer_unlimited_grenades.GetInt() == 0)
+		{
+			for (int i = 0; i < max_players; i++)
+			{
+				if (!respawn_list[i].needs_respawn) continue;
+
+				if (respawn_list[i].time_to_respawn < gpGlobals->curtime)
+				{
+					respawn_list[i].needs_respawn = false;
+
+					player_t player;
+					player.index = i + 1;
+					if (!FindPlayerByIndex(&player)) continue;
+
+					if (player.team != 2 && player.team != 3) return;
+
+					// Remove rag doll if there
+					//				CBaseEntity *pRagDoll = Prop_GetRagDoll(player.entity);
+					//				if (pRagDoll)
+					//				{
+					//					CCSUTILRemove(pRagDoll);
+					//				}
+
+					CUtlVector<CBaseEntity*> ragdolls;
+					CBaseEntity *ragdoll = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(NULL, "cs_ragdoll");
+
+					while (ragdoll) 
+					{
+						ragdolls.AddToTail(ragdoll);
+						ragdoll = (CBaseEntity*)CGlobalEntityList_FindEntityByClassname(ragdoll, "cs_ragdoll");
+					}
+
+					for (int x = 0; x < ragdolls.Count(); x++) 
+					{
+						CCSUTILRemove(ragdolls[x]);
+					}
+
+					CBaseEntity *pCBE = EdictToCBE(player.entity);
+					if (pCBE)
+					{
+						CCSRoundRespawn(pCBE);
+					}
+				}
+			}
 		}
 	}
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Unlimited HE's ?
+//---------------------------------------------------------------------------------
+void		ManiWarmupTimer::PlayerDeath(player_t *player_ptr)
+{
+	if (war_mode) return;
+	if (!check_timer) return;
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if (mani_warmup_timer_knives_only.GetInt() == 0) return;
+	if (mani_warmup_timer_knives_respawn.GetInt() == 0) return;
+	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1) return;
+	if (mani_warmup_timer_knives_respawn.GetInt() == 0) return;
+
+	if (player_ptr->team != 2 && player_ptr->team != 3) return;
+
+	// Setup respawn of player
+	respawn_list[player_ptr->index - 1].needs_respawn = true;
+	respawn_list[player_ptr->index - 1].time_to_respawn = gpGlobals->curtime + 1.0;
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Unlimited HE's ?
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT		ManiWarmupTimer::JoinClass(edict_t *pEdict)
+{
+	if (war_mode) return PLUGIN_CONTINUE;
+	if (!check_timer) return PLUGIN_CONTINUE;
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+	if (mani_warmup_timer_knives_only.GetInt() == 0) return PLUGIN_CONTINUE;
+	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1) return PLUGIN_CONTINUE;
+	if (mani_warmup_timer_knives_respawn.GetInt() == 0) return PLUGIN_CONTINUE;
+
+	player_t player;
+
+	player.entity = pEdict; 
+	if (!FindPlayerByEntity(&player)) return PLUGIN_CONTINUE;
+	if (player.team != 2 && player.team != 3) return PLUGIN_CONTINUE;
+
+	// Setup respawn of player
+	respawn_list[player.index - 1].needs_respawn = true;
+	respawn_list[player.index - 1].time_to_respawn = gpGlobals->curtime + 1.0;
+	return PLUGIN_CONTINUE;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Unlimited HE's ?
+//---------------------------------------------------------------------------------
+bool		ManiWarmupTimer::UnlimitedHE(void)
+{
+	if (!check_timer) return false;
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if (mani_warmup_timer_unlimited_grenades.GetInt() == 0) return false;
+
+	// Unlimited HE mode
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -182,8 +455,16 @@ bool		ManiWarmupTimer::KnivesOnly(void)
 	{
 		if (current_map[3] == '_' &&
 			(current_map[2] == 'm' || current_map[2] == 'M') &&
-			(current_map[1] == 'i' || current_map[1] == 'i') &&
-			(current_map[0] == 'a' || current_map[0] == 'a'))
+			(current_map[1] == 'i' || current_map[1] == 'I') &&
+			(current_map[0] == 'a' || current_map[0] == 'A'))
+		{
+			return false;
+		}
+
+		if (current_map[3] == '_' &&
+			(current_map[2] == 'p' || current_map[2] == 'A') &&
+			(current_map[1] == 'w' || current_map[1] == 'W') &&
+			(current_map[0] == 'a' || current_map[0] == 'P'))
 		{
 			return false;
 		}

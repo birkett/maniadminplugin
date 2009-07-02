@@ -29,6 +29,9 @@
 #include "mani_player.h"
 #include "mani_main.h"
 
+#define MANI_MAX_EVENTS (24)
+#define MANI_EVENT_HASH_SIZE (19)
+
 //---------------------------------------------------------------------------------
 // Purpose: Core class 
 //---------------------------------------------------------------------------------
@@ -114,20 +117,16 @@ public:
 	void			ProcessConfigOptions( edict_t *pEntity );
 	void			ProcessCExecOptions( edict_t *pEntity );
 	void			ProcessConfigToggle( edict_t *pEntity );
-	void			ProcessPlayerSay( IGameEvent *event);
 	void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);
-	edict_t *		GetEntityForUserID (const int user_id);
 	void			PrettyPrinter(KeyValues *keyValue, int indent);
 	void			ProcessConsoleVotemap( edict_t *pEntity);
 	//			void			ProcessMenuVotemap( edict_t *pEntity, int next_index, int argv_offset );
-	void			ProcessPlayerHurt(IGameEvent * event);
 	void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
 	void			ProcessPlayerTeam(IGameEvent * event);
 	void			ProcessPlayerDeath(IGameEvent * event);
+	void			ProcessDODSPlayerDeath(IGameEvent * event);
 	void			ShowTampered(void);
-	bool			IsPlayerImmuneFromPingCheck(player_t *player);
 	void			ProcessCheatCVars(void);
-	void			ProcessHighPingKick(void);
 	bool			IsTampered (void);
 	bool			HookSayCommand(void);
 	bool			HookChangeLevelCommand(void);
@@ -239,6 +238,56 @@ public:
 	bool			CanWeUserVoteBanYet( player_t *player );
 	bool			CanWeUserVoteBanAgainYet( player_t *player );
 	void			ProcessMenuUserVoteBan( player_t *player, int next_index, int argv_offset );
+
+	// Event functions
+
+	void			InitEvents();
+
+	void			EvPlayerHurt(IGameEvent *event);
+	void			EvPlayerTeam(IGameEvent *event);
+	void			EvPlayerDeath(IGameEvent *event);
+	void			EvPlayerSay(IGameEvent *event);
+	void			EvPlayerSpawn(IGameEvent *event);
+	void			EvWeaponFire(IGameEvent *event);
+	void			EvHostageStopsFollowing(IGameEvent *event);
+	void			EvBombPlanted(IGameEvent *event);
+	void			EvBombDropped(IGameEvent *event);
+	void			EvBombExploded(IGameEvent *event);
+	void			EvBombDefused(IGameEvent *event);
+	void			EvBombBeginDefuse(IGameEvent *event);
+	void			EvBombPickUp(IGameEvent *event);
+	void			EvHostageRescued(IGameEvent *event);
+	void			EvHostageFollows(IGameEvent *event);
+	void			EvHostageKilled(IGameEvent *event);
+	void			EvRoundStart(IGameEvent *event);
+	void			EvRoundEnd(IGameEvent *event);
+	void			EvRoundFreezeEnd(IGameEvent *event);
+	void			EvVIPKilled(IGameEvent *event);
+	void			EvVIPEscaped(IGameEvent *event);
+	void			EvDodStatsWeaponAttack(IGameEvent *event);
+	void			EvDodPointCaptured(IGameEvent *event);
+	void			EvDodCaptureBlocked(IGameEvent *event);
+	void			EvDodRoundWin(IGameEvent *event);
+	void			EvDodStatsPlayerDamage(IGameEvent *event);
+	void			EvDodStatsPlayerKilled(IGameEvent *event);
+	void			EvDodGameOver(IGameEvent *event);
+
+private:
+
+	struct	event_fire_t
+	{
+		char	event_name[256];
+		void	(CAdminPlugin::*funcPtr)( IGameEvent *event );
+	};
+
+	int				GetEventIndex(const char *event_string, const int loop_length);
+
+
+	int     event_table[256];
+	event_fire_t	event_fire[256];
+	int		max_events;
+	bool	event_duplicate;
+
 
 };
 

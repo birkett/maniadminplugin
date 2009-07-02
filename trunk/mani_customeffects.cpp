@@ -55,6 +55,7 @@
 #include "mani_gametype.h"
 #include "mani_customeffects.h"
 #include "mani_downloads.h"
+#include "mani_trackuser.h"
 #include "cbaseentity.h"
 #include "beam_flags.h"
 
@@ -110,7 +111,7 @@ void ManiCustomEffects::Init(void)
 	FreeList((void **) &decal_list, &decal_list_size);
 
 	// Read the decallist.txt file
-//	Msg("*********** Loading decallist.txt ************\n");
+//	MMsg("*********** Loading decallist.txt ************\n");
 
 	KeyValues *kv_ptr = new KeyValues("decallist.txt");
 
@@ -119,7 +120,7 @@ void ManiCustomEffects::Init(void)
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/decallist.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
-//			Msg("Failed to load decallist.txt\n");
+//			MMsg("Failed to load decallist.txt\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -129,7 +130,7 @@ void ManiCustomEffects::Init(void)
 		base_key_ptr = kv_ptr->GetFirstSubKey();
 		if (!base_key_ptr)
 		{
-//			Msg("Nothing found\n");
+//			MMsg("Nothing found\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -152,7 +153,7 @@ void ManiCustomEffects::Init(void)
 					texture_info.texture_index = engine->PrecacheDecal(texture_info.filename);
 					AddToList((void **) &decal_list, sizeof(texture_info_t), &decal_list_size);
 					decal_list[decal_list_size - 1] = texture_info;
-//					Msg("Added [%s => %s] using decal index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
+//					MMsg("Added [%s => %s] using decal index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
 				}
 			}
 
@@ -166,12 +167,12 @@ void ManiCustomEffects::Init(void)
 		kv_ptr->deleteThis();
 
 		qsort(decal_list, decal_list_size, sizeof(texture_info_t), sort_texture_list_by_name); 
-//		Msg("*********** decallist.txt loaded ************\n");
+//		MMsg("*********** decallist.txt loaded ************\n");
 		break;
 	}
 
 	// Read the texturelist.txt file
-//	Msg("*********** Loading texturelist.txt ************\n");
+//	MMsg("*********** Loading texturelist.txt ************\n");
 
 	kv_ptr = new KeyValues("texturelist.txt");
 
@@ -180,7 +181,7 @@ void ManiCustomEffects::Init(void)
 		Q_snprintf(core_filename, sizeof (core_filename), "./cfg/%s/texturelist.txt", mani_path.GetString());
 		if (!kv_ptr->LoadFromFile( filesystem, core_filename, NULL))
 		{
-//			Msg("Failed to load texturelist.txt\n");
+//			MMsg("Failed to load texturelist.txt\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -190,7 +191,7 @@ void ManiCustomEffects::Init(void)
 		base_key_ptr = kv_ptr->GetFirstSubKey();
 		if (!base_key_ptr)
 		{
-//			Msg("Nothing found\n");
+//			MMsg("Nothing found\n");
 			kv_ptr->deleteThis();
 			break;
 		}
@@ -213,7 +214,7 @@ void ManiCustomEffects::Init(void)
 					texture_info.texture_index = engine->PrecacheModel(texture_info.filename, true);
 					AddToList((void **) &texture_list, sizeof(texture_info_t), &texture_list_size);
 					texture_list[texture_list_size - 1] = texture_info;
-//					Msg("Added [%s => %s] using model index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
+//					MMsg("Added [%s => %s] using model index %i\n", texture_info.texture_name, texture_info.filename, texture_info.texture_index);
 				}
 			}
 
@@ -227,7 +228,7 @@ void ManiCustomEffects::Init(void)
 		kv_ptr->deleteThis();
 
 		qsort(texture_list, texture_list_size, sizeof(texture_info_t), sort_texture_list_by_name); 
-//		Msg("*********** texturelist.txt loaded ************\n");
+//		MMsg("*********** texturelist.txt loaded ************\n");
 		break;
 	}
 }
@@ -1432,33 +1433,30 @@ void	ManiCustomEffects::SetupFilter (MRecipientFilter *filter)
 //---------------------------------------------------------------------------------
 bool ManiCustomEffects::PlayerByUserID(player_t *player_ptr)
 {
-	for (int i = 1; i <= max_players; i++)
+	player_ptr->index = gpManiTrackUser->GetIndex(player_ptr->user_id);
+	if (player_ptr->index == -1) return false;
+
+	edict_t *pEntity = engine->PEntityOfEntIndex(player_ptr->index);
+	if(pEntity && !pEntity->IsFree() )
 	{
-		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree() )
+		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
+		if (playerinfo && playerinfo->IsConnected())
 		{
-			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-			if (playerinfo && playerinfo->IsConnected())
+			player_ptr->player_info = playerinfo;
+			player_ptr->team = playerinfo->GetTeamIndex();
+			player_ptr->is_dead = playerinfo->IsDead();
+			player_ptr->entity = pEntity;
+			Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
+			if (FStrEq(player_ptr->steam_id, "BOT"))
 			{
-				if (playerinfo->GetUserID() == player_ptr->user_id)
-				{
-					player_ptr->player_info = playerinfo;
-					player_ptr->index = i;
-					player_ptr->team = playerinfo->GetTeamIndex();
-					player_ptr->is_dead = playerinfo->IsDead();
-					player_ptr->entity = pEntity;
-					Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
-					if (FStrEq(player_ptr->steam_id, "BOT"))
-					{
-						player_ptr->is_bot = true;
-					}
-					else
-					{
-						player_ptr->is_bot = false;
-					}
-					return true;
-				}
+				player_ptr->is_bot = true;
 			}
+			else
+			{
+				player_ptr->is_bot = false;
+			}
+			return true;
+
 		}
 	}
 
