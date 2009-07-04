@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -73,6 +74,7 @@ typedef unsigned long DWORD;
 #include "mani_output.h"
 #include "mani_globals.h"
 #include "mani_mainclass.h"
+#include "mani_sourcehook.h"
 
 #include "interface.h"
 #include "filesystem.h"
@@ -167,21 +169,32 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	GET_INTERFACE(effects, IEffects, IEFFECTS_INTERFACE_VERSION, 20, gameServerFactory)
 	GET_INTERFACE(esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION, 20, interfaceFactory)
 	GET_INTERFACE(serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS, 20, gameServerFactory)
-	GET_INTERFACE(cvar, ICvar, VENGINE_CVAR_INTERFACE_VERSION, 20, interfaceFactory)
+#ifdef ORANGE 
+	GET_INTERFACE(g_pCVar, ICvar, CVAR_INTERFACE_VERSION, 20, interfaceFactory)
+#else
+	GET_INTERFACE(g_pCVar, ICvar, VENGINE_CVAR_INTERFACE_VERSION, 20, interfaceFactory)
+#endif
 	GET_INTERFACE(serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL, 20, gameServerFactory)
 	GET_INTERFACE(voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER, 20, interfaceFactory)
 	GET_INTERFACE(spatialpartition, ISpatialPartition, INTERFACEVERSION_SPATIALPARTITION, 20, interfaceFactory)
 
 	gamedll = serverdll;
+#ifndef ORANGE
 	InitCVars( interfaceFactory ); // register any cvars we have defined
+#else
+	ConVar_Register(0, NULL);
+
+#endif
 
 	gpGlobals = playerinfomanager->GetGlobalVars();
 
-	if (!cvar)
+	if (!g_pCVar)
 	{
 		MMsg("Failed to load cvar interface !!\n");
 		return false;
 	}
+
+	g_ManiSMMHooks.HookConCommands();
 
 	FindConPrintf();
 
@@ -355,10 +368,17 @@ PLUGIN_RESULT CValveMAP::ClientConnect( bool *bAllowConnect, edict_t *pEntity, c
 //---------------------------------------------------------------------------------
 // Purpose: called when a client types in a command (only a subset of commands however, not CON_COMMAND's)
 //---------------------------------------------------------------------------------
+#ifdef ORANGE
+PLUGIN_RESULT CValveMAP::ClientCommand( edict_t *pEntity, const CCommand &args )
+{
+	return (gpManiAdminPlugin->ClientCommand(pEntity, args));
+}
+#else
 PLUGIN_RESULT CValveMAP::ClientCommand( edict_t *pEntity )
 {
 	return (gpManiAdminPlugin->ClientCommand(pEntity));
 }
+#endif
 
 //---------------------------------------------------------------------------------
 // Purpose: called when a client is authenticated

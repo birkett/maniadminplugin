@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -3273,7 +3274,7 @@ void		ManiClient::ProcessRemoveClient
 	delete client_ptr;
 	
 	int index = 0;
-	for (vector<ClientPlayer *>::iterator itr = c_list.begin(); itr != c_list.end(); ++itr)
+	for (std::vector<ClientPlayer *>::iterator itr = c_list.begin(); itr != c_list.end(); ++itr)
 	{
 		if (index++ == client_index)
 		{

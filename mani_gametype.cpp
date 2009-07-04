@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -148,6 +149,7 @@ void ManiGameType::Init(void)
 	else if (FStrEq(MANI_GAME_GARRYS_MOD_STR, game_type)) game_type_index = MANI_GAME_GARRYS_MOD;
 	else if (FStrEq(MANI_GAME_DOD_STR1, game_type)) game_type_index = MANI_GAME_DOD;
 	else if (FStrEq(MANI_GAME_DOD_STR2, game_type)) game_type_index = MANI_GAME_DOD;
+	else if (FStrEq(MANI_GAME_TF_STR, game_type)) game_type_index = MANI_GAME_TF;
 	else game_type_index = MANI_GAME_UNKNOWN;
 
 	DefaultValues();
@@ -484,6 +486,7 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = kv_ptr->GetInt("commit_suicide", -1); // 0x0d
 	vfunc_index[MANI_VFUNC_SET_OBSERVER_TARGET] = kv_ptr->GetInt("set_observer_target", -1); // 0x0d
 	vfunc_index[MANI_VFUNC_WEAPON_CANUSE] = kv_ptr->GetInt("weapon_canuse", -1); // 0x0d
+	vfunc_index[MANI_VFUNC_GET_CLASS_NAME] = kv_ptr->GetInt("get_class_name", -1); // 0x03
 
 	return;
 }

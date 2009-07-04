@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -71,26 +72,26 @@ extern	CGlobalVars *gpGlobals;
 extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 extern  ConVar	*mp_friendlyfire; 
 
-static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString );
-static void ManiWarmupItem1 ( ConVar *var, char const *pOldString );
-static void ManiWarmupItem2 ( ConVar *var, char const *pOldString );
-static void ManiWarmupItem3 ( ConVar *var, char const *pOldString );
-static void ManiWarmupItem4 ( ConVar *var, char const *pOldString );
-static void ManiWarmupItem5 ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiWarmupTimerCVar);
+CONVAR_CALLBACK_PROTO(ManiWarmupItem1);
+CONVAR_CALLBACK_PROTO(ManiWarmupItem2);
+CONVAR_CALLBACK_PROTO(ManiWarmupItem3);
+CONVAR_CALLBACK_PROTO(ManiWarmupItem4);
+CONVAR_CALLBACK_PROTO(ManiWarmupItem5);
 
 ConVar mani_warmup_timer_show_countdown ("mani_warmup_timer_show_countdown", "1", 0, "1 = enable center say countdown, 0 = disable", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only ("mani_warmup_timer_knives_only", "0", 0, "1 = enable knives only mode, 0 = all weapons allowed", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_respawn ("mani_warmup_timer_knives_respawn", "0", 0, "1 = enable respawn in knife mode, 0 = no respawn", true, 0, true, 1);
-ConVar mani_warmup_timer ("mani_warmup_timer", "0", 0, "Time in seconds at the start of a map before performing mp_restartgame (0 = off)", true, 0, true, 360, ManiWarmupTimerCVar);
+ConVar mani_warmup_timer ("mani_warmup_timer", "0", 0, "Time in seconds at the start of a map before performing mp_restartgame (0 = off)", true, 0, true, 360, CONVAR_CALLBACK_REF(ManiWarmupTimerCVar));
 ConVar mani_warmup_timer_ignore_tk ("mani_warmup_timer_ignore_tk", "0", 0, "0 = tk punishment still allowed, 1 = no tk punishments", true, 0, true, 1);
 ConVar mani_warmup_timer_disable_ff ("mani_warmup_timer_disable_ff", "0", 0, "0 = Do not disable friendly fire during warmup, 1 = If friendly fire was turned on, the plugin will disable it during the warmup round", true, 0, true, 1);
 ConVar mani_warmup_timer_knives_only_ignore_fyi_aim_maps ("mani_warmup_timer_knives_only_ignore_fyi_aim_maps", "0", 0, "0 = knive mode still allowed on fy/aim maps, 1 = no knive mode for fy_/aim_ maps", true, 0, true, 1);
 ConVar mani_warmup_timer_unlimited_grenades ("mani_warmup_timer_unlimited_grenades", "0", 0, "1 = enable unlimited he grenades, 0 = disable unlimited he's", true, 0, true, 1);
-ConVar mani_warmup_timer_spawn_item_1 ("mani_warmup_timer_spawn_item_1", "item_assaultsuit", 0, "Item to spawn with in warmup mode", ManiWarmupItem1);
-ConVar mani_warmup_timer_spawn_item_2 ("mani_warmup_timer_spawn_item_2", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem2);
-ConVar mani_warmup_timer_spawn_item_3 ("mani_warmup_timer_spawn_item_3", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem3);
-ConVar mani_warmup_timer_spawn_item_4 ("mani_warmup_timer_spawn_item_4", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem4);
-ConVar mani_warmup_timer_spawn_item_5 ("mani_warmup_timer_spawn_item_5", "", 0, "Item to spawn with in warmup mode", ManiWarmupItem5);
+ConVar mani_warmup_timer_spawn_item_1 ("mani_warmup_timer_spawn_item_1", "item_assaultsuit", 0, "Item to spawn with in warmup mode", CONVAR_CALLBACK_REF(ManiWarmupItem1));
+ConVar mani_warmup_timer_spawn_item_2 ("mani_warmup_timer_spawn_item_2", "", 0, "Item to spawn with in warmup mode", CONVAR_CALLBACK_REF(ManiWarmupItem2));
+ConVar mani_warmup_timer_spawn_item_3 ("mani_warmup_timer_spawn_item_3", "", 0, "Item to spawn with in warmup mode", CONVAR_CALLBACK_REF(ManiWarmupItem3));
+ConVar mani_warmup_timer_spawn_item_4 ("mani_warmup_timer_spawn_item_4", "", 0, "Item to spawn with in warmup mode", CONVAR_CALLBACK_REF(ManiWarmupItem4));
+ConVar mani_warmup_timer_spawn_item_5 ("mani_warmup_timer_spawn_item_5", "", 0, "Item to spawn with in warmup mode", CONVAR_CALLBACK_REF(ManiWarmupItem5));
 ConVar mani_warmup_in_progress ("mani_warmup_in_progress", "0", 0, "Used by LDuke VIP mod to detect when warmup mode in operation", true, 0, true, 1);
 ConVar mani_warmup_infinite_ammo ("mani_warmup_infinite_ammo", "0", 0, "Infinite ammo, 0 = disabled, 1 = enabled", true, 0, true, 1);
 
@@ -635,32 +636,32 @@ void	ManiWarmupTimer::SetRandomItem(ConVar *cvar_ptr, int item_number)
 ManiWarmupTimer	g_ManiWarmupTimer;
 ManiWarmupTimer	*gpManiWarmupTimer;
 
-static void ManiWarmupTimerCVar ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiWarmupTimerCVar)
 {
 	gpManiWarmupTimer->LevelInit();
 }
 
-static void ManiWarmupItem1 ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiWarmupItem1)
 {
-	gpManiWarmupTimer->SetRandomItem(var, 0);
+	gpManiWarmupTimer->SetRandomItem(&mani_warmup_timer_spawn_item_1, 0);
 }
 
-static void ManiWarmupItem2 ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiWarmupItem2)
 {
-	gpManiWarmupTimer->SetRandomItem(var, 1);
+	gpManiWarmupTimer->SetRandomItem(&mani_warmup_timer_spawn_item_2, 1);
 }
 
-static void ManiWarmupItem3 ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiWarmupItem3)
 {
-	gpManiWarmupTimer->SetRandomItem(var, 2);
+	gpManiWarmupTimer->SetRandomItem(&mani_warmup_timer_spawn_item_3, 2);
 }
 
-static void ManiWarmupItem4 ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiWarmupItem4)
 {
-	gpManiWarmupTimer->SetRandomItem(var, 3);
+	gpManiWarmupTimer->SetRandomItem(&mani_warmup_timer_spawn_item_4, 3);
 }
 
-static void ManiWarmupItem5 ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiWarmupItem5)
 {
-	gpManiWarmupTimer->SetRandomItem(var, 4);
+	gpManiWarmupTimer->SetRandomItem(&mani_warmup_timer_spawn_item_5, 4);
 }

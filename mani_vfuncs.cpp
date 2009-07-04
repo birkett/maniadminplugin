@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -285,6 +286,10 @@ VFUNC_CALL0_void(MANI_VFUNC_COMMIT_SUICIDE, CBasePlayer, CBasePlayer_CommitSuici
 // virtual bool			SetObserverTarget(CBaseEntity * target);
 VFUNC_CALL1_void(MANI_VFUNC_SET_OBSERVER_TARGET, CBasePlayer, CBasePlayer_SetObserverTarget, CBaseEntity *)
 
+// virtual const char*		GetClassName() const = 0;
+VFUNC_CALL0(MANI_VFUNC_GET_CLASS_NAME, const char *, IServerNetworkable, IServerNetworkable_GetClassName)
+
+
 datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr)
 {
 	void **this_ptr = *(void ***)&pThisPtr;
@@ -309,7 +314,9 @@ datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr)
 #ifdef __linux__
 CON_COMMAND(ma_vfuncs, "Debug Tool")
 {
-
+#ifndef ORANGE
+	const CCommand args;
+#endif
         player_t player;
 
         player.entity = NULL;
@@ -317,7 +324,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
         if (!IsCommandIssuedByServerAdmin()) return;
         if (ProcessPluginPaused()) return;
 
-        if (engine->Cmd_Argc() < 4)
+        if (args.ArgC() < 4)
         {
                 MMsg("Need more args :)\n");
                 return;
@@ -371,22 +378,22 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                 DWORD   *type_ptr;
 
                 //Write to disk
-                if (FStrEq("CBE", engine->Cmd_Argv(2)))
+                if (FStrEq("CBE", args.Arg(2)))
                 {
                         snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbe.out", mani_path.GetString());
                         type_ptr = (DWORD *) pPlayer;
                 }
-                else if (FStrEq("VOICE", engine->Cmd_Argv(2)))
+                else if (FStrEq("VOICE", args.Arg(2)))
                 {
                         snprintf(base_filename, sizeof (base_filename), "./cfg/%s/voice.out", mani_path.GetString());
                         type_ptr = (DWORD *) voiceserver;
                 }
-				else if (FStrEq("TE", engine->Cmd_Argv(2)))
+				else if (FStrEq("TE", args.Arg(2)))
                 {
                         snprintf(base_filename, sizeof (base_filename), "./cfg/%s/te.out", mani_path.GetString());
                         type_ptr = (DWORD *) temp_ents;
                 }
-				else if (FStrEq("CBCC", engine->Cmd_Argv(2)))
+				else if (FStrEq("CBCC", args.Arg(2)))
                 {
                         snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbcc.out", mani_path.GetString());
 //                        CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
@@ -402,7 +409,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                                 return;
                         }
                 }
-                else if (FStrEq("CBCW", engine->Cmd_Argv(2)))
+                else if (FStrEq("CBCW", args.Arg(2)))
                 {
                         snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbcw.out", mani_path.GetString());
 						CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
@@ -441,7 +448,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                         return;
                 }
 
-                for (int i = 0; i < atoi(engine->Cmd_Argv(3)); i++)
+                for (int i = 0; i < atoi(args.Arg(3)); i++)
                 {
                         DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) type_ptr)) + (i * 4)));
 
@@ -474,6 +481,9 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 
 CON_COMMAND(ma_getvfunc, "Debug Tool")
 {
+#ifndef ORANGE
+	const CCommand args;
+#endif
 
 	player_t player;
 
@@ -482,7 +492,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 
-	if (engine->Cmd_Argc() < 3)
+	if (args.ArgC() < 3)
 	{
 		MMsg("Need more args :)\n");
 		return;
@@ -521,19 +531,19 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	DWORD *type_ptr;
 
 	//Write to disk
-	if (FStrEq("CBE", engine->Cmd_Argv(1)))
+	if (FStrEq("CBE", args.Arg(1)))
 	{
 		type_ptr = (DWORD *) pPlayer;
 	}
-	else if (FStrEq("VOICE", engine->Cmd_Argv(1)))
+	else if (FStrEq("VOICE", args.Arg(1)))
 	{
 		type_ptr = (DWORD *) voiceserver;
 	}
-	else if (FStrEq("TE", engine->Cmd_Argv(1)))
+	else if (FStrEq("TE", args.Arg(1)))
 	{
 		type_ptr = (DWORD *) temp_ents;
 	}
-	else if (FStrEq("CBCC", engine->Cmd_Argv(1)))
+	else if (FStrEq("CBCC", args.Arg(1)))
 	{
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		//		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
@@ -547,7 +557,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 			return;
 		}
 	}
-	else if (FStrEq("CBCW", engine->Cmd_Argv(1)))
+	else if (FStrEq("CBCW", args.Arg(1)))
 	{
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		//		CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
@@ -577,13 +587,13 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 	int index;
 
-	if (engine->Cmd_Argc() < 4)
+	if (args.ArgC() < 4)
 	{
-		index = FindVFunc(type_ptr, engine->Cmd_Argv(2), NULL, mangled_name);
+		index = FindVFunc(type_ptr, args.Arg(2), NULL, mangled_name);
 	}
 	else
 	{
-		index = FindVFunc(type_ptr, engine->Cmd_Argv(2), engine->Cmd_Argv(3), mangled_name);
+		index = FindVFunc(type_ptr, args.Arg(2), args.Arg(3), mangled_name);
 	}
 
 	if (index == -1)
@@ -597,7 +607,9 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 {
-
+#ifndef ORANGE
+	const CCommand args;
+#endif
 	player_t player;
 
 	player.entity = NULL;
@@ -605,7 +617,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 
-	if (engine->Cmd_Argc() < 2)
+	if (args.ArgC() < 2)
 	{
 		MMsg("Need more args :)\n");
 		return;
@@ -638,7 +650,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		return;
 	}
 
-	int level = atoi(engine->Cmd_Argv(1));
+	int level = atoi(args.Arg(1));
 
 	player_t *target_ptr = &player;
 
@@ -673,6 +685,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		CheckVFunc(type_ptr, "CBasePlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(type_ptr, "CCSPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(type_ptr, "CDODPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(type_ptr, "CTFPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 
 		type_ptr = (DWORD *) pBase;
 
@@ -681,8 +694,16 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		CheckVFunc(type_ptr, "CBasePlayer", "ProcessUsercmds", "user_cmds", MANI_VFUNC_USER_CMDS);
 		CheckVFunc(type_ptr, "CBasePlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
 		CheckVFunc(type_ptr, "CBasePlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
+
+		if (gpManiGameType->IsGameType(MANI_GAME_TF)) 
+		{
+			CheckVFunc(type_ptr, "CTFPlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
+		}
+
 		CheckVFunc(type_ptr, "CCSPlayer", "Weapon_CanUse", "canuse_weapon", MANI_VFUNC_WEAPON_CANUSE);
 		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(type_ptr, "CDODPlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
+
+		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(type_ptr, "CBaseFlex", "Teleport", "teleport", MANI_VFUNC_TELEPORT);
 	}
 
 	if (level > 1)
@@ -710,6 +731,8 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		}
 	}
 }
+
+
 
 static	void CheckVFunc(DWORD *class_ptr, char *class_name, char *class_function, char *gametype_ptr, int vfunc_type)
 {
@@ -785,6 +808,38 @@ static	int		FindVFunc(DWORD *class_ptr, char *class_name, char *class_function, 
 		return -1;
 }
 
+
+void DumpVFuncClass(DWORD *class_ptr, int count)
+{
+	void    *handle;
+	void    *var_address;
+	Dl_info d;
+
+	handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
+
+	if (handle == NULL)
+	{
+		MMsg("Failed to open server image, error [%s]\n", dlerror());
+	}
+	else
+	{
+		for (int i = 0; i < count; i++)
+		{
+			DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) class_ptr)) + (i * 4)));
+
+			int status = dladdr(FuncPtr, &d);
+
+			if (status)
+			{
+				MMsg("Index %d\t Function Name %s\n", i, d.dli_sname);
+			}
+		}
+
+		dlclose(handle);
+	}
+
+	return;
+}
 
 #endif
 

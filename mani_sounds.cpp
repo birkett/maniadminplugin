@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -86,11 +87,11 @@ action_sound_t	action_sound_list[MANI_MAX_ACTION_SOUNDS]=
 static	sound_t			*sound_list = NULL;
 static	int				sound_list_size = 0;
 int						sounds_played[MANI_MAX_PLAYERS];
-static void SoundsAutoDownload ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(SoundsAutoDownload);
 static void	SetupSoundAutoDownloads(void);
 static void	SetupActionAutoDownloads(void);
 
-ConVar mani_sounds_auto_download ("mani_sounds_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, SoundsAutoDownload); 
+ConVar mani_sounds_auto_download ("mani_sounds_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, CONVAR_CALLBACK_REF(SoundsAutoDownload)); 
 
 //---------------------------------------------------------------------------------
 // Purpose: Free the sounds used
@@ -144,7 +145,7 @@ void	LoadSounds(void)
 			Q_strcpy(sound_list[sound_list_size-1].alias, alias_command);
 			if (esounds)
 			{
-				esounds->PrecacheSound(sound_id, true);
+				// esounds->PrecacheSound(sound_id, true);
 			}
 
 //			MMsg("Alias [%s] Sound File [%s]\n", alias_command, sound_id); 
@@ -197,7 +198,7 @@ void	LoadSounds(void)
 						found_id = true;
 						if (esounds)
 						{
-							esounds->PrecacheSound(sound_id, true);
+							// esounds->PrecacheSound(sound_id, true);
 						}
 						break;
 					}
@@ -283,7 +284,7 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 	}
 
 	int sound_index;
-	//char play_sound[512];
+	char play_sound[512];
 
 	// See if we can find a match by index or partial match on name
 	sound_index = atoi(gpCmd->Cmd_Argv(1));
@@ -340,9 +341,9 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 			}
 		}
 
-		//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[sound_index].sound_name);
-		//engine->ClientCommand(target_player.entity, play_sound);
-		UTIL_EmitSoundSingle(&target_player, sound_list[sound_index].sound_name);
+		snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",sound_list[sound_index].sound_name);
+		engine->ClientCommand(target_player.entity, play_sound);
+		//UTIL_EmitSoundSingle(&target_player, sound_list[sound_index].sound_name);
 	}	
 
 	if(!unlimited_play)
@@ -400,7 +401,7 @@ int PlaySoundItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	int index;
 	if (this->params.GetParam("index", &index))
 	{
-		//char play_sound[512];
+		char play_sound[512];
 
 		for (int i = 1; i <= max_players; i++ )
 		{
@@ -417,9 +418,9 @@ int PlaySoundItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 			// This player doesn't want to hear sounds
 			if (!player_settings->server_sounds) continue;
 
-			//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[index].sound_name);
-			//engine->ClientCommand(player.entity, play_sound);
-			UTIL_EmitSoundSingle(&player, sound_list[index].sound_name);
+			snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",sound_list[index].sound_name);
+			engine->ClientCommand(player.entity, play_sound);
+			//UTIL_EmitSoundSingle(&player, sound_list[index].sound_name);
 		}
 	}
 
@@ -448,7 +449,7 @@ bool PlaySoundPage::PopulateMenuPage(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 void ProcessPlayActionSound( player_t *target_player, int sound_id)
 {
-	//char	play_sound[512];
+	char	play_sound[512];
 	player_settings_t	*player_settings;
 
 	if (!action_sound_list[sound_id].in_use) return;
@@ -470,9 +471,9 @@ void ProcessPlayActionSound( player_t *target_player, int sound_id)
 			// This player doesn't want to hear sounds
 			if (!player_settings->server_sounds) continue;
 
-			//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
-			//engine->ClientCommand(player.entity, play_sound);
-			UTIL_EmitSoundSingle(&player, action_sound_list[sound_id].sound_file);
+			snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",action_sound_list[sound_id].sound_file);
+			engine->ClientCommand(player.entity, play_sound);
+			//UTIL_EmitSoundSingle(&player, action_sound_list[sound_id].sound_file);
 		}
 	}
 	else
@@ -483,9 +484,9 @@ void ProcessPlayActionSound( player_t *target_player, int sound_id)
 		// This player doesn't want to hear sounds
 		if (!player_settings->server_sounds) return;
 
-		//snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
-		//engine->ClientCommand(target_player->entity, play_sound);
-		UTIL_EmitSoundSingle(target_player, action_sound_list[sound_id].sound_file);
+		snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",action_sound_list[sound_id].sound_file);
+		engine->ClientCommand(target_player->entity, play_sound);
+		//UTIL_EmitSoundSingle(target_player, action_sound_list[sound_id].sound_file);
 
 	}
 }
@@ -508,7 +509,11 @@ void	SetupSoundAutoDownloads(void)
 		{
 			char	res_string[512];
 			snprintf(res_string, sizeof(res_string), "sound/%s", sound_list[i].sound_name);
+#ifdef ORANGE
+			pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
+#else
 			pDownloadablesTable->AddString(res_string, sizeof(res_string));
+#endif		
 		} 
 	}
 
@@ -535,7 +540,11 @@ void	SetupActionAutoDownloads(void)
 			if (pDownloadablesTable)
 			{
 				snprintf(res_string, sizeof(res_string), "sound/%s", action_sound_list[i].sound_file);
+#ifdef ORANGE
+				pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
+#else
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
+#endif
 			}
 		}
 	}
@@ -546,11 +555,11 @@ void	SetupActionAutoDownloads(void)
 //---------------------------------------------------------------------------------
 // Purpose: Handle change of server sound download cvar
 //---------------------------------------------------------------------------------
-static void SoundsAutoDownload ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(SoundsAutoDownload)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_sounds_auto_download.GetString()))
 	{
-		if (atoi(var->GetString()) == 1)
+		if (atoi(mani_sounds_auto_download.GetString()) == 1)
 		{
 			SetupSoundAutoDownloads();
 			SetupActionAutoDownloads();

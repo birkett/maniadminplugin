@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -62,7 +63,12 @@ public:
 	virtual void			SetCommandClient( int index );
 	virtual void			ClientSettingsChanged( edict_t *pEdict );
 	virtual PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen );
+#ifdef ORANGE 
+	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity, const CCommand &args );
+	virtual void			OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue ) {return;}
+#else
 	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity );
+#endif
 	virtual PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	virtual int GetCommandIndex() { return m_iClientCommandIndex; }
 //	virtual void FireGameEvent( IGameEvent * event );

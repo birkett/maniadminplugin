@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -180,7 +181,11 @@ void ManiDownloads::AddToDownloads(const char *filename)
 	if (pDownloadablesTable)
 	{
 		snprintf(res_string, sizeof(res_string), "%s", filename);
+#ifdef ORANGE
+		pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
+#else
 		pDownloadablesTable->AddString(res_string, sizeof(res_string));
+#endif	
 	}
 
 	engine->LockNetworkStringTables(save);

@@ -19,9 +19,6 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
-
-
 
 
 #include <stdio.h>
@@ -84,12 +81,12 @@ action_model_t	*action_model_list = NULL;
 int				action_model_list_size = 0;
 
 static	bool LoadSkinType( const char *skin_directory,  const char *filename, const char *core_filename, const int	skin_type );
-static	void ManiSkinsAutoDownload ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiSkinsAutoDownload);
 static	void	SetupSkinsAutoDownloads(void);
 static  bool	IsSkinValidForPlayer( int *skin_index_ptr, player_t *player_ptr );
 static	int IsValidSkinName(const char *skin_name);
 
-ConVar mani_skins_auto_download ("mani_skins_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, ManiSkinsAutoDownload); 
+ConVar mani_skins_auto_download ("mani_skins_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiSkinsAutoDownload)); 
 
 //---------------------------------------------------------------------------------
 // Purpose: Free the skins used
@@ -1069,7 +1066,11 @@ void	SetupSkinsAutoDownloads(void)
 			if (pDownloadablesTable)
 			{
 				snprintf(res_string, sizeof(res_string), "%s", skin_list[i].resource_list[j].resource);
+#ifdef ORANGE
+				pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
+#else
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
+#endif
 			}
 		}
 	}
@@ -1099,7 +1100,11 @@ void	SetupActionModelsAutoDownloads(void)
 				snprintf(res_string, sizeof(res_string), "sound/%s", action_model_list[i].sound_list[j].sound_file);
 				if (filesystem->FileExists(res_string))
 				{
+#ifdef ORANGE
+					pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
+#else
 					pDownloadablesTable->AddString(res_string, sizeof(res_string));
+#endif					
 				}
 				else
 				{
@@ -1115,11 +1120,11 @@ void	SetupActionModelsAutoDownloads(void)
 //---------------------------------------------------------------------------------
 // Purpose: Handle change of server sound download cvar
 //---------------------------------------------------------------------------------
-static void ManiSkinsAutoDownload ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiSkinsAutoDownload)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_skins_auto_download.GetString()))
 	{
-		if (atoi(var->GetString()) == 1)
+		if (atoi(mani_skins_auto_download.GetString()) == 1)
 		{
 			SetupSkinsAutoDownloads();
 		}

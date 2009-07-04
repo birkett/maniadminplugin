@@ -22,12 +22,13 @@
 
 #ifndef SOURCEMM
 
+#include "cbaseentity.h"
+
 #include <ISmmPlugin.h>
-#include <sourcehook/sourcehook.h>
+#include <sourcehook/sourcehook_impl.h>
 #include <igameevents.h>
 
 #include "mani_main.h"
-#include "cbaseentity.h"
 
 // This file is used for backwards compatibility testing
 // It allows us to test binary backwards compatibility by using an older include file HERE:
@@ -36,28 +37,6 @@
 // and the up-to-date sourcehook_impl.h/sourcehook.cpp. The tests use this file however.
 // If the test needs an up-to-date version (like the recall test), it can simply
 // #include "sourcehook.h" before including this, thus overriding our decision.
-
-#include <sourcehook/sourcehook_impl.h>
-
-SourceHook::ISourceHook *SourceHook_Factory();
-void SourceHook_Delete(SourceHook::ISourceHook *shptr);
-
-struct CSHPtrAutoDestruction
-{
-	SourceHook::ISourceHook *m_SHPtr;
-	CSHPtrAutoDestruction(SourceHook::ISourceHook *shptr) : m_SHPtr(shptr) {}
-	~CSHPtrAutoDestruction() { SourceHook_Delete(m_SHPtr); }
-};
-
-#define GET_SHPTR(var) var = SourceHook_Factory(); CSHPtrAutoDestruction ___autodestruction(var);
-
-// Access to CSourceHookImpl functions
-void SourceHook_CompleteShutdown(SourceHook::ISourceHook *shptr);
-bool SourceHook_IsPluginInUse(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
-void SourceHook_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
-void SourceHook_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
-void SourceHook_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug);
-void SourceHook_InitSourceHook(void);
 
 class ManiSMMHooks
 {
@@ -72,11 +51,12 @@ public:
 	void	HookWeapon_CanUse(CBasePlayer *pPlayer);
 	bool	Weapon_CanUse(CBaseCombatWeapon *pWeapon);
 	void	UnHookWeapon_CanUse(CBasePlayer *pPlayer);
+	void	HookConCommands();
 };
 
 extern ManiSMMHooks g_ManiSMMHooks;
 extern SourceHook::ISourceHook *g_SHPtr;
-extern SourceHook::Plugin g_PLID;
+extern int g_PLID;
 
 #endif
 

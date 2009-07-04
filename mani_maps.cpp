@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -58,6 +59,7 @@ extern	IServerPluginHelpers *helpers;
 extern	IVEngineServer *engine;
 extern	IServerPluginCallbacks *gpManiClientPlugin;
 extern	CGlobalVars *gpGlobals;
+extern	ICvar *g_pCVar;
 extern	int	max_players;
 extern	bool war_mode;
 extern	char *mani_version;
@@ -97,14 +99,14 @@ bool	override_setnextmap = false;
 ConVar	*mapcyclefile = NULL;
 ConVar  *host_map = NULL;
 
-static void ManiMapCycleMode ( ConVar *var, char const *pOldString );
-static void ManiNextMap ( ConVar *var, char const *pOldString );
-ConVar mani_mapcycle_mode ("mani_mapcycle_mode", "0", 0, "0 = standard map cycle is followed, 1 = custom cycle is selected, 2 = random map cycle, 3 = Maps are not skipped after voting", true, 0, true, 3, ManiMapCycleMode); 
-ConVar mani_nextmap ("mani_nextmap", "Unknown", FCVAR_REPLICATED | FCVAR_NOTIFY, "Nextmap information");
+CONVAR_CALLBACK_PROTO(ManiMapCycleMode);
+CONVAR_CALLBACK_PROTO(ManiNextMap);
+ConVar mani_mapcycle_mode ("mani_mapcycle_mode", "0", 0, "0 = standard map cycle is followed, 1 = custom cycle is selected, 2 = random map cycle, 3 = Maps are not skipped after voting", true, 0, true, 3, CONVAR_CALLBACK_REF(ManiMapCycleMode)); 
+ConVar mani_nextmap ("mani_nextmap", "Unknown", FCVAR_REPLICATED | FCVAR_NOTIFY, "Nextmap information", CONVAR_CALLBACK_REF(ManiNextMap));
 
-static void ManiNextMap ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiNextMap)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_nextmap.GetString()))
 	{
 		if (mani_vote_allow_end_of_map_vote.GetInt() == 1 && gpManiVote->SysMapDecided() == false)
 		{
@@ -140,8 +142,8 @@ void	InitMaps(void)
 //---------------------------------------------------------------------------------
 void	FindMapCVars(void)
 {
-	mapcyclefile = cvar->FindVar( "mapcyclefile");
-	host_map = cvar->FindVar( "host_map");
+	mapcyclefile = g_pCVar->FindVar( "mapcyclefile");
+	host_map = g_pCVar->FindVar( "host_map");
 }
 
 //---------------------------------------------------------------------------------
@@ -862,8 +864,7 @@ PLUGIN_RESULT	ProcessMaSkipMap(player_t *player_ptr, const char	*command_name, c
 //---------------------------------------------------------------------------------
 // Purpose: Process the mani_map_cycle_mode cvar change
 //---------------------------------------------------------------------------------
-static 
-void ManiMapCycleMode ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiMapCycleMode)
 {
 	int	map_cycle_mode;
 	map_t	*select_list;
@@ -872,7 +873,7 @@ void ManiMapCycleMode ( ConVar *var, char const *pOldString )
 	last_map_t *last_maps;
 	int	maps_to_skip;
 
-	map_cycle_mode = var->GetInt();
+	map_cycle_mode = mani_mapcycle_mode.GetInt();
 	select_list = NULL;
 	select_list_size = 0;
 

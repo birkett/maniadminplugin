@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -72,7 +73,11 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 
-	if (engine->Cmd_Argc() == 1)
+#ifndef ORANGE
+	CCommand args;
+#endif
+
+	if (args.ArgC() == 1)
 	{
 		ServerClass *sc = serverdll->GetAllServerClasses();
 		while (sc)
@@ -81,12 +86,12 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 			sc = sc->m_pNext;
 		}	
 	}
-	else if (engine->Cmd_Argc() == 2)
+	else if (args.ArgC() == 2)
 	{
 		ServerClass *sc = serverdll->GetAllServerClasses();
 		while (sc)
 		{
-			if (FStrEq(sc->GetName(), engine->Cmd_Argv(1)))
+			if (FStrEq(sc->GetName(), args.Arg(1)))
 			{
 				int NumProps = sc->m_pTable->GetNumProps();
 				for (int i=0; i<NumProps; i++)
@@ -99,7 +104,7 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 			sc = sc->m_pNext;
 		}
 	}
-	else if (engine->Cmd_Argc() == 3)
+	else if (args.ArgC() == 3)
 	{
 		ServerClass *sc = serverdll->GetAllServerClasses();
 		while (sc)
@@ -107,7 +112,7 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 			int NumProps = sc->m_pTable->GetNumProps();
 			for (int i=0; i<NumProps; i++)
 			{
-				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), engine->Cmd_Argv(1)))
+				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), args.Arg(1)))
 				{
 					MMsg("%s.%s\n", sc->GetName(), sc->m_pTable->GetProp(i)->GetName());
 				}
@@ -122,8 +127,11 @@ CON_COMMAND(ma_getpropfilt, "Debug Tool")
 {
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
+#ifndef ORANGE
+	CCommand args;
+#endif
 
-	if (engine->Cmd_Argc() == 1)
+	if (args.ArgC() == 1)
 	{
 		ServerClass *sc = serverdll->GetAllServerClasses();
 		while (sc)
@@ -132,7 +140,7 @@ CON_COMMAND(ma_getpropfilt, "Debug Tool")
 			sc = sc->m_pNext;
 		}	
 	}
-	else if (engine->Cmd_Argc() == 2)
+	else if (args.ArgC() == 2)
 	{
 		ServerClass *sc = serverdll->GetAllServerClasses();
 		while (sc)
@@ -140,7 +148,7 @@ CON_COMMAND(ma_getpropfilt, "Debug Tool")
 			int NumProps = sc->m_pTable->GetNumProps();
 			for (int i=0; i<NumProps; i++)
 			{
-				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), engine->Cmd_Argv(1)))
+				if (Q_stristr(sc->m_pTable->GetProp(i)->GetName(), args.Arg(1)))
 				{
 					MMsg("%s.%s [%i] [%i] [Signed: %s]\n", 
 							sc->GetName(), 
@@ -365,17 +373,18 @@ CON_COMMAND(ma_getmap, "Debug Tool")
 
 	player.entity = NULL;
 
-	if (!IsCommandIssuedByServerAdmin()) return;
-	if (ProcessPluginPaused()) return;
+#ifndef ORANGE
+	CCommand args;
+#endif
 
-	if (engine->Cmd_Argc() < 2)
+	if (args.ArgC() < 2)
 	{
 		MMsg("Need more args :)\n");
 		return;
 	}
 
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(&player, engine->Cmd_Argv(1), NULL))
+	if (!FindTargetPlayers(&player, args.Arg(1), NULL))
 	{
 		return;
 	}

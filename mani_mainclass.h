@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -60,7 +61,11 @@ public:
 	void			SetCommandClient( int index );
 	void			ClientSettingsChanged( edict_t *pEdict );
 	PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen );
+#ifdef ORANGE
+	PLUGIN_RESULT	ClientCommand( edict_t *pEntity,  const CCommand &args);
+#else
 	PLUGIN_RESULT	ClientCommand( edict_t *pEntity );
+#endif
 	PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	// End of callbacks
 
@@ -68,12 +73,11 @@ public:
 	bool			CanTeleport(player_t *player);
 	void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);
 	void			ProcessConsoleVotemap( edict_t *pEntity);
-	//			void			ProcessMenuVotemap( edict_t *pEntity, int next_index, int argv_offset );
 	void			ProcessReflectDamagePlayer( player_t *victim,  player_t *attacker, IGameEvent *event );
 	void			ProcessPlayerTeam(IGameEvent * event);
 	void			ProcessPlayerDeath(IGameEvent * event);
 	void			ProcessDODSPlayerDeath(IGameEvent * event);
-	bool			HookSayCommand(bool team_say);
+	bool			HookSayCommand(bool team_say, const CCommand &args);
 	bool			HookChangeLevelCommand(void);
 
 	PLUGIN_RESULT	ProcessMaKick(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
@@ -132,8 +136,8 @@ public:
 	PLUGIN_RESULT	ProcessMaConfig(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaSaveLoc(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaWar(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
-	PLUGIN_RESULT	ProcessMaSettings(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaTimeLeft(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
+	PLUGIN_RESULT	ProcessMaSettings(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	void			TurnOffOverviewMap(void);
 	void			ProcessMapCycleMode (int map_cycle_mode);
 

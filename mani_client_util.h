@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -32,8 +33,6 @@
 #include <set>
 #include "mani_output.h"
 #include "mani_util.h"
-
-using namespace std;
 
 class DualStrKey
 {
@@ -261,9 +260,9 @@ public:
 
 
 private:
-	multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator l_itr;
-	multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator l_itr2;
-	multimap<const unsigned int, FlagAccessSwitch, ltint> flag_list;
+	std::multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator l_itr;
+	std::multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator l_itr2;
+	std::multimap<const unsigned int, FlagAccessSwitch, ltint> flag_list;
 };
 
 class FlagDesc
@@ -313,8 +312,8 @@ public:
 	void	DumpFlags();
 
 private:
-	map<DualStrKey, FlagDesc>::iterator l_itr;
-	map<DualStrKey, FlagDesc> flag_desc_list;
+	std::map<DualStrKey, FlagDesc>::iterator l_itr;
+	std::map<DualStrKey, FlagDesc> flag_desc_list;
 };
 
 class PersonalFlag
@@ -333,8 +332,8 @@ public:
 	void	Copy(PersonalFlag &src);
 
 private:
-	multimap<const unsigned int, ClassFlagAccess, ltint>::iterator l_itr;
-	multimap<const unsigned int, ClassFlagAccess, ltint> flag_list;
+	std::multimap<const unsigned int, ClassFlagAccess, ltint>::iterator l_itr;
+	std::multimap<const unsigned int, ClassFlagAccess, ltint> flag_list;
 };
 
 class GroupList
@@ -353,8 +352,8 @@ public:
 	GlobalGroupFlag	*FindNext(const char *class_type, const DualStriKey **ptr);
 
 private:
-	map<DualStriKey, GlobalGroupFlag>::iterator l_itr;
-	map<DualStriKey, GlobalGroupFlag> group_list;
+	std::map<DualStriKey, GlobalGroupFlag>::iterator l_itr;
+	std::map<DualStriKey, GlobalGroupFlag> group_list;
 };
 
 
@@ -374,8 +373,8 @@ public:
 	GlobalGroupFlag	*FindNext(const char *class_type, const DualStrIntKey **ptr);
 
 private:
-	map<DualStrIntKey, GlobalGroupFlag>::iterator l_itr;
-	map<DualStrIntKey, GlobalGroupFlag> group_list;
+	std::map<DualStrIntKey, GlobalGroupFlag>::iterator l_itr;
+	std::map<DualStrIntKey, GlobalGroupFlag> group_list;
 };
 
 class GroupSet
@@ -395,8 +394,8 @@ public:
 	const char *FindNext(const char *class_type);
 
 private:
-	set<DualStriKey>::iterator l_itr;
-	set<DualStriKey> group_set;
+	std::set<DualStriKey>::iterator l_itr;
+	std::set<DualStriKey> group_set;
 };
 
 
@@ -417,8 +416,8 @@ public:
 	const int FindNext(const char *class_type);
 
 private:
-	set<DualStrIntKey>::iterator l_itr;
-	set<DualStrIntKey> group_set;
+	std::set<DualStrIntKey>::iterator l_itr;
+	std::set<DualStrIntKey> group_set;
 };
 
 
@@ -439,7 +438,7 @@ public:
 	void	Remove(const char *str) {string_list.erase(str);}
 	bool	Find(const char *str)
 	{
-		set<BasicStr> ::iterator itr = string_list.find(str);
+		std::set<BasicStr> ::iterator itr = string_list.find(str);
 		return ((itr != string_list.end()) ? true:false);
 	}
 
@@ -461,8 +460,8 @@ public:
 	}
 
 private:
-	set<BasicStr>::iterator l_itr;
-	set<BasicStr> string_list;
+	std::set<BasicStr>::iterator l_itr;
+	std::set<BasicStr> string_list;
 };
 
 extern StringSet class_type_list;

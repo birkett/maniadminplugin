@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -98,9 +99,9 @@ static	void ResetQuakePlayer(int index);
 static	long IncrementKillStreak (int index, bool *multi_kill);
 static	void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int mode);
 static	void ShowQuakeSound (player_t *attacker, player_t *victim, int mode, char *fmt, ...);
-static	void QuakeAutoDownload ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO (QuakeAutoDownload);
 
-ConVar mani_quake_auto_download ("mani_quake_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, QuakeAutoDownload); 
+ConVar mani_quake_auto_download ("mani_quake_auto_download", "0", 0, "0 = Don't auto download files to client, 1 = automatically download files to client", true, 0, true, 1, CONVAR_CALLBACK_REF(QuakeAutoDownload)); 
 
 // Monster kill sounds
 ConVar mani_quake_sounds ("mani_quake_sounds", "0", 0, "Turn on quake sounds like headshot, monster kill etc 1 = on, 0 = off", true, 0, true, 1); 
@@ -222,7 +223,7 @@ void	LoadQuakeSounds(void)
 						found_id = true;
 						if (esounds)
 						{
-							esounds->PrecacheSound(sound_id, true);
+							// esounds->PrecacheSound(sound_id, true);
 						}
 
 						break;
@@ -272,7 +273,11 @@ void	SetupAutoDownloads(void)
 			if (pDownloadablesTable)
 			{
 				snprintf(res_string, sizeof(res_string), "sound/%s", quake_sound_list[i].sound_file);
+#ifdef ORANGE
+				pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
+#else
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
+#endif
 			}
 		}
 	}
@@ -560,7 +565,7 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 	if (!esounds || mode == 0) return;
 	if (!quake_sound_list[sound_index].in_use) return;
 
-	snprintf(client_string, sizeof(client_string), "playgamesound \"%s\"\n", quake_sound_list[sound_index].sound_file);
+	snprintf(client_string, sizeof(client_string), "play \"%s\"\n", quake_sound_list[sound_index].sound_file);
 
 	if (mode == 1)
 	{
@@ -576,8 +581,8 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 			player_settings = FindPlayerSettings(&sound_player);
 			if (player_settings && player_settings->quake_sounds)
 			{
-				UTIL_EmitSoundSingle(&sound_player, quake_sound_list[sound_index].sound_file);
-				//engine->ClientCommand(sound_player.entity, client_string);
+				//UTIL_EmitSoundSingle(&sound_player, quake_sound_list[sound_index].sound_file);
+				engine->ClientCommand(sound_player.entity, client_string);
 			}
 		}
 	}
@@ -591,8 +596,8 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 			player_settings = FindPlayerSettings(attacker);
 			if (player_settings && player_settings->quake_sounds)
 			{
-				UTIL_EmitSoundSingle(attacker, quake_sound_list[sound_index].sound_file);
-//				engine->ClientCommand(attacker->entity, client_string);
+				//UTIL_EmitSoundSingle(attacker, quake_sound_list[sound_index].sound_file);
+				engine->ClientCommand(attacker->entity, client_string);
 			}
 		}
 
@@ -601,8 +606,8 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 			player_settings = FindPlayerSettings(victim);
 			if (player_settings && player_settings->quake_sounds)
 			{
-				UTIL_EmitSoundSingle(victim, quake_sound_list[sound_index].sound_file);
-//				engine->ClientCommand(victim->entity, client_string);
+//				UTIL_EmitSoundSingle(victim, quake_sound_list[sound_index].sound_file);
+				engine->ClientCommand(victim->entity, client_string);
 			}
 		}
 
@@ -617,8 +622,8 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 			player_settings = FindPlayerSettings(attacker);
 			if (player_settings && player_settings->quake_sounds)
 			{
-				UTIL_EmitSoundSingle(attacker, quake_sound_list[sound_index].sound_file);
-//				engine->ClientCommand(attacker->entity, client_string);
+//				UTIL_EmitSoundSingle(attacker, quake_sound_list[sound_index].sound_file);
+				engine->ClientCommand(attacker->entity, client_string);
 			}
 		}
 	}
@@ -632,8 +637,8 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 			player_settings = FindPlayerSettings(victim);
 			if (player_settings && player_settings->quake_sounds)
 			{
-				UTIL_EmitSoundSingle(victim, quake_sound_list[sound_index].sound_file);
-//				engine->ClientCommand(victim->entity, client_string);
+//				UTIL_EmitSoundSingle(victim, quake_sound_list[sound_index].sound_file);
+				engine->ClientCommand(victim->entity, client_string);
 			}
 		}
 	}
@@ -725,11 +730,11 @@ void ShowQuakeSound (player_t *attacker, player_t *victim, int mode, char *fmt, 
 //---------------------------------------------------------------------------------
 // Purpose: Handle change of quake sound download cvar
 //---------------------------------------------------------------------------------
-static void QuakeAutoDownload ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(QuakeAutoDownload)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_quake_auto_download.GetString()))
 	{
-		if (atoi(var->GetString()) == 1)
+		if (atoi(mani_quake_auto_download.GetString()) == 1)
 		{
 			SetupAutoDownloads();
 		}

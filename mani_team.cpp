@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -102,6 +103,9 @@ void	ManiTeam::Init(int edict_count)
 {
 	int number_of_entries = 0;
 
+#ifdef __linux__
+	bool first_time = true;
+#endif
 	this->CleanUp();
 	change_team = false;
 	swap_team = false;
@@ -112,8 +116,23 @@ void	ManiTeam::Init(int edict_count)
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
 		if(pEntity)
 		{
+			if (!pEntity->m_pNetworkable)
+			{
+				continue;
+			}
+#ifdef __linux__
+			if (first_time)
+			{
+				DumpVFuncClass((DWORD *) pEntity->m_pNetworkable, 15);
+				first_time = false;
+			}
+#endif
 			const char *class_name = pEntity->GetClassName();
-//MMsg("Classname %s\n", class_name);
+			if (!class_name)
+			{
+				continue;
+			}
+//  MMsg("Classname %s\n", class_name);
 
 			if (Q_stristr(class_name, "team_") != NULL)
 			{

@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -43,7 +44,6 @@
 #include "networkstringtabledefs.h"
 #include "mani_main.h"
 #include "mani_callback_sourcemm.h"
-#include "mani_sourcehook.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_player.h"
@@ -71,15 +71,21 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	IServerGameEnts *serverents;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
+extern	ICvar *g_pCVar;
 extern	bool war_mode;
 extern	time_t	g_RealTime;
 extern  float timeleft_offset;
 
 ConVar *pMPRestartGame = NULL;
-FnChangeCallback pMPRestartGameCallback = NULL;
-static	void mp_restart_game_callback (ConVar *var, char const *pOldString );
 
-static void ManiMPRestartGameKicker ( ConVar *var, char const *pOldString );
+#ifdef ORANGE
+FnChangeCallback_t pMPRestartGameCallback = NULL;
+#else
+FnChangeCallback pMPRestartGameCallback = NULL;
+#endif
+
+CONVAR_CALLBACK_PROTO(mp_restart_game_callback);
+CONVAR_CALLBACK_PROTO(ManiMPRestartGameKicker);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -104,7 +110,7 @@ ManiMPRestartGame::~ManiMPRestartGame()
 void	ManiMPRestartGame::Load(void)
 {
 	//find the commands in the server's CVAR list
-	ConCommandBase *pCmd = cvar->GetCommands();
+	ConCommandBase *pCmd = g_pCVar->GetCommands();
 	while (pCmd)
 	{
 		if (!pCmd->IsCommand())
@@ -123,7 +129,11 @@ void	ManiMPRestartGame::Load(void)
 			pMPRestartGameCallback = pMPRestartGame->m_fnChangeCallback;
 		}
 
+#ifdef ORANGE
+		pMPRestartGame->m_fnChangeCallback = (FnChangeCallback_t) mp_restart_game_callback;
+#else
 		pMPRestartGame->m_fnChangeCallback = mp_restart_game_callback;
+#endif
 	}
 
 
@@ -238,13 +248,17 @@ void	ManiMPRestartGame::PostFire()
 ManiMPRestartGame	g_ManiMPRestartGame;
 ManiMPRestartGame	*gpManiMPRestartGame;
 
-static void mp_restart_game_callback (ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(mp_restart_game_callback)
 {
-	Msg("hooked mp_restartgame %s\n", var->GetString());
+	Msg("hooked mp_restartgame %s\n", pVar->GetString());
 	if (pMPRestartGameCallback)
 	{
-		g_ManiMPRestartGame.CVarChanged(var);
-		pMPRestartGameCallback(var, pOldString);
+		g_ManiMPRestartGame.CVarChanged(pVar);
+#ifdef ORANGE
+		pMPRestartGameCallback(pVar, pOldString, pOldFloat);
+#else
+		pMPRestartGameCallback(pVar, pOldString);
+#endif
 	}
 }
 

@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -177,15 +178,15 @@ static	char	*dod_weapons_log[MANI_MAX_STATS_DODS_WEAPONS] =
 //static char *stats_user_def_name[MANI_MAX_USER_DEF] = {"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p"};
 static char *stats_user_def_name[MANI_MAX_USER_DEF] = {"1a","1b","1c","1d","1e","1f","1g","1h","1i","1j","1k","1l","1m","1n","1o","1p"};
 
-static void ManiStatsDecayStart ( ConVar *var, char const *pOldString );
-static void ManiStatsDecayPeriod ( ConVar *var, char const *pOldString );
-static void ManiStatsIgnoreRanks ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiStatsDecayStart);
+CONVAR_CALLBACK_PROTO(ManiStatsDecayPeriod);
+CONVAR_CALLBACK_PROTO(ManiStatsIgnoreRanks);
 
-ConVar mani_stats_decay_start ("mani_stats_decay_start", "2", 0, "This defines the number of days before points decay starts, default is 2 days",true, 0, true, 365, ManiStatsDecayStart ); 
-ConVar mani_stats_decay_period ("mani_stats_decay_period", "7", 0, "This defines the number of days that the decay period will last before points flat line at 500 points, default is 7 days",true, 0, true, 365, ManiStatsDecayPeriod ); 
+ConVar mani_stats_decay_start ("mani_stats_decay_start", "2", 0, "This defines the number of days before points decay starts, default is 2 days",true, 0, true, 365, CONVAR_CALLBACK_REF(ManiStatsDecayStart)); 
+ConVar mani_stats_decay_period ("mani_stats_decay_period", "7", 0, "This defines the number of days that the decay period will last before points flat line at 500 points, default is 7 days",true, 0, true, 365, CONVAR_CALLBACK_REF(ManiStatsDecayPeriod)); 
 ConVar mani_stats_decay_restore_points_on_connect ("mani_stats_decay_restore_points_on_connect", "1", 0, "0 = Full points not restored on player reconnect if points decayed, 1 = Full points restored on reconnect if points decayed",true, 0, true, 1 ); 
 ConVar mani_stats_points_add_only ("mani_stats_points_add_only", "0", 0, "If set to 0 you lose points for being killed, if set to 1 you do not",true, 0, true, 1); 
-ConVar mani_stats_ignore_ranks_after_x_days ("mani_stats_ignore_ranks_after_x_days", "21", 0, "After this many days, ranked players are ignored from the rank output (they are not deleted)",true, 0, true, 365, ManiStatsIgnoreRanks); 
+ConVar mani_stats_ignore_ranks_after_x_days ("mani_stats_ignore_ranks_after_x_days", "21", 0, "After this many days, ranked players are ignored from the rank output (they are not deleted)",true, 0, true, 365, CONVAR_CALLBACK_REF(ManiStatsIgnoreRanks)); 
 
 ConVar mani_stats_points_multiplier ("mani_stats_points_multiplier", "5.0", 0, "Multiplier used in a kill calculation", true, -100, true, 100); 
 ConVar mani_stats_points_death_multiplier ("mani_stats_points_death_multiplier", "1.0", 0, "Multiplier used against the points removed from a player if killed", true, -100, true, 100); 
@@ -4798,10 +4799,9 @@ SCON_COMMAND(ma_resetrank, 2105, MaResetRank, false);
 //---------------------------------------------------------------------------------
 // Purpose: Number of days before decay period kicks in
 //---------------------------------------------------------------------------------
-static 
-void ManiStatsDecayStart ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiStatsDecayStart)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_stats_decay_start.GetString()))
 	{
 		// cvar changed
 		gpManiStats->LoadStats();
@@ -4811,10 +4811,9 @@ void ManiStatsDecayStart ( ConVar *var, char const *pOldString )
 //---------------------------------------------------------------------------------
 // Purpose: Duration in days of decay period for points
 //---------------------------------------------------------------------------------
-static 
-void ManiStatsDecayPeriod ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiStatsDecayPeriod)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_stats_decay_period.GetString()))
 	{
 		// cvar changed
 		gpManiStats->LoadStats();
@@ -4824,10 +4823,9 @@ void ManiStatsDecayPeriod ( ConVar *var, char const *pOldString )
 //---------------------------------------------------------------------------------
 // Purpose: Rebuild stats based on ignore days changing
 //---------------------------------------------------------------------------------
-static 
-void ManiStatsIgnoreRanks ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiStatsIgnoreRanks)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_stats_ignore_ranks_after_x_days.GetString()))
 	{
 		// cvar changed
 		gpManiStats->LoadStats();

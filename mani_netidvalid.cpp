@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -187,7 +188,7 @@ void ManiNetIDValid::GameFrame(void)
 		if (!net_id_list.empty())
 		{
 			// Got some players to parse
-			for (vector<net_id_t>::iterator i = net_id_list.begin(); i != net_id_list.end(); ++i)
+			for (std::vector<net_id_t>::iterator i = net_id_list.begin(); i != net_id_list.end(); ++i)
 			{
 				player_t player;
 				player.index = i->player_index;
@@ -277,7 +278,7 @@ bool ManiNetIDValid::TimeoutKick(player_t *player_ptr, time_t timeout)
 //---------------------------------------------------------------------------------
 void ManiNetIDValid::ClientDisconnect(player_t *player_ptr)
 {
-	for (vector<net_id_t>::iterator i = net_id_list.begin(); i != net_id_list.end();++i)
+	for (std::vector<net_id_t>::iterator i = net_id_list.begin(); i != net_id_list.end();++i)
 	{
 		if (i->player_index == player_ptr->index)
 		{

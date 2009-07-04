@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -32,8 +33,6 @@
 #include <vector>
 #include <algorithm>
 #include "mani_util.h"
-
-using namespace std;
 
 extern	void	DrawMenu(int player_index, int time, int range, bool back, bool more, bool cancel, char *menu_string, bool final);
 extern	int		RePopOption(int return_option);
@@ -70,8 +69,8 @@ public:
 	ParamManager	params;
 	BasicStr		display_text;
 	BasicStr		hidden_text;
-	vector<BasicStr> pre_text; // Free text that can be placed before the menu item (AMX only)
-	vector<BasicStr> post_text; // Free text that can be placed after the menu item (AMX only)
+	std::vector<BasicStr> pre_text; // Free text that can be placed before the menu item (AMX only)
+	std::vector<BasicStr> post_text; // Free text that can be placed after the menu item (AMX only)
 };
 
 class MenuPage
@@ -108,7 +107,7 @@ private:
 	BasicStr	esc_link;
 	bool		input_object;
 	bool		hook_chat;
-	vector<MenuItem *> menu_items;
+	std::vector<MenuItem *> menu_items;
 };
 
 class FreePage
@@ -137,7 +136,7 @@ private:
 	int			priority;
 	time_t		timeout_timestamp;
 	BasicStr	title;
-	vector<MenuPage *> menu_pages; // Most commonly used for menus
+	std::vector<MenuPage *> menu_pages; // Most commonly used for menus
 	FreePage *free_page; // More of a raw interface (used in mani_stats.cpp)
 };
 

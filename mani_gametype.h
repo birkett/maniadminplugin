@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -46,6 +47,8 @@ class CBaseEntity;
 #define MANI_GAME_DOD_STR1 "Day Of Defeat"
 #define MANI_GAME_DOD_STR2 "Day Of Defeat: Source"
 #define MANI_GAME_DOD (7)
+#define MANI_GAME_TF_STR "Team Fortress"
+#define MANI_GAME_TF (8)
 
 // VFunc defs
 enum
@@ -71,7 +74,9 @@ enum
 	MANI_VFUNC_COMMIT_SUICIDE,
 	MANI_VFUNC_SET_OBSERVER_TARGET,
 	MANI_VFUNC_WEAPON_CANUSE,
-	MANI_VFUNC_SIZE
+	MANI_VFUNC_GET_CLASS_NAME,
+	MANI_VFUNC_SIZE,
+
 };
 
 //Property defs

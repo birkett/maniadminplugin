@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -41,7 +42,7 @@ public:
 	void		Unload(void);
 	void		LevelInit(void);
 	void		GameCommencing(void);
-	void		ProcessUsercmds(CBaseEntity *, CUserCmd *cmds, int numcmds);
+	void		ProcessUsercmds(CBasePlayer *, CUserCmd *cmds, int numcmds);
 	void		GameFrame(void);
 	void		RoundEnd(void);
 	void		LevelShutdown(void);

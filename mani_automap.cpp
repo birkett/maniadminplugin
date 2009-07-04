@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -66,14 +67,14 @@ extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	time_t	g_RealTime;
 
-static void ManiAutoMapMapList ( ConVar *var, char const *pOldString );
-static void ManiAutoMapTimer ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiAutoMapMapList);
+CONVAR_CALLBACK_PROTO(ManiAutoMapTimer);
 
 ConVar mani_automap ("mani_automap", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1);
-ConVar mani_automap_map_list ("mani_automap_map_list", "", 0, "Setup your maps that will used seperated by a colon, e.g. de_dust:de_aztec:cs_office", ManiAutoMapMapList);
+ConVar mani_automap_map_list ("mani_automap_map_list", "", 0, "Setup your maps that will used seperated by a colon, e.g. de_dust:de_aztec:cs_office", CONVAR_CALLBACK_REF(ManiAutoMapMapList));
 ConVar mani_automap_player_threshold ("mani_automap_player_threshold", "0", 0, "Player limit before an automap change will not take place", true, 0, true, 64);
 ConVar mani_automap_include_bots ("mani_automap_include_bots", "0", 0, "0 = disabled, 1 = include bots as part of player count", true, 0, true, 1);
-ConVar mani_automap_timer ("mani_automap_timer", "240", 0, "Time in seconds before map will be changed once player threshold reached", true, 60, true, 86400, ManiAutoMapTimer);
+ConVar mani_automap_timer ("mani_automap_timer", "240", 0, "Time in seconds before map will be changed once player threshold reached", true, 60, true, 86400, CONVAR_CALLBACK_REF(ManiAutoMapTimer));
 ConVar mani_automap_set_nextmap ("mani_automap_set_nextmap", "0", 0, "0 = Disabled, 1 = Once map changed set next map to be same as the changed map", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
@@ -301,16 +302,16 @@ void	ManiAutoMap::SetupMapList(void)
 	}
 }
 
-static void ManiAutoMapMapList ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiAutoMapMapList)
 {
 	gpManiAutoMap->SetupMapList();
 }
 
-static void ManiAutoMapTimer ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiAutoMapTimer)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_automap_timer.GetString()))
 	{
-		gpManiAutoMap->ResetTimeout(var->GetInt());
+		gpManiAutoMap->ResetTimeout(mani_automap_timer.GetInt());
 	}
 }
 

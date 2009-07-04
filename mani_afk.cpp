@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -69,9 +70,9 @@ extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	time_t	g_RealTime;
 
-static void ManiAFKKicker ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiAFKKicker);
 
-ConVar mani_afk_kicker ("mani_afk_kicker", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1, ManiAFKKicker);
+ConVar mani_afk_kicker ("mani_afk_kicker", "0", 0, "0 = disabled, 1 = enabled", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiAFKKicker));
 ConVar mani_afk_kicker_mode ("mani_afk_kicker_mode", "0", 0, "0 = kick to spectator first, 1 = kick straight off the server", true, 0, true, 1);
 ConVar mani_afk_kicker_alive_rounds ("mani_afk_kicker_alive_rounds", "0", 0, "0 = disabled, > 0 = number of rounds before kick/move", true, 0, true, 20);
 ConVar mani_afk_kicker_spectator_rounds ("mani_afk_kicker_spectator_rounds", "0", 0, "0 = disabled, > 0 = number of rounds before kick", true, 0, true, 20);
@@ -226,14 +227,14 @@ void ManiAFK::NotAFK(int index)
 //---------------------------------------------------------------------------------
 void ManiAFK::ProcessUsercmds
 (
- CBaseEntity *pPlayer, CUserCmd *cmds, int numcmds
+ CBasePlayer *pPlayer, CUserCmd *cmds, int numcmds
  )
 {
 	if (war_mode) return;
 	if (mani_afk_kicker.GetInt() == 0) return;
 
 	if (!pPlayer) return;
-	edict_t *pEdict = serverents->BaseEntityToEdict((CBasePlayer *) pPlayer);
+	edict_t *pEdict = serverents->BaseEntityToEdict((CBaseEntity *) pPlayer);
 	if (!pEdict) return;
 
 	int index = engine->IndexOfEdict(pEdict);
@@ -551,9 +552,9 @@ void	ManiAFK::GameCommencing(void)
 	}
 }
 
-static void ManiAFKKicker ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiAFKKicker)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_afk_kicker.GetString()))
 	{
 		gpManiAFK->Load();
 	}

@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -28,8 +29,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "interface.h"
+#include "filesystem.h"
 #include "engine/iserverplugin.h"
 #include "dlls/iplayerinfo.h"
+#include "eiface.h"
+#include "mrecipientfilter.h" 
+#include "inetchannelinfo.h"
+#include "networkstringtabledefs.h"
+#include "bitbuf.h"
 #include "convar.h"
 #include "Color.h"
 #include "mani_player.h"

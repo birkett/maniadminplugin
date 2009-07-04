@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -28,16 +29,19 @@
 
 #ifdef SOURCEMM
 #include <ISmmPlugin.h>
-#include <sourcehook/sourcehook.h>
+#include <convar.h>
+//#include <sourcehook/sourcehook.h>
 #include <igameevents.h>
 
 #include "mani_main.h"
 #include "cbaseentity.h"
 
-
 class CCSWeaponInfo;
 
-class CSourceMMMAP : public ISmmPlugin, public IMetamodListener
+class CSourceMMMAP : 
+	public ISmmPlugin, 
+	public IMetamodListener, 
+	public IConCommandBaseAccessor
 {
 public:
 //	CSourceMMMAP();
@@ -54,7 +58,12 @@ public:
 		return true;
 	}
 public:
+#ifdef ORANGE
+	int GetApiVersion() { return METAMOD_PLAPI_VERSION; }
+#else
 	int GetApiVersion() { return PLAPI_VERSION; }
+#endif
+
 public:
 	const char *GetAuthor()
 	{
@@ -127,16 +136,19 @@ public:
 
 	//Called when a client uses a command.  Unlike server plugins, it's void.
 	// You can still supercede the gamedll through RETURN_META(MRES_SUPERCEDE).
+	// void ClientCommand(edict_t *pEntity);
+#ifdef ORANGE
+	void ClientCommand(edict_t *pEntity, const CCommand &args);
+#else
 	void ClientCommand(edict_t *pEntity);
+#endif
 
 	//From IMetamodListener
 	virtual void OnLevelShutdown();
+	bool RegisterConCommandBase(ConCommandBase *pVar);
 
 private:
-/*	IGameEventManager2 *m_GameEventManager;	
-	IVEngineServer *m_Engine;
-	IServerGameDLL *m_ServerDll;*/
-	void					HookConCommands(void);
+	void HookConCommands(void);
 	int m_iClientCommandIndex;
 };
 
@@ -167,7 +179,12 @@ public:
 	virtual void			SetCommandClient( int index );
 	virtual void			ClientSettingsChanged( edict_t *pEdict ) {return;}
 	virtual PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen )  {return PLUGIN_CONTINUE;}
+#ifdef ORANGE 
+	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity, const CCommand &args );
+	virtual void			OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue ) {return;}
+#else
 	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity );
+#endif
 	virtual PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID )  {return PLUGIN_CONTINUE;}
 	virtual int GetCommandIndex() { return m_iClientCommandIndex; }
 private:
@@ -188,12 +205,21 @@ public:
 	void	UnHookWeapon_CanUse(CBasePlayer *pPlayer);
 };
 
+#ifdef ORANGE 
+extern	void Say_handler(const CCommand &command);
+extern	void TeamSay_handler(const CCommand &command);
+extern	void ChangeLevel_handler(const CCommand &command);
+extern	void AutoBuy_handler(const CCommand &command);
+extern	void ReBuy_handler(const CCommand &command);
+extern	void RespawnEntities_handler(const CCommand &command);
+#else
 extern	void Say_handler();
 extern	void TeamSay_handler();
 extern	void ChangeLevel_handler();
 extern	void AutoBuy_handler();
 extern	void ReBuy_handler();
 extern	void RespawnEntities_handler();
+#endif
 
 extern CSourceMMMAP g_ManiCallback;
 extern ManiSMMHooks g_ManiSMMHooks;

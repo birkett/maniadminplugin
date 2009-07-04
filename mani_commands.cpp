@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -631,13 +632,13 @@ void	ManiCommands::DumpHelp
 //---------------------------------------------------------------------------------
 // Purpose: Process the the say command strings
 //---------------------------------------------------------------------------------
-void	ManiCommands::ExtractSayCommand(bool team_say)
+void	ManiCommands::ExtractSayCommand(bool team_say, const CCommand &args)
 {
 	char	one[8];
 	char	two[8];
 	char	three[8];
 
-	this->ParseSayCommand();
+	this->ParseSayCommand(args);
 
 	strcpy(say_argv0, "");
 
@@ -734,7 +735,7 @@ void	ManiCommands::DumpCommands(void)
 //---------------------------------------------------------------------------------
 // Purpose: Process the the say command strings
 //---------------------------------------------------------------------------------
-void	ManiCommands::ParseSayCommand(void)
+void	ManiCommands::ParseSayCommand(const CCommand &args)
 {
 	static int i,j;
 	static char terminate_char;
@@ -751,9 +752,9 @@ void	ManiCommands::ParseSayCommand(void)
 		cmd_argv_cat[i] = cmd_null_string;
 	}
 
-	if (!engine->Cmd_Args()) return;
+	if (!args.ArgS()) return;
 
-	say_string = engine->Cmd_Args();
+	say_string = args.ArgS();
 	say_length = Q_strlen(say_string);
 	if (say_length == 0)
 	{
@@ -939,7 +940,7 @@ void	ManiCommands::ParseEventSayCommand(const char *player_say)
 //---------------------------------------------------------------------------------
 // Purpose: Process the the Client and Server command strings
 //---------------------------------------------------------------------------------
-void	ManiCommands::ExtractClientAndServerCommand(void)
+void	ManiCommands::ExtractClientAndServerCommand(const CCommand &args)
 {
 	static int i,j;
 	static char terminate_char;
@@ -958,13 +959,13 @@ void	ManiCommands::ExtractClientAndServerCommand(void)
 	
 	Q_strcpy(say_argv0, "");
 
-	int initial_len = snprintf(temp_string1, sizeof(temp_string1), "%s ", engine->Cmd_Argv(0));
-	Q_strcpy(temp_string2, engine->Cmd_Argv(0));
+	int initial_len = snprintf(temp_string1, sizeof(temp_string1), "%s ", args.Arg(0));
+	Q_strcpy(temp_string2, args.Arg(0));
 
-	say_string = engine->Cmd_Args();
+	say_string = args.ArgS();
 	if (!say_string)
 	{
-		Q_strcpy(temp_string1, engine->Cmd_Argv(0));
+		Q_strcpy(temp_string1, args.Arg(0));
 		cmd_args = &(temp_string1[0]);
 		cmd_argv_cat[0] = &(temp_string1[0]);
 		cmd_argv[0] = &(temp_string2[0]);
@@ -1125,7 +1126,8 @@ void ManiCommands::RegisterCommand
 int	ManiCommands::HandleCommand
 (
  player_t *player_ptr, 
- int command_type
+ int command_type,
+ const CCommand &args
  )
 {
 	cmd_t	cmd_key;
@@ -1141,8 +1143,8 @@ int	ManiCommands::HandleCommand
 	}
 	else
 	{
-		if (engine->Cmd_Argc() == 0) return PLUGIN_CONTINUE;
-		cmd_key.cmd_name = (char *) engine->Cmd_Argv(0);
+		if (args.ArgC() == 0) return PLUGIN_CONTINUE;
+		cmd_key.cmd_name = (char *) args.Arg(0);
 	}
 
 	// Do BSearch for function name
@@ -1601,7 +1603,7 @@ void	ManiCommands::WriteHelpHTML(void)
 	fprintf(filehandle, "\t\t</TH>\n");
 	fprintf(filehandle, "\t</TR>\n");
 
-	ConCommandBase *pPtr = cvar->GetCommands();
+	ConCommandBase *pPtr = g_pCVar->GetCommands();
 	while (pPtr)
 	{
 		if (!pPtr->IsCommand())
@@ -1611,7 +1613,7 @@ void	ManiCommands::WriteHelpHTML(void)
 			if (NULL != Q_stristr(name, "mani_"))
 			{
 				// Found mani cvar
-				ConVar *mani_var = cvar->FindVar(name);
+				ConVar *mani_var = g_pCVar->FindVar(name);
 				fprintf(filehandle, "\t<TR VALIGN=TOP>\n");
 				fprintf(filehandle, "\t\t<TD WIDTH=17%% BGCOLOR=\"%s\">\n", cmd_col_bg_colour);
 				fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");

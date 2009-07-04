@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -55,6 +56,7 @@ extern	IVEngineServer	*engine; // helper functions (messaging clients, loading c
 extern	INetworkStringTableContainer *networkstringtable;
 extern	INetworkStringTable *g_pStringTableManiScreen;
 extern	IFileSystem	*filesystem;
+extern	ICvar *g_pCVar;
 
 extern	int	max_players;
 extern	bf_write *msg_buffer;
@@ -91,7 +93,11 @@ void	InitPanels(void)
 	}
 	else
 	{
-		g_pStringTableManiScreen->AddString( MANI_WEB_STATS_PANEL, 5, "INIT");
+#ifdef ORANGE
+		g_pStringTableManiScreen->AddString(true, MANI_WEB_STATS_PANEL, 5, "INIT");
+#else
+		g_pStringTableManiScreen->AddString(MANI_WEB_STATS_PANEL, 5, "INIT");
+#endif
 //		MMsg("Added 1 new network string\n");
 	}
 }
@@ -278,7 +284,7 @@ void	DrawPanel(MRecipientFilter *mrf, char *panel_title, char *network_string, c
 //---------------------------------------------------------------------------------
 void	DrawMOTD(MRecipientFilter *mrf)
 {
-	const ConVar *hostname = cvar->FindVar( "hostname" );
+	const ConVar *hostname = g_pCVar->FindVar( "hostname" );
 	const char *title = (hostname) ? hostname->GetString() : "MESSAGE OF THE DAY";
 
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
