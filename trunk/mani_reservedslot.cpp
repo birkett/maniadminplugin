@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -352,7 +353,7 @@ void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr, int *players_on
 
 				active_player.ping = nci->GetAvgLatency(0);
 				const char * szCmdRate = engine->GetClientConVarValue( i, "cl_cmdrate" );
-				int nCmdRate = max( 20, Q_atoi( szCmdRate ) );
+				int nCmdRate = (20 > Q_atoi( szCmdRate )) ? 20 : Q_atoi(szCmdRate);
 				active_player.ping -= (0.5f/nCmdRate) + TICKS_TO_TIME( 1.0f ); // correct latency
 
 				// in GoldSrc we had a different, not fixed tickrate. so we have to adjust

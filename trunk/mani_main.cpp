@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -179,19 +180,21 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
-static void ManiAdminPluginVersion ( ConVar *var, char const *pOldString );
-static void ManiTickrate ( ConVar *var, char const *pOldString );
-static void WarModeChanged ( ConVar *var, char const *pOldString );
-static void ManiStatsBySteamID ( ConVar *var, char const *pOldString );
-static void ManiCSStackingNumLevels ( ConVar *var, char const *pOldString );
-static void ManiUnlimitedGrenades ( ConVar *var, char const *pOldString );
 
-ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSION, FCVAR_REPLICATED | FCVAR_NOTIFY, "This is the version of the plugin", ManiAdminPluginVersion); 
-ConVar mani_war_mode ("mani_war_mode", "0", 0, "This defines whether war mode is enabled or disabled (1 = enabled)", true, 0, true, 1, WarModeChanged); 
-ConVar mani_stats_by_steam_id ("mani_stats_by_steam_id", "1", 0, "This defines whether the steam id is used or name is used to organise the stats (1 = steam id)", true, 0, true, 1, ManiStatsBySteamID); 
-ConVar mani_tickrate ("mani_tickrate", "", FCVAR_REPLICATED | FCVAR_NOTIFY, "Server tickrate information", ManiTickrate);
-ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set number of players that can build a stack", true, 1, true, 50, ManiCSStackingNumLevels);
-ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal CSS mode, 1 = Grenades replenished after throw (CSS Only)", true, 0, true, 1, ManiUnlimitedGrenades);
+CONVAR_CALLBACK_PROTO (ManiAdminPluginVersion);
+CONVAR_CALLBACK_PROTO (ManiTickrate);
+CONVAR_CALLBACK_PROTO (WarModeChanged);
+CONVAR_CALLBACK_PROTO (ManiStatsBySteamID);
+CONVAR_CALLBACK_PROTO (ManiCSStackingNumLevels);
+CONVAR_CALLBACK_PROTO (ManiUnlimitedGrenades);
+
+
+ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSION, FCVAR_REPLICATED | FCVAR_NOTIFY, "This is the version of the plugin", CONVAR_CALLBACK_REF(ManiAdminPluginVersion)); 
+ConVar mani_war_mode ("mani_war_mode", "0", 0, "This defines whether war mode is enabled or disabled (1 = enabled)", true, 0, true, 1, CONVAR_CALLBACK_REF(WarModeChanged)); 
+ConVar mani_stats_by_steam_id ("mani_stats_by_steam_id", "1", 0, "This defines whether the steam id is used or name is used to organise the stats (1 = steam id)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiStatsBySteamID)); 
+ConVar mani_tickrate ("mani_tickrate", "", FCVAR_REPLICATED | FCVAR_NOTIFY, "Server tickrate information", CONVAR_CALLBACK_REF(ManiTickrate));
+ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set number of players that can build a stack", true, 1, true, 50, CONVAR_CALLBACK_REF(ManiCSStackingNumLevels));
+ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal CSS mode, 1 = Grenades replenished after throw (CSS Only)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiUnlimitedGrenades));
 ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1); 
 
 ConVar mani_exec_default_file1 ("mani_exec_default_file1", "mani_server.cfg", 0, "Run a default .cfg file on level change after server.cfg"); 
@@ -342,10 +345,6 @@ CAdminPlugin::CAdminPlugin()
 	gpManiIGELCallback = this;
 	gpManiAdminPlugin = this;
 	srand( (unsigned)time(NULL));
-
-#ifndef SOURCEMM
-	SourceHook_InitSourceHook();
-#endif
 
 	event_duplicate = false;
 
@@ -509,6 +508,9 @@ bool CAdminPlugin::Load(void)
 		return false;
 	}
 
+//	int ver = UTIL_GetWebVersion("75.126.15.16", 80, "/mani_admin_plugin/gametypes/gversion.dat");
+//MMsg("Gametypes version [%i]\n", ver);
+
 	gpManiGameType->Init();
 	gpCmd->Load();
 	g_menu_mgr.Load();
@@ -558,11 +560,6 @@ bool CAdminPlugin::Load(void)
 #endif
 	}
 
-	if (gpManiGameType->GetAdvancedEffectsAllowed())
-	{
-		temp_ents_cc = SH_GET_CALLCLASS(temp_ents);
-	}
-
 	const char *game_type = serverdll->GetGameDescription();
 
 	MMsg("Game Type [%s]\n", game_type);
@@ -581,32 +578,32 @@ bool CAdminPlugin::Load(void)
 	}
 
 	next_ping_check = 0.0;
-	mp_friendlyfire = cvar->FindVar( "mp_friendlyfire");
-	mp_freezetime = cvar->FindVar( "mp_freezetime");
-	mp_winlimit = cvar->FindVar( "mp_winlimit");
-	mp_maxrounds = cvar->FindVar( "mp_maxrounds");
-	mp_timelimit = cvar->FindVar( "mp_timelimit");
-	mp_fraglimit = cvar->FindVar( "mp_fraglimit");
-	mp_limitteams = cvar->FindVar( "mp_limitteams");
-	mp_restartgame = cvar->FindVar( "mp_restartgame");
-	mp_dynamicpricing = cvar->FindVar( "mp_dynamicpricing");
+	mp_friendlyfire = g_pCVar->FindVar( "mp_friendlyfire");
+	mp_freezetime = g_pCVar->FindVar( "mp_freezetime");
+	mp_winlimit = g_pCVar->FindVar( "mp_winlimit");
+	mp_maxrounds = g_pCVar->FindVar( "mp_maxrounds");
+	mp_timelimit = g_pCVar->FindVar( "mp_timelimit");
+	mp_fraglimit = g_pCVar->FindVar( "mp_fraglimit");
+	mp_limitteams = g_pCVar->FindVar( "mp_limitteams");
+	mp_restartgame = g_pCVar->FindVar( "mp_restartgame");
+	mp_dynamicpricing = g_pCVar->FindVar( "mp_dynamicpricing");
 	
 	if (mp_dynamicpricing)
 	{
 		mp_dynamicpricing->AddFlags(FCVAR_REPLICATED | FCVAR_NOTIFY);
 	}
 
-	sv_lan = cvar->FindVar( "sv_lan");
-	sv_gravity = cvar->FindVar( "sv_gravity");
-	cs_stacking_num_levels = cvar->FindVar( "cs_stacking_num_levels");
+	sv_lan = g_pCVar->FindVar( "sv_lan");
+	sv_gravity = g_pCVar->FindVar( "sv_gravity");
+	cs_stacking_num_levels = g_pCVar->FindVar( "cs_stacking_num_levels");
 
-	sv_cheats = cvar->FindVar( "sv_cheats");
-	sv_alltalk = cvar->FindVar( "sv_alltalk");
-	hostname = cvar->FindVar( "hostname");
-	phy_pushscale = cvar->FindVar( "phys_pushscale");
-	vip_version = cvar->FindVar("vip_version");
-	tv_name = cvar->FindVar("tv_name");
-	mp_allowspectators = cvar->FindVar("mp_allowspectators");
+	sv_cheats = g_pCVar->FindVar( "sv_cheats");
+	sv_alltalk = g_pCVar->FindVar( "sv_alltalk");
+	hostname = g_pCVar->FindVar( "hostname");
+	phy_pushscale = g_pCVar->FindVar( "phys_pushscale");
+	vip_version = g_pCVar->FindVar("vip_version");
+	tv_name = g_pCVar->FindVar("tv_name");
+	mp_allowspectators = g_pCVar->FindVar("mp_allowspectators");
 
 	last_cheat_check_time = 0;
 	last_slapped_player = -1;
@@ -761,8 +758,10 @@ bool CAdminPlugin::Load(void)
 #else
 	server_tickrate = (int) (1.0 / serverdll->GetTickInterval());
 #endif
+MMsg("Here");
 	mani_tickrate.SetValue(server_tickrate);
 
+MMsg("Here2");
 	// Hook our changelevel here
 	//HOOKVFUNC(engine, 0, OrgEngineChangeLevel, ManiChangeLevelHook);
 	//HOOKVFUNC(engine, 43, OrgEngineEntityMessageBegin, ManiEntityMessageBeginHook);
@@ -947,31 +946,31 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	FreeList((void **) &cexec_all_list, &cexec_all_list_size);
 	FreeList((void **) &target_player_list, &target_player_list_size);
 
-	mp_friendlyfire = cvar->FindVar( "mp_friendlyfire");
-	mp_freezetime = cvar->FindVar( "mp_freezetime");
-	mp_winlimit = cvar->FindVar( "mp_winlimit");
-	mp_maxrounds = cvar->FindVar( "mp_maxrounds");
-	mp_timelimit = cvar->FindVar( "mp_timelimit");
-	mp_fraglimit = cvar->FindVar( "mp_fraglimit");
-	mp_limitteams = cvar->FindVar( "mp_limitteams");
-	mp_restartgame = cvar->FindVar( "mp_restartgame");
-	mp_dynamicpricing = cvar->FindVar( "mp_dynamicpricing");
+	mp_friendlyfire = g_pCVar->FindVar( "mp_friendlyfire");
+	mp_freezetime = g_pCVar->FindVar( "mp_freezetime");
+	mp_winlimit = g_pCVar->FindVar( "mp_winlimit");
+	mp_maxrounds = g_pCVar->FindVar( "mp_maxrounds");
+	mp_timelimit = g_pCVar->FindVar( "mp_timelimit");
+	mp_fraglimit = g_pCVar->FindVar( "mp_fraglimit");
+	mp_limitteams = g_pCVar->FindVar( "mp_limitteams");
+	mp_restartgame = g_pCVar->FindVar( "mp_restartgame");
+	mp_dynamicpricing = g_pCVar->FindVar( "mp_dynamicpricing");
 	if (mp_dynamicpricing)
 	{
 		mp_dynamicpricing->AddFlags(FCVAR_REPLICATED | FCVAR_NOTIFY);
 	}
 
-	sv_lan = cvar->FindVar( "sv_lan");
-	sv_gravity = cvar->FindVar( "sv_gravity");
-	cs_stacking_num_levels = cvar->FindVar( "cs_stacking_num_levels");
+	sv_lan = g_pCVar->FindVar( "sv_lan");
+	sv_gravity = g_pCVar->FindVar( "sv_gravity");
+	cs_stacking_num_levels = g_pCVar->FindVar( "cs_stacking_num_levels");
 
-	sv_cheats = cvar->FindVar( "sv_cheats");
-	sv_alltalk = cvar->FindVar( "sv_alltalk");
-	hostname = cvar->FindVar( "hostname");
-	phy_pushscale = cvar->FindVar( "phys_pushscale");
-	vip_version = cvar->FindVar("vip_version");
-	tv_name = cvar->FindVar("tv_name");
-	mp_allowspectators = cvar->FindVar("mp_allowspectators");
+	sv_cheats = g_pCVar->FindVar( "sv_cheats");
+	sv_alltalk = g_pCVar->FindVar( "sv_alltalk");
+	hostname = g_pCVar->FindVar( "hostname");
+	phy_pushscale = g_pCVar->FindVar( "phys_pushscale");
+	vip_version = g_pCVar->FindVar("vip_version");
+	tv_name = g_pCVar->FindVar("tv_name");
+	mp_allowspectators = g_pCVar->FindVar("mp_allowspectators");
 
 	next_ping_check = 0.0;
 	last_cheat_check_time = 0;
@@ -1365,7 +1364,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 {
 	max_players = clientMax; 
-	// MMsg("Activated\n");
+
 	// Get team manager pointers
 	gpManiTeam->Init(edictCount);
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
@@ -1726,8 +1725,16 @@ PLUGIN_RESULT CAdminPlugin::ClientConnect( bool *bAllowConnect, edict_t *pEntity
 //---------------------------------------------------------------------------------
 // Purpose: called when a client types in a command (only a subset of commands however, not CON_COMMAND's)
 //---------------------------------------------------------------------------------
-PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
+#ifdef ORANGE
+PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity,  const CCommand &args)
+#else
+PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
+#endif
 {
+#ifndef ORANGE 
+	CCommand args;
+#endif
+
 	if (ProcessPluginPaused())
 	{
 		return PLUGIN_CONTINUE;
@@ -1736,7 +1743,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 	player_t	player;
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return PLUGIN_CONTINUE;
-	gpCmd->ExtractClientAndServerCommand();
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	int	pargc = gpCmd->Cmd_Argc();
 	const char *pcmd = gpCmd->Cmd_Argv(0);
@@ -1780,7 +1787,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 
-	if (gpCmd->HandleCommand(&player, M_CCONSOLE) == PLUGIN_STOP) return PLUGIN_STOP;
+	if (gpCmd->HandleCommand(&player, M_CCONSOLE, args) == PLUGIN_STOP) return PLUGIN_STOP;
 	else if ( FStrEq( pcmd, "jointeam")) return (gpManiTeamJoin->PlayerJoin(pEntity, (char *) gpCmd->Cmd_Argv(1)));
 	else if ( FStrEq( pcmd, "joinclass")) return (gpManiWarmupTimer->JoinClass(pEntity));
 	else if ( FStrEq( pcmd, "admin" )) 
@@ -1839,7 +1846,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq(pcmd, "buy"))	return (gpManiWeaponMgr->CanBuy(&player, pcmd2));
 	else if ( FStrEq( pcmd, "nextmap" )) return (ProcessMaNextMap(&player, "nextmap", 0, M_CCONSOLE));
-	else if ( FStrEq( pcmd, "timeleft" )) return (ProcessMaTimeLeft(&player, "timeleft", 0, M_CCONSOLE));
+	else if ( FStrEq( pcmd, "timeleft" )) return (gpManiAdminPlugin->ProcessMaTimeLeft(&player, "timeleft", 0, M_CCONSOLE));
 	else if ( FStrEq( pcmd, "listmaps" )) return (ProcessMaListMaps(&player, "listmaps", 0, M_CCONSOLE));
 	else if ( FStrEq( pcmd, "damage" )) return (ProcessMaDamage(player.index));
 	else if ( FStrEq( pcmd, "deathbeam" )) return (ProcessMaDeathBeam(player.index));
@@ -1879,7 +1886,7 @@ PLUGIN_RESULT CAdminPlugin::ClientCommand( edict_t *pEntity )
 		if (!FindPlayerByEntity(&player)) return PLUGIN_STOP;
 		if (!gpManiClient->HasAccess(player.index, ADMIN, ADMIN_EXPLODE, war_mode)) return PLUGIN_BAD_ADMIN;
 
-		ProcessExplodeAtCurrentPosition (&player);
+		gpManiAdminPlugin->ProcessExplodeAtCurrentPosition (&player);
 		return PLUGIN_STOP;
 	} 
 
@@ -5622,7 +5629,7 @@ void CAdminPlugin::ProcessDODSPlayerDeath(IGameEvent * event)
 //---------------------------------------------------------------------------------
 // Purpose: Read the stats
 //---------------------------------------------------------------------------------
-bool CAdminPlugin::HookSayCommand(bool team_say)
+bool CAdminPlugin::HookSayCommand(bool team_say, const CCommand &args)
 {
 
 	player_t player;
@@ -5636,7 +5643,7 @@ bool CAdminPlugin::HookSayCommand(bool team_say)
 
 	if (player.is_bot) return true;
 
-	gpCmd->ExtractSayCommand(team_say);
+	gpCmd->ExtractSayCommand(team_say, args);
 	if (gpCmd->Cmd_Argc() == 0) return true;
 
 	if (g_menu_mgr.ChatHooked(&player))
@@ -5736,11 +5743,11 @@ bool CAdminPlugin::HookSayCommand(bool team_say)
 	{
 		if (team_say)
 		{
-			if (gpCmd->HandleCommand(&player, M_TSAY) == PLUGIN_STOP) return false;
+			if (gpCmd->HandleCommand(&player, M_TSAY, args) == PLUGIN_STOP) return false;
 		}
 		else
 		{
-			if (gpCmd->HandleCommand(&player, M_SAY) == PLUGIN_STOP) return false;
+			if (gpCmd->HandleCommand(&player, M_SAY, args) == PLUGIN_STOP) return false;
 		}
 	}
 
@@ -8333,7 +8340,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaConfig(player_t *player_ptr, const char *co
 
 	OutputToConsole(player_ptr, "Current Plugin server var settings\n\n");
 
-    ConCommandBase *pPtr = cvar->GetCommands();
+    ConCommandBase *pPtr = g_pCVar->GetCommands();
     while (pPtr)
 	{
 		if (!pPtr->IsCommand())
@@ -8347,14 +8354,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaConfig(player_t *player_ptr, const char *co
 					if (NULL != Q_stristr(name, filter))
 					{
 						// Found mani cvar filtered
-						ConVar *mani_var = cvar->FindVar(name);
+						ConVar *mani_var = g_pCVar->FindVar(name);
 						OutputToConsole(player_ptr, "%s %s\n", name, mani_var->GetString());
 					}
 				}
 				else
 				{
 					// Found mani cvar
-					ConVar *mani_var = cvar->FindVar(name);
+					ConVar *mani_var = g_pCVar->FindVar(name);
 					OutputToConsole(player_ptr, "%s %s\n", name, mani_var->GetString());
 				}
 			}
@@ -8438,42 +8445,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaWar(player_t *player_ptr, const char *comma
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: Process the ma_settings command
-//---------------------------------------------------------------------------------
-PLUGIN_RESULT	CAdminPlugin::ProcessMaSettings(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
-{
-	player_settings_t *player_settings;
-
-	player_settings = FindPlayerSettings(player_ptr);
-	if (!player_settings) return PLUGIN_STOP;
-
-	OutputToConsole(player_ptr, "Your current settings are\n\n");
-	OutputToConsole(player_ptr,		"Display Damage Stats    (%s)\n", (player_settings->damage_stats) ? "On":"Off");
-	if (mani_quake_sounds.GetInt() == 1)
-	{
-		OutputToConsole(player_ptr,	"Quake Style Sounds      (%s)\n", (player_settings->quake_sounds) ? "On":"Off");
-		OutputToConsole(player_ptr,	"Server Sounds           (%s)\n", (player_settings->server_sounds) ? "On":"Off");
-	}
-
-	if (player_settings->teleport_coords_list_size != 0)
-	{
-		// Dump maps stored for teleport
-		OutputToConsole(player_ptr, "Current maps you have teleport locations saved on :-\n");
-		for (int i = 0; i < player_settings->teleport_coords_list_size; i++)
-		{
-			OutputToConsole(player_ptr, "[%s] ", player_settings->teleport_coords_list[i].map_name);
-		}
-
-		OutputToConsole(player_ptr, "\n");
-	}
-
-	return PLUGIN_STOP;
-}
-
-
-
-
-//---------------------------------------------------------------------------------
 // Purpose: Process the timeleft command
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
@@ -8490,7 +8461,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 	bool	follow_string = false;
 	bool	last_round = false;
 
-// DEBUG to trace timeleft error
+	// DEBUG to trace timeleft error
 	if (gpManiGameType->IsGameType(MANI_GAME_DOD))
 	{
 		LogCommand(player_ptr, "timeleft triggered\n");
@@ -8511,7 +8482,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 				minutes_portion = time_left / 60;
 				seconds_portion = time_left - (minutes_portion * 60);
 			}
-		
+
 			if (gpManiGameType->IsGameType(MANI_GAME_CSS) && time_left == 0)
 			{
 				last_round = true;
@@ -8604,6 +8575,44 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 
 	return PLUGIN_STOP;
 }
+
+//---------------------------------------------------------------------------------
+// Purpose: Process the ma_settings command
+//---------------------------------------------------------------------------------
+PLUGIN_RESULT	CAdminPlugin::ProcessMaSettings(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
+{
+	player_settings_t *player_settings;
+
+	player_settings = FindPlayerSettings(player_ptr);
+	if (!player_settings) return PLUGIN_STOP;
+
+	OutputToConsole(player_ptr, "Your current settings are\n\n");
+	OutputToConsole(player_ptr,		"Display Damage Stats    (%s)\n", (player_settings->damage_stats) ? "On":"Off");
+	if (mani_quake_sounds.GetInt() == 1)
+	{
+		OutputToConsole(player_ptr,	"Quake Style Sounds      (%s)\n", (player_settings->quake_sounds) ? "On":"Off");
+		OutputToConsole(player_ptr,	"Server Sounds           (%s)\n", (player_settings->server_sounds) ? "On":"Off");
+	}
+
+	if (player_settings->teleport_coords_list_size != 0)
+	{
+		// Dump maps stored for teleport
+		OutputToConsole(player_ptr, "Current maps you have teleport locations saved on :-\n");
+		for (int i = 0; i < player_settings->teleport_coords_list_size; i++)
+		{
+			OutputToConsole(player_ptr, "[%s] ", player_settings->teleport_coords_list[i].map_name);
+		}
+
+		OutputToConsole(player_ptr, "\n");
+	}
+
+	return PLUGIN_STOP;
+}
+
+
+
+
+
 
 
 //---------------------------------------------------------------------------------
@@ -8742,11 +8751,11 @@ CON_COMMAND(ma_game, "Prints the game type in use")
 	return;
 }
 
-static void WarModeChanged ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(WarModeChanged)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_war_mode.GetString()))
 	{
-		if (atoi(var->GetString()) == 0)
+		if (atoi(mani_war_mode.GetString()) == 0)
 		{
 			war_mode = false;
 		}
@@ -8759,42 +8768,42 @@ static void WarModeChanged ( ConVar *var, char const *pOldString )
 	}
 }
 
-static void ManiAdminPluginVersion ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiAdminPluginVersion)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_admin_plugin_version.GetString()))
 	{
 		mani_admin_plugin_version.SetValue(PLUGIN_CORE_VERSION);
 	}
 }
 
-static void ManiTickrate ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiTickrate)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_tickrate.GetString()))
 	{
 		mani_tickrate.SetValue(server_tickrate);
 	}
 }
 
-static void ManiCSStackingNumLevels ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiCSStackingNumLevels)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_tickrate.GetString()))
 	{
 		if (cs_stacking_num_levels)
 		{
-			cs_stacking_num_levels->m_fMaxVal = var->GetFloat();
-			cs_stacking_num_levels->SetValue(var->GetInt());
+			cs_stacking_num_levels->m_fMaxVal = mani_tickrate.GetFloat();
+			cs_stacking_num_levels->SetValue(mani_tickrate.GetInt());
 		}
 	}
 }
 
-static void ManiUnlimitedGrenades ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiUnlimitedGrenades)
 {
-	if (!FStrEq(pOldString, var->GetString()) && 
+	if (!FStrEq(pOldString, mani_unlimited_grenades.GetString()) && 
 		gpManiGameType->IsGameType(MANI_GAME_CSS) && 
 		sv_cheats &&
 		!war_mode)
 	{
-		if (var->GetInt() == 1)
+		if (mani_unlimited_grenades.GetInt() == 1)
 		{
 			SayToAll(GREEN_CHAT, false, "Unlimited grenades enabled !!");
 			for (int i = 1; i <= max_players; i++)
@@ -8816,7 +8825,7 @@ static void ManiUnlimitedGrenades ( ConVar *var, char const *pOldString )
 	}
 }
 
-static void ManiStatsBySteamID ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiStatsBySteamID)
 {
 	player_t	player;
 
@@ -8830,292 +8839,8 @@ static void ManiStatsBySteamID ( ConVar *var, char const *pOldString )
 		if (player.is_bot) continue;
 
 		// Don't add player if steam id is not confirmed
-		if (var->GetInt() == 1 && FStrEq(player.steam_id, "STEAM_ID_PENDING")) continue;
+		if (mani_stats_by_steam_id.GetInt() == 1 && FStrEq(player.steam_id, "STEAM_ID_PENDING")) continue;
 		
 		gpManiStats->NetworkIDValidated(&player);
 	}
 }
-
-
-#ifndef SOURCEMM
-//**************************************************************************************************
-// Special hook for say commands
-//**************************************************************************************************
-
-class CSayHook : public ConCommand
-{
-   // This will hold the pointer original gamedll say command
-   ConCommand *m_pGameDLLSayCommand;
-public:
-   CSayHook() : ConCommand("say", NULL, "say messages", FCVAR_GAMEDLL), m_pGameDLLSayCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll say command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "say") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-      if (!pPtr)
-	  {
-         MMsg("Didn't find say command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLSayCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-      // Do the normal stuff, return if you want to override the say
-      if(!ProcessPluginPaused() && !g_ManiAdminPlugin.HookSayCommand(false)) return;
-      // Forward to gamedll
-      m_pGameDLLSayCommand->Dispatch();
-   }
-};
-
-CSayHook g_SayHook;
-
-//**************************************************************************************************
-// Special hook for say commands
-//**************************************************************************************************
-
-class CSayTeamHook : public ConCommand
-{
-   // This will hold the pointer original gamedll say command
-   ConCommand *m_pGameDLLSayCommand;
-public:
-   CSayTeamHook() : ConCommand("say_team", NULL, "say messages to teammates", FCVAR_GAMEDLL), m_pGameDLLSayCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll say command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "say_team") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-      if (!pPtr)
-	  {
-         MMsg("Didn't find say_team command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLSayCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-      // Do the normal stuff, return if you want to override the say
-
-      if(!ProcessPluginPaused() && !g_ManiAdminPlugin.HookSayCommand(true)) return;
-      // Forward to gamedll
-      m_pGameDLLSayCommand->Dispatch();
-   }
-};
-
-CSayTeamHook g_SayTeamHook;
-
-//**************************************************************************************************
-// Special hook for autobuy commands
-//**************************************************************************************************
-
-class CAutobuyHook : public ConCommand
-{
-   // This will hold the pointer original gamedll autobuy command
-   ConCommand *m_pGameDLLAutobuyCommand;
-public:
-   CAutobuyHook() : ConCommand("autobuy", NULL, "autobuy", FCVAR_GAMEDLL), m_pGameDLLAutobuyCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll autobuy command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "autobuy") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-
-      if (!pPtr)
-	  {
-         MMsg("Didn't find autobuy command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLAutobuyCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-      // Do the normal stuff, return if you want to override the autobuy
-      // Forward to gamedll
-      m_pGameDLLAutobuyCommand->Dispatch();
-	  if(!ProcessPluginPaused()) gpManiWeaponMgr->AutoBuyReBuy();
-   }
-};
-
-CAutobuyHook g_AutobuyHook;
-
-//**************************************************************************************************
-// Special hook for rebuy commands
-//**************************************************************************************************
-class CRebuyHook : public ConCommand
-{
-   // This will hold the pointer original gamedll rebuy command
-   ConCommand *m_pGameDLLRebuyCommand;
-public:
-   CRebuyHook() : ConCommand("rebuy", NULL, "rebuy", FCVAR_GAMEDLL), m_pGameDLLRebuyCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll rebuy command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "rebuy") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-
-      if (!pPtr)
-	  {
-         MMsg("Didn't find rebuy command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLRebuyCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-      // Do the normal stuff, return if you want to override the say
-      // Forward to gamedll
-      m_pGameDLLRebuyCommand->Dispatch();
-	  if(!ProcessPluginPaused()) gpManiWeaponMgr->AutoBuyReBuy();
-   }
-};
-
-CRebuyHook g_RebuyHook;
-
-
-
-class CChangeLevelHook : public ConCommand
-{
-   // This will hold the pointer original gamedll say command
-   ConCommand *m_pGameDLLChangeLevelCommand;
-public:
-   CChangeLevelHook() : ConCommand("changelevel", NULL, "changelevel", FCVAR_GAMEDLL), m_pGameDLLChangeLevelCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll say command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "changelevel") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-      if (!pPtr)
-	  {
-         MMsg("Didn't find changelevel command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLChangeLevelCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-      // Do the normal stuff, return if you want to override the say
-
-      if(!ProcessPluginPaused() && !g_ManiAdminPlugin.HookChangeLevelCommand()) return;
-      // Forward to gamedll
-      m_pGameDLLChangeLevelCommand->Dispatch();
-   }
-};
-
-CChangeLevelHook g_ChangeLevelHook;
-
-//**************************************************************************************************
-// Special hook for say commands
-//**************************************************************************************************
-
-class CRespawnEntitiesHook : public ConCommand
-{
-   // This will hold the pointer original gamedll say command
-   ConCommand *m_pGameDLLRespawnEntitiesCommand;
-public:
-   CRespawnEntitiesHook() : ConCommand("respawn_entities", NULL, "exploit fixed by mani", FCVAR_GAMEDLL), m_pGameDLLRespawnEntitiesCommand(NULL)
-   { }
-
-   // Override Init
-   void Init()
-   {
-      // Try to find the gamedll say command
-      ConCommandBase *pPtr = cvar->GetCommands();
-      while (pPtr)
-      {
-         if (pPtr != this && pPtr->IsCommand() && strcmp(pPtr->GetName(), "respawn_entities") == 0)
-            break;
-         // Nasty
-         pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
-      }
-      if (!pPtr)
-	  {
-         MMsg("Didn't find respawn_entities command ptr!!!!\n");
-		 return;
-	  }
-
-      m_pGameDLLRespawnEntitiesCommand = (ConCommand *) pPtr;
-
-      // Call base class' init function
-      ConCommand::Init();
-   }
-
-   void Dispatch()
-   {
-	   return;
-   }
-};
-
-CRespawnEntitiesHook g_RespawnEntitiesHook;
-
-#endif

@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -67,9 +68,14 @@ typedef unsigned long DWORD;
 #include "itempents.h"
 #include "networkstringtabledefs.h"
 
+#ifdef ORANGE
+#include <metamod_oslink.h>
+#else
 #include <oslink.h>
+#endif
+
 #include "mani_callback_sourcemm.h"
-#include "cvars.h"
+//#include "cvars.h"
 #include "meta_hooks.h"
 #include "mani_mainclass.h"
 #include "mani_gametype.h"
@@ -128,8 +134,10 @@ extern unsigned int g_CallBackCount;
 extern SourceHook::CVector<AdminInterfaceListnerStruct *>g_CallBackList;
 extern ClientInterface g_ClientInterface;
 
-PLUGIN_EXPOSE(CSourceMMMAP, g_ManiCallback);
+
 CSourceMMMAP g_ManiCallback;
+PLUGIN_EXPOSE(CSourceMMMAP, g_ManiCallback);
+
 char	*pReplaceEnts = NULL;
 extern int	max_players;
 
@@ -143,6 +151,24 @@ ConCommand *pReBuyCmd = NULL;
 ConCommand *pRespawnEntities = NULL;
 
 static int offset1 = -1;
+
+//#if !defined ORANGE
+//ICvar *g_pCVar = NULL;
+//#endif
+
+ICvar *GetICVar()
+{
+#if defined METAMOD_PLAPI_VERSION
+#if defined ORANGE
+	return (ICvar *)((g_SMAPI->GetEngineFactory())(CVAR_INTERFACE_VERSION, NULL));
+#else
+	return (ICvar *)((g_SMAPI->GetEngineFactory())(VENGINE_CVAR_INTERFACE_VERSION, NULL));
+#endif
+#else
+	return (ICvar *)((g_SMAPI->engineFactory())(VENGINE_CVAR_INTERFACE_VERSION, NULL));
+#endif
+}
+
 
 //---------------------------------------------------------------------------------
 // Purpose: constructor/destructor
@@ -168,24 +194,19 @@ void CSourceMMMAPCallback::SetCommandClient( int index )
 //---------------------------------------------------------------------------------
 // Purpose: called when a client types in a command (only a subset of commands however, not CON_COMMAND's)
 //---------------------------------------------------------------------------------
+#ifdef ORANGE 
+PLUGIN_RESULT CSourceMMMAPCallback::ClientCommand( edict_t *pEntity, const CCommand &args)
+{
+	return (gpManiAdminPlugin->ClientCommand(pEntity, args));
+}
+#else
 PLUGIN_RESULT CSourceMMMAPCallback::ClientCommand( edict_t *pEntity )
 {
 	return (gpManiAdminPlugin->ClientCommand(pEntity));
 }
+#endif
 
 CSourceMMMAPCallback g_HelperCallback;
-
-//---------------------------------------------------------------------------------
-// Purpose: constructor/destructor
-//---------------------------------------------------------------------------------
-/*CSourceMMMAP::CSourceMMMAP()
-{
-	m_iClientCommandIndex = con_command_index = 0;
-}
-
-CSourceMMMAP::~CSourceMMMAP()
-{
-}*/
 
 bool CSourceMMMAP::LevelInit(const char *pMapName, const char *pMapEntities, const char *pOldLevel, const char *pLandmarkName, bool loadGame, bool background)
 {
@@ -279,10 +300,16 @@ bool CSourceMMMAP::ClientConnect(edict_t *pEntity, const char *pszName, const ch
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
+#ifdef ORANGE
+void CSourceMMMAP::ClientCommand(edict_t *pEntity, const CCommand &args)
+{
+	int result = gpManiAdminPlugin->ClientCommand(pEntity, args);
+#else
 void CSourceMMMAP::ClientCommand(edict_t *pEntity)
 {
-//	META_LOG(g_PLAPI, "ClientCommand called: pEntity=%d (commandString=%s)", pEntity ? engine->IndexOfEdict(pEntity) : 0, gpCmd->Cmd_Args() ? gpCmd->Cmd_Args() : "");
 	int result = gpManiAdminPlugin->ClientCommand(pEntity);
+#endif
+
 	if (result == PLUGIN_CONTINUE)
 	{
 		// Plugin continue
@@ -301,7 +328,22 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	//char iface_buffer[255];
 	//int num = 0;
-
+#ifdef ORANGE
+	GET_V_IFACE(GetServerFactory, playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER);
+	GET_V_IFACE(GetEngineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
+	GET_V_IFACE(GetEngineFactory, gameeventmanager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
+	GET_V_IFACE(GetEngineFactory, filesystem, IFileSystem, FILESYSTEM_INTERFACE_VERSION);
+	GET_V_IFACE(GetEngineFactory, helpers, IServerPluginHelpers, INTERFACEVERSION_ISERVERPLUGINHELPERS);
+	GET_V_IFACE(GetEngineFactory, networkstringtable, INetworkStringTableContainer, INTERFACENAME_NETWORKSTRINGTABLESERVER);
+	GET_V_IFACE(GetEngineFactory, enginetrace, IEngineTrace, INTERFACEVERSION_ENGINETRACE_SERVER);
+	GET_V_IFACE(GetEngineFactory, randomStr, IUniformRandomStream, VENGINE_SERVER_RANDOM_INTERFACE_VERSION);
+	GET_V_IFACE(GetServerFactory, serverents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS);
+	GET_V_IFACE(GetServerFactory, effects, IEffects, IEFFECTS_INTERFACE_VERSION);
+	GET_V_IFACE(GetEngineFactory, esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION);
+	GET_V_IFACE(GetServerFactory, serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
+	GET_V_IFACE(GetEngineFactory, voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER);
+	GET_V_IFACE(GetServerFactory, serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
+#else
 	GET_V_IFACE(serverFactory, playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER);
 	GET_V_IFACE(engineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE(engineFactory, gameeventmanager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
@@ -313,17 +355,23 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	GET_V_IFACE(serverFactory, serverents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS);
 	GET_V_IFACE(serverFactory, effects, IEffects, IEFFECTS_INTERFACE_VERSION);
 	GET_V_IFACE(engineFactory, esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION);
-	GET_V_IFACE(engineFactory, cvar, ICvar, VENGINE_CVAR_INTERFACE_VERSION);
+	GET_V_IFACE(engineFactory, g_pCVar, ICvar, VENGINE_CVAR_INTERFACE_VERSION);
 	GET_V_IFACE(serverFactory, serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE(engineFactory, voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER);
 	GET_V_IFACE(serverFactory, serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
-
+#endif
 	META_LOG(g_PLAPI, "Starting plugin.\n");
 
 	ismm->AddListener(this, &g_Listener);
 
 	//Init our cvars/concmds
-	ConCommandBaseMgr::OneTimeInit(&g_Accessor);
+#if defined ORANGE
+	g_pCVar = GetICVar();
+	ConVar_Register(0, this);
+#else
+	ConCommandBaseMgr::OneTimeInit(this);
+#endif
+//	ConCommandBaseMgr::OneTimeInit(&g_Accessor);
 
 	//We're hooking the following things as POST, in order to seem like Server Plugins.
 	//However, I don't actually know if Valve has done server plugins as POST or not.
@@ -358,19 +406,28 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	//This hook is a static hook, no member function
 	//SH_ADD_HOOK_STATICFUNC(IGameEventManager2, FireEvent, gameeventmanager, FireEvent_Handler, false); 
-
+#if !defined ORANGE && defined SOURCEMM
 	//Get the call class for IVServerEngine so we can safely call functions without
 	// invoking their hooks (when needed).
 	engine_cc = SH_GET_CALLCLASS(engine);
 	voiceserver_cc = SH_GET_CALLCLASS(voiceserver);
 	serverdll_cc = SH_GET_CALLCLASS(serverdll);
-	gamedll = g_SMAPI->serverFactory(false);
+#endif
 
-	SH_CALL(engine_cc, &IVEngineServer::LogPrint)("All hooks started!\n");
+
+#ifdef ORANGE 
+	gamedll = g_SMAPI->GetServerFactory(false);
+#else
+	gamedll = g_SMAPI->serverFactory(false);
+#endif
 
 	g_SMAPI->AddListener(g_PLAPI, this);
 
+#ifdef ORANGE 
+	gpGlobals = g_SMAPI->GetCGlobals();
+#else
 	gpGlobals = g_SMAPI->pGlobals();
+#endif
 
 	FindConPrintf();
 
@@ -390,7 +447,13 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	if (!UTIL_InterfaceMsg(serverents,"IServerGameEnts", INTERFACEVERSION_SERVERGAMEENTS)) return false;
 	if (!UTIL_InterfaceMsg(effects,"IEffects", IEFFECTS_INTERFACE_VERSION)) return false;
 	if (!UTIL_InterfaceMsg(esounds,"IEngineSound", IENGINESOUND_SERVER_INTERFACE_VERSION)) return false;
-	if (!UTIL_InterfaceMsg(cvar,"ICvar", VENGINE_CVAR_INTERFACE_VERSION)) return false;
+
+#ifdef ORANGE 
+	if (!UTIL_InterfaceMsg(g_pCVar,"ICvar", CVAR_INTERFACE_VERSION)) return false;
+#else
+	if (!UTIL_InterfaceMsg(g_pCVar,"ICvar", VENGINE_CVAR_INTERFACE_VERSION)) return false;
+#endif
+
 	if (!UTIL_InterfaceMsg(serverdll,"IServerGameDLL", "ServerGameDLL003")) return false;
 	if (!UTIL_InterfaceMsg(voiceserver,"IVoiceServer", INTERFACEVERSION_VOICESERVER)) return false;
 	//if (!UTIL_InterfaceMsg(partition,"ISpatialPartition", INTERFACEVERSION_SPATIALPARTITION)) return false;
@@ -461,15 +524,20 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	if (pAutoBuyCmd) 
 	{
 		SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, pAutoBuyCmd, AutoBuy_handler, false);
+#if !defined ORANGE && defined SOURCEMM
 		SH_RELEASE_CALLCLASS(autobuy_cc);
+#endif
 	}
 
 	if (pReBuyCmd) 
 	{
 		SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, pReBuyCmd, ReBuy_handler, false);
+#if !defined ORANGE && defined SOURCEMM
 		SH_RELEASE_CALLCLASS(rebuy_cc);
+#endif
 	}
 
+#if !defined ORANGE && defined SOURCEMM
 	if (gpManiGameType->GetAdvancedEffectsAllowed())
 	{
 		SH_RELEASE_CALLCLASS(temp_ents_cc);
@@ -478,6 +546,8 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	SH_RELEASE_CALLCLASS(engine_cc);
 	SH_RELEASE_CALLCLASS(voiceserver_cc);
 	SH_RELEASE_CALLCLASS(serverdll_cc);
+#endif
+	//this, sourcehook does not keep track of.  we must do this.
 
 	return true; 
 }
@@ -492,10 +562,16 @@ void CSourceMMMAP::AllPluginsLoaded()
 	HookConCommands();
 }
 
+bool CSourceMMMAP::RegisterConCommandBase(ConCommandBase *pVar)
+{
+	//this will work on any type of concmd!
+	return META_REGCVAR(pVar);
+}
+
 void CSourceMMMAP::HookConCommands()
 {
 	//find the commands in the server's CVAR list
-	ConCommandBase *pCmd = cvar->GetCommands();
+	ConCommandBase *pCmd = g_pCVar->GetCommands();
 	while (pCmd)
 	{
 		if (pCmd->IsCommand())
@@ -517,6 +593,7 @@ void CSourceMMMAP::HookConCommands()
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
 	}
 
+#if !defined ORANGE && defined SOURCEMM
 	if (pSayCmd) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pSayCmd, Say_handler, false);
 	if (pRespawnEntities) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pRespawnEntities, RespawnEntities_handler, false);
 	if (pTeamSayCmd) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pTeamSayCmd, TeamSay_handler, false);
@@ -532,6 +609,15 @@ void CSourceMMMAP::HookConCommands()
 		SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pReBuyCmd, ReBuy_handler, false);
 		rebuy_cc = SH_GET_CALLCLASS(pReBuyCmd);
 	}
+#else
+	if (pSayCmd) SH_ADD_HOOK(ConCommand, Dispatch, pSayCmd, SH_STATIC(Say_handler), false);
+	if (pRespawnEntities) SH_ADD_HOOK(ConCommand, Dispatch, pRespawnEntities, SH_STATIC(RespawnEntities_handler), false);
+	if (pTeamSayCmd) SH_ADD_HOOK(ConCommand, Dispatch, pTeamSayCmd, SH_STATIC(TeamSay_handler), false);
+	if (pChangeLevelCmd) SH_ADD_HOOK(ConCommand, Dispatch, pChangeLevelCmd, SH_STATIC(ChangeLevel_handler), false);
+	if (pAutoBuyCmd) SH_ADD_HOOK(ConCommand, Dispatch, pAutoBuyCmd, SH_STATIC(AutoBuy_handler), false);
+	if (pReBuyCmd) SH_ADD_HOOK(ConCommand, Dispatch, pReBuyCmd, SH_STATIC(ReBuy_handler), false);
+#endif
+
 
 }
 
@@ -597,7 +683,11 @@ bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
 	{
+#if !defined ORANGE && defined SOURCEMM
 		return_value = SH_CALL(voiceserver_cc, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
+#else
+		return_value = SH_CALL(voiceserver, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
+#endif
 		RETURN_META_VALUE(MRES_SUPERCEDE, return_value);
 	}
 
@@ -652,17 +742,27 @@ void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
 }
 
 
+#ifdef ORANGE
+void RespawnEntities_handler(const CCommand &command)
+#else
 void RespawnEntities_handler()
+#endif
 {
 	//Override exploit
 	RETURN_META(MRES_SUPERCEDE);
 } 
 
+#ifdef ORANGE
+void Say_handler(const CCommand &command)
+{
+#else
 void Say_handler()
 {
+CCommand command;
+#endif
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 		
-	if (!g_ManiAdminPlugin.HookSayCommand(false))
+	if (!g_ManiAdminPlugin.HookSayCommand(false, command))
 	{
 		RETURN_META(MRES_SUPERCEDE);
 	}
@@ -670,11 +770,17 @@ void Say_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
+#ifdef ORANGE
+void TeamSay_handler(const CCommand &command)
+{
+#else
 void TeamSay_handler()
 {
+CCommand command;
+#endif
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 
-	if(!g_ManiAdminPlugin.HookSayCommand(true))
+	if(!g_ManiAdminPlugin.HookSayCommand(true, command))
 	{
 		RETURN_META(MRES_SUPERCEDE);
 	}
@@ -682,7 +788,11 @@ void TeamSay_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
+#ifdef ORANGE
+void ChangeLevel_handler(const CCommand &command)
+#else
 void ChangeLevel_handler()
+#endif
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 
@@ -694,20 +804,44 @@ void ChangeLevel_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
+#ifdef ORANGE
+void AutoBuy_handler(const CCommand &command)
+#else
 void AutoBuy_handler()
+#endif
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
+#ifdef ORANGE 
+	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)(command);
+#else
+#ifndef SOURCEMM
+	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)();
+#else
 	SH_CALL(autobuy_cc, &ConCommand::Dispatch)();
+#endif
+#endif
 	gpManiWeaponMgr->AutoBuyReBuy();
 	RETURN_META(MRES_SUPERCEDE);
 } 
 
+#ifdef ORANGE
+void ReBuy_handler(const CCommand &command)
+#else
 void ReBuy_handler()
+#endif
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
-	SH_CALL(rebuy_cc, &ConCommand::Dispatch)();
+#ifdef ORANGE 
+	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)(command);
+#else
+#ifndef SOURCEMM
+	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)();
+#else
+	SH_CALL(rebuy_cc, &ConCommand::Dispatch)();	
+#endif
+#endif
 	gpManiWeaponMgr->AutoBuyReBuy();
 	RETURN_META(MRES_SUPERCEDE);
 } 

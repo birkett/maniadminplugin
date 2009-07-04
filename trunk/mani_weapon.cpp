@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -52,6 +53,7 @@
 #include "mani_sourcehook.h"
 #include "mani_client_flags.h"
 #include "mani_client.h"
+#include "mani_util.h"
 #include "mani_sounds.h"
 #include "mani_gametype.h"
 #include "mani_weapon.h"
@@ -472,7 +474,17 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 		lower_alias[i] = tolower(alias_name[i]);
 	}
 
-	MWeapon *weapon = alias_list[lower_alias];
+	MWeapon *weapon = NULL;
+	std::map <BasicStr, MWeapon *>::iterator itr;
+	for (itr = alias_list.begin(); itr != alias_list.end(); ++itr)
+	{
+		if (V_stristr(lower_alias, (const char *) itr->first.str) != NULL)
+		{
+			weapon = itr->second;
+			break;
+		}
+	}
+
 	if (weapon == NULL)
 	{
 		return PLUGIN_CONTINUE;
@@ -771,6 +783,7 @@ bool RestrictWeaponPage::PopulateMenuPage(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShowRestrict(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
 
 	OutputToConsole(player_ptr, "Current weapons and their restrictions\n\n");
 	OutputToConsole(player_ptr, "Weapon Alias                  Restricted  Limit  Ratio\n");
@@ -801,6 +814,8 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrict
  const int	command_type
  )
 {
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+
 	if (player_ptr)
 	{
 		// Check if player is admin
@@ -858,6 +873,8 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictRatio
  const int	command_type
  )
 {
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+
 	if (player_ptr)
 	{
 		// Check if player is admin
@@ -889,6 +906,8 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictRatio
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+
 	if (player_ptr)
 	{
 		// Check if player is admin

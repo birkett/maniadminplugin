@@ -62,7 +62,6 @@ typedef unsigned long DWORD;
 
 //#include <oslink.h>
 #include "mani_sourcehook.h"
-#include "cvars.h"
 #include "meta_hooks.h"
 #include "mani_mainclass.h"
 #include "mani_gametype.h"
@@ -86,53 +85,23 @@ typedef unsigned long DWORD;
 //
 // Don't forget to make an instance
 
-SourceHook::ISourceHook *g_SHPtr;
-SourceHook::Plugin g_PLID;
+SourceHook::Impl::CSourceHookImpl g_SourceHook;
+
 char	*pReplaceEnts = NULL;
+extern SourceHook::ISourceHook *g_SHPtr;
+extern int g_PLID;
+SourceHook::ISourceHook *g_SHPtr = &g_SourceHook;
+int g_PLID = 1337;
 
 ManiSMMHooks g_ManiSMMHooks;
 //GET_SHPTR(g_SHPtr);
 
-SourceHook::ISourceHook *SourceHook_Factory()
-{
-	return new SourceHook::CSourceHookImpl();
-}
-
-void SourceHook_Delete(SourceHook::ISourceHook *shptr)
-{
-	delete static_cast<SourceHook::CSourceHookImpl *>(shptr);
-}
-
-void SourceHook_CompleteShutdown(SourceHook::ISourceHook *shptr)
-{
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->CompleteShutdown();
-}
-
-bool SourceHook_IsPluginInUse(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
-{
-	return static_cast<SourceHook::CSourceHookImpl *>(shptr)->IsPluginInUse(plug);
-}
-
-void SourceHook_UnloadPlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
-{
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnloadPlugin(plug);
-}
-
-void SourceHook_PausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
-{
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->PausePlugin(plug);
-}
-
-void SourceHook_UnpausePlugin(SourceHook::ISourceHook *shptr, SourceHook::Plugin plug)
-{
-	static_cast<SourceHook::CSourceHookImpl *>(shptr)->UnpausePlugin(plug);
-}
-
-void SourceHook_InitSourceHook(void)
-{
-	g_SHPtr = SourceHook_Factory();
-	g_PLID = 1337;
-}
+ConCommand *pSayCmd = NULL;
+ConCommand *pTeamSayCmd = NULL;
+ConCommand *pChangeLevelCmd = NULL;
+ConCommand *pAutoBuyCmd = NULL;
+ConCommand *pReBuyCmd = NULL;
+ConCommand *pRespawnEntities = NULL;
 
 // Hook declarations
 SH_DECL_HOOK7(IServerGameClients, ProcessUsercmds, SH_NOATTRIB, 0, float, edict_t *, bf_read *, int , int , int , bool , bool );
@@ -141,14 +110,17 @@ SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, cha
 SH_DECL_HOOK5_void(ITempEntsSystem, PlayerDecal, SH_NOATTRIB, 0, IRecipientFilter &, float , const Vector* , int , int );
 SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, int, bool);
 SH_DECL_MANUALHOOK1(Player_Weapon_CanUse, 0, 0, 0, bool, CBaseCombatWeapon *);
+#ifdef ORANGE
+SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, 0, const CCommand &);
+#else
+SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, 0);
+#endif
 
 static	bool hooked = false;
 
 void	ManiSMMHooks::HookVFuncs(void)
 {
 	if (hooked) return;
-
-	voiceserver_cc = SH_GET_CALLCLASS(voiceserver);
 
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
 	{
@@ -209,8 +181,8 @@ bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 	bool return_value = true;
 
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
-	{
-		return_value = SH_CALL(voiceserver_cc, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
+	{	
+		return_value = SH_CALL(voiceserver, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
 		RETURN_META_VALUE(MRES_SUPERCEDE, return_value);
 	}
 
@@ -263,5 +235,136 @@ void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
 {
 	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_Weapon_CanUse, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::Weapon_CanUse, false);
 }
+
+
+#ifdef ORANGE
+void RespawnEntities_handler(const CCommand &command)
+#else
+void RespawnEntities_handler()
+#endif
+{
+	//Override exploit
+	RETURN_META(MRES_SUPERCEDE);
+} 
+
+#ifdef ORANGE
+void Say_handler(const CCommand &command)
+{
+#else
+void Say_handler()
+{
+	CCommand command;
+#endif
+	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
+
+	if (!g_ManiAdminPlugin.HookSayCommand(false, command))
+	{
+		RETURN_META(MRES_SUPERCEDE);
+	}
+
+	RETURN_META(MRES_IGNORED);
+} 
+
+#ifdef ORANGE
+void TeamSay_handler(const CCommand &command)
+{
+#else
+void TeamSay_handler()
+{
+	CCommand command;
+#endif
+	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
+
+	if(!g_ManiAdminPlugin.HookSayCommand(true, command))
+	{
+		RETURN_META(MRES_SUPERCEDE);
+	}
+
+	RETURN_META(MRES_IGNORED);
+} 
+
+#ifdef ORANGE
+void ChangeLevel_handler(const CCommand &command)
+#else
+void ChangeLevel_handler()
+#endif
+{
+	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
+
+	if(!g_ManiAdminPlugin.HookChangeLevelCommand())
+	{
+		RETURN_META(MRES_SUPERCEDE);
+	}
+
+	RETURN_META(MRES_IGNORED);
+} 
+
+#ifdef ORANGE
+void AutoBuy_handler(const CCommand &command)
+#else
+void AutoBuy_handler()
+#endif
+{
+	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
+	gpManiWeaponMgr->PreAutoBuyReBuy();
+#ifdef ORANGE 
+	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)(command);
+#else
+	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)();
+#endif
+	gpManiWeaponMgr->AutoBuyReBuy();
+	RETURN_META(MRES_SUPERCEDE);
+} 
+
+#ifdef ORANGE
+void ReBuy_handler(const CCommand &command)
+#else
+void ReBuy_handler()
+#endif
+{
+	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
+	gpManiWeaponMgr->PreAutoBuyReBuy();
+#ifdef ORANGE 
+	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)(command);
+#else
+	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)();
+#endif
+	gpManiWeaponMgr->AutoBuyReBuy();
+	RETURN_META(MRES_SUPERCEDE);
+} 
+
+void	ManiSMMHooks::HookConCommands()
+{
+	//find the commands in the server's CVAR list
+	ConCommandBase *pCmd = g_pCVar->GetCommands();
+	while (pCmd)
+	{
+		if (pCmd->IsCommand())
+		{
+			if (strcmp(pCmd->GetName(), "say") == 0)
+				pSayCmd = static_cast<ConCommand *>(pCmd);
+			else if (strcmp(pCmd->GetName(), "say_team") == 0)
+				pTeamSayCmd = static_cast<ConCommand *>(pCmd);
+			else if (strcmp(pCmd->GetName(), "changelevel") == 0)
+				pChangeLevelCmd = static_cast<ConCommand *>(pCmd);
+			else if (strcmp(pCmd->GetName(), "autobuy") == 0)
+				pAutoBuyCmd = static_cast<ConCommand *>(pCmd);
+			else if (strcmp(pCmd->GetName(), "rebuy") == 0)
+				pReBuyCmd = static_cast<ConCommand *>(pCmd);
+			else if (strcmp(pCmd->GetName(), "respawn_entities") == 0)
+				pRespawnEntities = static_cast<ConCommand *>(pCmd);
+		}
+
+		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
+	}
+
+	if (pSayCmd) SH_ADD_HOOK(ConCommand, Dispatch, pSayCmd, SH_STATIC(Say_handler), false);
+	if (pRespawnEntities) SH_ADD_HOOK(ConCommand, Dispatch, pRespawnEntities, SH_STATIC(RespawnEntities_handler), false);
+	if (pTeamSayCmd) SH_ADD_HOOK(ConCommand, Dispatch, pTeamSayCmd, SH_STATIC(TeamSay_handler), false);
+	if (pChangeLevelCmd) SH_ADD_HOOK(ConCommand, Dispatch, pChangeLevelCmd, SH_STATIC(ChangeLevel_handler), false);
+	if (pAutoBuyCmd) SH_ADD_HOOK(ConCommand, Dispatch, pAutoBuyCmd, SH_STATIC(AutoBuy_handler), false);
+	if (pReBuyCmd) SH_ADD_HOOK(ConCommand, Dispatch, pReBuyCmd, SH_STATIC(ReBuy_handler), false);
+}
+
 
 #endif

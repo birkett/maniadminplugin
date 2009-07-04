@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -67,11 +68,11 @@ extern	bool war_mode;
 
 static int sort_ping_immunity_by_steam_id ( const void *m1,  const void *m2);
 
-static void HighPingKick ( ConVar *var, char const *pOldString );
-static void HighPingKickSamples ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(HighPingKick);
+CONVAR_CALLBACK_PROTO(HighPingKickSamples);
 
-ConVar mani_high_ping_kick ("mani_high_ping_kick", "0", 0, "This defines whether the high ping kicker is enabled or not", true, 0, true, 1, HighPingKick); 
-ConVar mani_high_ping_kick_samples_required ("mani_high_ping_kick_samples_required", "60", 0, "This defines the amount of samples required before the player is kicked", true, 0, true, 10000, HighPingKickSamples); 
+ConVar mani_high_ping_kick ("mani_high_ping_kick", "0", 0, "This defines whether the high ping kicker is enabled or not", true, 0, true, 1, CONVAR_CALLBACK_REF(HighPingKick)); 
+ConVar mani_high_ping_kick_samples_required ("mani_high_ping_kick_samples_required", "60", 0, "This defines the amount of samples required before the player is kicked", true, 0, true, 10000, CONVAR_CALLBACK_REF(HighPingKickSamples)); 
 ConVar mani_high_ping_kick_ping_limit ("mani_high_ping_kick_ping_limit", "400", 0, "This defines the ping limit before a player is kicked", true, 10, true, 99999999); 
 ConVar mani_high_ping_kick_message ("mani_high_ping_kick_message", "Your ping is too high", 0, "This defines the message given to the player in their console on disconnect"); 
 
@@ -254,7 +255,7 @@ void ManiPing::GameFrame(void)
 		float ping = nci->GetAvgLatency(0);
 		const char * szCmdRate = engine->GetClientConVarValue( i + 1, "cl_cmdrate" );
 
-		int nCmdRate = max( 20, atoi( szCmdRate ) );
+		int nCmdRate = (20 > Q_atoi( szCmdRate )) ? 20 : Q_atoi(szCmdRate);
 		ping -= (0.5f/nCmdRate) + TICKS_TO_TIME( 1.0f ); // correct latency
 
 		// in GoldSrc we had a different, not fixed tickrate. so we have to adjust
@@ -369,17 +370,17 @@ void ManiPing::LoadImmunityList(void)
 
 }
 
-static void HighPingKick ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(HighPingKick)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_high_ping_kick.GetString()))
 	{
 		gpManiPing->Load();
 	}
 }
 
-static void HighPingKickSamples ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(HighPingKickSamples)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_high_ping_kick_samples_required.GetString()))
 	{
 		gpManiPing->Load();
 	}

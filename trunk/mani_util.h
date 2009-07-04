@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -28,7 +29,6 @@
 
 #include <map>
 #include <ctype.h>
-using namespace std;
 
 extern	unsigned long djb2_hash(unsigned char *str);
 extern	unsigned long djb2_hash(unsigned char *str1, unsigned char *str2);
@@ -39,6 +39,7 @@ extern	unsigned long sdbm_hash(unsigned char *str1, unsigned char *str2);
 extern	void		  MSleep(int   milliseconds);
 extern  bool		  IsLAN();
 extern  char	*AsciiToHTML(char *in_string);
+extern  int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename);
 
 class BasicStr
 {
@@ -130,8 +131,8 @@ class ParamManager
 public:
 	ParamManager () {};
 	~ParamManager () {};
-	void	AddParam(const char *id, const int param) {int_list.insert(make_pair<BasicStr, int>(BasicStr(id), param));}
-	void	AddParam(const char *id, const char *param) {str_list.insert(make_pair<BasicStr, BasicStr>(BasicStr(id), BasicStr(param)));}
+	void	AddParam(const char *id, const int param) {int_list.insert(std::make_pair<BasicStr, int>(BasicStr(id), param));}
+	void	AddParam(const char *id, const char *param) {str_list.insert(std::make_pair<BasicStr, BasicStr>(BasicStr(id), BasicStr(param)));}
 	// Separate version for ... version
 	void	AddParamVar(const char *id, const char *param, ...) 
 	{
@@ -141,14 +142,14 @@ public:
 		va_start ( argptr, param );
 		vsnprintf( temp_str, sizeof(temp_str), param, argptr );
 		va_end   ( argptr );
-		str_list.insert(make_pair<BasicStr, BasicStr>(BasicStr(id), BasicStr(temp_str)));
+		str_list.insert(std::make_pair<BasicStr, BasicStr>(BasicStr(id), BasicStr(temp_str)));
 	}
-	void	AddParam(const char *id, const float param) {float_list.insert(make_pair<BasicStr, float>(BasicStr(id), param));}
-	void	AddParam(const char *id, const bool param) {bool_list.insert(make_pair<BasicStr, bool>(BasicStr(id), param));}
-	void	AddParam(const char *id, void *param) {ptr_list.insert(make_pair<BasicStr, void *>(BasicStr(id), param));}
+	void	AddParam(const char *id, const float param) {float_list.insert(std::make_pair<BasicStr, float>(BasicStr(id), param));}
+	void	AddParam(const char *id, const bool param) {bool_list.insert(std::make_pair<BasicStr, bool>(BasicStr(id), param));}
+	void	AddParam(const char *id, void *param) {ptr_list.insert(std::make_pair<BasicStr, void *>(BasicStr(id), param));}
 	bool	GetParam(const char *id, char **param)
 	{
-		map<BasicStr, BasicStr>::iterator itr = str_list.find(BasicStr(id));
+		std::map<BasicStr, BasicStr>::iterator itr = str_list.find(BasicStr(id));
 		if (itr != str_list.end())
 		{
 			*param = itr->second.str;
@@ -160,7 +161,7 @@ public:
 
 	bool	GetParam(const char *id, int *param)
 	{
-		map<BasicStr, int>::iterator itr = int_list.find(BasicStr(id));
+		std::map<BasicStr, int>::iterator itr = int_list.find(BasicStr(id));
 		if (itr != int_list.end())
 		{
 			*param = itr->second;
@@ -172,7 +173,7 @@ public:
 
 	bool	GetParam(const char *id, float *param)
 	{
-		map<BasicStr, float>::iterator itr = float_list.find(BasicStr(id));
+		std::map<BasicStr, float>::iterator itr = float_list.find(BasicStr(id));
 		if (itr != float_list.end())
 		{
 			*param = itr->second;
@@ -184,7 +185,7 @@ public:
 
 	bool	GetParam(const char *id, bool *param)
 	{
-		map<BasicStr, bool>::iterator itr = bool_list.find(BasicStr(id));
+		std::map<BasicStr, bool>::iterator itr = bool_list.find(BasicStr(id));
 		if (itr != bool_list.end())
 		{
 			*param = itr->second;
@@ -196,7 +197,7 @@ public:
 
 	bool	GetParam(const char *id, void **param)
 	{
-		map<BasicStr, void *>::iterator itr = ptr_list.find(BasicStr(id));
+		std::map<BasicStr, void *>::iterator itr = ptr_list.find(BasicStr(id));
 		if (itr != ptr_list.end())
 		{
 			*param = itr->second;
@@ -207,11 +208,11 @@ public:
 	}
 
 private:
-	map<BasicStr, BasicStr> str_list;
-	map<BasicStr, int> int_list;
-	map<BasicStr, float> float_list;
-	map<BasicStr, bool> bool_list;
-	map<BasicStr, void *> ptr_list;
+	std::map<BasicStr, BasicStr> str_list;
+	std::map<BasicStr, int> int_list;
+	std::map<BasicStr, float> float_list;
+	std::map<BasicStr, bool> bool_list;
+	std::map<BasicStr, void *> ptr_list;
 };
 
 

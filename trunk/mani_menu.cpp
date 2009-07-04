@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -873,7 +874,7 @@ void MenuManager::KillLast(player_t *player_ptr)
 
 	if (!mt_ptr->menu_pages.empty())
 	{
-		vector<MenuPage *>::reverse_iterator i = mt_ptr->menu_pages.rbegin();
+		std::vector<MenuPage *>::reverse_iterator i = mt_ptr->menu_pages.rbegin();
 		delete *i;
 		mt_ptr->menu_pages.pop_back();
 	}

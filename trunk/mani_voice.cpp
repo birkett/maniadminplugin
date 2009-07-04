@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -75,9 +76,9 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
-static void ManiDeadAllTalk ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiDeadAllTalk);
 
-ConVar mani_dead_alltalk ("mani_dead_alltalk", "0", 0, "0 = Dont let dead players from each team talk, 1 = Let dead players from each team talk", true, 0, true, 1, ManiDeadAllTalk); 
+ConVar mani_dead_alltalk ("mani_dead_alltalk", "0", 0, "0 = Dont let dead players from each team talk, 1 = Let dead players from each team talk", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiDeadAllTalk)); 
 
 
 //---------------------------------------------------------------------------------
@@ -162,11 +163,11 @@ bool IsPlayerValid(player_t *player_ptr)
 	return false;
 }
 
-static void ManiDeadAllTalk ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiDeadAllTalk)
 {
-	if (!FStrEq(pOldString, var->GetString()))
+	if (!FStrEq(pOldString, mani_dead_alltalk.GetString()))
 	{
-		if (atoi(var->GetString()) == 0)
+		if (atoi(mani_dead_alltalk.GetString()) == 0)
 		{
 			SayToAll(ORANGE_CHAT, true, "DeadAllTalk mode off");
 		}

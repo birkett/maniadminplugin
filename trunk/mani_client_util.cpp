@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -60,16 +61,16 @@ void GlobalGroupFlag::AddFlag(const char *flag_id)
 {
 	const unsigned int hash_id = djb2_hash((unsigned char *) flag_id);
 
-	multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator p;
-	flag_list.insert(make_pair(hash_id, FlagAccessSwitch(flag_id, true)));
+	std::multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator p;
+	flag_list.insert(std::make_pair(hash_id, FlagAccessSwitch(flag_id, true)));
 }
 
 void GlobalGroupFlag::SetFlag(const char *flag_id, const bool enable)
 {
 	const unsigned int hash_id = djb2_hash((unsigned char *)flag_id);
 	bool found = false;
-	typedef	multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator RangeType;
-	pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
+	typedef	std::multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator RangeType;
+	std::pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
 
 	for (RangeType i = range.first; i != range.second; i++)
 	{
@@ -91,8 +92,8 @@ bool GlobalGroupFlag::IsFlagSet(const char *flag_id)
 {
 	const unsigned int hash_id = djb2_hash((unsigned char *)flag_id);
 
-	typedef	multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator RangeType;
-	pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
+	typedef	std::multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator RangeType;
+	std::pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
 
 	for (RangeType i = range.first; i != range.second; i++)
 	{
@@ -113,7 +114,7 @@ bool GlobalGroupFlag::IsFlagSet(const char *flag_id)
 bool GlobalGroupFlag::CatFlags(char *string)
 {
 	bool found_flag = false;
-	multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator i;
+	std::multimap<const unsigned int, FlagAccessSwitch, ltint>::iterator i;
 
 	strcpy(string, "");
 	for (i = flag_list.begin(); i != flag_list.end(); i++)
@@ -201,13 +202,13 @@ PersonalFlag::~PersonalFlag()
 void PersonalFlag::Copy(PersonalFlag &src)
 {
 	this->flag_list.clear();
-	multimap<const unsigned int, ClassFlagAccess, ltint>::iterator itr;
+	std::multimap<const unsigned int, ClassFlagAccess, ltint>::iterator itr;
 	itr = src.flag_list.begin();
 	for (itr = src.flag_list.begin(); itr != src.flag_list.end(); itr++)
 	{
 		if (itr->second.IsEnabled())
 		{
-			this->flag_list.insert(make_pair(itr->first, ClassFlagAccess(itr->second.GetClassType(), itr->second.GetFlagID(), true)));
+			this->flag_list.insert(std::make_pair(itr->first, ClassFlagAccess(itr->second.GetClassType(), itr->second.GetFlagID(), true)));
 		}
 	}
 }
@@ -215,7 +216,7 @@ void PersonalFlag::Copy(PersonalFlag &src)
 void PersonalFlag::AddFlag(const char *class_type, const char *flag_id)
 {
 	const unsigned int hash_id = djb2_hash((unsigned char *) class_type, (unsigned char *) flag_id);
-	flag_list.insert(pair<const unsigned int, ClassFlagAccess> (hash_id, ClassFlagAccess(class_type, flag_id, true)));
+	flag_list.insert(std::pair<const unsigned int, ClassFlagAccess> (hash_id, ClassFlagAccess(class_type, flag_id, true)));
 }
 
 void PersonalFlag::SetFlag(const char *class_type, const char *flag_id, const bool enable)
@@ -225,8 +226,8 @@ void PersonalFlag::SetFlag(const char *class_type, const char *flag_id, const bo
 	if (!flag_list.empty())
 	{
 		const unsigned int hash_id = djb2_hash((unsigned char *) class_type, (unsigned char *)flag_id);
-		typedef	multimap<const unsigned int, ClassFlagAccess, ltint>::iterator RangeType;
-		pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
+		typedef	std::multimap<const unsigned int, ClassFlagAccess, ltint>::iterator RangeType;
+		std::pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
 
 		for (RangeType i = range.first; i != range.second; i++)
 		{
@@ -253,7 +254,7 @@ void PersonalFlag::SetAll(const char *class_type, FlagDescList *flag_list_ptr)
 	for (const char *flag_id = flag_list_ptr->FindFirst(class_type, &key_value); flag_id != NULL; flag_id = flag_list_ptr->FindNext(class_type, &key_value))
 	{
 		const unsigned int hash_id = djb2_hash((unsigned char *) class_type, (unsigned char *) flag_id);
-		flag_list.insert(pair<const unsigned int, ClassFlagAccess> (hash_id, ClassFlagAccess(class_type, flag_id, true)));
+		flag_list.insert(std::pair<const unsigned int, ClassFlagAccess> (hash_id, ClassFlagAccess(class_type, flag_id, true)));
 	}
 }
 
@@ -263,8 +264,8 @@ bool PersonalFlag::IsFlagSet(const char *class_type, const char *flag_id)
 	{
 		const unsigned int hash_id = djb2_hash((unsigned char *) class_type, (unsigned char *)flag_id);
 
-		typedef	multimap<const unsigned int, ClassFlagAccess, ltint>::iterator RangeType;
-		pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
+		typedef	std::multimap<const unsigned int, ClassFlagAccess, ltint>::iterator RangeType;
+		std::pair<RangeType, RangeType> range = flag_list.equal_range(hash_id);
 
 		for (RangeType i = range.first; i != range.second; i++)
 		{
@@ -287,7 +288,7 @@ bool PersonalFlag::IsFlagSet(const char *class_type, const char *flag_id)
 bool PersonalFlag::CatFlags(char *string, const char *class_type)
 {
 	bool found_flag = false;
-	multimap<const unsigned int, ClassFlagAccess, ltint>::iterator i;
+	std::multimap<const unsigned int, ClassFlagAccess, ltint>::iterator i;
 
 	strcpy(string, "");
 	for (i = flag_list.begin(); i != flag_list.end(); i++)
@@ -341,25 +342,25 @@ bool PersonalFlag::CatFlags(char *string, const char *class_type, const unsigned
 
 GlobalGroupFlag	*GroupList::AddGroup(const char *class_type, const char *group_id)
 {
-	map<DualStriKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStriKey(class_type, group_id));
+	std::map<DualStriKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStriKey(class_type, group_id));
 	if (itr != group_list.end())
 	{
 		return &itr->second;
 	}
 
-	group_list.insert(make_pair<DualStriKey, GlobalGroupFlag>(DualStriKey(class_type, group_id),GlobalGroupFlag()));
+	group_list.insert(std::make_pair<DualStriKey, GlobalGroupFlag>(DualStriKey(class_type, group_id),GlobalGroupFlag()));
 	return this->Find(class_type, group_id);
 }
 
 void	GroupList::RemoveGroup(const char *class_type, const char *group_id)
 {
-	map<DualStriKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStriKey(class_type, group_id));
+	std::map<DualStriKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStriKey(class_type, group_id));
 	if (itr != group_list.end()) group_list.erase(itr);
 }
 
 GlobalGroupFlag	*GroupList::Find(const char *class_type, const char *group_id)
 {
-	map<DualStriKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStriKey(class_type, group_id));
+	std::map<DualStriKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStriKey(class_type, group_id));
 	return ((itr != group_list.end()) ? &itr->second:NULL);
 }
 
@@ -427,19 +428,19 @@ GlobalGroupFlag	*GroupList::FindNext(const char *class_type, const DualStriKey *
 
 GlobalGroupFlag	*LevelList::AddGroup(const char *class_type, const int level_id)
 {
-	map<DualStrIntKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStrIntKey(class_type, level_id));
+	std::map<DualStrIntKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStrIntKey(class_type, level_id));
 	if (itr != group_list.end())
 	{
 		return &itr->second;
 	}
 
-	group_list.insert(make_pair<DualStrIntKey, GlobalGroupFlag>(DualStrIntKey(class_type, level_id),GlobalGroupFlag()));
+	group_list.insert(std::make_pair<DualStrIntKey, GlobalGroupFlag>(DualStrIntKey(class_type, level_id),GlobalGroupFlag()));
 	return this->Find(class_type, level_id);
 }
 
 void	LevelList::RemoveGroup(const char *class_type, const int level_id)
 {
-	map<DualStrIntKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStrIntKey(class_type, level_id));
+	std::map<DualStrIntKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStrIntKey(class_type, level_id));
 	if (itr != group_list.end()) 
 	{
 		group_list.erase(itr);
@@ -448,7 +449,7 @@ void	LevelList::RemoveGroup(const char *class_type, const int level_id)
 
 GlobalGroupFlag	*LevelList::Find(const char *class_type, const int level_id)
 {
-	map<DualStrIntKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStrIntKey(class_type, level_id));
+	std::map<DualStrIntKey, GlobalGroupFlag>::iterator itr = group_list.find(DualStrIntKey(class_type, level_id));
 	return ((itr != group_list.end()) ? &itr->second:NULL);
 }
 
@@ -520,13 +521,13 @@ void GroupSet::Add(const char *class_type, const char *group_id)
 
 void GroupSet::Remove(const char *class_type, const char *group_id)
 {
-	set<DualStriKey>::iterator itr = group_set.find(DualStriKey(class_type, group_id));
+	std::set<DualStriKey>::iterator itr = group_set.find(DualStriKey(class_type, group_id));
 	if (itr != group_set.end()) group_set.erase(itr);
 }
 
 bool GroupSet::Find(const char *class_type, const char *group_id)
 {
-	set<DualStriKey>::iterator itr = group_set.find(DualStriKey(class_type, group_id));
+	std::set<DualStriKey>::iterator itr = group_set.find(DualStriKey(class_type, group_id));
 	return ((itr != group_set.end()) ? true:false);
 }
 
@@ -593,7 +594,7 @@ void LevelSet::Add(const char *class_type, const int level_id)
 
 void	LevelSet::Remove(const char *class_type, const int level_id)
 {
-	set<DualStrIntKey>::iterator itr = group_set.find(DualStrIntKey(class_type, level_id));
+	std::set<DualStrIntKey>::iterator itr = group_set.find(DualStrIntKey(class_type, level_id));
 	if (itr != group_set.end()) 
 	{
 		group_set.erase(itr);
@@ -602,7 +603,7 @@ void	LevelSet::Remove(const char *class_type, const int level_id)
 
 bool LevelSet::Find(const char *class_type, const int level_id)
 {
-	set<DualStrIntKey>::iterator itr = group_set.find(DualStrIntKey(class_type, level_id));
+	std::set<DualStrIntKey>::iterator itr = group_set.find(DualStrIntKey(class_type, level_id));
 	return ((itr != group_set.end()) ? true:false);
 }
 
@@ -663,7 +664,7 @@ const int LevelSet::FindNext(const char *class_type)
 //********************************************************************************
 bool FlagDescList::AddFlag(const char *class_type, const char *flag_id, const char *description, bool	replace_description)
 {
-	map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
+	std::map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
 	if (itr != flag_desc_list.end())
 	{
 		if (replace_description)
@@ -676,7 +677,7 @@ bool FlagDescList::AddFlag(const char *class_type, const char *flag_id, const ch
 	}
 	else
 	{
-		flag_desc_list.insert(make_pair<DualStrKey, FlagDesc>(DualStrKey(class_type, flag_id), FlagDesc(description)));
+		flag_desc_list.insert(std::make_pair<DualStrKey, FlagDesc>(DualStrKey(class_type, flag_id), FlagDesc(description)));
 		class_type_list.Add(class_type);
 	}
 
@@ -685,7 +686,7 @@ bool FlagDescList::AddFlag(const char *class_type, const char *flag_id, const ch
 
 void	FlagDescList::RemoveFlag(const char *class_type, const char *flag_id)
 {
-	map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
+	std::map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
 	if (itr != flag_desc_list.end()) 
 	{
 		flag_desc_list.erase(itr);
@@ -694,13 +695,13 @@ void	FlagDescList::RemoveFlag(const char *class_type, const char *flag_id)
 
 bool	FlagDescList::IsValidFlag(const char *class_type, const char *flag_id)
 {
-	map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
+	std::map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
 	return ((itr != flag_desc_list.end()) ? true:false);
 }
 
 const char *FlagDescList::Find(const char *class_type, const char *flag_id)
 {
-	map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
+	std::map<DualStrKey, FlagDesc>::iterator itr = flag_desc_list.find(DualStrKey(class_type, flag_id));
 	return ((itr != flag_desc_list.end()) ? itr->second.description:NULL);
 }
 
@@ -763,7 +764,7 @@ const char *FlagDescList::FindNext(const char *class_type, const DualStrKey **pt
 
 void	FlagDescList::DumpFlags()
 {
-	map<DualStrKey, FlagDesc>::iterator itr;
+	std::map<DualStrKey, FlagDesc>::iterator itr;
 	for (itr = flag_desc_list.begin(); itr != flag_desc_list.end(); itr++)
 	{
 		Msg("[%s] [%s] [%s]\n", itr->first.key1, itr->first.key2, itr->second.description);

@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -44,7 +45,6 @@
 #include "Color.h"
 #include "mani_main.h"
 #include "mani_callback_sourcemm.h"
-#include "mani_sourcehook.h"
 #include "mani_convar.h"
 #include "mani_player.h"
 #include "mani_language.h"

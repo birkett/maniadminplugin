@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -94,8 +95,10 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
 	if (mani_use_amx_style_menu.GetInt() == 0 || !gpManiGameType->IsAMXMenuAllowed()) return ;
-
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	if (gpCmd->Cmd_Argc() < 4) 
 	{
@@ -197,7 +200,10 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	bool	fire_message = false;
 
@@ -250,7 +256,10 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	if (gpCmd->Cmd_Argc() < 3) 
 	{
@@ -295,7 +304,10 @@ CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	if (gpCmd->Cmd_Argc() < 2) 
 	{
@@ -345,7 +357,10 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	if (gpCmd->Cmd_Argc() < 3) 
 	{
@@ -404,7 +419,10 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 CON_COMMAND(ma_hlx_cexec, "ma_hlx_cexec <target> <command>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	if (gpCmd->Cmd_Argc() < 3) 
 	{
@@ -440,7 +458,10 @@ CON_COMMAND(ma_hlx_cexec, "ma_hlx_cexec <target> <command>")
 CON_COMMAND(ma_hlx_hint, "ma_hlx_hint <target> <message>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-	gpCmd->ExtractClientAndServerCommand();
+#ifndef ORANGE
+	const CCommand args;
+#endif
+	gpCmd->ExtractClientAndServerCommand(args);
 
 	if (gpCmd->Cmd_Argc() < 3) 
 	{

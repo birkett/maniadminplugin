@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -125,5 +126,30 @@ extern	void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id);
 
 MENUALL_DEC(PlayerSettings);
 MENUALL_DEC(SkinChoice);
+
+#if !defined ORANGE
+class IVEngineServer;
+extern	IVEngineServer	*engine;
+class CCommand
+{
+public:
+	CCommand () {};
+		
+	const char *ArgS() const
+	{
+		return engine->Cmd_Args();
+	}
+	int ArgC() const
+	{
+		return engine->Cmd_Argc();
+	}
+
+	const char *Arg(int index) const
+	{
+		return engine->Cmd_Argv(index);
+	}
+};
+
+#endif
 
 #endif

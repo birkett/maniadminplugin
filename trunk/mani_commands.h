@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -36,17 +37,31 @@ enum
 };
 
 // Define a new con command that will directly call the gpCmd-> function
+#ifdef ORANGE 
 #define SCON_COMMAND(_name, _help_id, _func, _war_mode_allowed) \
-   static void _name(); \
-   static ConCommand _name##_command( #_name, _name, "Use ma_help _name for help" ); \
-   static void _name() \
+	static void _name( const CCommand &args ); \
+	static ConCommand _name##_command( #_name, _name, "Use ma_help _name for help" ); \
+	static void _name( const CCommand &args ) \
 { \
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused()) return; \
-	gpCmd->ExtractClientAndServerCommand(); \
+	gpCmd->ExtractClientAndServerCommand(args); \
 	gpCmd->_func(NULL, #_name, _help_id, M_SCONSOLE, _war_mode_allowed); \
 }
+#else
+#define SCON_COMMAND(_name, _help_id, _func, _war_mode_allowed) \
+	static void _name(); \
+	static ConCommand _name##_command( #_name, _name, "Use ma_help _name for help" ); \
+	static void _name() \
+{ \
+	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused()) return; \
+	const CCommand args; \
+	gpCmd->ExtractClientAndServerCommand(args); \
+	gpCmd->_func(NULL, #_name, _help_id, M_SCONSOLE, _war_mode_allowed); \
+	}
+#endif
 
 class ManiCommands;
+class CCommand;
 
 struct	cmd_t
 {
@@ -77,16 +92,16 @@ public:
 	void		DumpHelp( player_t *player_ptr, int	cmd_index, const int command_type );
 	void		RegisterCommand(const char *name, int help_id, bool admin_required, bool war_mode_allowed, bool server_command, bool client_command, bool say_command, bool tsay_command, int (ManiCommands::*funcPtr)(player_t *, const char *, int, int, bool));
 	void		RegisterCommand(const char *name, bool war_mode_allowed, int (ManiCommands::*funcPtr)(player_t *, const char *, int, int, bool));
-	int			HandleCommand(player_t *player_ptr, int command_type);
+	int			HandleCommand(player_t *player_ptr, int command_type, const CCommand &args);
 	int			Cmd_Argc(void);
 	const char *Cmd_Argv(int i);
 	const char *Cmd_Args(void);
 	const char *Cmd_Args(int i);
 	const char *Cmd_SayArg0(void);
-	void		ExtractSayCommand(bool team_say);
-	void		ParseSayCommand(void);
+	void		ExtractSayCommand(bool team_say, const CCommand &args);
+	void		ParseSayCommand(const CCommand &args);
 	void		ParseEventSayCommand(const char *player_say);
-	void		ExtractClientAndServerCommand(void);
+	void		ExtractClientAndServerCommand(const CCommand &args);
 	void		NewCmd(void);
 	void		AddParam(char *fmt, ...);
 	void		AddParam(int number);

@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -54,6 +55,7 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	IServerPluginHelpers *helpers;
 extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IFileSystem	*filesystem;
+extern	ICvar *g_pCVar;
 extern	bool war_mode;
 extern	int	max_players;
 extern	bf_write *msg_buffer;
@@ -87,13 +89,13 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
-static void ManiLogMode ( ConVar *var, char const *pOldString );
+CONVAR_CALLBACK_PROTO(ManiLogMode);
 static void WriteToManiLog ( char *log_string, char *steam_id);
 static bool vcmp(void *_addr1, void *_addr2, size_t len);
 
 
 ConVar mani_log_directory ("mani_log_directory", "mani_logs", 0, "This defines the directory to store admin logs in"); 
-ConVar mani_log_mode ("mani_log_mode", "0", 0, "0 = to main valve log file, 1 = per map in mani_log_directory, 2 = log to one big file in mani_log_directory, 3 = per steam id in mani_log_directory", true, 0, true, 3, ManiLogMode); 
+ConVar mani_log_mode ("mani_log_mode", "0", 0, "0 = to main valve log file, 1 = per map in mani_log_directory, 2 = log to one big file in mani_log_directory, 3 = per steam id in mani_log_directory", true, 0, true, 3, CONVAR_CALLBACK_REF(ManiLogMode)); 
 
 //---------------------------------------------------------------------------------
 // Purpose: Say only to admin
@@ -416,7 +418,8 @@ const char	*fmt,
 			{
 				found_admin = true;
 				mrfadmin.AddPlayer(i);
-				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+				if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+					  gpManiGameType->IsGameType(MANI_GAME_CSS)))
 				{
 					OutputToConsole(&server_player, "%s\n", admin_final_string);
 				}
@@ -425,7 +428,8 @@ const char	*fmt,
 			{
 				found_player = true;
 				mrf.AddPlayer(i);
-				if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+				if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+					gpManiGameType->IsGameType(MANI_GAME_CSS)))
 				{
 					OutputToConsole(&server_player, "%s\n", non_admin_final_string);
 				}
@@ -464,7 +468,8 @@ const char	*fmt,
 			}
 
 			found_player = true;
-			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+			if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+				gpManiGameType->IsGameType(MANI_GAME_CSS)))
 			{
 				OutputToConsole(&server_player, "%s\n", admin_final_string);
 			}
@@ -577,7 +582,8 @@ void SayToAll(const int colour, bool echo, const char	*fmt, ...)
 		found_player = true;
 		mrf.AddPlayer(i);
 
-		if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+			gpManiGameType->IsGameType(MANI_GAME_CSS)))
 		{
 			if (echo) OutputToConsole(&server_player, "%s\n", tempString);
 		}
@@ -633,7 +639,8 @@ void SayToDead(const int colour, const char	*fmt, ...)
 		{
 			mrf.AddPlayer(i);
 			found_player = true;
-			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+			if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+				gpManiGameType->IsGameType(MANI_GAME_CSS)))
 			{
 				OutputToConsole(&recipient_player, "%s\n", tempString);
 			}
@@ -644,7 +651,8 @@ void SayToDead(const int colour, const char	*fmt, ...)
 		{
 			mrf.AddPlayer(i);
 			found_player = true;
-			if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+			if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+				gpManiGameType->IsGameType(MANI_GAME_CSS)))
 			{
 				OutputToConsole(&recipient_player, "%s\n", tempString);
 			}
@@ -692,7 +700,8 @@ void SayToPlayer(const int colour, player_t *player, const char	*fmt, ...)
 	}
 
 	mrf.AddPlayer(player->index);
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
+		 gpManiGameType->IsGameType(MANI_GAME_TF)))
 	{
 		OutputToConsole(player, "%s\n", tempString);
 	}
@@ -1121,9 +1130,9 @@ void WriteToManiLog
 //---------------------------------------------------------------------------------
 // Purpose: Update log mode
 //---------------------------------------------------------------------------------
-static void ManiLogMode ( ConVar *var, char const *pOldString )
+CONVAR_CALLBACK_FN(ManiLogMode)
 {
-	int	log_mode = atoi(var->GetString());
+	int	log_mode = atoi(mani_log_mode.GetString());
 
 	// Setup log mode
 	if (log_mode == 0) return;
@@ -1490,9 +1499,14 @@ bool vcmp(void *_addr1, void *_addr2, size_t len)
 
 void FindConPrintf(void)
 {
-	ConCommandBase *pBase = cvar->GetCommands();
+	ConCommandBase *pBase = g_pCVar->GetCommands();
 	unsigned char *ptr = NULL;
+#ifdef ORANGE
+	FnCommandCallback_t callback = NULL;
+#else
 	FnCommandCallback callback = NULL;
+#endif
+
 	int offs = 0;
 
 	while (pBase)

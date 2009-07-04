@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -40,7 +41,6 @@
 #include <mysql.h>
 #include "mani_mutex.h"
 
-using namespace std;
 
 //************************************************************************
 // SQLProcessBlock - A block of code for specific client sql requests

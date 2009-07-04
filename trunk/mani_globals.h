@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -40,7 +41,7 @@ extern	void *gamedll;
 extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 extern	IEffects *effects; // fx
 extern	IEngineSound *esounds; // sound
-extern	ICvar *cvar;	// console vars
+extern	ICvar *g_pCVar;	// console vars
 extern	INetworkStringTableContainer *networkstringtable;
 extern	INetworkStringTable *g_pStringTableManiScreen;
 extern	IVoiceServer *voiceserver;
@@ -60,7 +61,7 @@ extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IGameEventListener2 *gpManiIGELCallback;
 extern	int	con_command_index;
 
-//#ifdef SOURCEMM
+#if !defined ORANGE && defined SOURCEMM
 #include <ISmmPlugin.h>
 #include <sourcehook/sourcehook.h>
 
@@ -70,7 +71,6 @@ extern SourceHook::CallClass<IVoiceServer> *voiceserver_cc;
 extern SourceHook::CallClass<IServerGameDLL> *serverdll_cc;
 extern SourceHook::CallClass<ConCommand> *rebuy_cc;
 extern SourceHook::CallClass<ConCommand> *autobuy_cc;
-
-//#endif
+#endif
 
 #endif

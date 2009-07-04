@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -295,7 +296,7 @@ private:
 	ClientPlayer	*active_client_list[64];
 
 	// Stores all clients in a list
-	vector<ClientPlayer *> c_list;
+	std::vector<ClientPlayer *> c_list;
 	FlagDescList	flag_desc_list;
 };
 

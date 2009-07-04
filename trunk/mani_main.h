@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -39,25 +40,34 @@ const int MANI_MAX_PLAYERS = 64;
 #define TEAM_B (3)
 // T
 #define TEAM_A (2)
-//#define TEAM_SPEC (1)
 
 // Version information
-const int	gametypes_min_version = 1;
+const int	gametypes_min_version = 2;
 
 #ifdef WIN32
 #define snprintf _snprintf
 #endif
 
+#ifdef ORANGE
 #ifdef SOURCEMM
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaR SMM, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaR SMM"
+#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT SMM Orange, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaT SMM"
 #else
-#define PLUGIN_VERSION "Mani Admin Plugin 2006 V1.2BetaR VSP, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaR VSP"
+#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT VSP Orange, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaT VSP"
+#endif
+#else
+#ifdef SOURCEMM
+#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT SMM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaT SMM"
+#else
+#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT VSP, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION "1.2BetaT VSP"
+#endif
 #endif
 
-#define PLUGIN_VERSION_ID "V1.2BetaR\n"
-#define PLUGIN_VERSION_ID2 "V1.2BetaR"
+#define PLUGIN_VERSION_ID "V1.2BetaT\n"
+#define PLUGIN_VERSION_ID2 "V1.2BetaT"
 
 // Define vote types
 enum
@@ -190,5 +200,25 @@ MANI_GIVE_HEALTH,
 MANI_GIVE_HEALTH_PERCENT,
 MANI_TAKE_HEALTH,
 MANI_TAKE_HEALTH_PERCENT};
+
+#ifdef ORANGE
+#define CONVAR_CALLBACK_PROTO(_name) \
+	static void _name ( ConVar *pVar, char const *pOldString, float pOldFloat)
+
+#define CONVAR_CALLBACK_REF(_name) \
+	(FnChangeCallback_t) &_name
+
+#define CONVAR_CALLBACK_FN(_name) \
+	static void _name ( ConVar *pVar, char const *pOldString, float pOldFloat)
+#else
+#define CONVAR_CALLBACK_PROTO(_name) \
+	static void _name ( ConVar *pVar, char const *pOldString)
+
+#define CONVAR_CALLBACK_REF(_name) \
+	_name
+
+#define CONVAR_CALLBACK_FN(_name) \
+	static void _name ( ConVar *pVar, char const *pOldString)
+#endif
 
 #endif

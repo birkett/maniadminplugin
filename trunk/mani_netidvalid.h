@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -53,7 +54,7 @@ private:
 		time_t	timer;
 	};
 
-	vector	<net_id_t> net_id_list;
+	std::vector	<net_id_t> net_id_list;
 
 	float		timeout;
 
