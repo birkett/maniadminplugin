@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use Cwd;
+use LWP::Simple;
 
 # Updates the default Valve Source engined games.
 
@@ -94,8 +95,8 @@ sub update_game
 		else
 		{
 			# Windows 
-			print "You need to download the following file to the srcds_1 folder 'http://www.steampowered.com/download/hldsupdatetool.exe'";
-			exit;
+			getstore("http://www.steampowered.com/download/hldsupdatetool.exe", $UPDATER);
+			system($UPDATER);
 		}
 	}
 
