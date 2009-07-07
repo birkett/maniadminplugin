@@ -12,6 +12,7 @@ if ($^O eq "MSWin32")
 	print "Windows platform\n";
 	$ROOT_PATH="C:/MyDev";
 	$UPDATER="HldsUpdateTool.exe";
+	$linux=false;
 }
 else
 {
@@ -19,6 +20,7 @@ else
 	print "Linux platform\n";
 	$ROOT_PATH='$HOME/MyDev';
 	$UPDATER="./steam";	
+	$linux=true;
 }
 
 $SRCDS_PATH="$ROOT_PATH/srcds_1";
@@ -78,6 +80,25 @@ else
 
 sub update_game
 {
+	if (! -e $UPDATER)
+	{
+		# No installation found
+		if ($linux == true)
+		{
+			# Download the hlds updater tool and run it
+			system("wget http://www.steampowered.com/download/hldsupdatetool.bin");
+			system("chmod +x hldsupdatetool.bin");
+			system("./hldsupdatetool.bin");
+			system("./steam");
+		}
+		else
+		{
+			# Windows 
+			print "You need to download the following file to the srcds_1 folder 'http://www.steampowered.com/download/hldsupdatetool.exe'";
+			exit;
+		}
+	}
+
 	print "Perl script - Updating Game $_[0]\n";
 	$system_command="$UPDATER -command update -game \"$_[0]\" -dir $SRCDS_PATH";
 	system($system_command);
