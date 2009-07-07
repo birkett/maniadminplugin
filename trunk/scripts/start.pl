@@ -19,7 +19,7 @@ else
 #Linux platform
 	print "Linux platform\n";
 	$LINUX="TRUE";
-	$ROOT_PATH='$HOME/MyDev';
+	$ROOT_PATH=$ENV{HOME}."/MyDev";
 	$GAME_EXE="srcds_run -debug -port $DEFAULT_PORT -console";	
 }
 

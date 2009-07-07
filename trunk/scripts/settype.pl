@@ -9,7 +9,7 @@ sub create_folder;
 
 #Setup vars here
 $CORE_BIN="mani_admin_plugin";
-$LINUX_BASE='$HOME/MyDev';
+$LINUX_BASE=$ENV{HOME}."/MyDev";
 $WINDOWS_BASE="C:/MyDev";
 $ROOT_GAME="/srcds_1";
 $ROOT_ORANGE_GAME="/srcds_1/orangebox";
