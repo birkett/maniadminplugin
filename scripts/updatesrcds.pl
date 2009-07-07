@@ -13,7 +13,6 @@ if ($^O eq "MSWin32")
 	print "Windows platform\n";
 	$ROOT_PATH="C:/MyDev";
 	$UPDATER="HldsUpdateTool.exe";
-	$linux=false;
 }
 else
 {
@@ -21,7 +20,7 @@ else
 	print "Linux platform\n";
 	$ROOT_PATH=$ENV{HOME}."/MyDev";
 	$UPDATER="./steam";	
-	$linux=true;
+	$LINUX="TRUE";
 }
 
 $SRCDS_PATH="$ROOT_PATH/srcds_1";
@@ -84,7 +83,7 @@ sub update_game
 	if (! -e $UPDATER)
 	{
 		# No installation found
-		if ($linux == true)
+		if ($LINUX)
 		{
 			# Download the hlds updater tool and run it
 			system("wget http://www.steampowered.com/download/hldsupdatetool.bin");
