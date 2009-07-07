@@ -118,6 +118,7 @@ ARCH_CFLAGS=-mtune=i686 -march=pentium3 -mmmx -O3
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
 BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf \
+	-Wall \
 	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp $(SOURCEMM) $(ORANGE)
 SHLIBEXT=so
 SHLIBLDFLAGS=-shared
