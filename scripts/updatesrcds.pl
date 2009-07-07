@@ -19,7 +19,7 @@ else
 {
 #Linux platform
 	print "Linux platform\n";
-	$ROOT_PATH='$HOME/MyDev';
+	$ROOT_PATH=$ENV{HOME}."/MyDev";
 	$UPDATER="./steam";	
 	$linux=true;
 }
@@ -49,7 +49,7 @@ print "\nChoose a game to update or type \"all\" to update all games\n\n";
 
 $question_response = <>;
 chomp($question_response);
-chdir ($SRCDS_PATH);
+chdir($SRCDS_PATH);
 
 my $dir = getcwd();
 
