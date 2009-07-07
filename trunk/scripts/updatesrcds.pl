@@ -94,8 +94,19 @@ sub update_game
 		else
 		{
 			# Windows 
-			getstore("http://www.steampowered.com/download/hldsupdatetool.exe", $UPDATER);
-			system($UPDATER);
+			print "Getting HldsUpdateTool from Valve...\n";
+			getstore("http://www.steampowered.com/download/hldsupdatetool.exe", "HldsUpdateToolDeleteMe.exe");
+			system("HldsUpdateToolDeleteMe.exe");
+			print "\n\n\nWhen the popup appears, install to " . $SRCDS_PATH. "\n";
+			print "Once completed, run updatesrcds.pl again to install/update a game\n";
+			exit;
+		}
+	}
+	else
+	{
+		if (-e "HldsUpdateToolDeleteMe.exe")
+		{
+			unlink("HldsUpdateToolDeleteMe.exe");
 		}
 	}
 
