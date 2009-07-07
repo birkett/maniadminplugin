@@ -91,12 +91,12 @@ PLUGIN_FILES =  mani_adverts.cpp \
 
 PLUGIN_FILES+= $(EXTRA_FILES_1)
 
-# compiler options (gcc 3.4.1 or above is required)
+# compiler options (gcc 4.1.3 or above is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
-CPLUS=/usr/bin/g++-3.4
-CLINK=/usr/bin/gcc-3.4
-CPP_LIB=/usr/lib/gcc/i486-linux-gnu/3.4.6/libstdc++.a \
-	/usr/lib/gcc/i486-linux-gnu/3.4.6/libgcc_eh.a \
+CPLUS=/usr/bin/g++-4.1
+CLINK=/usr/bin/gcc-4.1
+CPP_LIB=/usr/lib/gcc/i486-linux-gnu/4.1/libstdc++.a \
+	/usr/lib/gcc/i486-linux-gnu/4.1/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
 	$(EXTRA_LIBS)
