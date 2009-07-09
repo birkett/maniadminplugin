@@ -1,0 +1,6 @@
+{RED}http://www.mani-admin-plugin.com
+{GREEN}Current map is {CURRENTMAP}
+{BLUE}Mani Admin Plugin
+Next map is {NEXTMAP}
+{WHITE}Server Tick Rate {TICKRATE}
+

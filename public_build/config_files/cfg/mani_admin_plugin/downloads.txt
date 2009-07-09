@@ -1,0 +1,11 @@
+"downloads.txt"
+{
+	// Add any files you wish to have downloaded to a clients system in here
+	// The key can be any name you wish.
+	// The value must be the location on your server of the file
+
+	"downloads"
+	{
+	//	"my_file"	"materials/decals/custom/mani_admin_plugin/mani_logo.vmt"
+	}
+}

@@ -1,0 +1,366 @@
+// ************************************************
+//
+// Mani Admin Plugin 2005
+//
+// mapadverts.txt
+// 
+// Map Advert system
+//
+// Last Update V1.1.0x
+//
+// This file contains the coordinates list of all decal adverts within standard CSS maps.
+// 
+// If you have a decal setup you can find the target coordinates
+// by using the ma_decal <decal name> to shoot at a target
+// Go to the console then copy and paste the coordinates into
+// this file.
+//
+//
+// www.mani-admin-plugin.com
+//
+//*************************************************
+
+
+"mapadverts.txt"
+{
+	// Map name
+
+	"de_dust"
+	{
+		// Name of the decals to use (see decallist.txt file)
+		// You can specify more than one decal to use per map.
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"266.19424"	// x position
+			"y"	"-1855.96875"	// y position
+			"z"	"218.25949"	// z position
+  		
+			"x"	"-1279.96875"	// x position
+			"y"	"1198.67468"	// y position
+			"z"	"194.21437"	// z position
+
+			"x"	"1020.94836"	// x position
+			"y"	"3615.96875"	// y position
+			"z"	"228.66261"	// z position
+		}
+
+	}
+
+	"de_aztec"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x"	"-1095.64136"	// x position
+			"y"	"-960.03125"	// y position
+			"z"	"-126.18461"	// z position
+  		
+			"x"	"1316.81494"	// x position
+			"y"	"697.58588"	// y position
+			"z"	"-180.10448"	// z position
+
+			"x"	"-412.81372"	// x position
+			"y"	"0.03125"	// y position
+			"z"	"-135.19481"	// z position
+		}
+	}
+
+	"cs_italy"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x"	"144.37666"	// x position
+			"y"	"2623.96875"	// y position
+			"z"	"353.53491"	// z position
+	
+			"x"	"-1001.89795"	// x position
+			"y"	"-1472.03125"	// y position
+			"z"	"27.24899"	// z position
+	
+		}
+	}
+
+	"de_cbble"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-3135.96875"
+			"y" "-638.08209"
+			"z" "525.89594"
+
+			"x" "-325.45050"
+			"y" "2495.96875"
+			"z" "-147.76404"
+
+			"x" "-2112.03125"
+			"y" "596.45135"
+			"z" "202.52596"
+		}
+
+	}
+
+	"de_chateau"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "1255.67151"
+			"y" "2472.03125"
+			"z" "264.63724"
+
+			"x" "732.09418"
+			"y" "-256.03125"
+			"z" "102.97175"
+
+			"x" "130.39034"
+			"y" "677.90845"
+			"z" "507.74704"
+		}
+
+	}
+
+	"de_dust2"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "1607.96875"
+			"y" "1206.32117"
+			"z" "246.53748"
+
+			"x" "-1683.10193"
+			"y" "-127.96877"
+			"z" "83.44805"
+
+			"x" "383.96875"
+			"y" "-520.66534"
+			"z" "147.81691"
+		}
+
+	}
+
+	"cs_assault"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "7047.96875"
+			"y" "6235.47754"
+			"z" "-579.63098"
+
+
+			"x" "4776.03125"
+			"y" "4584.94189"
+			"z" "-460.83054"
+		}
+
+	}
+
+	"de_piranesi"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "-863.93896"
+			"y" "-501.47214"
+			"z" "436.98581"
+
+			"x" "1572.15112"
+			"y" "508.10703"
+			"z" "332.94974"
+		}
+
+	}
+
+	"cs_havana"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-767.96875"
+			"y" "-997.16095"
+			"z" "121.53770"
+
+
+			"x" "-159.96873"
+			"y" "2083.69507"
+			"z" "106.94505"
+		}
+
+	}
+
+	"cs_office"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-1503.96875"
+			"y" "-1827.91382"
+			"z" "-251.35899"
+
+			"x" "-64.99084"
+			"y" "-696.03125"
+			"z" "-84.53757"
+
+			"x" "963.20728"
+			"y" "1535.96875"
+			"z" "-244.28468"
+		}
+
+	}
+
+	"de_train"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "-653.96875"
+			"y" "-1297.31714"
+			"z" "-21.16162"
+
+			"x" "-1472.03125"
+			"y" "1837.09546"
+			"z" "228.59209"
+
+			"x" "2019.96875"
+			"y" "1599.57434"
+			"z" "-116.08844"
+		}
+
+	}
+
+	"cs_compound"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "3189.97412"
+			"y" "90.07026"
+			"z" "67.50111"
+
+			"x" "646.35492"
+			"y" "2112.03125"
+			"z" "-59.89242"
+
+			"x" "1919.84717"
+			"y" "-256.03125"
+			"z" "201.17630"
+
+			"x" "2859.28613"
+			"y" "-1444.75793"
+			"z" "65.76572"
+		}
+
+	}
+
+	"de_prodigy"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "3921.10059"
+			"y" "-781.44708"
+			"z" "-271.98285"
+
+			"x" "487.96875"
+			"y" "-590.99139"
+			"z" "-136.20856"
+
+			"x" "2151.24780"
+			"y" "183.96873"
+			"z" "-205.35480"
+		}
+
+	}
+
+	"de_tides"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-1247.96875"
+			"y" "1038.59631"
+			"z" "128.85332"
+
+			"x" "-1539.78210"
+			"y" "-640.03125"
+			"z" "60.39038"
+		}
+
+	}
+
+	"de_port"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "1496.86584"
+			"y" "1888.03125"
+			"z" "364.52536"
+
+			"x" "-656.26123"
+			"y" "2619.60376"
+			"z" "606.27997"
+
+			"x" "2391.40625"
+			"y" "-1623.36206"
+			"z" "614.78711"
+
+			"x" "896.03125"
+			"y" "307.68723"
+			"z" "521.91315"
+		}
+
+	}
+
+	"de_inferno"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "2753.78027"
+			"y" "-119.96874"
+			"z" "276.43948"
+
+			"x" "-1871.21680"
+			"y" "631.96875"
+			"z" "202.64844"
+
+			"x" "691.71124"
+			"y" "3336.03125"
+			"z" "332.08176"
+
+			"x" "1151.96875"
+			"y" "-477.56979"
+			"z" "330.44449"
+		}
+
+	}
+}
+
+

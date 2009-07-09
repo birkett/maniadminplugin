@@ -27,7 +27,7 @@
 #define MANI_PARSER_H
 
 #include "engine/iserverplugin.h"
-#include "dlls/iplayerinfo.h"
+#include "iplayerinfo.h"
 #include "mani_player.h"
 
 struct mani_colour_t

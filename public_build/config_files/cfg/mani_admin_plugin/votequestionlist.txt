@@ -1,0 +1,23 @@
+//
+// votequestionlist.txt
+//
+// Place all your Yes/No vote questions in here
+//
+// This file uses aliases.
+//
+// Aliases are what is shown in the menu system
+// a nice way of presenting the commands.
+// Aliases must be enclosed in quotes
+//
+// E.G. "Low Gravity"
+//
+// Do not put another quote inside like :-
+//
+// "Low "Gravity""
+//
+// The text after the alias is the question that will be asked and must also
+// be enclosed in quotes " "
+//
+
+"Nice Map" "Is this a nice map to player on ?" 	// Nice map question
+"Random Vote" "Shall we have a random map vote ?" // Random vote question

@@ -1,0 +1,10 @@
+// Enter the phrases you want a players say text to be replaced with here
+// You can have as many as you like
+// Each phrase will be chosen at random by the plugin
+
+I like being a gimp :)
+My master plays games with me
+I like dressing up in rubber suits
+A gimp is for life, not just for Christmas
+
+
