@@ -1,0 +1,9 @@
+//
+// Add your Steam ID's for players that need reserve slots.
+//
+// Any admins automatically get reserve slot status so 
+// they don't need to be put in here
+//
+// e.g STEAM_0:0:21233123
+//
+

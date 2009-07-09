@@ -1,0 +1,8 @@
+//
+// Add your Steam ID's for players that you don't want to
+// be kicked for having a high ping
+//
+//
+// e.g STEAM_0:0:21233123
+//
+

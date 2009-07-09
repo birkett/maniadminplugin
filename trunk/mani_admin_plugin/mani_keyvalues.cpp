@@ -32,7 +32,7 @@
 #include <time.h>
 #include "interface.h"
 #include "engine/iserverplugin.h"
-#include "dlls/iplayerinfo.h"
+#include "iplayerinfo.h"
 #include "eiface.h"
 #include "igameevents.h"
 #include "mrecipientfilter.h" 

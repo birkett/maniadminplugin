@@ -32,7 +32,7 @@
 #include "interface.h"
 #include "filesystem.h"
 #include "engine/iserverplugin.h"
-#include "dlls/iplayerinfo.h"
+#include "iplayerinfo.h"
 #include "eiface.h"
 #include "inetchannelinfo.h"
 #include "mani_main.h"

@@ -33,7 +33,7 @@
 #include "interface.h"
 #include "filesystem.h"
 #include "engine/iserverplugin.h"
-#include "dlls/iplayerinfo.h"
+#include "iplayerinfo.h"
 #include "Color.h"
 #include "eiface.h"
 #include "convar.h"

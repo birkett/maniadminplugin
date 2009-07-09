@@ -51,7 +51,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -80,6 +80,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/FORCE:MULTIPLE"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib vstdlib.lib tier0.lib"
 				OutputFile="..\plugin_output\mani_admin_plugin.dll"
 				LinkIncremental="1"
@@ -155,7 +156,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
 				PreprocessorDefinitions="WIN32;NDEBUG;MAPBETA;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -261,7 +262,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_4\sourcemm;..\sourcemm_1_4"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_4\sourcemm;..\sourcemm_1_4"
 				PreprocessorDefinitions="WIN32;MAPBETA;NDEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -365,7 +366,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_4\sourcemm;..\sourcemm_1_4"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_4\sourcemm;..\sourcemm_1_4"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM;PROFILING"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="1"
@@ -393,6 +394,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/FORCE:MULTIPLE"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib"
 				OutputFile="..\plugin_output\mani_admin_plugin_mm.dll"
 				LinkIncremental="1"
@@ -468,7 +470,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcemm;..\sourcemm_1_6;..\sourcemm_1_6\sourcehook"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcemm;..\sourcemm_1_6;..\sourcemm_1_6\sourcehook"
 				PreprocessorDefinitions="ORANGE;WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -572,7 +574,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcemm;..\sourcemm_1_6;..\sourcemm_1_6\sourcehook"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\game_shared;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcemm;..\sourcemm_1_6;..\sourcemm_1_6\sourcehook"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM;PROFILING"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="1"
@@ -600,6 +602,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/FORCE:MULTIPLE"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib tier0.lib tier1.lib vstdlib.lib mathlib.lib"
 				OutputFile="..\plugin_output\mani_admin_plugin_mm.dll"
 				LinkIncremental="1"
@@ -675,7 +678,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\game\server;..\sdk_orange\game\shared;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\public\game\server;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
 				PreprocessorDefinitions="ORANGE;WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -780,7 +783,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -809,6 +812,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/FORCE:MULTIPLE"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib tier0.lib tier1.lib vstdlib.lib mathlib.lib"
 				OutputFile="..\plugin_output\mani_admin_plugin.dll"
 				LinkIncremental="1"
@@ -2515,6 +2519,13 @@
 				<File
 					RelativePath="..\sdk\public\tier0\memoverride.cpp"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
 						ExcludedFromBuild="true"
