@@ -9,12 +9,15 @@
 # DEBUG_ON
 
 
-ifeq ($(DEBUG_ON), "TRUE")
-	DEBUG_FLAGS="-g -ggdb"
-else
-	STRIP_SYM=-s
+ifeq ($(DEBUG_ON), TRUE)
+	DEBUG_FLAGS=-g -ggdb
 endif
 
+ifeq ($(ORANGE_BUILD), TRUE)
+	COMP_VER=4.1
+else
+	COMP_VER=4.1
+endif
 
 # source files that should be compiled and linked into the binary
 PLUGIN_FILES =  mani_adverts.cpp \
@@ -93,10 +96,10 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 
 # compiler options (gcc 4.1.3 or above is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
-CPLUS=/usr/bin/g++-4.1
-CLINK=/usr/bin/gcc-4.1
-CPP_LIB=/usr/lib/gcc/i486-linux-gnu/4.1/libstdc++.a \
-	/usr/lib/gcc/i486-linux-gnu/4.1/libgcc_eh.a \
+CPLUS=/usr/bin/g++-$(COMP_VER)
+CLINK=/usr/bin/gcc-$(COMP_VER)
+CPP_LIB=/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libstdc++.a \
+	/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
 	$(EXTRA_LIBS)
@@ -119,6 +122,8 @@ ARCH_CFLAGS=-mtune=i686 -march=pentium3 -mmmx -O3
 BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf \
 	-Wall \
+	-D_LINUX -DLINUX -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
+        -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp \
 	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp $(SOURCEMM) $(ORANGE)
 SHLIBEXT=so
 SHLIBLDFLAGS=-shared
@@ -138,6 +143,7 @@ dirs:
 	@echo "Orange build $(ORANGE_BUILD)"
 	@echo "VSP Build $(VSP_BUILD)"
 	@echo "Debug On $(DEBUG_ON)"
+	@echo "Compiler version $(COMP_VER)"
 	@echo $(HL2BIN_DIR)
 
 	@echo "HL2SDK_SRC_DIR = $(HL2SDK_SRC_DIR)"

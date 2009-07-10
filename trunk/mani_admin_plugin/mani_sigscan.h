@@ -19,6 +19,7 @@ public:
 class CGameRules;
 class CBaseCombatCharacter;
 class CBaseCombatWeapon;
+class CBaseEntityList;
 
 /*19:52.12    ( +c0ldfyr3 ) haha
   19:53.31    ( +c0ldfyr3 ) CBasePlayer_SetFOV
