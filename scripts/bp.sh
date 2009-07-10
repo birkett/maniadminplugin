@@ -143,7 +143,7 @@ then
 	export SOURCEHOOK_SRC_DIR="../sourcemm_1_6/sourcehook"
 	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/ -I$HL2SDK_SRC_DIR/public/vstdlib"
 
 	export NAME="mani_admin_plugin"
 
@@ -171,7 +171,7 @@ then
 	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
 	export SOURCEHOOK_SRC_DIR="../sourcemm_1_4/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_4/ -I../sourcemm_1_4/sourcemm/ -I../sourcemm_1_4/sourcehook/"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_4/ -I../sourcemm_1_4/sourcemm/ -I../sourcemm_1_4/sourcehook/ -I$HL2SDK_SRC_DIR/public/vstdlib"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/convar.o $TIER1_OBJ_DIR/KeyValues.o $TIER1_OBJ_DIR/bitbuf.o $TIER1_OBJ_DIR/utlbuffer.o"
