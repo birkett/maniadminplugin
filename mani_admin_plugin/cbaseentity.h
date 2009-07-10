@@ -53,7 +53,7 @@
 #include "utlbuffer.h"
 #include "positionwatcher.h"
 #include "movetype_push.h"
-#include "ICommandLine.h"
+#include "icommandline.h"
 #include "vphysics/friction.h"
 #include "engine/iserverplugin.h"
 #include "iplayerinfo.h"
