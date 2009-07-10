@@ -193,20 +193,20 @@ then
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
 	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
 	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
-	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
+#	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
 	export SOURCEHOOK_SRC_DIR="../sourcemm_1_6/sourcehook"
 	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/ -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared"
 
 	export NAME="mani_admin_plugin"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
-	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
-	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride-vc7.o"
+#	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
+	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o"
 	export ORANGE="-DORANGE"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp"
-	export EXTRA_LIBS="../sdk_orange/linux_sdk/tier1_i486.a ../sdk_orange/linux_sdk/mathlib_i486.a"
+	export EXTRA_LIBS="../sdk_orange/lib/linux/tier1_i486.a ../sdk_orange/lib/linux/mathlib_i486.a"
 
 
 else
@@ -223,16 +223,16 @@ else
 	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
 	export SOURCEHOOK_SRC_DIR="$SOURCEMM_ROOT/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/ -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
-	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
-	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride-vc7.o"
+#	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
+	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEMM="-DSOURCEMM"
 	export ORANGE="-DORANGE"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp"
-	export EXTRA_LIBS="../sdk_orange/linux_sdk/tier1_i486.a ../sdk_orange/linux_sdk/mathlib_i486.a"
+	export EXTRA_LIBS="../sdk_orange/lib/linux/tier1_i486.a ../sdk_orange/lib/linux/mathlib_i486.a"
 fi
 
 if [ "$CLEAN" = "TRUE" ]
@@ -267,5 +267,5 @@ fi
 cd -
 
 show_build_mode
-echo "Finsihed option $REPLY"
+echo "Finished option $REPLY"
 
