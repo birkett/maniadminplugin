@@ -98,7 +98,7 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
 CPLUS=/usr/bin/g++-$(COMP_VER)
 CLINK=/usr/bin/gcc-$(COMP_VER)
-CPP_LIB=/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libstdc++.a \
+CPP_LIB=../stlport/lib/libstlport.a \
 	/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
@@ -131,7 +131,7 @@ SHLIBLDFLAGS=-shared
 CFLAGS=$(USER_CFLAGS) $(BASE_CFLAGS) $(ARCH_CFLAGS)
 CFLAGS+= $(DEBUG_FLAGS)
 
-DO_CC=$(CPLUS) $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
+DO_CC=$(CPLUS) -I../stlport/include/stlport/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 
 #####################################################################
 
