@@ -280,13 +280,13 @@ void MenuPage::AddItem(MenuItem *ptr)
 void MenuPage::SortDisplay() 
 {
 	if (mani_sort_menus.GetInt() == 0) return;
-	sort(menu_items.begin(), menu_items.end(), DisplaySort);
+	std::sort(menu_items.begin(), menu_items.end(), DisplaySort);
 }
 
 void MenuPage::SortHidden() 
 {
 	if (mani_sort_menus.GetInt() == 0) return;
-	sort(menu_items.begin(), menu_items.end(), HiddenSort);
+	std::sort(menu_items.begin(), menu_items.end(), HiddenSort);
 }
 
 void	MenuPage::RenderPage(player_t *player_ptr, const int history_level)
