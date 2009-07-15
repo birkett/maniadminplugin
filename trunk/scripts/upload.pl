@@ -2,6 +2,10 @@
 
 use Net::FTP;
 sub transfer_file;
+use File::Basename;
+use File::Spec::Functions qw(rel2abs);
+
+$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
 
 $bsize=1024 * 100;
 
@@ -9,8 +13,8 @@ $bsize=1024 * 100;
 $host_name="";
 
 #Core dev paths
-$linux_dev_base='$HOME/MyDev';
-$windows_dev_base="C:/MyDev";
+$linux_dev_base=$BASE_FOLDER;
+$windows_dev_base=$BASE_FOLDER;
 
 #Path on remote ftp server
 $upload_target="";

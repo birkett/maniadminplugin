@@ -3,14 +3,17 @@
 # Copies binaries to Valve engined games and to a base folder
 use Getopt::Std;
 use File::Copy;
+use File::Basename;
+use File::Spec::Functions qw(rel2abs);
 
 sub copy_binaries;
 sub create_folder;
 
 #Setup vars here
+$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
 $CORE_BIN="mani_admin_plugin";
-$LINUX_BASE=$ENV{HOME}."/MyDev";
-$WINDOWS_BASE="C:/MyDev";
+$LINUX_BASE=$BASE_FOLDER;
+$WINDOWS_BASE=$BASE_FOLDER;
 $ROOT_GAME="/srcds_1";
 $ROOT_ORANGE_GAME="/srcds_1/orangebox";
 

@@ -1,17 +1,20 @@
 #!/usr/bin/perl
 
 use Cwd;
+use File::Basename;
+use File::Spec::Functions qw(rel2abs);
 
 # Starts up an instance of a Valve game
 
 sub execute_game;
+$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
 
 $DEFAULT_PORT="27100";
 
 if ($^O eq "MSWin32")
 {
 	print "Windows platform\n";
-	$ROOT_PATH="C:/MyDev";
+	$ROOT_PATH=$BASE_FOLDER;
 	$GAME_EXE="start /abovenormal /wait srcds.exe -allowdebug -port $DEFAULT_PORT -console";
 }
 else
@@ -19,7 +22,7 @@ else
 #Linux platform
 	print "Linux platform\n";
 	$LINUX="TRUE";
-	$ROOT_PATH=$ENV{HOME}."/MyDev";
+	$ROOT_PATH=$BASE_FOLDER;
 	$GAME_EXE="srcds_run -debug -port $DEFAULT_PORT -console";	
 }
 

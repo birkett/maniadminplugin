@@ -2,23 +2,26 @@
 
 use Cwd;
 use LWP::Simple;
+use File::Basename;
+use File::Spec::Functions qw(rel2abs);
 
 # Updates the default Valve Source engined games.
 
 sub update_game;
 
+$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
 
 if ($^O eq "MSWin32")
 {
 	print "Windows platform\n";
-	$ROOT_PATH="C:/MyDev";
+	$ROOT_PATH=$BASE_FOLDER;
 	$UPDATER="HldsUpdateTool.exe";
 }
 else
 {
 #Linux platform
 	print "Linux platform\n";
-	$ROOT_PATH=$ENV{HOME}."/MyDev";
+	$ROOT_PATH=$BASE_FOLDER;
 	$UPDATER="./steam";	
 	$LINUX="TRUE";
 }

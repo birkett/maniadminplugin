@@ -4,12 +4,16 @@
 use File::Copy;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use Archive::Zip;   # imports
+use File::Basename;
+use File::Spec::Functions qw(rel2abs);
 
 sub cleanup;
 sub recursedir($$);
 
 #Setup Vars here
-$RELEASE_BASE="C:/MyDev/public_build";
+$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
+
+$RELEASE_BASE=$BASE_FOLDER . "public_build";
 
 print "Is this an Orange build? ";
 $question_response = <>;
