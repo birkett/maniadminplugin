@@ -3,15 +3,17 @@
 # Copies gametypes and english.cfg to Valve engined games and to a base folder
 
 use File::Copy;
+use File::Basename;
+use File::Spec::Functions qw(rel2abs);
 
 sub do_copy;
 sub copy_defaults;
 sub create_folder;
 
 #Setup vars here
-
-$LINUX_BASE=$ENV{HOME}."/MyDev";
-$WINDOWS_BASE="C:/MyDev";
+$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
+$LINUX_BASE=$BASE_FOLDER;
+$WINDOWS_BASE=$BASE_FOLDER;
 $ROOT_GAME="/srcds_1";
 $ROOT_ORANGE_GAME="/srcds_1/orangebox";
 

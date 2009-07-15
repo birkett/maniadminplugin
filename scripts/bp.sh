@@ -1,6 +1,7 @@
 #!/bin/sh
 
 PROG_NAME=$(basename $0)
+BASE_FOLDER=$(dirname $(readlink -f $0))/../
 CLEAN=FALSE
 DEBUG_ON=FALSE
 
@@ -98,12 +99,12 @@ done
 show_build_mode
 select_build_type
 
-cd $HOME/MyDev/mani_admin_plugin/
+cd $BASE_FOLDER/mani_admin_plugin/
 export DEBUG_ON
 dump_vars
 
 
-EXE_DIR=$HOME/MyDev/mani_admin_plugin
+EXE_DIR=$BASE_FOLDER/mani_admin_plugin
 
 if [ -f $EXE_DIR/mani_admin_plugin_mm_i486.so ] && [ "$VSP_BUILD" = "TRUE" ]
 then
