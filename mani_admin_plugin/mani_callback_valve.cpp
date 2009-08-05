@@ -182,7 +182,7 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 #ifndef ORANGE
 	InitCVars( interfaceFactory ); // register any cvars we have defined
 #else
-	ConVar_Register(0, NULL);
+	ConVar_Register(0);
 
 #endif
 
@@ -256,6 +256,11 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 //---------------------------------------------------------------------------------
 void CValveMAP::Unload( void )
 {
+#if defined ( ORANGE )
+	// We must unregister ConVars
+	ConVar_Unregister();
+#endif
+	gpManiAdminPlugin->Unload();
 	gameeventmanager->RemoveListener( gpManiIGELCallback ); // make sure we are unloaded from the event system
 }
 
