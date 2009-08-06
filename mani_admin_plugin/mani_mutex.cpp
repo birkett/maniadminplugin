@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -51,7 +52,8 @@ bool	Mutex::Create()
 #ifndef __linux__
 	char mutex_id[128];
 
-	_snprintf(mutex_id, sizeof(mutex_id), "mutex_%i", number_mutex++);
+	_snprintf_s( mutex_id, _countof(mutex_id), 128, "mutex_%i", number_mutex++);
+	//_snprintf(mutex_id, sizeof(mutex_id), "mutex_%i", number_mutex++);
 	mutex = CreateMutex( 
 			NULL,      // no security attributes
 			FALSE,     // initially not owned

@@ -18,6 +18,11 @@
 
 #ifndef SOURCEMM
 
+#ifndef ORANGE
+// SH_STATIC was introduced in SH 5.0
+#define SH_STATIC(func) fastdelegate::MakeDelegate(func)
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,7 +90,11 @@ typedef unsigned long DWORD;
 //
 // Don't forget to make an instance
 
+#if defined ( ORANGE )
 SourceHook::Impl::CSourceHookImpl g_SourceHook;
+#else
+SourceHook::CSourceHookImpl g_SourceHook;
+#endif
 
 char	*pReplaceEnts = NULL;
 extern SourceHook::ISourceHook *g_SHPtr;
@@ -182,7 +191,7 @@ bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
 	{	
-		return_value = SH_CALL(voiceserver, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
+		return_value = SH_CALL(SH_GET_CALLCLASS(voiceserver), &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
 		RETURN_META_VALUE(MRES_SUPERCEDE, return_value);
 	}
 
@@ -307,10 +316,10 @@ void AutoBuy_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
-#ifdef ORANGE 
+#if defined ( ORANGE )
 	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)(command);
 #else
-	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)();
+	SH_CALL(SH_GET_CALLCLASS(pAutoBuyCmd), &ConCommand::Dispatch)();
 #endif
 	gpManiWeaponMgr->AutoBuyReBuy();
 	RETURN_META(MRES_SUPERCEDE);
@@ -327,7 +336,7 @@ void ReBuy_handler()
 #ifdef ORANGE 
 	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)(command);
 #else
-	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)();
+	SH_CALL(SH_GET_CALLCLASS(pReBuyCmd), &ConCommand::Dispatch)();
 #endif
 	gpManiWeaponMgr->AutoBuyReBuy();
 	RETURN_META(MRES_SUPERCEDE);

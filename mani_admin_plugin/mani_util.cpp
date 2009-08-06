@@ -323,7 +323,7 @@ int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filen
 // Windows version
 char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filename, long cap_size, long *filesize)
 {
-	WORD wVersionRequested = MAKEWORD(1,1);
+/*	WORD wVersionRequested = MAKEWORD(1,1);
 	WSADATA wsaData;
 
 	unsigned int         server_s;
@@ -332,7 +332,7 @@ char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filen
 	char                 in_buf[4096];
 	unsigned int         retcode;
 	unsigned int         i;
-	char 			*final_buf;/*
+	char 			*final_buf;
 	char			*temp_buf;
 	long			final_buf_size;
 	long 			arg;
@@ -460,7 +460,7 @@ char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filen
 		*filesize = 0;
 	}
 */
-	return final_buf;
+	return NULL;
 }
 #else
 // linux version
