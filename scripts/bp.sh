@@ -141,10 +141,10 @@ then
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
 	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
 	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
-	export SOURCEHOOK_SRC_DIR="../sourcemm_1_6/sourcehook"
+	export SOURCEHOOK_SRC_DIR="../sourcemm_1_7/core-legacy/sourcehook"
 	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/ -I$HL2SDK_SRC_DIR/public/vstdlib"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include -I../sourcemm_1_7/core-legacy -I../sourcemm_1_7/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib"
 
 	export NAME="mani_admin_plugin"
 
@@ -170,9 +170,9 @@ then
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
 	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
 	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
-	export SOURCEHOOK_SRC_DIR="../sourcemm_1_4/sourcehook"
+	export SOURCEHOOK_SRC_DIR="../sourcemm_1_7/core-legacy/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_4/ -I../sourcemm_1_4/sourcemm/ -I../sourcemm_1_4/sourcehook/ -I$HL2SDK_SRC_DIR/public/vstdlib"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core-legacy -I../sourcemm_1_7/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/convar.o $TIER1_OBJ_DIR/KeyValues.o $TIER1_OBJ_DIR/bitbuf.o $TIER1_OBJ_DIR/utlbuffer.o"
@@ -195,10 +195,10 @@ then
 	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
 	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
 #	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
-	export SOURCEHOOK_SRC_DIR="../sourcemm_1_6/sourcehook"
+	export SOURCEHOOK_SRC_DIR="../sourcemm_1_7/core/sourcehook"
 	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/ -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core -I../sourcemm_1_7/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared"
 
 	export NAME="mani_admin_plugin"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
@@ -224,7 +224,7 @@ else
 	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
 	export SOURCEHOOK_SRC_DIR="$SOURCEMM_ROOT/sourcehook"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_6/ -I../sourcemm_1_6/sourcemm/ -I../sourcemm_1_6/sourcehook/ -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core -I../sourcemm_1_7/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
@@ -251,21 +251,21 @@ then
 	COPY_ORANGE="-o"	
 fi
 
+cd -
+
 if [ "$VSP_BUILD" = "TRUE" ]
 then
 	if [ -f $EXE_DIR/mani_admin_plugin_i486.so ]
 	then
-		setbinaries.pl $COPY_SMM $COPY_ORANGE
+		./setbinaries.pl $COPY_SMM $COPY_ORANGE
 	fi
 else
 	COPY_SMM="-s"	
 	if [ -f $EXE_DIR/mani_admin_plugin_mm_i486.so ]
 	then
-		setbinaries.pl $COPY_SMM $COPY_ORANGE
+		./setbinaries.pl $COPY_SMM $COPY_ORANGE
 	fi
 fi
-
-cd -
 
 show_build_mode
 echo "Finished option $REPLY"
