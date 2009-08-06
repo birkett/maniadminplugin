@@ -30,7 +30,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\bin\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\base\common\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\cstrike\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2mp\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dod\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hl2ctf\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\dystopia\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\gmod\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\hidden\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\empires\addons\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; C:\MyDev\srcds_1\ship\ship\addons\&#x0D;&#x0A;"
+				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\bin\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\base\common\&#x0D;&#x0A;perl.exe ../scripts/setbinaries.pl"
 				Outputs="..\bin\mani_admin_plugin.dll"
 			/>
 			<Tool
@@ -51,7 +51,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core-legacy\sourcehook;..\sourcemm_1_7\core-legacy"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -86,7 +86,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql5.1\win_32\lib"
-				IgnoreDefaultLibraryNames="LIBCMT"
+				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\Debug/mani_admin_plugin.pdb"
 				GenerateMapFile="true"
@@ -156,7 +156,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core-legacy\sourcehook;..\sourcemm_1_7\core-legacy"
 				PreprocessorDefinitions="WIN32;NDEBUG;MAPBETA;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -400,7 +400,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\lib\public,..\lib\common,.\mysql5.1\win_32\lib"
-				IgnoreDefaultLibraryNames="LIBCMT"
+				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\DebugSMM/mani_admin_plugin_mm.pdb"
 				GenerateMapFile="true"
@@ -470,7 +470,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcemm;..\sourcemm_1_6;..\sourcemm_1_6\sourcehook"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\game_shared;.\mysql5.1\win_32\include;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook"
 				PreprocessorDefinitions="ORANGE;WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -574,7 +574,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\game_shared;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcemm;..\sourcemm_1_6;..\sourcemm_1_6\sourcehook"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\game_shared;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM;PROFILING"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="1"
@@ -608,7 +608,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\sdk_orange\lib\public;.\mysql5.1\win_32\lib"
-				IgnoreDefaultLibraryNames="LIBCMT"
+				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\Orange/DebugSMM/mani_admin_plugin_mm.pdb"
 				GenerateMapFile="true"
@@ -678,7 +678,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\game\server;..\sdk_orange\game\shared;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\public\game\server;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\game\server;..\sdk_orange\game\shared;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\public\game\server;..\sdk_orange\dlls;..\sdk_orange\game_shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core"
 				PreprocessorDefinitions="ORANGE;WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -783,7 +783,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_6\sourcehook\;..\sourcemm_1_6\;..\sourcemm_1_6\sourcemm\"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -818,7 +818,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\sdk_orange\lib\public;..\sdk_orange\lib\common;.\mysql5.1\win_32\lib"
-				IgnoreDefaultLibraryNames="LIBCMT"
+				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\Orange/DebugVSP/mani_admin_plugin.pdb"
 				GenerateMapFile="true"
@@ -1156,18 +1156,6 @@
 				<File
 					RelativePath=".\mrecipientfilter.cpp"
 					>
-				</File>
-				<File
-					RelativePath="..\sourcemm_1_6\sourcehook\sourcehook.cpp"
-					>
-					<FileConfiguration
-						Name="SourceMM Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -2520,13 +2508,6 @@
 					RelativePath="..\sdk\public\tier0\memoverride.cpp"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
 						ExcludedFromBuild="true"
 						>
@@ -2668,90 +2649,191 @@
 					</FileConfiguration>
 				</File>
 			</Filter>
+			<Filter
+				Name="Libraries"
+				>
+				<File
+					RelativePath="..\sdk\lib\public\mathlib.lib"
+					>
+					<FileConfiguration
+						Name="SourceMM Orange Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Orange Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk\lib\public\tier0.lib"
+					>
+					<FileConfiguration
+						Name="SourceMM Orange Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Orange Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk\lib\public\tier1.lib"
+					>
+					<FileConfiguration
+						Name="SourceMM Orange Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Orange Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk\lib\public\vstdlib.lib"
+					>
+					<FileConfiguration
+						Name="SourceMM Orange Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Orange Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Orange VSP Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
-			Name="libs"
+			Name="MMSource OB"
 			>
 			<File
-				RelativePath="..\sdk\lib\public\mathlib.lib"
+				RelativePath="..\sourcemm_1_7\core\sourcehook\sourcehook.cpp"
 				>
 				<FileConfiguration
-					Name="SourceMM Orange Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
+						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="SourceMM Orange Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
+						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\sdk\lib\public\tier0.lib"
-				>
-				<FileConfiguration
-					Name="SourceMM Orange Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="SourceMM Orange Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\sdk\lib\public\tier1.lib"
-				>
 				<FileConfiguration
 					Name="SourceMM Release|Win32"
+					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="SourceMM Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -2759,7 +2841,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
+						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -2767,59 +2849,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\sdk\lib\public\vstdlib.lib"
-				>
-				<FileConfiguration
-					Name="SourceMM Orange Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="SourceMM Orange Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Orange VSP Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
+						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
 			</File>
@@ -3231,6 +3261,282 @@
 					</FileConfiguration>
 				</File>
 			</Filter>
+			<Filter
+				Name="Libraries"
+				>
+				<File
+					RelativePath="..\sdk_orange\lib\public\mathlib.lib"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk_orange\lib\public\tier0.lib"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk_orange\lib\public\tier1.lib"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk_orange\lib\public\tier2.lib"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk_orange\lib\public\tier3.lib"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sdk_orange\lib\public\vstdlib.lib"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="SourceMM Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+			</Filter>
+		</Filter>
+		<Filter
+			Name="MMSource Legacy"
+			>
+			<File
+				RelativePath="..\sourcemm_1_7\core-legacy\sourcehook\sourcehook.cpp"
+				>
+				<FileConfiguration
+					Name="SourceMM Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="SourceMM Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="SourceMM Orange Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="SourceMM Orange Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Orange VSP Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Orange VSP Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\mani_admin_plugin.rc"

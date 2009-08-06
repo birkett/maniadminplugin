@@ -548,7 +548,9 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	SH_RELEASE_CALLCLASS(serverdll_cc);
 #endif
 	//this, sourcehook does not keep track of.  we must do this.
-
+#if defined ( ORANGE )
+	ConVar_Unregister(); // probably not needed, but do it just in case.
+#endif
 	return true; 
 }
 
