@@ -280,7 +280,6 @@ ConVar	*mp_allowspectators = NULL;
 
 bf_write *msg_buffer;
 
-
 // 
 // The plugin is a static singleton that is exported as an interface
 //
@@ -758,10 +757,8 @@ bool CAdminPlugin::Load(void)
 #else
 	server_tickrate = (int) (1.0 / serverdll->GetTickInterval());
 #endif
-MMsg("Here");
 	mani_tickrate.SetValue(server_tickrate);
 
-MMsg("Here2");
 	// Hook our changelevel here
 	//HOOKVFUNC(engine, 0, OrgEngineChangeLevel, ManiChangeLevelHook);
 	//HOOKVFUNC(engine, 43, OrgEngineEntityMessageBegin, ManiEntityMessageBeginHook);
@@ -773,6 +770,20 @@ MMsg("Here2");
 
 	this->InitEvents();
 	gpManiMPRestartGame->Load();
+
+	LOADUP_STATUS vdf = ScanLoadup();
+	switch ( vdf ) {
+		case LOADUP_CREATED:
+			MMsg ( "Plugin load file successfully created\n" );
+			break;
+		case LOADUP_EXISTS:
+			MMsg ( "Plugin load file already exists ... bypassing autocreate\n" );
+			break;
+		default:
+			MMsg ( "Failed to autocreate plugin load file\n" );
+			break;
+	}
+
 	return true;
 }
 
@@ -1891,6 +1902,159 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	} 
 
 	return PLUGIN_CONTINUE;
+}
+
+#define DECL_STR(name,size)	char name[size]; \
+	Q_memset ( name, 0, sizeof(name) )
+
+#define SET_STR(name,val)	if ( val && ( val[0] != 0 ) )\
+	Q_strncpy ( (char *)name, val, 256 )
+
+
+LOADUP_STATUS CAdminPlugin::MakeOrAddToINI( char *path ) {
+
+	//need to scan the ini for an entry.  if not add it otherwise return exists.
+	bool created = false;
+	FileHandle_t ini = FILESYSTEM_INVALID_HANDLE;
+	DECL_STR ( line, 128 );
+
+	if ( filesystem->FileExists ( path ) ) {
+		ini = filesystem->Open ( path, "r" );
+		if ( ini != FILESYSTEM_INVALID_HANDLE ) {
+			while ( filesystem->ReadLine( line, 128, ini ) ) {
+				if ( line[0] == ';' )
+					continue;
+
+				if ( strstr( line, "mani_admin_plugin" ) )
+					break;
+			}
+
+			if ( line[0] != 0 ) {
+				filesystem->Close( ini );
+				return LOADUP_EXISTS;
+			}
+		}
+
+		filesystem->Close( ini );
+	}
+
+	if ( filesystem->FileExists ( path ) )
+		ini = filesystem->Open ( path, "at" );
+	else {
+		ini = filesystem->Open ( path, "wt" );
+		created = true;
+	}
+	
+	if ( !ini )
+		return LOADUP_FAILED;
+
+	if ( created ) {
+		filesystem->FPrintf ( ini, ";If your plugin came with a .vdf file, you do not need to use this file.\n" );
+		filesystem->FPrintf ( ini, ";\n" );
+		filesystem->FPrintf ( ini, ";List one plugin per line.  Each line should contain the path to the plugin's binary.\n" );
+		filesystem->FPrintf ( ini, ";Any line starting with a ';' character is a comment line, and is ignored.\n" );
+		filesystem->FPrintf ( ini, ";\n" );
+		filesystem->FPrintf ( ini, ";You do not need to include the _i486.so or .dll part of the file name.  Example:\n" );
+		filesystem->FPrintf ( ini, "; addons/sourcemod/bin/sourcemod_mm\n" );
+		filesystem->FPrintf ( ini, ";You may also put an alias in front of the file, for example:\n" );
+		filesystem->FPrintf ( ini, "; sm addons/sourcemod/bin/sourcemod_mm\n" );
+		filesystem->FPrintf ( ini, ";Will allow you to use \"meta load sm\" from the console.\n" );
+		filesystem->FPrintf ( ini, ";\n" );
+		filesystem->FPrintf ( ini, ";********* LIST PLUGINS BELOW ***********" );
+	}
+
+	filesystem->FPrintf ( ini, "\nMAP\taddons/mani_admin_plugin/bin/mani_admin_plugin_mm" );
+	filesystem->Flush ( ini );
+	filesystem->Close ( ini );
+
+	return LOADUP_CREATED;
+}
+
+LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
+	FileHandle_t vdf = filesystem->Open( path, "wt" );
+
+	// get the game dir
+	DECL_STR ( gamedir, 256 );
+	char *p_path = NULL;
+	filesystem->RelativePathToFullPath ( "gameinfo.txt", "GAME", gamedir, 256 );
+	if ( gamedir[0] != 0 ) {
+		char *p_slash = strrchr ( gamedir, '\\' );
+		if ( p_slash )
+			*p_slash = 0;
+
+		p_path = strrchr ( gamedir, '\\' );
+
+		if ( p_path )
+			p_path ++;
+		else
+			return LOADUP_FAILED;
+	} else
+		return LOADUP_FAILED;
+
+	if ( vdf != FILESYSTEM_INVALID_HANDLE ) {
+		if ( SMM ) {
+			filesystem->FPrintf ( vdf, "\"Metamod Plugin\"\n");
+			filesystem->FPrintf ( vdf, "{\n" );
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin/bin/mani_admin_plugin_mm\"\n", p_path );
+		} else {
+			filesystem->FPrintf ( vdf, "\"Plugin\"\n");
+			filesystem->FPrintf ( vdf, "{\n" );
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin\"\n", p_path );
+		}
+		filesystem->FPrintf ( vdf, "}" );
+		filesystem->Flush ( vdf );
+		filesystem->Close( vdf );
+		return LOADUP_CREATED;
+	} 
+	return LOADUP_FAILED;
+}
+
+LOADUP_STATUS CAdminPlugin::ScanLoadup( void ) {
+	ConVar *mmpath = g_pCVar->FindVar ( "mm_pluginsfile" );
+	ConVar *mmver = g_pCVar->FindVar ( "metamod_version" );
+	DECL_STR ( path, 256 );
+
+	GetVDFPath ( path, ( mmpath ) ? mmpath->GetString() : NULL );
+
+	if ( mmpath ) { // sourcemm
+		if ( !mmver || strcmp ( mmver->GetString(), "1.7.0" ) < 0 ) { // 1.7.0 and greater allows for .vdfs for plugins
+			Q_strcat ( path, "/metaplugins.ini", sizeof(path) );
+			return MakeOrAddToINI ( path );
+		} else {
+			Q_strcat ( path, "/mani_admin_plugin.vdf", sizeof(path) );
+			if ( filesystem->FileExists ( path ) )
+				return LOADUP_EXISTS;
+
+			return MakeVDF ( path, true );
+		}
+	} else {
+		Q_strcat ( path, "/mani_admin_plugin.vdf", sizeof(path) );
+		if ( filesystem->FileExists ( path ) )
+			return LOADUP_EXISTS;
+
+		return MakeVDF ( path, false );
+	}
+	return LOADUP_FAILED;
+}
+
+void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
+	DECL_STR ( local_source, 256 );
+
+	if ( SourceMMPath ) {
+		SET_STR ( local_source, SourceMMPath );
+		const char *p_sourceslash = strrchr ( SourceMMPath, '\\' );
+
+		if ( p_sourceslash ) {
+			int source_slash = (int) (p_sourceslash - SourceMMPath );
+			if ( source_slash > 0 )
+				local_source[source_slash] = 0;
+		}
+	}
+
+	if ( local_source[0]==0 )
+		SET_STR ( local_source, "addons" );
+
+	SET_STR ( path, local_source );
 }
 
 //---------------------------------------------------------------------------------
