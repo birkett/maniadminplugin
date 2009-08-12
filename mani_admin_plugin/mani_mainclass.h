@@ -34,6 +34,12 @@
 #define MANI_MAX_EVENTS (24)
 #define MANI_EVENT_HASH_SIZE (19)
 
+enum LOADUP_STATUS {
+	LOADUP_CREATED,
+	LOADUP_EXISTS,
+	LOADUP_FAILED,
+};
+
 //---------------------------------------------------------------------------------
 // Purpose: Core class 
 //---------------------------------------------------------------------------------
@@ -69,6 +75,10 @@ public:
 	PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	// End of callbacks
 
+	void			GetVDFPath ( char *path, const char *SourceMMPath = NULL );
+	LOADUP_STATUS	ScanLoadup ( void );
+	LOADUP_STATUS	MakeVDF ( char *path, bool SMM);
+	LOADUP_STATUS	MakeOrAddToINI ( char *path );
 	void			ProcessExplodeAtCurrentPosition( player_t *player);
 	bool			CanTeleport(player_t *player);
 	void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);
