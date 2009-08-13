@@ -103,6 +103,7 @@ MWeapon::MWeapon(const char *weapon_name, int translation_id, int weapon_index)
 //---------------------------------------------------------------------------------
 bool	MWeapon::CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, int &ratio)
 {
+	//	Msg("[%s] [%s] [%i] [%i] [%s]\n", weapon_name, display_name, team_limit, round_ratio, (restricted == true) ? "YES":"NO");
 	if (!restricted || war_mode) return true;
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return true;
 	if (translation_id == 0) return true;
