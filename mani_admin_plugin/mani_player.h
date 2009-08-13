@@ -72,6 +72,10 @@ struct player_settings_t
 	unsigned int		bit_array[8]; // 8 * 32 = 256 flags to play with (provided we have 32 bits per integer)
 	int		teleport_coords_list_size;
 	teleport_coords_t *teleport_coords_list;
+#if defined ( ORANGE )
+	bool	menu_showing;
+	float	menu_expiration_time;
+#endif
 };
 
 struct	active_settings_t
