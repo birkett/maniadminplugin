@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -110,6 +111,7 @@ private:
 	void	AddWeapon(const char *search_name, int translation_id, const char *alias1);
 	void	AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2);
 	void	AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2, const char *alias3);
+	void	AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2, const char *alias3, const char *alias4);
 	int		FindWeaponIndex(const char *search_name);
 
 	std::map <BasicStr, MWeapon *> alias_list;

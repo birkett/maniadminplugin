@@ -95,7 +95,7 @@ MWeapon::MWeapon(const char *weapon_name, int translation_id, int weapon_index)
 	this->team_limit = 0;
 	this->restricted = false;
 	this->round_ratio = 0;
-//	Msg("Weapon Name [%s] Display Name [%s]\n", weapon_name, display_name);
+	//Msg("Setup: Weapon Name [%s]\n", weapon_name);
 }
 
 //---------------------------------------------------------------------------------
@@ -103,7 +103,6 @@ MWeapon::MWeapon(const char *weapon_name, int translation_id, int weapon_index)
 //---------------------------------------------------------------------------------
 bool	MWeapon::CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, int &ratio)
 {
-//	Msg("[%s] [%s] [%i] [%i] [%s]\n", weapon_name, display_name, team_limit, round_ratio, (restricted == true) ? "YES":"NO");
 	if (!restricted || war_mode) return true;
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return true;
 	if (translation_id == 0) return true;
@@ -310,39 +309,52 @@ void ManiWeaponMgr::AddWeapon(const char *search_name, int translation_id, const
 	}
 }
 
+void ManiWeaponMgr::AddWeapon(const char *search_name, int translation_id, const char *alias1, const char *alias2, const char *alias3, const char *alias4)
+{	
+	int weapon_index = this->FindWeaponIndex(search_name);
+	if (weapon_index != -1)
+	{
+		this->weapons[weapon_index] = new MWeapon(search_name, translation_id, weapon_index);
+		this->alias_list[alias1] = this->weapons[weapon_index];
+		this->alias_list[alias2] = this->weapons[weapon_index];
+		this->alias_list[alias3] = this->weapons[weapon_index];
+		this->alias_list[alias4] = this->weapons[weapon_index];
+	}
+}
+
 void ManiWeaponMgr::SetupWeapons()
 {
 	this->CleanUp();
 
-	this->AddWeapon("weapon_xm1014", 3000, "xm1014", "autoshotgun");
-	this->AddWeapon("weapon_usp", 3001, "usp", "km45");
-	this->AddWeapon("weapon_ump45", 3002, "ump45");
-	this->AddWeapon("weapon_tmp", 3003, "tmp", "mp");
-	this->AddWeapon("weapon_smokegrenade", 3004, "smokegrenade", "sgren");
-	this->AddWeapon("weapon_sg552", 3005, "sg552", "krieg552");
-	this->AddWeapon("weapon_sg550", 3006, "sg550", "krieg550");
-	this->AddWeapon("weapon_scout", 3007, "scout");
-	this->AddWeapon("weapon_p90", 3008, "p90", "c90");
-	this->AddWeapon("weapon_p228", 3009, "p228", "228compact");
-	this->AddWeapon("weapon_mp5navy", 3010, "mp5navy", "mp5", "smg");
-	this->AddWeapon("weapon_mac10", 3011, "mac10");
-	this->AddWeapon("weapon_m4a1", 3012, "m4a1");
-	this->AddWeapon("weapon_m3", 3013, "m3", "12gauge");
-	this->AddWeapon("weapon_m249", 3014, "m249");
+	this->AddWeapon("weapon_xm1014", 3000, "xm1014", "autoshotgun", "weapon_xm1014");
+	this->AddWeapon("weapon_usp", 3001, "usp", "km45", "weapon_usp");
+	this->AddWeapon("weapon_ump45", 3002, "ump45", "weapon_ump45");
+	this->AddWeapon("weapon_tmp", 3003, "tmp", "mp", "weapon_tmp");
+	this->AddWeapon("weapon_smokegrenade", 3004, "smokegrenade", "sgren", "weapon_smokegrenade");
+	this->AddWeapon("weapon_sg552", 3005, "sg552", "krieg552", "weapon_sg552");
+	this->AddWeapon("weapon_sg550", 3006, "sg550", "krieg550", "weapon_sg550");
+	this->AddWeapon("weapon_scout", 3007, "scout", "weapon_scout");
+	this->AddWeapon("weapon_p90", 3008, "p90", "c90", "weapon_p90");
+	this->AddWeapon("weapon_p228", 3009, "p228", "228compact", "weapon_p228");
+	this->AddWeapon("weapon_mp5navy", 3010, "mp5navy", "mp5", "smg", "weapon_mp5navy");
+	this->AddWeapon("weapon_mac10", 3011, "mac10", "weapon_mac10");
+	this->AddWeapon("weapon_m4a1", 3012, "m4a1", "weapon_m4a1");
+	this->AddWeapon("weapon_m3", 3013, "m3", "12gauge", "weapon_m3");
+	this->AddWeapon("weapon_m249", 3014, "m249", "weapon_m249");
 	this->AddWeapon("weapon_knife", 0);
-	this->AddWeapon("weapon_hegrenade", 3015, "hegrenade", "hegren");
-	this->AddWeapon("weapon_glock", 3016, "glock", "9x19mm");
-	this->AddWeapon("weapon_galil", 3017, "galil", "defender");
-	this->AddWeapon("weapon_g3sg1", 3018, "g3sg1", "d3au1");
-	this->AddWeapon("weapon_flashbang", 3019, "flashbang", "flash");
-	this->AddWeapon("weapon_fiveseven", 3020, "fiveseven", "fn57");
-	this->AddWeapon("weapon_famas", 3021, "famas", "clarion");
-	this->AddWeapon("weapon_elite", 3022, "elite");
-	this->AddWeapon("weapon_deagle", 3023, "deagle", "nighthawk");
+	this->AddWeapon("weapon_hegrenade", 3015, "hegrenade", "hegren", "weapon_hegrenade");
+	this->AddWeapon("weapon_glock", 3016, "glock", "9x19mm", "weapon_glock");
+	this->AddWeapon("weapon_galil", 3017, "galil", "defender", "weapon_galil");
+	this->AddWeapon("weapon_g3sg1", 3018, "g3sg1", "d3au1", "weapon_g3sg1");
+	this->AddWeapon("weapon_flashbang", 3019, "flashbang", "flash", "weapon_flashbang");
+	this->AddWeapon("weapon_fiveseven", 3020, "fiveseven", "fn57", "weapon_fiveseven");
+	this->AddWeapon("weapon_famas", 3021, "famas", "clarion", "weapon_famas");
+	this->AddWeapon("weapon_elite", 3022, "elite", "weapon_elite");
+	this->AddWeapon("weapon_deagle", 3023, "deagle", "nighthawk", "weapon_deagle");
 	this->AddWeapon("weapon_c4", 0);
-	this->AddWeapon("weapon_awp", 3024, "awp", "magnum");
-	this->AddWeapon("weapon_aug", 3025, "aug", "bullpup");
-	this->AddWeapon("weapon_ak47", 3026, "ak47", "cv47");
+	this->AddWeapon("weapon_awp", 3024, "awp", "magnum", "weapon_awp");
+	this->AddWeapon("weapon_aug", 3025, "aug", "bullpup", "weapon_aug");
+	this->AddWeapon("weapon_ak47", 3026, "ak47", "cv47", "weapon_ak47");
 }
 
 void	ManiWeaponMgr::PlayerSpawn(player_t *player_ptr) 
@@ -473,7 +485,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 	{
 		lower_alias[i] = tolower(alias_name[i]);
 	}
-
+	
 	MWeapon *weapon = NULL;
 	std::map <BasicStr, MWeapon *>::iterator itr;
 	for (itr = alias_list.begin(); itr != alias_list.end(); ++itr)
