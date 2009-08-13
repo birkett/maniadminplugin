@@ -166,6 +166,9 @@ public:
 private:
 	MenuTemporal player_list[64];
 	int			 game_frame_repop[64];
+#if defined ( ORANGE )
+	float		 next_time_check;
+#endif
 };
 
 
