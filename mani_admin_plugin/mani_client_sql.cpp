@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -491,6 +492,8 @@ void	SQLManager::AddRequest
 	request_list_ptr->next_ptr = NULL;
 	request_list_ptr->prev_ptr = NULL;
 
+	// Fuxx: Well without requesting to unlock the mutex, LockWait will result in infinity loop
+	mutex.Unlock();
 	// Add it to the end of the linked list (need mutex for it)
 	mutex.LockWait();
 
