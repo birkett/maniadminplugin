@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -1662,10 +1663,43 @@ void	ProcessBurnPlayer
  int burn_time
 )
 {
+	std::vector<int> flamelist;
+	// first get alist of the entityflame entities that already exist
+	// we do this to avoid sig scanning for the entity list in all the
+	// different games
+	int max = engine->GetEntityCount();
+	for ( int index = 0; index < max; index++ ) {
+		edict_t *pEdict = engine->PEntityOfEntIndex( index );
+		if ( !pEdict ) continue;
+		if ( FStrEq ( "entityflame", pEdict->GetClassName() ) ) {
+			flamelist.push_back(index);
+		}
+	}
+
 	CBaseEntity *m_pCBaseEntity = player->entity->GetUnknown()->GetBaseEntity(); 
 	CBasePlayer *pBase = (CBasePlayer*) m_pCBaseEntity;
 	CBasePlayer_Ignite(pBase, burn_time, false, 12, false);
+	player_settings_t *player_settings = FindPlayerSettings ( player );
 //	pBase->Ignite(burn_time ,false, 12, false);
+
+	max = engine->GetEntityCount(); // should be one more :)
+	for ( int index = 0; index < max; index++ ) {
+		edict_t *pEdict = engine->PEntityOfEntIndex( index );
+		if ( !pEdict ) continue;
+		if ( FStrEq ( "entityflame", pEdict->GetClassName() ) ) {
+			if ( flamelist.size() == 0 ) {
+				player_settings->flame_index = index;
+				break;
+			}
+			for ( int fi = 0; fi<flamelist.size(); fi ++ ) {
+				if ( flamelist[fi] == index )
+					break;
+
+				player_settings->flame_index = index;
+				break;
+			}
+		}
+	}
 }
 
 //---------------------------------------------------------------------------------
