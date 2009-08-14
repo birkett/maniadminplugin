@@ -4632,6 +4632,23 @@ void CAdminPlugin::EvPlayerTeam(IGameEvent *event)
 //---------------------------------------------------------------------------------
 void CAdminPlugin::EvPlayerDeath(IGameEvent *event)
 {
+	player_t dead_player;
+	player_settings_t *player_settings;
+
+	dead_player.user_id = event->GetInt("userid", -1);
+	if (dead_player.user_id == -1) return;
+
+	if (!FindPlayerByUserID(&dead_player)) return;
+	player_settings = FindPlayerSettings ( &dead_player );
+
+	if ( player_settings->flame_index != 0 ) {
+		edict_t * pEdict = engine->PEntityOfEntIndex ( player_settings->flame_index );
+		if ( pEdict ) {
+			char cmd[256];
+			sprintf( cmd, "ent_remove %i\n", player_settings->flame_index );
+			engine->ServerCommand( cmd );
+		}
+	}
 	if (!gpManiGameType->IsGameType(MANI_GAME_DOD))
 	{
 		ProcessPlayerDeath(event);
