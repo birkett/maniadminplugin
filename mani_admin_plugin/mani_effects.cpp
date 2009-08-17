@@ -202,6 +202,7 @@ void	EffectsClientDisconnect(int	index, bool spawn_flag)
 	punish_mode_list[index].time_bomb_beeps_remaining = mani_tk_time_bomb_seconds.GetInt();
 	punish_mode_list[index].fire_bomb_beeps_remaining = mani_tk_fire_bomb_seconds.GetInt();
 	punish_mode_list[index].freeze_bomb_beeps_remaining = mani_tk_freeze_bomb_seconds.GetInt();
+	punish_mode_list[index].flame_index = 0;
 	CheckAllGlobal();
 }
 
@@ -1679,7 +1680,6 @@ void	ProcessBurnPlayer
 	CBaseEntity *m_pCBaseEntity = player->entity->GetUnknown()->GetBaseEntity(); 
 	CBasePlayer *pBase = (CBasePlayer*) m_pCBaseEntity;
 	CBasePlayer_Ignite(pBase, burn_time, false, 12, false);
-	player_settings_t *player_settings = FindPlayerSettings ( player );
 //	pBase->Ignite(burn_time ,false, 12, false);
 
 	max = engine->GetEntityCount(); // should be one more :)
@@ -1688,14 +1688,14 @@ void	ProcessBurnPlayer
 		if ( !pEdict ) continue;
 		if ( FStrEq ( "entityflame", pEdict->GetClassName() ) ) {
 			if ( flamelist.size() == 0 ) {
-				player_settings->flame_index = index;
+				punish_mode_list[player->index - 1].flame_index = index;
 				break;
 			}
-			for ( int fi = 0; fi<flamelist.size(); fi ++ ) {
+			for ( int fi = 0; fi< (int)flamelist.size(); fi ++ ) {
 				if ( flamelist[fi] == index )
 					break;
 
-				player_settings->flame_index = index;
+				punish_mode_list[player->index - 1].flame_index = index;
 				break;
 			}
 		}

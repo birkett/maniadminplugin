@@ -58,6 +58,7 @@ extern	IEngineSound *esounds; // sound
 extern	bf_write *msg_buffer;
 extern	int	menu_message_index;
 extern	CGlobalVars *gpGlobals;
+extern	int	max_players;
 
 extern char *menu_select_exit_sound;
 extern char *menu_select_sound;
@@ -92,10 +93,6 @@ bool final
 {
 	unsigned int		keys=0;
 	char				menu_string_clamped[512];
-#if defined ( ORANGE )
-	player_t			player;
-	player_settings_t  *player_settings;
-#endif
 
 	for (int i = 1; i <= range; i++)
 	{
@@ -111,27 +108,14 @@ bool final
 	mrf.RemoveAllRecipients();
 	mrf.AddPlayer(player_index);
 
-#if defined ( ORANGE )
-	if ( final ) {
-		player.index = player_index;
-		FindPlayerByIndex(&player);
-		player_settings = FindPlayerSettings(&player);
-	}
-#endif 
-
 	msg_buffer = engine->UserMessageBegin( &mrf, menu_message_index ); // Show Menu message
 	if (final)
 	{
 		msg_buffer->WriteShort( keys ); // Key bits
 #if defined ( ORANGE )
-		if ( player_settings && !player_settings->menu_showing ) {
-			player_settings->menu_showing = true;
-			if ( time <= -1 ) 
-				player_settings->menu_expiration_time = 0;
-			else if ( time < 5 )
-				player_settings->menu_expiration_time = gpGlobals->curtime;
-			else
-				player_settings->menu_expiration_time = gpGlobals->curtime + time - 5;
+		if ( !g_menu_mgr.GetMenuShowing ( player_index - 1) ) {
+			g_menu_mgr.ResetMenuShowing ( player_index - 1 , false );
+			g_menu_mgr.SetMenuExpirationTime ( player_index - 1, time );
 		}
 #endif
 	}
@@ -589,10 +573,6 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	}
 	MenuPage *menu_page_ptr = menu_pages[menu_pages.size() - 1];
 
-#if defined ( ORANGE )
-	player_settings_t *player_settings = FindPlayerSettings(player_ptr);
-#endif
-
 	if (menu_page_ptr->input_object && option == 1337)
 	{
 		// Handle input object
@@ -602,7 +582,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 		case CLOSE_MENU:
 			this->Kill();
 #if defined ( ORANGE )
-			player_settings->menu_showing = false;
+			g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 			ProcessPlayMenuSound(player_ptr, menu_select_sound);
 			break;
@@ -616,7 +596,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 				// Get out of menu as it has closed
 				this->Kill();
 #if defined ( ORANGE )
-			player_settings->menu_showing = false;
+				g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 				ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
 			}
@@ -663,7 +643,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 				// Get out of menu as it has closed
 				this->Kill();
 #if defined ( ORANGE )
-			player_settings->menu_showing = false;
+				g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 				ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
 				return;
@@ -683,7 +663,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 					{
 						this->Kill();
 #if defined ( ORANGE )
-						player_settings->menu_showing = false;
+						g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 						ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
 						return;
@@ -716,7 +696,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 		// Exit pressed
 		this->Kill();
 #if defined ( ORANGE )
-		player_settings->menu_showing = false;
+		g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 		ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
 		return;
@@ -727,7 +707,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	{
 		this->Kill();
 #if defined ( ORANGE )
-		player_settings->menu_showing = false;
+		g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 		return;
 	}
@@ -765,7 +745,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 		case CLOSE_MENU:
 			this->Kill();
 #if defined ( ORANGE )
-			player_settings->menu_showing = false;
+			g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 			ProcessPlayMenuSound(player_ptr, menu_select_sound);
 			break;
@@ -781,7 +761,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 					// Get out of menu as it has closed
 					this->Kill();
 #if defined ( ORANGE )
-					player_settings->menu_showing = false;
+				g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 					ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
 					return;
@@ -818,14 +798,13 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	else
 	{
 #if defined ( ORANGE )
-		player_settings->menu_showing = false;
+		g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 		this->Kill();
 	}
 
 	return;
 }
-
 
 void MenuManager::Kill() 
 {
@@ -1039,34 +1018,30 @@ void MenuManager::GameFrame()
 	player_t player;
 	for (int i = 0; i < 64; i++)
 	{
+		player.index = i + 1;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		if (player.player_info->IsHLTV()) continue;
+
 		if (game_frame_repop[i] > 0)
 		{
 			game_frame_repop[i]--;
 			if (game_frame_repop[i] == 0)
 			{
-				player.index = i + 1;
-				if (!FindPlayerByIndex(&player)) continue;
-				if (player.is_bot) continue;
-				if (player.player_info->IsHLTV()) continue;
-
 				// Valid player to run re-pop on
 				this->RepopulatePage(&player);
 			}
 		}
 #if defined ( ORANGE )
 		if ( gpGlobals->curtime > next_time_check ) {
-			player.index = i + 1;
-			if (!FindPlayerByIndex(&player)) continue;
-			player_settings_t *player_settings = FindPlayerSettings ( &player );
-			if ( !player_settings ) continue;
-			if ( !player_settings->menu_showing ) continue;
-				MenuTemporal *mt_ptr = &(player_list[(&player)->index - 1]);
-				MenuPage *menu_page_ptr = mt_ptr->menu_pages[mt_ptr->menu_pages.size() - 1];
+			if ( !menu_showing[i] ) continue;
+
+			MenuTemporal *mt_ptr = &player_list[i];
+			MenuPage *menu_page_ptr = mt_ptr->menu_pages[mt_ptr->menu_pages.size() - 1];
 				
-			if ( (player_settings->menu_expiration_time != 0.0f) && (gpGlobals->curtime > player_settings->menu_expiration_time) ) {
-				player_settings->menu_showing = false;
+			if ( ( menu_expiration_time[i] != 0.0f ) && (gpGlobals->curtime > menu_expiration_time[i]) ) {
+				menu_showing[i] = false;
 				mt_ptr->Kill();
-				ProcessPlayMenuSound(&player, menu_select_exit_sound);
 			} else {
 				menu_page_ptr->RenderPage(&player, mt_ptr->menu_pages.size());
 			}
@@ -1078,7 +1053,43 @@ void MenuManager::GameFrame()
 		next_time_check = gpGlobals->curtime + 1.0f;
 #endif
 }
+#if defined ( ORANGE )
+float MenuManager::GetExpirationTime(int player_index) {
+	if ( player_index < 0 || player_index > max_players )
+		return 0;
 
+	return menu_expiration_time[player_index];
+}
+
+bool MenuManager::GetMenuShowing(int player_index) {
+	if ( player_index < 0 || player_index >= max_players )
+		return false;
+
+	return menu_showing[player_index];
+}
+
+void MenuManager::SetMenuExpirationTime(int player_index, float time) {
+	if ( player_index < 0 || player_index >= max_players)
+		return;
+
+	float tmp = 0;
+	if ( time == -1 )
+		tmp = 0;
+	else if ( time < 6 )
+		tmp = 1;
+	else if ( time > 5 )
+		tmp = ( time - 5 );
+
+	menu_expiration_time[player_index] = tmp;
+}
+
+void MenuManager::ResetMenuShowing (int player_index, bool off) {
+	if ( player_index < 0 || player_index >= max_players )
+		return;
+
+	menu_showing[player_index] = !off;
+}
+#endif
 int	RePopOption(int return_option)
 {
 	return (((mani_old_style_menu_behaviour.GetInt() == 0) ? return_option:CLOSE_MENU));

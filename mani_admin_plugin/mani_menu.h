@@ -167,6 +167,18 @@ private:
 	MenuTemporal player_list[64];
 	int			 game_frame_repop[64];
 #if defined ( ORANGE )
+public:
+	void ResetMenuShowing ( int player_index, bool off = true );
+	void SetMenuExpirationTime ( int player_index, float time );
+	
+	bool GetMenuShowing ( int player_index );
+	float GetExpirationTime ( int player_index );
+private:
+	bool	menu_showing[64];
+	float	menu_expiration_time[64];
+#endif
+
+#if defined ( ORANGE )
 	float		 next_time_check;
 #endif
 };
