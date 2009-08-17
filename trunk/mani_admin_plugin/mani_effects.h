@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -69,6 +70,7 @@ struct punish_mode_t
 	int		freeze_bomb_beeps_remaining;
 	int		beacon;
 	float	next_beacon_update_time;
+	int		flame_index;
 };
 
 extern	punish_mode_t	punish_mode_list[];

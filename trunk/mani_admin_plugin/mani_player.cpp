@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -198,6 +199,20 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 			target_player_list[target_player_list_size - 1] = player;
 		}	
+
+		if (target_player_list_size != 0)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	if (FStrEq(target_string,"#SELF"))
+	{
+		// STINGY BASTARD!!! Only doing things for yourself!
+		AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+		target_player_list[target_player_list_size - 1] = *requesting_player;
 
 		if (target_player_list_size != 0)
 		{

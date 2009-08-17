@@ -10,7 +10,7 @@ sub copy_binaries;
 sub create_folder;
 
 #Setup vars here
-$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
+$BASE_FOLDER=dirname(rel2abs($0)) . "/..";
 $CORE_BIN="mani_admin_plugin";
 $LINUX_BASE=$BASE_FOLDER;
 $WINDOWS_BASE=$BASE_FOLDER;
@@ -47,7 +47,7 @@ else
 #Linux platform
 	print "Linux platform\n";
 	$DEV_BASE=$LINUX_BASE;
-	$BIN_FOLDER=$DEV_BASE . "/mani_admin_plugin";#
+	$BIN_FOLDER=$DEV_BASE . "/mani_admin_plugin";
 	$FILE_EXT="_i486.so";
 }
 
@@ -61,10 +61,9 @@ else
 }
 
 
-
 $BIN_FILE=$CORE_BIN . $SMM_EXT . $FILE_EXT;
 
-print "$DEV_BASE\n$ENGINE_BASE\n$BIN_FOLDER\n";
+print "INFO:\nDEV_BASE:  $DEV_BASE\nENGINE_BASE:  $ENGINE_BASE\nBIN_FOLDER:  $BIN_FOLDER\n";
 print "File = " . $BIN_FILE . "\n";
 
 opendir MYDIR, "$ENGINE_BASE/";

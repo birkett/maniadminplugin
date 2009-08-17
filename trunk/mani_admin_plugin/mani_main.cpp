@@ -275,7 +275,6 @@ ConVar	*vip_version = NULL;
 ConVar	*mp_dynamicpricing = NULL;
 ConVar	*tv_name = NULL;
 ConVar	*mp_allowspectators = NULL;
-
 //RenderMode_t mani_render_mode = kRenderNormal;
 
 bf_write *msg_buffer;
@@ -1487,6 +1486,19 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	player_t player;
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return;
+
+	const char *pname = player.name;
+	if ( pname && pname[0] == 0 )
+		pname = NULL;
+
+		if ( !pname ) {
+			UTIL_KickPlayer ( &player, "Empty name violation", 
+				"Empty name violation, change your name and come back", 
+				"Empty name kicked" );
+			return;
+		}
+
+
 	if (!player.player_info->IsHLTV())
 	{
 		g_menu_mgr.ClientActive(&player);
@@ -4633,20 +4645,26 @@ void CAdminPlugin::EvPlayerTeam(IGameEvent *event)
 void CAdminPlugin::EvPlayerDeath(IGameEvent *event)
 {
 	player_t dead_player;
-	player_settings_t *player_settings;
 
 	dead_player.user_id = event->GetInt("userid", -1);
 	if (dead_player.user_id == -1) return;
 
 	if (!FindPlayerByUserID(&dead_player)) return;
-	player_settings = FindPlayerSettings ( &dead_player );
 
-	if ( player_settings->flame_index != 0 ) {
-		edict_t * pEdict = engine->PEntityOfEntIndex ( player_settings->flame_index );
+	if ( punish_mode_list[dead_player.index - 1].flame_index != 0 ) {
+		edict_t * pEdict = engine->PEntityOfEntIndex ( punish_mode_list[dead_player.index - 1].flame_index );
 		if ( pEdict ) {
 			char cmd[256];
-			sprintf( cmd, "ent_remove %i\n", player_settings->flame_index );
-			engine->ServerCommand( cmd );
+			snprintf ( cmd, sizeof ( cmd ), "sv_cheats 1;ent_remove %i;sv_cheats 0\n", punish_mode_list[dead_player.index - 1].flame_index );
+			if (sv_cheats->GetInt() == 0) {
+				sv_cheats->m_nFlags &= ~FCVAR_SPONLY;
+				sv_cheats->m_nFlags &= ~FCVAR_NOTIFY;
+				engine->ServerCommand( cmd );
+				sv_cheats->m_nFlags &= ~FCVAR_SPONLY;
+				sv_cheats->m_nFlags &= ~FCVAR_NOTIFY;
+			} else {
+				engine->ServerCommand( cmd );
+			}
 		}
 	}
 	if (!gpManiGameType->IsGameType(MANI_GAME_DOD))
