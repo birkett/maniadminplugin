@@ -48,26 +48,29 @@ const int	gametypes_min_version = 2;
 #define snprintf _snprintf
 #endif
 
+#define COMMON_CORE "1.2BetaT-internal-1"
+#define COMMON_VERSION "Mani Admin Plugin 2009 V" COMMON_CORE
+
 #ifdef ORANGE
 #ifdef SOURCEMM
-#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT SMM Orange, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaT SMM"
+#define PLUGIN_VERSION COMMON_VERSION " SMM Orange, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
 #else
-#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT VSP Orange, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaT VSP"
+#define PLUGIN_VERSION COMMON_VERSION " VSP Orange, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
 #endif
 #else
 #ifdef SOURCEMM
-#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT SMM, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaT SMM"
+#define PLUGIN_VERSION COMMON_VERSION " SMM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
 #else
-#define PLUGIN_VERSION "Mani Admin Plugin 2007 V1.2BetaT VSP, www.mani-admin-plugin.com"
-#define PLUGIN_CORE_VERSION "1.2BetaT VSP"
+#define PLUGIN_VERSION COMMON_VERSION " VSP, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
 #endif
 #endif
 
-#define PLUGIN_VERSION_ID "V1.2BetaT\n"
-#define PLUGIN_VERSION_ID2 "V1.2BetaT"
+#define PLUGIN_VERSION_ID "V" COMMON_CORE "\n"
+#define PLUGIN_VERSION_ID2 "V" COMMON_CORE
 
 // Define vote types
 enum

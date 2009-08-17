@@ -30,7 +30,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\bin\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\base\common\&#x0D;&#x0A;perl.exe ../scripts/setbinaries.pl"
+				CommandLine="attrib -r ..\bin\mani_admin_plugin.dll&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\bin\&#x0D;&#x0A;copy &quot;$(TargetPath)&quot; ..\base\common\&#x0D;&#x0A;perl.exe ../scripts/setbinaries.pl&#x0D;&#x0A;"
 				Outputs="..\bin\mani_admin_plugin.dll"
 			/>
 			<Tool
@@ -500,7 +500,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib tier0.lib tier1.lib vstdlib.lib mathlib.lib"
-				OutputFile="..\plugin_output\mani_admin_plugin_mm.dll"
+				OutputFile="..\plugin_output\orange\mani_admin_plugin_mm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\sdk_orange\lib\public;.\mysql5.1\win_32\lib"
@@ -709,7 +709,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib mysqlclient.lib ws2_32.lib zlib.lib mysys.lib tier0.lib tier1.lib vstdlib.lib mathlib.lib"
 				ShowProgress="1"
-				OutputFile="..\plugin_output\mani_admin_plugin.dll"
+				OutputFile="..\plugin_output\orange\mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\sdk_orange\lib\public;..\sdk_orange\lib\common;.\mysql5.1\win_32\lib"
