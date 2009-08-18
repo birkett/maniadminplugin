@@ -43,7 +43,8 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 );
 
 %extra_game_path = (
-"Team Fortress 2" 		=> "/orangebox"
+"Team Fortress 2" 		=> "/orangebox",
+"Day of Defeat Source"		=> "/orangebox"
 );
 
 print "\n";
