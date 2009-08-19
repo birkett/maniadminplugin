@@ -11,7 +11,7 @@ sub cleanup;
 sub recursedir($$);
 
 #Setup Vars here
-$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
+$BASE_FOLDER=dirname(rel2abs($0)) . "/..";
 
 $RELEASE_BASE=$BASE_FOLDER . "public_build";
 

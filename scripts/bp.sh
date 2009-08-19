@@ -241,7 +241,7 @@ then
 	make clean
 fi
 
-make
+make -j2
 
 COPY_SMM=""
 COPY_ORANGE=""

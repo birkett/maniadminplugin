@@ -7,7 +7,7 @@ use File::Spec::Functions qw(rel2abs);
 # Starts up an instance of a Valve game
 
 sub execute_game;
-$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
+$BASE_FOLDER=dirname(rel2abs($0)) . "/..";
 
 $DEFAULT_PORT="27100";
 
@@ -23,7 +23,7 @@ else
 	print "Linux platform\n";
 	$LINUX="TRUE";
 	$ROOT_PATH=$BASE_FOLDER;
-	$GAME_EXE="srcds_run -debug -port $DEFAULT_PORT -console";	
+	$GAME_EXE="./srcds_run -debug -port $DEFAULT_PORT -console";	
 }
 
 $SRCDS_PATH="$ROOT_PATH/srcds_1";

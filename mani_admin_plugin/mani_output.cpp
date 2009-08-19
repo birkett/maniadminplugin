@@ -1427,7 +1427,7 @@ void OutputHelpText
 	}
 	else
 	{
-		SayToPlayer(colour, player_ptr, "%s\n", tempString);
+		SayToPlayer(colour, player_ptr, "%s", tempString);
 	}
 }
 
