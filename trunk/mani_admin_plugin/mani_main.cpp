@@ -279,6 +279,12 @@ ConVar	*mp_allowspectators = NULL;
 
 bf_write *msg_buffer;
 
+#if defined ( WIN32 )
+	#define PATH_SLASH '\\'
+#else
+	#define PATH_SLASH '/'
+#endif
+
 // 
 // The plugin is a static singleton that is exported as an interface
 //
@@ -1990,11 +1996,11 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 	char *p_path = NULL;
 	filesystem->RelativePathToFullPath ( "gameinfo.txt", "GAME", gamedir, 256 );
 	if ( gamedir[0] != 0 ) {
-		char *p_slash = strrchr ( gamedir, '\\' );
+		char *p_slash = strrchr ( gamedir, PATH_SLASH );
 		if ( p_slash )
 			*p_slash = 0;
 
-		p_path = strrchr ( gamedir, '\\' );
+		p_path = strrchr ( gamedir, PATH_SLASH );
 
 		if ( p_path )
 			p_path ++;
@@ -2029,7 +2035,7 @@ LOADUP_STATUS CAdminPlugin::ScanLoadup( void ) {
 	GetVDFPath ( path, ( mmpath ) ? mmpath->GetString() : NULL );
 
 	if ( mmpath ) { // sourcemm
-		if ( !mmver || strcmp ( mmver->GetString(), "1.7.0" ) < 0 ) { // 1.7.0 and greater allows for .vdfs for plugins
+		if ( !mmver || strcmp ( mmver->GetString(), "1.7.0" ) < 0 ) { // 1.7.0 and greater allows for .vdfs for plugins ( need to check ini anyway! )
 			Q_strcat ( path, "/metaplugins.ini", sizeof(path) );
 			return MakeOrAddToINI ( path );
 		} else {
@@ -2054,7 +2060,7 @@ void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
 
 	if ( SourceMMPath ) {
 		SET_STR ( local_source, SourceMMPath );
-		const char *p_sourceslash = strrchr ( SourceMMPath, '\\' );
+		const char *p_sourceslash = strrchr ( SourceMMPath, PATH_SLASH );
 
 		if ( p_sourceslash ) {
 			int source_slash = (int) (p_sourceslash - SourceMMPath );
