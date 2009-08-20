@@ -446,8 +446,9 @@ void ManiWeaponMgr::RoundStart()
 	if (war_mode) return;
 	for (int i = 0; i < 29; i++)
 	{
-		if (weapons[i]->GetDisplayID() == 0) continue;
-		if (!weapons[i]->IsRestricted()) continue;
+		if ( !weapons[i] ) continue;
+		if ( weapons[i]->GetDisplayID() == 0 ) continue;
+		if ( !weapons[i]->IsRestricted() ) continue;
 
 		int round_ratio = weapons[i]->GetRoundRatio();
 
