@@ -1241,7 +1241,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"107"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -1413,7 +1413,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"107"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
