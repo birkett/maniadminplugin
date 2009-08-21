@@ -1,8 +1,17 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : decallist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : List decal textures to be available for custom effects via
+//                ma_effect and for the map adverts
+// *****************************************************************************
+
+
 "decallist.txt"
 {
-	// List decal textures to be available for custom effects via ma_effect
-	// and for the map adverts.
-	//
 	// The first label is the name you use within the ma_effect command and ma_decal to reference
 	// the decal texture, the second is the location of the decal itself
 	// You can view the decals from the Valve Hammer Editor.

@@ -1,24 +1,14 @@
-// ************************************************
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
 //
-// Mani Admin Plugin 2005
+//   Filename   : mapadverts.txt
 //
-// mapadverts.txt
-// 
-// Map Advert system
+// Last Updated : 2009/07/21
 //
-// Last Update V1.1.0x
-//
-// This file contains the coordinates list of all decal adverts within standard CSS maps.
-// 
-// If you have a decal setup you can find the target coordinates
-// by using the ma_decal <decal name> to shoot at a target
-// Go to the console then copy and paste the coordinates into
-// this file.
-//
-//
-// www.mani-admin-plugin.com
-//
-//*************************************************
+// Description  : Set the in game position of the map decals. You can find out
+//                coordinates using ma_decal <decal name>, the coordinates wil
+//                then be displayed in the in game console
+// *****************************************************************************
 
 
 "mapadverts.txt"

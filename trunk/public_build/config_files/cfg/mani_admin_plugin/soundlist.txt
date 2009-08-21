@@ -1,14 +1,18 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
 //
-// soundlist.txt
+//   Filename   : soundlist.txt
 //
-// Place all your client commands that you want to
-// execute on all players in here
+// Last Updated : 2009/07/21
+//
+// Description  : Sounds which will get played in game using ma_play <alias>
+// *****************************************************************************
+//
 //
 // This file can use aliases.
 //
-// Aliases are what is shown in the menu system
-// a nice way of presenting the commands.
-// Aliases must be enclosed in quotes
+// Aliases are what is shown in the menu system a nice way of presenting
+// the commands. Aliases must be enclosed in quotes.
 //
 // E.G. "Don't just stand there"
 //
@@ -19,7 +23,18 @@
 // You do not have to use aliases but it makes the
 // menu's easier to use if you do.
 //
+// As the source engine doens't support all sound format, they have to be like
+// MPEG-1 layer 3
+// 128kbit
+// 44100Hz Stereo
 //
+// or
+//
+// 8 Bit PCM
+// 2 Channel
+// 11025 Hz
+//
+// in order to work.
 
 
 "Waiting For Suspect" admin_plugin/waitingforsuspect.mp3
