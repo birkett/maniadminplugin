@@ -1,9 +1,13 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
 //
-// This is the spawnpoints.txt file
-// for the mani_admin_plugin V1.2 Beta G+.
+//   Filename   : spawnpoints.txt
 //
-// In the previous versions you needed to include existing spawnpoints
-// but now you only specify extra spawnpoints required.
+// Last Updated : 2009/07/21
+//
+// Description  : Create extra spawnpoints for specific maps
+// *****************************************************************************
+//
 //
 // If you want to define your own extra spawnpoints, put them
 // in here. 

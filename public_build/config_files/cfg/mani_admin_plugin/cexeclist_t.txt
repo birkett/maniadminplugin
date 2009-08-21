@@ -1,8 +1,13 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
 //
-// cexeclist_t.txt
+//   Filename   : cexeclist_t.txt
 //
-// Place all your client commands that you want to 
-// execute on all T players in here
+// Last Updated : 2009/07/21
+//
+// Description  : Commands that should be executed on all T clients connected
+// *****************************************************************************
+//
 //
 // This file can use aliases.
 //

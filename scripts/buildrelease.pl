@@ -13,7 +13,7 @@ sub recursedir($$);
 #Setup Vars here
 $BASE_FOLDER=dirname(rel2abs($0)) . "/..";
 
-$RELEASE_BASE=$BASE_FOLDER . "public_build";
+$RELEASE_BASE=$BASE_FOLDER . "/public_build";
 
 print "Is this an Orange build? ";
 $question_response = <>;

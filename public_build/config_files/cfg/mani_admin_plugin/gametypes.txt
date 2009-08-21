@@ -2,8 +2,8 @@
 //
 // Mani Admin Plugin 2006
 //
-// Last Update V1.1.0zj + V1.2 Beta O
-// 5th December 2006
+// Last Update V.1.2 Beta T
+// 18.08.2009
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -101,29 +101,30 @@
 			"move_type"	"CBaseEntity.movetype"
 		}
 
-                "vfuncs"
-                {
-                        "eye_angles"    		"121"
-                        "set_model_index"       "9"
-                        "teleport"       		"100"
-                        "eye_position"  		"120"
-                        "my_combat_character"   "69"
-                        "get_velocity"  		"129"
-                        "ignite"        		"192"
-                        "weapon_drop"   		"220"
-                        "remove_player_item"    "237"
-                        "get_weapon_slot"       "235"
-                        "give_ammo"     		"214"
-                        "get_primary_ammo_type" "301"
-                        "get_secondary_ammo_type"       "302"
-                        "weapon_get_name"       "294"
+		"vfuncs"
+		{
+			"eye_angles"	"128"
+			"teleport"	"106" // and 554
+			"eye_position"	"127"
+			"give_item"	"358"
+			"my_combat_character"	"70"
+			"get_velocity"	"137"
+			"ignite"	"200"
+			"user_cmds"	"375"
+			"commit_suicide"	"398"
+			"set_observer_target"	"332"
+			"set_model_index"       "9"
+			"weapon_drop"   		"220"
+			"remove_player_item"	"245"
+			"get_weapon_slot"	"243"
+			"give_ammo"     		"214"
+			"get_primary_ammo_type"	"317"
+			"get_secondary_ammo_type"	"318"
+			"weapon_get_name"	"310"
 			"weapon_switch"		"221"
-			"give_item"		"349"
-			"user_cmds"		"366"
 			"map_desc"		"12"
-			"set_observer_target"   "323"
 			"weapon_canuse"		"217"
-                }
+		}
 
 		// Setup team structure for mod		
 		"teams"
@@ -1257,21 +1258,25 @@
 
 		"vfuncs"
 		{
-			"eye_angles"    		"119"
-			"set_model_index"       "9"
-			"teleport"      		"99"
-			"eye_position"  		"118"
-			"give_item"     		"329"
-			"my_combat_character"   "68"
-			"get_velocity"  		"127"
-			"ignite"        		"189"
-			"weapon_drop"   		"220"
-			"user_cmds"			"346"
-			"map_desc"			"14"
-                  "remove_player_item"    "227"
-                  "get_weapon_slot"       "225"
-                  "give_ammo"			"214"
-		  "set_observer_target"   "305"
+                        "eye_angles"    "128"
+                        "teleport"      "554"
+                        "eye_position"  "127"
+                        "give_item"     "358"
+                        "my_combat_character"   "70"
+                        "get_velocity"  "137"
+                        "map_desc"      "12"
+                        "ignite"        "200"
+                        "weapon_drop"   "238"
+                        "user_cmds"     "375"
+                        "set_observer_target"   "332"
+                        "commit_suicide"        "397"
+						"remove_player_item"	"245"
+						"get_weapon_slot"	"243"
+						"give_ammo"	"230"
+						"get_primary_ammo_type"	"312"
+						"get_secondary_ammo_type"	"313"
+						"weapon_get_name"	"305"
+						"set_model_index"       "9"
  		}
 
 		// Setup team structure for mod		
@@ -1425,21 +1430,25 @@
 
 		"vfuncs"
 		{
-			"eye_angles"    		"119"
-			"set_model_index"       "9"
-			"teleport"      		"99"
-			"eye_position"  		"118"
-			"give_item"     		"329"
-			"my_combat_character"   "68"
-			"get_velocity"  		"127"
-			"ignite"        		"189"
-			"weapon_drop"   		"220"
-			"user_cmds"			"346"
-			"map_desc"			"14"
-                  "remove_player_item"    "227"
-                  "get_weapon_slot"       "225"
-                  "give_ammo"			"214"
-		  "set_observer_target"   "305"
+			"eye_angles"	"128"
+			"teleport"	"554"
+			"eye_position"	"127"
+			"give_item"	"358"
+			"my_combat_character"	"70"
+			"get_velocity"	"137"
+			"map_desc"	"12"
+			"ignite"	"200"
+			"weapon_drop"	"238"
+			"user_cmds"	"375"
+			"set_observer_target"	"332"
+			"commit_suicide"	"397"
+			"remove_player_item"	"245"
+			"get_weapon_slot"	"243"
+			"give_ammo"	"230"
+			"get_primary_ammo_type"	"312"
+			"get_secondary_ammo_type"	"313"
+			"weapon_get_name"	"305"
+
  		}
 
 		// Setup team structure for mod		

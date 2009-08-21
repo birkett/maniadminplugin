@@ -1,10 +1,21 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
 //
-// Mani Admin Plugin 2006
-// Web shortcut list
+//   Filename   : webshortcutlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Link to sites on the web using ma_browse <url>
+// *****************************************************************************
+//
+//
+// The content of this file can be displayed in a menu if you type "favourites"
+// into the chat.
 //
 // The first field relates to the shortcut chat command a player
 // can use. The second field is the web site that will be displayed.
-// The steam id token {STEAMID} can be used for a search term
+// The steam id token {STEAMID} and the {IPADDRESS} token
+// can be used for a search term
 //
 
 "plugin" http://www.mani-admin-plugin.com

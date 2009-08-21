@@ -1,7 +1,13 @@
-// 
-// This is the default_weapon_restrict.txt file
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
 //
-// It is used to place weapons restrictions on all maps loaded.
+//   Filename   : default_weapon_restrict.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Restrict weapons generally for all maps
+// ***************************************************************************** 
+//
 //
 // If you want a weapon to be restriction remove the '//' from the start
 // of the line of the weapons you want restricted so they are not commented
