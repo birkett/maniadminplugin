@@ -341,7 +341,7 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 			}
 		}
 
-		snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",sound_list[sound_index].sound_name);
+		snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[sound_index].sound_name);
 		engine->ClientCommand(target_player.entity, play_sound);
 		//UTIL_EmitSoundSingle(&target_player, sound_list[sound_index].sound_name);
 	}	
@@ -418,7 +418,7 @@ int PlaySoundItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 			// This player doesn't want to hear sounds
 			if (!player_settings->server_sounds) continue;
 
-			snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",sound_list[index].sound_name);
+			snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",sound_list[index].sound_name);
 			engine->ClientCommand(player.entity, play_sound);
 			//UTIL_EmitSoundSingle(&player, sound_list[index].sound_name);
 		}
@@ -471,7 +471,7 @@ void ProcessPlayActionSound( player_t *target_player, int sound_id)
 			// This player doesn't want to hear sounds
 			if (!player_settings->server_sounds) continue;
 
-			snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",action_sound_list[sound_id].sound_file);
+			snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
 			engine->ClientCommand(player.entity, play_sound);
 			//UTIL_EmitSoundSingle(&player, action_sound_list[sound_id].sound_file);
 		}
@@ -484,7 +484,7 @@ void ProcessPlayActionSound( player_t *target_player, int sound_id)
 		// This player doesn't want to hear sounds
 		if (!player_settings->server_sounds) return;
 
-		snprintf(play_sound, sizeof(play_sound), "play \"%s\"\n",action_sound_list[sound_id].sound_file);
+		snprintf(play_sound, sizeof(play_sound), "playgamesound \"%s\"\n",action_sound_list[sound_id].sound_file);
 		engine->ClientCommand(target_player->entity, play_sound);
 		//UTIL_EmitSoundSingle(target_player, action_sound_list[sound_id].sound_file);
 
