@@ -392,6 +392,7 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 	// Check all weapons
 	for (int i = 0; i < 29; i++)
 	{
+		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
 		if (!weapons[i]->CanBuy(player_ptr, 1, reason, limit, ratio) || 
 			knife_mode)
@@ -446,7 +447,7 @@ void ManiWeaponMgr::RoundStart()
 	if (war_mode) return;
 	for (int i = 0; i < 29; i++)
 	{
-		if ( !weapons[i] ) continue;
+		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if ( weapons[i]->GetDisplayID() == 0 ) continue;
 		if ( !weapons[i]->IsRestricted() ) continue;
 
@@ -608,6 +609,7 @@ void	ManiWeaponMgr::RestrictAll()
 {
 	for (int i = 0; i < 29; i++)
 	{
+		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
 		weapons[i]->SetRestricted(true);
 		weapons[i]->SetTeamLimit(0);
@@ -619,6 +621,7 @@ void	ManiWeaponMgr::UnRestrictAll()
 {
 	for (int i = 0; i < 29; i++)
 	{
+		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
 		weapons[i]->SetRestricted(false);
 		weapons[i]->SetTeamLimit(0);
@@ -805,6 +808,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShowRestrict(player_t *player_ptr, const c
 
 	for (int i = 0; i < 29; i++)
 	{
+		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
 		OutputToConsole(player_ptr, "%-29s %-11s %i      %i\n", 
 					Translate(player_ptr, weapons[i]->GetDisplayID()), 
@@ -1130,6 +1134,7 @@ bool	ManiWeaponMgr::CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 	// Find index
 	for (int i = 0; i < 29; i++)
 	{
+		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (strcmp(weapons[i]->GetWeaponName(), weapon_name) != 0) continue;
 		if (weapons[i]->GetDisplayID() == 0) continue;
 

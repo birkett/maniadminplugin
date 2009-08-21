@@ -1921,7 +1921,6 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 
 	return PLUGIN_CONTINUE;
 }
-
 #define DECL_STR(name,size)	char name[size]; \
 	Q_memset ( name, 0, sizeof(name) )
 
