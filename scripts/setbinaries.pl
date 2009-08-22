@@ -16,16 +16,24 @@ $LINUX_BASE=$BASE_FOLDER;
 $WINDOWS_BASE=$BASE_FOLDER;
 $ROOT_GAME="/srcds_1";
 $ROOT_ORANGE_GAME="/srcds_1/orangebox";
+$PLUGIN_BASE="VSP";
 
 %option = ();
-getopts("so", \%option);
+getopts("rso", \%option);
 
 $SMM_EXT="";
+if ($option{r})
+{
+	print "RELEASE MODE\n";
+	$RELEASE="TRUE";
+}
+
 if ($option{s})
 {
     print "MM:S Version\n";
     $SMM="TRUE";
     $SMM_EXT="_mm";
+	$PLUGIN_BASE="SourceMM";
 }
 
 if ($option{o})
@@ -82,19 +90,21 @@ foreach $listitem ( @contents )
 }
 
 #Copy ready for a build
-if ($ORANGE)
+if ($RELEASE)
 {
-	print "Copying $BIN_FOLDER/$BIN_FILE to $DEV_BASE/public_build/orange_bin/$BIN_FILE\n";
-	copy ("$BIN_FOLDER/$BIN_FILE",
-	"$DEV_BASE/public_build/orange_bin/$BIN_FILE");
-}
-else
-{
-	print "Copying $BIN_FOLDER/$BIN_FILE to $DEV_BASE/public_build/legacy_bin/$BIN_FILE\n";
-	copy ("$BIN_FOLDER/$BIN_FILE",
-	"$DEV_BASE/public_build/legacy_bin/$BIN_FILE");
-}
-	
+	if ($ORANGE)
+	{
+		print "Copying $BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/orange_bin/$BIN_FILE\n";
+		copy ("$BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE",
+		"$DEV_BASE/public_build/orange_bin/$BIN_FILE");
+	}
+	else
+	{
+		print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/legacy_bin/$BIN_FILE\n";
+		copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
+		"$DEV_BASE/public_build/legacy_bin/$BIN_FILE");
+	}
+}	
 sleep(1);
 
 #### Functions
@@ -127,17 +137,36 @@ my $search_curly = 0;
 			"$mod_dir/addons/metamod/bin/metamod.1.ep1.dll");
 	}
 
-	if ($SMM)
+	if ($ORANGE)
 	{
-		copy ("$BIN_FOLDER/$BIN_FILE",
-			"$mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE");
+		if ($SMM)
+		{
+			print "Copying $BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE",
+				"$mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE");
+		}
+		else
+		{
+			print "Copying $BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE",
+				"$mod_dir/addons/$BIN_FILE");
+		}
 	}
 	else
 	{
-		copy ("$BIN_FOLDER/$BIN_FILE",
-			"$mod_dir/addons/$BIN_FILE");
+		if ($SMM)
+		{
+			print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
+				"$mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE");
+		}
+		else
+		{
+			print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
+				"$mod_dir/addons/$BIN_FILE");
+		}
 	}
-
 
 	#Parse gameinfo.txt and setup for correct mode
 	open(DAT, "$mod_dir/gameinfo.txt");
