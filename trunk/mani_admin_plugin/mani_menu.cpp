@@ -819,6 +819,10 @@ void MenuManager::Kill(player_t *player_ptr)
 {
 	player_list[player_ptr->index - 1].Kill();
 	game_frame_repop[player_ptr->index - 1] = 0;
+
+#if defined ( ORANGE )
+	menu_showing[player_ptr->index - 1] = false;
+#endif
 }
 
 void MenuManager::OptionSelected(player_t *player_ptr, const int option) 
