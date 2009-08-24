@@ -34,7 +34,7 @@ const int MANI_MAX_PLAYERS = 64;
 
 #define MAX_LAST_MAPS (20)
 #define	MANI_MAX_TEAMS (5)
-
+#define COMMAND_SPAM_DELAY 1.0f
 // Team indexes for CS Source
 // CT
 #define TEAM_B (3)

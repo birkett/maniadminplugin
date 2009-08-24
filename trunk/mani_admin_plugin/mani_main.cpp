@@ -207,6 +207,7 @@ bool war_mode = false;
 float	next_ping_check;
 int	max_players = 0;
 float			chat_flood[MANI_MAX_PLAYERS];
+float			command_flood[MANI_MAX_PLAYERS];
 
 int				last_slapped_player;
 float			last_slapped_time;
@@ -321,11 +322,12 @@ CAdminPlugin::CAdminPlugin()
 
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		chat_flood[i] = -99;
+		chat_flood[i] = -99.0;
+		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		name_changes[i] = 0;
-		tw_spam_list[i].last_time = -99.0;
 		tw_spam_list[i].index = -99;
+		tw_spam_list[i].last_time = -99.0;
 
 		user_name[i].in_use = false;
 		Q_strcpy(user_name[i].name,"");
@@ -572,7 +574,8 @@ bool CAdminPlugin::Load(void)
 
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		chat_flood[i] = -99;
+		chat_flood[i] = -99.0;
+		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		name_changes[i] = 0;
 		tw_spam_list[i].last_time = -99.0;
@@ -1040,7 +1043,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	// Init votes and menu system
 	for (i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
-		chat_flood[i] = -99;
+		chat_flood[i] = -99.0;
+		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		name_changes[i] = 0;
 		tw_spam_list[i].last_time = -99.0;
@@ -1815,6 +1819,17 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 		g_menu_mgr.RepopulatePage(&player);
 		return PLUGIN_STOP;
 	}
+
+	//put antispam here?
+	// Check anti spam - need to make sure it is a player ... then need to parse the commands!
+	if (command_flood[player.index - 1] > gpGlobals->curtime)
+	{
+		OutputToConsole ( &player, "This server has command spam protection!\n" );
+		command_flood[player.index - 1] = gpGlobals->curtime + ( COMMAND_SPAM_DELAY * 2 );
+		return PLUGIN_STOP;
+	}
+
+	command_flood[player.index - 1] = gpGlobals->curtime + COMMAND_SPAM_DELAY;
 
 	if (gpCmd->HandleCommand(&player, M_CCONSOLE, args) == PLUGIN_STOP) return PLUGIN_STOP;
 	else if ( FStrEq( pcmd, "jointeam")) return (gpManiTeamJoin->PlayerJoin(pEntity, (char *) gpCmd->Cmd_Argv(1)));
@@ -5267,6 +5282,8 @@ void CAdminPlugin::EvRoundStart(IGameEvent *event)
 
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
+		chat_flood[i] = -99.0;
+		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		tw_spam_list[i].index = -99;
 		tw_spam_list[i].last_time = -99.0;
