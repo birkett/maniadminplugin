@@ -85,7 +85,7 @@ void	LoadAdverts(void)
 //		MMsg("Advert list\n");
 		while (filesystem->ReadLine (ad_text, sizeof(ad_text), file_handle) != NULL)
 		{
-			if (!ParseLine(ad_text, false, false))
+			if (!ParseLine(ad_text, false, true))
 			{
 				// String is empty after parsing
 				continue;

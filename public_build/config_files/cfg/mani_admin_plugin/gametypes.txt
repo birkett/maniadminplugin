@@ -1259,7 +1259,7 @@
 		"vfuncs"
 		{
                         "eye_angles"    "128"
-                        "teleport"      "554"
+                        "teleport"      "106" 
                         "eye_position"  "127"
                         "give_item"     "358"
                         "my_combat_character"   "70"
@@ -1273,10 +1273,10 @@
 						"remove_player_item"	"245"
 						"get_weapon_slot"	"243"
 						"give_ammo"	"230"
+						"set_model_index"       "9"
 						"get_primary_ammo_type"	"312"
 						"get_secondary_ammo_type"	"313"
 						"weapon_get_name"	"305"
-						"set_model_index"       "9"
  		}
 
 		// Setup team structure for mod		
@@ -1430,25 +1430,25 @@
 
 		"vfuncs"
 		{
-			"eye_angles"	"128"
-			"teleport"	"554"
-			"eye_position"	"127"
-			"give_item"	"358"
-			"my_combat_character"	"70"
-			"get_velocity"	"137"
-			"map_desc"	"12"
-			"ignite"	"200"
-			"weapon_drop"	"238"
-			"user_cmds"	"375"
-			"set_observer_target"	"332"
-			"commit_suicide"	"397"
-			"remove_player_item"	"245"
-			"get_weapon_slot"	"243"
-			"give_ammo"	"230"
-			"get_primary_ammo_type"	"312"
-			"get_secondary_ammo_type"	"313"
-			"weapon_get_name"	"305"
-
+                        "eye_angles"    "128"
+                        "teleport"      "106" 
+                        "eye_position"  "127"
+                        "give_item"     "358"
+                        "my_combat_character"   "70"
+                        "get_velocity"  "137"
+                        "map_desc"      "12"
+                        "ignite"        "200"
+                        "weapon_drop"   "238"
+                        "user_cmds"     "375"
+                        "set_observer_target"   "332"
+                        "commit_suicide"        "397"
+						"remove_player_item"	"245"
+						"get_weapon_slot"	"243"
+						"give_ammo"	"230"
+						"set_model_index"       "9"
+						"get_primary_ammo_type"	"312"
+						"get_secondary_ammo_type"	"313"
+						"weapon_get_name"	"305"
  		}
 
 		// Setup team structure for mod		
