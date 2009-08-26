@@ -4,6 +4,7 @@ PROG_NAME=$(basename $0)
 BASE_FOLDER=$(dirname $(readlink -f $0))/..
 CLEAN=FALSE
 DEBUG_ON=FALSE
+OUTPUT_DIR="$BASE_FOLDER/plugin_output/legacy_bin"
 
 ##########################################
 dump_vars()
@@ -255,7 +256,8 @@ fi
 
 if [ "$ORANGE_BUILD" = "TRUE" ]
 then
-	COPY_ORANGE="-o"	
+	COPY_ORANGE="-o"
+	OUTPUT_DIR="$BASE_FOLDER/plugin_output/orange_bin"
 fi
 
 cd -
@@ -264,12 +266,14 @@ if [ "$VSP_BUILD" = "TRUE" ]
 then
 	if [ -f $EXE_DIR/mani_admin_plugin_i486.so ]
 	then
+		cp -f $EXE_DIR/mani_admin_plugin_i486.so $OUTPUT_DIR/VSP
 		./setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 else
 	COPY_SMM="-s"	
 	if [ -f $EXE_DIR/mani_admin_plugin_mm_i486.so ]
 	then
+		cp -f $EXE_DIR/mani_admin_plugin_mm_i486.so $OUTPUT_DIR/SourceMM
 		./setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 fi

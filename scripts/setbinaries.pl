@@ -48,16 +48,16 @@ if ($^O eq "MSWin32")
 	$WINDOWS="TRUE";
 	$DEV_BASE=$WINDOWS_BASE;
 	$FILE_EXT=".dll";
-	$BIN_FOLDER=$DEV_BASE . "/plugin_output";
 }
 else
 {
 #Linux platform
 	print "Linux platform\n";
 	$DEV_BASE=$LINUX_BASE;
-	$BIN_FOLDER=$DEV_BASE . "/mani_admin_plugin";
 	$FILE_EXT="_i486.so";
 }
+
+$BIN_FOLDER=$DEV_BASE . "/plugin_output";
 
 if ($ORANGE)
 {
