@@ -15,7 +15,7 @@ if ($^O eq "MSWin32")
 {
 	print "Windows platform\n";
 	$ROOT_PATH=$BASE_FOLDER;
-	$GAME_EXE="start /abovenormal /wait srcds.exe -allowdebug -port $DEFAULT_PORT -console";
+	$GAME_EXE="start /abovenormal /wait srcds.exe -console";
 }
 else
 {
@@ -23,7 +23,7 @@ else
 	print "Linux platform\n";
 	$LINUX="TRUE";
 	$ROOT_PATH=$BASE_FOLDER;
-	$GAME_EXE="./srcds_run -debug -port $DEFAULT_PORT -console";	
+	$GAME_EXE="./srcds_run -console";	
 }
 
 $SRCDS_PATH="$ROOT_PATH/srcds_1";
@@ -31,7 +31,7 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 #Add new games here with their Valve game names
 %game_cmd = (
 "Counter-Strike Source"		=> "-game cstrike -tickrate 66 -secure +map de_dust +maxplayers 32 +mp_dynamicpricing 0",
-"Half-Life 2 Deathmatch" 	=> "-game hl2mp -secure +map dm_lockdown +maxplayers 32",
+"Half-Life 2 Deathmatch" 	=> "-game hl2mp -secure +map dm_lockdown +maxplayers 16",
 "Team Fortress 2" 		=> "-game tf -secure +map cp_dustbowl +maxplayers 16",
 "Day of Defeat Source" 		=> "-game dod -secure +map dod_donner +maxplayers 32",
 "Dystopia" 			=> "-game dystopia -secure +map dys_vaccine +maxplayers 16",

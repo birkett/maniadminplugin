@@ -13,12 +13,6 @@ ifeq ($(DEBUG_ON), TRUE)
 	DEBUG_FLAGS=-g -ggdb
 endif
 
-ifeq ($(ORANGE_BUILD), TRUE)
-	COMP_VER=4.1
-else
-	COMP_VER=4.1
-endif
-
 # source files that should be compiled and linked into the binary
 PLUGIN_FILES =  mani_adverts.cpp \
                 mani_afk.cpp \
@@ -96,10 +90,16 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 
 # compiler options (gcc 4.1.3 or above is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
+ifeq ($(ORANGE_BUILD), TRUE)
+	COMP_VER=3.4
+else
+	COMP_VER=3.4
+endif
+
 CPLUS=/usr/bin/g++-$(COMP_VER)
 CLINK=/usr/bin/gcc-$(COMP_VER)
 CPP_LIB=../stlport/lib/libstlport.a \
-	/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libgcc_eh.a \
+	/usr/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
 	$(EXTRA_LIBS)

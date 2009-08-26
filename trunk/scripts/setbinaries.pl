@@ -123,18 +123,18 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
 	#Copy Meta Mod Source 1.7 binary
-	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/server.dll",
-		"$mod_dir/addons/metamod/bin/server.dll");
+	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/server_i486.so",
+		"$mod_dir/addons/metamod/bin/server_i486.so");
 	
 	if ($ORANGE)
 	{
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/metamod.2.ep2.dll",
-			"$mod_dir/addons/metamod/bin/metamod.2.ep2.dll");
+		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/metamod.2.ep2.so",
+			"$mod_dir/addons/metamod/bin/metamod.2.ep2.so");
 	}
 	else
 	{
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/metamod.1.ep1.dll",
-			"$mod_dir/addons/metamod/bin/metamod.1.ep1.dll");
+		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/metamod.1.ep1.so",
+			"$mod_dir/addons/metamod/bin/metamod.1.ep1.so");
 	}
 
 	if ($ORANGE)
