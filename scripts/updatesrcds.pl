@@ -9,7 +9,7 @@ use File::Spec::Functions qw(rel2abs);
 
 sub update_game;
 
-$BASE_FOLDER=dirname(rel2abs($0)) . "/../";
+$BASE_FOLDER=dirname(rel2abs($0)) . "/..";
 
 if ($^O eq "MSWin32")
 {

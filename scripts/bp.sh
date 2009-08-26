@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PROG_NAME=$(basename $0)
-BASE_FOLDER=$(dirname $(readlink -f $0))/../
+BASE_FOLDER=$(dirname $(readlink -f $0))/..
 CLEAN=FALSE
 DEBUG_ON=FALSE
 
@@ -241,10 +241,17 @@ then
 	make clean
 fi
 
-make -j2
+make -j 2
 
 COPY_SMM=""
 COPY_ORANGE=""
+
+if [ "$DEBUG_ON" = "TRUE" ]
+then
+	RELEASE_MODE=""
+else
+	RELEASE_MODE="-r"
+fi
 
 if [ "$ORANGE_BUILD" = "TRUE" ]
 then
@@ -257,13 +264,13 @@ if [ "$VSP_BUILD" = "TRUE" ]
 then
 	if [ -f $EXE_DIR/mani_admin_plugin_i486.so ]
 	then
-		./setbinaries.pl $COPY_SMM $COPY_ORANGE
+		./setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 else
 	COPY_SMM="-s"	
 	if [ -f $EXE_DIR/mani_admin_plugin_mm_i486.so ]
 	then
-		./setbinaries.pl $COPY_SMM $COPY_ORANGE
+		./setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 fi
 
