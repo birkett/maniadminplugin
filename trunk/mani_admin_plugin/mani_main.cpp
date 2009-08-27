@@ -778,7 +778,7 @@ bool CAdminPlugin::Load(void)
 
 	this->InitEvents();
 	gpManiMPRestartGame->Load();
-
+#if 0
 	LOADUP_STATUS vdf = ScanLoadup();
 	switch ( vdf ) {
 		case LOADUP_CREATED:
@@ -791,7 +791,7 @@ bool CAdminPlugin::Load(void)
 			MMsg ( "Failed to autocreate plugin load file\n" );
 			break;
 	}
-
+#endif
 	return true;
 }
 
@@ -1936,6 +1936,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 
 	return PLUGIN_CONTINUE;
 }
+#if 0
 #define DECL_STR(name,size)	char name[size]; \
 	Q_memset ( name, 0, sizeof(name) )
 
@@ -2088,7 +2089,7 @@ void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
 
 	SET_STR ( path, local_source );
 }
-
+#endif
 //---------------------------------------------------------------------------------
 // Purpose: Draw Primary menu
 //---------------------------------------------------------------------------------
