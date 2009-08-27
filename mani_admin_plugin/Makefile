@@ -88,17 +88,13 @@ PLUGIN_FILES =  mani_adverts.cpp \
 
 PLUGIN_FILES+= $(EXTRA_FILES_1)
 
-# compiler options (gcc 4.1.3 or above is required)
+# compiler options (gcc 3.4.1 to 3.4.6 is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
-ifeq ($(ORANGE_BUILD), TRUE)
-	COMP_VER=3.4
-else
-	COMP_VER=3.4
-endif
+COMP_VER=3.4
 
 CPLUS=/usr/bin/g++-$(COMP_VER)
 CLINK=/usr/bin/gcc-$(COMP_VER)
-CPP_LIB=../stlport/lib/libstlport.a \
+CPP_LIB=../stlport/lib/libstlport.a  \
 	/usr/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
@@ -108,7 +104,7 @@ CPP_LIB=../stlport/lib/libstlport.a \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl $(STRIP_SYM) tier0_i486.so vstdlib_i486.so
+LDFLAGS=-lm -ldl tier0_i486.so vstdlib_i486.so
 
 #############################################################################
 # Things below here shouldn't need to be altered
