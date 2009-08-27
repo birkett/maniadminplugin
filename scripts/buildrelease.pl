@@ -103,19 +103,12 @@ if ($obj->writeToFileNamed($FINAL_FILE) != AZ_OK) {  # write to disk
 
 
 # Make up the same but with the pdb files included too
-if ($ORANGE eq "TRUE")
+if ($^O eq "MSWin32")
 {
-	copy ("$RELEASE_BASE/../plugin_output/Release/mani_admin_plugin.pdb",
+	copy ("$BINARY_LOC/mani_admin_plugin.pdb",
 		"$RELEASE_BASE/tmp/mani_admin_plugin.pdb");	
-	copy ("$RELEASE_BASE/../plugin_output/ReleaseSMM/mani_admin_plugin_mm.pdb",
+	copy ("$BINARY_LOC/mani_admin_plugin_mm.pdb",
 		"$RELEASE_BASE/tmp/mani_admin_plugin_mm.pdb");	
-}
-else
-{
-	copy ("$RELEASE_BASE/../plugin_output/orange/ReleaseVSP/mani_admin_plugin.pdb",
-		"$RELEASE_BASE/tmp/mani_admin_plugin.pdb");	
-	copy ("$RELEASE_BASE/../plugin_output/oramge/ReleaseSMM/mani_admin_plugin_mm.pdb",
-		"$RELEASE_BASE/tmp/mani_admin_plugin_mm.pdb");		
 }
 
 ($dir)      = '.';   #  start in the current dir

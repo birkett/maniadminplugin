@@ -112,7 +112,6 @@ extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	int	con_command_index;
-extern	float command_flood[];
 static int sort_by_cmd_name ( const void *m1,  const void *m2);
 
 static int sort_by_cmd_name ( const void *m1,  const void *m2) 
