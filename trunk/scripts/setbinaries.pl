@@ -70,6 +70,7 @@ else
 
 
 $BIN_FILE=$CORE_BIN . $SMM_EXT . $FILE_EXT;
+$PDB_FILE=$CORE_BIN . $SMM_EXT . ".pdb";
 
 print "INFO:\nDEV_BASE:  $DEV_BASE\nENGINE_BASE:  $ENGINE_BASE\nBIN_FOLDER:  $BIN_FOLDER\n";
 print "File = " . $BIN_FILE . "\n";
@@ -97,12 +98,24 @@ if ($RELEASE)
 		print "Copying $BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/orange_bin/$BIN_FILE\n";
 		copy ("$BIN_FOLDER/orange_bin/$PLUGIN_BASE/$BIN_FILE",
 		"$DEV_BASE/public_build/orange_bin/$BIN_FILE");
+		if ($^O eq "MSWin32")
+		{
+			print "Copying $BIN_FOLDER/orange_bin/$PLUGIN_BASE/$PDB_FILE to $DEV_BASE/public_build/orange_bin/$PDB_FILE\n";
+			copy ("$BIN_FOLDER/orange_bin/$PLUGIN_BASE/$PDB_FILE",
+			"$DEV_BASE/public_build/orange_bin/$PDB_FILE");
+		}
 	}
 	else
 	{
 		print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/legacy_bin/$BIN_FILE\n";
 		copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
 		"$DEV_BASE/public_build/legacy_bin/$BIN_FILE");
+		if ($^O eq "MSWin32")
+		{
+			print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$PDB_FILE to $DEV_BASE/public_build/legacy_bin/$PDB_FILE\n";
+			copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$PDB_FILE",
+			"$DEV_BASE/public_build/legacy_bin/$PDB_FILE");
+		}
 	}
 }	
 sleep(1);

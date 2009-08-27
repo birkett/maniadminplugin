@@ -1820,6 +1820,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 
+#if 0 // for hotfix 2
 	//put antispam here?
 	// Check anti spam - need to make sure it is a player ... then need to parse the commands!
 	if (command_flood[player.index - 1] > gpGlobals->curtime)
@@ -1830,6 +1831,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 
 	command_flood[player.index - 1] = gpGlobals->curtime + COMMAND_SPAM_DELAY;
+#endif
 
 	if (gpCmd->HandleCommand(&player, M_CCONSOLE, args) == PLUGIN_STOP) return PLUGIN_STOP;
 	else if ( FStrEq( pcmd, "jointeam")) return (gpManiTeamJoin->PlayerJoin(pEntity, (char *) gpCmd->Cmd_Argv(1)));
