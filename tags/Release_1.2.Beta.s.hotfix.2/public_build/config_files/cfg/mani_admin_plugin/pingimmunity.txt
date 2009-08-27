@@ -1,0 +1,20 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : pingimmunity.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Grant players immunity from the high ping kicker, if
+//                mani_high_ping_kick 1 is set in the mani_server.cfg
+// *****************************************************************************
+//
+//
+// Add your Steam ID's for players that you don't want to be kicked for having
+// a high ping. You can also grant your admins immunity from being kicked via
+// the clients.txt, so you don't have to add them here
+//
+//
+// e.g STEAM_0:0:21233123
+//
+

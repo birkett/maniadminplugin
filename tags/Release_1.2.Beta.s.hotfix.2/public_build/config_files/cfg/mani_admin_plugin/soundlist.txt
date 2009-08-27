@@ -1,0 +1,58 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : soundlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Sounds which will get played in game using ma_play <alias>
+// *****************************************************************************
+//
+//
+// This file can use aliases.
+//
+// Aliases are what is shown in the menu system a nice way of presenting
+// the commands. Aliases must be enclosed in quotes.
+//
+// E.G. "Don't just stand there"
+//
+// Do not put another quote inside like :-
+//
+// "See "Ya" Later"
+//
+// You do not have to use aliases but it makes the
+// menu's easier to use if you do.
+//
+// As the source engine doens't support all sound format, they have to be like
+// MPEG-1 layer 3
+// 128kbit
+// 44100Hz Stereo
+//
+// or
+//
+// 8 Bit PCM
+// 2 Channel
+// 11025 Hz
+//
+// in order to work.
+
+
+"Waiting For Suspect" admin_plugin/waitingforsuspect.mp3
+"Don't just stand there, pick up the gun and shoot it !" admin_plugin/dontjuststandthere.wav
+"Who ate all the donuts ?" admin_plugin/donuteater.wav
+"Do you smell something ?" admin_plugin/doyousmell.wav
+"With my brains and your brawn we'll make an excellent team" admin_plugin/excellentteam.wav
+
+"Hello" admin_plugin/hellosoft.wav
+"Don't ask me" admin_plugin/dontaskme.wav
+"Could it get any worse than this ?" admin_plugin/getanyworse.wav
+"See ya later" admin_plugin/seeya.wav
+"Oh you'll pay, you will definately pay !!" admin_plugin/youwillpay.wav
+
+"Laughing sounds" admin_plugin/laugh.wav
+"Move !!" admin_plugin/move.wav
+"Good luck out there, you're gonna need it" admin_plugin/goodluck.mp3
+"1069er 1069er We got whores in the city, we need backup now, cmon" admin_plugin/whores.wav
+"I am the great Cornholio" admin_plugin/cornholio.wav
+
+

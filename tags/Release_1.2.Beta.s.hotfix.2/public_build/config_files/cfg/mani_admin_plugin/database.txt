@@ -1,0 +1,105 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : database.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Using MySQL for Admin Managment
+// *****************************************************************************
+
+
+"database.txt"
+{
+	// 
+	// Database.txt file for database connectivity via mani_admin_plugin V1.2 onwards
+	// If this file is used, make sure that it is not visible to the world if 
+	// your game server doubles as a webhost.
+	//
+
+	// First value determines whether the database connectivity is turned on 
+	// or off (1 = on, 0 = off). This is turned off by default !!!
+
+	"db_enabled"	"0"
+
+	// Now the database connection values
+	//
+
+	// Put your internet host name here
+	"db_host"	"www.myhost.com"
+
+	// Put your database user id for mysql in here
+	"db_user"	"mysqluserid"
+
+	// Put the password for your mysql database in here
+	"db_password"	"mysqlpassword"
+
+	// Put the name of your database in here
+	"db_name"	"map_db"
+
+	// Port number of the database here (Default is 3306)
+	"db_port"	"3306"
+
+	// Timeout in seconds before connection gives up
+	// Default is 5 seconds
+	"db_timeout"	"5"
+
+	// Name of the prefix to place before the table names
+	"db_table_prefix"	"map_"
+
+	// Names of tables within the database, no need to change these
+	// unless a third party application requires it
+	"db_table_client"		"client"
+	"db_table_client_flag"		"client_flag"
+	"db_table_client_group"		"client_group"
+	"db_table_client_level"		"client_level"
+	"db_table_client_server"	"client_server"
+	"db_table_flag"			"flag"
+	"db_table_ip"			"ip"
+	"db_table_level"		"level"
+	"db_table_nick"			"nick"
+	"db_table_server"		"server"
+	"db_table_steam"		"steam"
+	"db_table_version"		"version"
+
+	// Linux only !!!!
+	// If you are using a web server that is local to the gameserver
+	// (you would have put 'localhost' or '127.0.0.1' in the db_host 
+	// section. You need to enter the path to mysql.sock here
+	// This is usually '/var/lib/mysql/mysql.sock' but could be
+	// something different on your particular system
+
+	"db_socket_path"	"/var/lib/mysql/mysql.sock"
+
+	// Now we have data that is inserted into the 'server' 
+	// table on the database. This is information about your
+	// game server, not the mysql database
+
+	// Server ID. This should be a numeric number (default is 1). 
+	//
+	// IMPORTANT !!
+	// If you are using multiple servers on a single database
+	// you MUST use a different server id for each server.
+
+	"server_id"		"1"
+
+	// Server group that your server belongs to
+	"server_group_id"	"Default"	
+	
+	// The following are purely informational for a 
+	// web front end so it's easier to see which
+	// server is which.
+
+	"server_name"		"My Source Server"
+	"server_ip_address" 	"123.123.123.123"
+	"server_port"		"27015"
+
+	// Your mod name
+	"mod_name"		"CS:Source"
+
+	// RCON Password. Note this is not used yet but may be in the future
+	// for allowing remote rcon commands to be used from an advanced 
+	// web front end or via inter-server communications
+
+	"rcon_password"		"blahblah"
+}
