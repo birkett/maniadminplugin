@@ -821,7 +821,7 @@ void MenuManager::Kill(player_t *player_ptr)
 	game_frame_repop[player_ptr->index - 1] = 0;
 
 #if defined ( ORANGE )
-	menu_showing[player_ptr->index - 1] = false;
+	ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 }
 
