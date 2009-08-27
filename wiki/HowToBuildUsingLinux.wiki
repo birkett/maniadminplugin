@@ -13,8 +13,8 @@
 
 7.   Install the following packages: -
 
-    * gcc-4.1
-    * g++4.1
+    * ~~gcc-4.1~~ gcc-3.4.6
+    * ~~g++4.1~~ g++-3.4.6
     * openssh
     * tofrodos
     * subversion
