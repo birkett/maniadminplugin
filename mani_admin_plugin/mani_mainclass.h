@@ -74,12 +74,12 @@ public:
 #endif
 	PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	// End of callbacks
-#if 0
+
 	void			GetVDFPath ( char *path, const char *SourceMMPath = NULL );
 	LOADUP_STATUS	ScanLoadup ( void );
 	LOADUP_STATUS	MakeVDF ( char *path, bool SMM);
 	LOADUP_STATUS	MakeOrAddToINI ( char *path );
-#endif
+
 	void			ProcessExplodeAtCurrentPosition( player_t *player);
 	bool			CanTeleport(player_t *player);
 	void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);
