@@ -207,7 +207,7 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 
 		return false;
 	}
-#if 0
+
 	if (FStrEq(target_string,"#SELF"))
 	{
 		// STINGY BASTARD!!! Only doing things for yourself!
@@ -221,7 +221,7 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 
 		return false;
 	}
-#endif
+
 	if (FStrEq(target_string,"#BOT"))
 	{
 		// Looks like we want many targetted players
