@@ -133,6 +133,7 @@ typedef unsigned long DWORD;
 #include "mani_client_sql.h"
 #include "mani_globals.h"
 #include "mani_util.h"
+#include "mani_command_control.h"
 
 #include "shareddefs.h"
 #include "cbaseentity.h"
@@ -1417,7 +1418,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 		// Event hash table is broken !!!
 		MMsg("MANI ADMIN PLUGIN - Event Hash table has duplicates!\n");
 	}
-
+	gpManiReservedSlot->GameFrame ( simulating );
 	time(&g_RealTime);
 
 	g_menu_mgr.GameFrame();
@@ -1523,7 +1524,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	}
 
 	if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) return;
-
+	g_command_control.ClientActive(&player);
 	gpManiGhost->ClientActive(&player);
 	gpManiVictimStats->ClientActive(&player);
 	gpManiMapAdverts->ClientActive(&player);
@@ -1562,6 +1563,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 		return;
 	}
 
+	g_command_control.ClientDisconnect(&player);
 	g_menu_mgr.ClientDisconnect(&player);
 	gpManiNetIDValid->ClientDisconnect(&player);
 	gpManiSprayRemove->ClientDisconnect(&player);
@@ -1819,6 +1821,9 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 		g_menu_mgr.RepopulatePage(&player);
 		return PLUGIN_STOP;
 	}
+
+	//if ( g_command_control.ClientCommand( &player ) == PLUGIN_STOP ) 
+	//	return PLUGIN_STOP;
 
 #if 0 
 	//put antispam here?

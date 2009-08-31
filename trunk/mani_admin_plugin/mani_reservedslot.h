@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -60,6 +61,7 @@ public:
 	void		Load(void); // Run at level init
 	void		LevelInit(void); // Run at level init
 	bool		NetworkIDValidated(player_t *player_ptr);
+	void		GameFrame ( bool simulating );
 
 private:
 
