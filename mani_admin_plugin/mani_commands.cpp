@@ -105,6 +105,7 @@
 #include "mani_globals.h"
 #include "mani_commands.h"
 #include "shareddefs.h"
+#include "mani_command_control.h"
 
 extern	IVEngineServer *engine;
 extern	IPlayerInfoManager *playerinfomanager;
@@ -1161,6 +1162,9 @@ int	ManiCommands::HandleCommand
 		// No function found
 		return (int) PLUGIN_CONTINUE;
 	}
+
+	if ( g_command_control.ClientCommand( player_ptr ) == PLUGIN_STOP ) 
+		return PLUGIN_STOP;
 
 	if (command_type == M_CCONSOLE)
 	{

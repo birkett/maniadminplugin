@@ -548,7 +548,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="perl.exe ../scripts/setbinaries.pl -o -s"
+				CommandLine="perl.exe ../scripts/setbinaries.pl -o -s&#x0D;&#x0A;"
 				Outputs="..\plugin_output\mani_admin_plugin_mm.dll"
 			/>
 			<Tool
@@ -901,6 +901,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_command_control.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mani_commands.cpp"
 					>
 				</File>
@@ -1202,6 +1206,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_client_util.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_command_control.h"
 					>
 				</File>
 				<File

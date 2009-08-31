@@ -247,7 +247,7 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 
 	// max players = 0 on first load, > 0 on late load
 	max_players = gpGlobals->maxClients;
-
+	
 	return (gpManiAdminPlugin->Load());
 }
 

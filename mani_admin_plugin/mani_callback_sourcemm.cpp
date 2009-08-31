@@ -232,6 +232,10 @@ void CSourceMMMAP::OnLevelShutdown()
 {
 //	META_LOG(g_PLAPI, "OnLevelShutdown() called from listener");
 }
+void CSourceMMMAP::GameShutdown( void ) {
+	engine->ServerCommand("maxplayers 33;map cp_badlands\n");
+	RETURN_META(MRES_IGNORED);
+}
 
 void CSourceMMMAP::ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
 {
@@ -298,6 +302,12 @@ bool CSourceMMMAP::ClientConnect(edict_t *pEntity, const char *pszName, const ch
 	gpManiAdminPlugin->ClientConnect(&allow_connect, pEntity, pszName, pszAddress, reject, maxrejectlen);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+void CSourceMMMAP::GetPlayerLimits ( int &minplayers, int &maxplayers, int &defaultMaxPlayers ) {
+	minplayers = defaultMaxPlayers = 1; 
+	maxplayers = 254;
+	RETURN_META (MRES_SUPERCEDE);
 }
 
 #ifdef ORANGE
@@ -386,6 +396,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, serverdll, &g_ManiCallback, &CSourceMMMAP::GameFrame, true);
 	//Hook LevelShutdown to our function -- this makes more sense as pre I guess
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, serverdll, &g_ManiCallback, &CSourceMMMAP::LevelShutdown, false);
+	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameShutdown, serverdll, &g_ManiCallback, &CSourceMMMAP::GameShutdown, true);
 	//Hook ClientActivate to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientActive, false);
 	//Hook ClientDisconnect to our function
@@ -398,11 +409,13 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientSettingsChanged, true);
 
 	//The following functions are pre handled, because that's how they are in IServerPluginCallbacks
-
 	//Hook ClientConnect to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientConnect, false);
 	//Hook ClientCommand to our function
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientCommand, false);
+
+	//Hook GetPlayerLimits to our function
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, GetPlayerLimits, serverclients, &g_ManiCallback, &CSourceMMMAP::GetPlayerLimits, false );
 
 	//This hook is a static hook, no member function
 	//SH_ADD_HOOK_STATICFUNC(IGameEventManager2, FireEvent, gameeventmanager, FireEvent_Handler, false); 
@@ -506,6 +519,8 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientSettingsChanged, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientSettingsChanged, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, serverclients, &g_ManiCallback, &CSourceMMMAP::ClientCommand, false);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, GetPlayerLimits, serverclients, &g_ManiCallback, &CSourceMMMAP::GetPlayerLimits, false );
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameShutdown, serverdll, &g_ManiCallback, &CSourceMMMAP::GameShutdown, false);
 
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
 	{
