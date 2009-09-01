@@ -24,6 +24,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_client_interface.cpp \
                 mani_client_sql.cpp \
                 mani_client_util.cpp \
+				mani_command_control.cpp \
                 mani_commands.cpp \
                 mani_convar.cpp \
                 mani_crontab.cpp \
@@ -42,8 +43,8 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_hlxinterface.cpp \
                 mani_keyvalues.cpp \
                 mani_language.cpp \
-		mani_log_css_stats.cpp \
-		mani_log_dods_stats.cpp \
+				mani_log_css_stats.cpp \
+				mani_log_dods_stats.cpp \
                 mani_main.cpp \
                 mani_mapadverts.cpp \
                 mani_maps.cpp \

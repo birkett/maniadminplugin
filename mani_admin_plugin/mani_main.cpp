@@ -1418,7 +1418,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 		// Event hash table is broken !!!
 		MMsg("MANI ADMIN PLUGIN - Event Hash table has duplicates!\n");
 	}
-	gpManiReservedSlot->GameFrame ( simulating );
+
 	time(&g_RealTime);
 
 	g_menu_mgr.GameFrame();

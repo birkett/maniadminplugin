@@ -67,7 +67,6 @@ extern	bool war_mode;
 static int sort_active_players_by_ping ( const void *m1,  const void *m2);
 static int sort_active_players_by_connect_time ( const void *m1,  const void *m2);
 static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2);
-bool runonce;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -88,7 +87,6 @@ ManiReservedSlot::ManiReservedSlot()
 	reserve_slot_list_size = 0;
 
 	gpManiReservedSlot = this;
-	runonce = false;
 }
 
 ManiReservedSlot::~ManiReservedSlot()
@@ -152,15 +150,6 @@ void ManiReservedSlot::LevelInit(void)
 	}
 }
 
-//---------------------------------------------------------------------------------
-// Purpose: Check Player on connect
-//---------------------------------------------------------------------------------
-void ManiReservedSlot::GameFrame(bool simulating) {
-	if ( !runonce ) {
-		engine->ServerCommand("disconnect\n");
-		runonce = true;
-	}
-}
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on connect
 //---------------------------------------------------------------------------------
