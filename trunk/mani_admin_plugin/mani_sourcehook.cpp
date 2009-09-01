@@ -115,7 +115,6 @@ ConCommand *pRespawnEntities = NULL;
 // Hook declarations
 SH_DECL_HOOK7(IServerGameClients, ProcessUsercmds, SH_NOATTRIB, 0, float, edict_t *, bf_read *, int , int , int , bool , bool );
 SH_DECL_HOOK3(IVoiceServer, SetClientListening, SH_NOATTRIB, 0, bool, int, int, bool);
-SH_DECL_HOOK3_void(IServerGameClients, GetPlayerLimits, SH_NOATTRIB, 0, int &, int &, int & );
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *, bool, bool);
 SH_DECL_HOOK5_void(ITempEntsSystem, PlayerDecal, SH_NOATTRIB, 0, IRecipientFilter &, float , const Vector* , int , int );
 SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, int, bool);
@@ -153,11 +152,6 @@ void	ManiSMMHooks::HookVFuncs(void)
 	if (serverdll)
 	{
 		SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, serverdll, &g_ManiSMMHooks, &ManiSMMHooks::LevelInit, false);
-	}
-
-	if (serverclients)
-	{
-		SH_ADD_HOOK_MEMFUNC(IServerGameClients, GetPlayerLimits, serverclients, &g_ManiSMMHooks, &ManiSMMHooks::GetPlayerLimits, false );
 	}
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
@@ -213,12 +207,6 @@ void	ManiSMMHooks::PlayerDecal(IRecipientFilter& filter, float delay, const Vect
 	}
 
 	RETURN_META(MRES_SUPERCEDE);
-}
-
-void	ManiSMMHooks::GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers ) {
-	minplayers = defaultMaxPlayers = 1; 
-	maxplayers = 254;
-	RETURN_META (MRES_SUPERCEDE);
 }
 
 void	ManiSMMHooks::HookProcessUsercmds(CBasePlayer *pPlayer)

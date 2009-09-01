@@ -43,7 +43,6 @@ class ManiSMMHooks
 public:
 	void	HookVFuncs(void);
 	bool	LevelInit(const char *pMapName, const char *pMapEntities, const char *pOldLevel, const char *pLandmarkName, bool loadGame, bool background);
-	void	GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers );
 	bool	SetClientListening(int iReceiver, int iSender, bool bListen);
 	void	PlayerDecal(IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity);
 	void	HookProcessUsercmds(CBasePlayer *pPlayer);

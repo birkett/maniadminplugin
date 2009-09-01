@@ -107,7 +107,6 @@ public:
 	//Called on ServerActivate.  Same definition as server plugins
 	void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
 
-	void GameShutdown( void );
 	//Called on a game tick.  Same definition as server plugins
 	void GameFrame(bool simulating);
 
@@ -144,7 +143,6 @@ public:
 	void ClientCommand(edict_t *pEntity);
 #endif
 
-	void GetPlayerLimits ( int& minplayers, int& maxplayers, int &defaultMaxPlayers );
 	//From IMetamodListener
 	virtual void OnLevelShutdown();
 	bool RegisterConCommandBase(ConCommandBase *pVar);
