@@ -208,9 +208,12 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 		return false;
 	}
 
+	// STINGY BASTARD!!! Only doing things for yourself!
 	if (FStrEq(target_string,"#SELF"))
 	{
-		// STINGY BASTARD!!! Only doing things for yourself!
+		if ( !requesting_player )
+			return false;
+
 		AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
 		target_player_list[target_player_list_size - 1] = *requesting_player;
 

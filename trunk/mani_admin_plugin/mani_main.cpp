@@ -208,7 +208,6 @@ bool war_mode = false;
 float	next_ping_check;
 int	max_players = 0;
 float			chat_flood[MANI_MAX_PLAYERS];
-float			command_flood[MANI_MAX_PLAYERS];
 
 int				last_slapped_player;
 float			last_slapped_time;
@@ -324,7 +323,6 @@ CAdminPlugin::CAdminPlugin()
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
 		chat_flood[i] = -99.0;
-		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		name_changes[i] = 0;
 		tw_spam_list[i].index = -99;
@@ -576,7 +574,6 @@ bool CAdminPlugin::Load(void)
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
 		chat_flood[i] = -99.0;
-		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		name_changes[i] = 0;
 		tw_spam_list[i].last_time = -99.0;
@@ -1045,7 +1042,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	for (i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
 		chat_flood[i] = -99.0;
-		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		name_changes[i] = 0;
 		tw_spam_list[i].last_time = -99.0;
@@ -5291,7 +5287,6 @@ void CAdminPlugin::EvRoundStart(IGameEvent *event)
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
 		chat_flood[i] = -99.0;
-		command_flood[i] = -99.0;
 		sounds_played[i] = 0;
 		tw_spam_list[i].index = -99;
 		tw_spam_list[i].last_time = -99.0;
