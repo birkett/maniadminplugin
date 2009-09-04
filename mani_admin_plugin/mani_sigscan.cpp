@@ -30,6 +30,7 @@
 #include "mani_vfuncs.h"
 #include "cbaseentity.h"
 #include "beam_flags.h"
+#include "sourcehook.h"
 
 extern	void *gamedll;
 extern	int	max_players;
@@ -37,6 +38,7 @@ extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	int	con_command_index;
 extern	bf_write *msg_buffer;
+extern SourceHook::ISourceHook *g_SHPtr;
 
 typedef void (*UTIL_Remove_)(CBaseEntity *);
 typedef CCSWeaponInfo* (*CCSGetFileWeaponInfoHandle_)(unsigned short);
@@ -52,6 +54,7 @@ void *get_weapon_price_addr = NULL;
 void *get_weapon_addr = NULL;
 void *get_black_market_price_addr = NULL;
 void *update_client_addr = NULL;
+void *connect_client_addr = NULL;
 
 CBaseEntityList *g_pEList = NULL;
 CGameRules *g_pGRules = NULL;
@@ -300,19 +303,39 @@ CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, i
 	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_number);
 }
 
+
+
 void LoadSigScans(void)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	// Need to get engine hook here for clients connecting
+#ifdef WIN32
+	unsigned char *engine_base = 0;
+	size_t engine_len = 0;
 
+	bool engine_success = GetDllMemInfo(engine, &engine_base, &engine_len);
+
+	if (engine_success) {
+		MMsg("Found engine base %p and length %i [%p]\n", engine_base, engine_len, engine_base + engine_len);
+		connect_client_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));	
+	}
+#else
+	connect_client_addr = FindAddress(CBaseEngine_ClientConnect_Linux);	
+#endif
+	MMsg("Sigscan info\n"); 
+	ShowSigInfo(connect_client_addr, "CBaseServer::ConnectClient");
+
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
 #ifdef WIN32
 	// Windows
 	unsigned char *base = 0;
 	size_t len = 0;
 
 	bool success = GetDllMemInfo(gamedll, &base, &len);
+
 	if (success)
 	{
 		MMsg("Found base %p and length %i [%p]\n", base, len, base + len);
+
 		respawn_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_RoundRespawn));
 		util_remove_addr = FindSignature(base, len, (unsigned char *) MKSIG(UTIL_Remove));
 		void *is_there_a_bomb_addr = FindSignature(base, len, (unsigned char *) MKSIG(CEntList));
@@ -347,8 +370,7 @@ void LoadSigScans(void)
 
 #else
 	// Linux
-	void *ptr;
-
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
 	respawn_addr = FindAddress(CCSPlayer_RoundRespawn_Linux);
 	util_remove_addr = FindAddress(UTIL_Remove_Linux);
 	g_pEList = *(CBaseEntityList **) FindAddress(CEntList_Linux);
@@ -369,7 +391,6 @@ void LoadSigScans(void)
 
 
 #endif
-
 	MMsg("Sigscan info\n"); 
 	ShowSigInfo(respawn_addr, "A");
 	ShowSigInfo(util_remove_addr, "B");
