@@ -51,7 +51,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;.\cdetour"
+				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdk\public\steam"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -775,7 +775,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core"
+				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\public\steam;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -934,6 +934,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_database.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_detours.cpp"
 					>
 				</File>
 				<File
@@ -1242,6 +1246,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_database.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_detours.h"
 					>
 				</File>
 				<File
