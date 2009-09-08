@@ -55,6 +55,7 @@
 #include "mani_gametype.h"
 #include "mani_reservedslot.h"
 #include "shareddefs.h"
+#include "steamclientpublic.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
@@ -78,6 +79,33 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
+#if 0
+#if !defined ORANGE
+void *ConnectClient(void *netaddr, int a, int b, int c, const char *d, const char *e, const char *steam_auth, int len, const char *h, int i) {
+	CSteamID steam_info;
+	if ( steam_auth && (len > 20) ) {
+		for ( int index = 0; index < len; index++ ) {
+			memcpy ( &steam_info, &steam_auth[index], sizeof(steam_info) );
+			if (( steam_info.GetEAccountType() == k_EAccountTypeIndividual ) &&
+				( steam_info.GetEUniverse() == k_EUniversePublic ) ) {
+				MMsg ( "INDEX = %d\n", index );
+			}
+		}
+	}
+#else
+void *ConnectClient(void *netaddr, int a, int b, int c, const char *d, const char *e, const char *steam_auth, int len) {
+	CSteamID steam_info;
+	if ( steam_auth && (len > 20) )
+		memcpy ( &steam_info, &steam_auth[12], sizeof(steam_info) );
+
+#endif
+	int ip = *(int *)((const char *)netaddr + 4);
+	char ipString[30];
+	snprintf(ipString, sizeof(ipString), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
+	engine->ServerCommand("kickid 3\n");
+	return ConnectClientDetour.Org ( netaddr, a, b, c, d, e, steam_auth, len );
+}
+#endif
 ManiReservedSlot::ManiReservedSlot()
 {
 	// Init
@@ -85,7 +113,6 @@ ManiReservedSlot::ManiReservedSlot()
 	active_player_list = NULL;
 	reserve_slot_list = NULL;
 	reserve_slot_list_size = 0;
-
 	gpManiReservedSlot = this;
 }
 
