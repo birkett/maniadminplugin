@@ -56,6 +56,7 @@
 #include "mani_reservedslot.h"
 #include "shareddefs.h"
 #include "steamclientpublic.h"
+#include "mani_detours.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
@@ -64,10 +65,12 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
+extern void * connect_client_addr;
 
 static int sort_active_players_by_ping ( const void *m1,  const void *m2);
 static int sort_active_players_by_connect_time ( const void *m1,  const void *m2);
 static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2);
+static CDetour * ccd;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -79,33 +82,21 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
-#if 0
-#if !defined ORANGE
-void *ConnectClient(void *netaddr, int a, int b, int c, const char *d, const char *e, const char *steam_auth, int len, const char *h, int i) {
-	CSteamID steam_info;
-	if ( steam_auth && (len > 20) ) {
-		for ( int index = 0; index < len; index++ ) {
-			memcpy ( &steam_info, &steam_auth[index], sizeof(steam_info) );
-			if (( steam_info.GetEAccountType() == k_EAccountTypeIndividual ) &&
-				( steam_info.GetEUniverse() == k_EUniversePublic ) ) {
-				MMsg ( "INDEX = %d\n", index );
-			}
-		}
-	}
+#if defined ORANGEBOX_BUILD
+#define CONNECT_CALL DETOUR_MEMBER_CALL(ConnectClientDetour)(netaddr_s, something, something2, something3, name, pass, steamcert, len);
 #else
-void *ConnectClient(void *netaddr, int a, int b, int c, const char *d, const char *e, const char *steam_auth, int len) {
-	CSteamID steam_info;
-	if ( steam_auth && (len > 20) )
-		memcpy ( &steam_info, &steam_auth[12], sizeof(steam_info) );
+#define CONNECT_CALL DETOUR_MEMBER_CALL(ConnectClientDetour)(netaddr_s, something, something2, something3, name, pass, steamcert, len, more, unknowns);
+#endif
 
+#if defined ORANGEBOX_BUILD
+DETOUR_DECL_MEMBER8(ConnectClientDetour, void *, void *, netaddr_s, int, something, int, something2, int, something3, char  const*, name, char  const*, pass, const char*, steamcert, int, len)
+#else
+DETOUR_DECL_MEMBER10(ConnectClientDetour, void *, void *, netaddr_s, int, something, int, something2, int, something3, char  const*, name, char  const*, pass, const char*, steamcert, int, len, char const*, more, int, unknowns)
 #endif
-	int ip = *(int *)((const char *)netaddr + 4);
-	char ipString[30];
-	snprintf(ipString, sizeof(ipString), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
-	engine->ServerCommand("kickid 3\n");
-	return ConnectClientDetour.Org ( netaddr, a, b, c, d, e, steam_auth, len );
+{
+	return CONNECT_CALL
 }
-#endif
+
 ManiReservedSlot::ManiReservedSlot()
 {
 	// Init
@@ -136,6 +127,9 @@ void ManiReservedSlot::CleanUp(void)
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::Load(void)
 {
+	ccd = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
+	if ( ccd )
+		ccd->DetourFunction();
 	this->CleanUp();
 }
 
