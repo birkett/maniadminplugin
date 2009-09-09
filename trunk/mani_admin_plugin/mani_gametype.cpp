@@ -111,7 +111,36 @@ void ManiGameType::GameFrame(void)
 		next_time_check = current_time + 30;
 	}
 }
+#if !defined ( WIN32 )
+// find the linux binary information from dlinfo()
+#include <link.h>
+#include <dlfcn.h>
+void GetLinuxBins ( char *game, char *engine ) {
+	link_map *map;
+	void *handle = NULL;
+	int count = 0;
 
+	handle = dlopen ( "./bin/engine_i486.so", RTLD_NOW);
+	if ( handle ) {	
+		dlinfo(handle, RTLD_DI_LINKMAP, &map);
+
+		while (map != NULL) {
+			count ++;
+			map = map->l_next;
+		} 
+	}
+
+	if ( count > 1 ) 
+		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
+	else
+		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
+
+	
+	char gamedir[256];
+	UTIL_GetGamePath ( gamedir );
+	Q_snprintf ( game, 256, "./%s/bin/server_i486.so", gamedir );
+}
+#endif
 //---------------------------------------------------------------------------------
 // Purpose: Read in core config and setup
 //---------------------------------------------------------------------------------
@@ -228,10 +257,10 @@ void ManiGameType::Init(void)
 	}
 
 	//base_key_ptr should now hold our core key for our game type defaults
-	Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
-	Q_strcpy(linux_engine_bin, base_key_ptr->GetString("engine_bin", "nothing"));
+	//Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
 #ifdef __linux__
-	Msg("Linux binary @ %s\n", linux_game_bin);
+	GetLinuxBins( linux_game_bin,  linux_engine_bin);
+	Msg("Linux game binary @ %s\n", linux_game_bin);
 	Msg("Linux engine binary @ %s\n", linux_engine_bin);
 #endif
 	spectator_allowed = base_key_ptr->GetInt("spectator_allowed", 0);

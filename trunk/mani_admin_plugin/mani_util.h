@@ -40,6 +40,7 @@ extern	void		  MSleep(int   milliseconds);
 extern  bool		  IsLAN();
 extern  char	*AsciiToHTML(char *in_string);
 extern  int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename);
+extern	void UTIL_GetGamePath( char *path );
 
 class BasicStr
 {

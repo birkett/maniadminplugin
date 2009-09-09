@@ -58,7 +58,7 @@
 #include "mani_util.h"
 #include "mani_file.h"
 extern	IVEngineServer	*engine;
-
+extern	IFileSystem *filesystem;
 extern	ConVar	*sv_lan;
 
 /* These hash functions were taken from http://www.sparknotes.com/cs/searching/hashtables/section2.rhtml */
@@ -228,6 +228,25 @@ char	*AsciiToHTML(char *in_string)
 
 	out_string[out_index] = '\0';
 	return out_string;
+}
+
+void UTIL_GetGamePath ( char *path ) {
+	char gamedir[256];
+	char *p_path = NULL;
+	filesystem->RelativePathToFullPath ( "gameinfo.txt", "GAME", gamedir, 256 );
+	if ( gamedir[0] != 0 ) {
+		char *p_slash = strrchr ( gamedir, PATH_SLASH );
+		if ( p_slash )
+			*p_slash = 0;
+
+		p_path = strrchr ( gamedir, PATH_SLASH );
+
+		if ( p_path )
+			p_path ++;
+	}
+
+	Q_strncpy ( path, p_path, 256 );
+
 }
 
 int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename)

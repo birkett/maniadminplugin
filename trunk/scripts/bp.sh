@@ -183,7 +183,7 @@ then
 	export TIER1_OBJS="$TIER1_OBJ_DIR/convar.o $TIER1_OBJ_DIR/KeyValues.o $TIER1_OBJ_DIR/bitbuf.o $TIER1_OBJ_DIR/utlbuffer.o"
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride-vc7.o"
 	export SOURCEMM="-DSOURCEMM"
-	export EXTRA_FILES_1="mani_callback_sourcemm.cpp"
+	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdk/linux_sdk/tier1_i486.a ../sdk/linux_sdk/mathlib_i486.a"
 
 
@@ -213,7 +213,7 @@ then
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o"
 	export ORANGE="-DORANGE"
-	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp"
+	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdk_orange/lib/linux/tier1_i486.a ../sdk_orange/lib/linux/mathlib_i486.a"
 
 
@@ -241,7 +241,7 @@ else
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEMM="-DSOURCEMM"
 	export ORANGE="-DORANGE"
-	export EXTRA_FILES_1="mani_callback_sourcemm.cpp"
+	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdk_orange/lib/linux/tier1_i486.a ../sdk_orange/lib/linux/mathlib_i486.a"
 fi
 
