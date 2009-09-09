@@ -145,6 +145,7 @@ public:
 	void		GetWeaponDetails(KeyValues *kv_ptr);
 
 	const char	*GetLinuxBin(void);
+	const char  *GetLinuxEngine(void);
 
 	bool		IsTeamPlayAllowed(void);
 
@@ -243,6 +244,7 @@ private:
 	int			advanced_effects_vfunc_offset;
 	int			advanced_effects_code_offset;
 	char		linux_game_bin[256];
+	char		linux_engine_bin[256];
 
 	int			hl1_menu_compatible;
 
@@ -288,3 +290,4 @@ private:
 extern	ManiGameType *gpManiGameType;
 
 #endif
+

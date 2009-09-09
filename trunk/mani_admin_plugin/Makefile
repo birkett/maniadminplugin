@@ -24,7 +24,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_client_interface.cpp \
                 mani_client_sql.cpp \
                 mani_client_util.cpp \
-				mani_command_control.cpp \
+		mani_command_control.cpp \
                 mani_commands.cpp \
                 mani_convar.cpp \
                 mani_crontab.cpp \
@@ -33,6 +33,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_css_objectives.cpp \
                 mani_customeffects.cpp \
                 mani_database.cpp \
+		mani_detours.cpp \
                 mani_downloads.cpp \
                 mani_effects.cpp \
                 mani_file.cpp \
@@ -43,8 +44,8 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_hlxinterface.cpp \
                 mani_keyvalues.cpp \
                 mani_language.cpp \
-				mani_log_css_stats.cpp \
-				mani_log_dods_stats.cpp \
+		mani_log_css_stats.cpp \
+		mani_log_dods_stats.cpp \
                 mani_main.cpp \
                 mani_mapadverts.cpp \
                 mani_maps.cpp \
@@ -164,6 +165,8 @@ dirs:
 	@echo "ORANGE = $(ORANGE)"
 	@echo "PLUGIN_FILES = $(PLUGIN_FILES)"
 	@echo "PLUGIN_OBJS = $(PLUGIN_OBJS)"
+	@echo "ASM_OBJ_DIR = $(ASM_OBJ_DIRs)"
+	@echo "KNIGHT_OBJ_DIR = $(KNIGHT_OBJ_DIR)"
 	@echo ""
 
 	@if [ ! -f "tier0_i486.so" ]; then ln -s $(HL2BIN_DIR)/tier0_i486.so .; fi
@@ -176,6 +179,8 @@ dirs:
 	@if [ ! -d $(TIER1_OBJ_DIR) ]; then mkdir $(TIER1_OBJ_DIR); fi
 	@if [ ! -d $(MATHLIB_OBJ_DIR) ]; then mkdir $(MATHLIB_OBJ_DIR); fi
 	@if [ ! -d $(SOURCEHOOK_OBJ_DIR) ]; then mkdir $(SOURCEHOOK_OBJ_DIR); fi
+	@if [ ! -d $(ASM_OBJ_DIR) ]; then mkdir $(ASM_OBJ_DIR); fi
+	@if [ ! -d $(KNIGHT_OBJ_DIR) ]; then mkdir $(KNIGHT_OBJ_DIR); fi
 
 
 $(NAME)_$(ARCH).$(SHLIBEXT): $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) $(SOURCEHOOK_OBJS)

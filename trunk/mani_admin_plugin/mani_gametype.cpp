@@ -229,8 +229,10 @@ void ManiGameType::Init(void)
 
 	//base_key_ptr should now hold our core key for our game type defaults
 	Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
+	Q_strcpy(linux_engine_bin, base_key_ptr->GetString("engine_bin", "nothing"));
 #ifdef __linux__
 	Msg("Linux binary @ %s\n", linux_game_bin);
+	Msg("Linux engine binary @ %s\n", linux_engine_bin);
 #endif
 	spectator_allowed = base_key_ptr->GetInt("spectator_allowed", 0);
 	spectator_index = base_key_ptr->GetInt("spectator_index", 1);
@@ -636,6 +638,10 @@ const char	*ManiGameType::GetLinuxBin(void)
 	return ((const char *) linux_game_bin);
 }
 
+const char *ManiGameType::GetLinuxEngine(void)
+{
+	return ((const char *) linux_engine_bin);
+}
 //---------------------------------------------------------------------------------
 // Purpose: Returns true if team play allowed
 //---------------------------------------------------------------------------------
@@ -951,6 +957,7 @@ void	ManiGameType::DefaultValues(void)
 	}
 
 	Q_strcpy(linux_game_bin, "nothing");
+	Q_strcpy(linux_engine_bin, "nothing");
 	spectator_allowed = 0;
 	spectator_index = 1;
 	Q_strcpy(spectator_group, "#SPEC");
@@ -1108,3 +1115,4 @@ CON_COMMAND(ma_showprops, "Shows current prop types")
 
 ManiGameType	g_ManiGameType;
 ManiGameType	*gpManiGameType;
+

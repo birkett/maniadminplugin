@@ -37,7 +37,7 @@ KeCodeCache	   *g_pCodeCache;
 
 CDetour::CDetour( const char *function, void *address_from, void *address_to, void **ret_tramp )
 {
-	strcpy_s ( FunctionDetoured, function );
+	strcpy ( FunctionDetoured, function );
 	DetourAddress = address_from;
 	NewFunctionAddress = address_to;
 	TrampolineFunc = ret_tramp;
