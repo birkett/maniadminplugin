@@ -67,7 +67,7 @@ static void ShowSigInfo(void *ptr, char *sig_name);
 static	void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
 static  bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
 #else
-static void	*FindAddress(char *address_name);
+static void	*FindAddress(char *address_name, bool gamebin = false);
 #endif
 
 class ManiEmptyClass {};
@@ -124,12 +124,15 @@ bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len)
 
 #else
 static
-void	*FindAddress(char *address_name)
+void	*FindAddress(char *address_name, bool gamebin)
 {
 	void	*handle;
 	void	*var_address;
 
-	handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
+	if ( gamebin )
+		handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
+	else
+		handle = dlopen(gpManiGameType->GetLinuxEngine(), RTLD_NOW);
 
 	if (handle == NULL)
 	{
@@ -319,7 +322,7 @@ void LoadSigScans(void)
 		connect_client_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));	
 	}
 #else
-	connect_client_addr = FindAddress(CBaseEngine_ClientConnect_Linux);	
+	connect_client_addr = FindAddress(CBaseServer_ConnectClient_Linux);	
 #endif
 	MMsg("Sigscan info\n"); 
 	ShowSigInfo(connect_client_addr, "CBaseServer::ConnectClient");
@@ -369,6 +372,8 @@ void LoadSigScans(void)
 	}
 
 #else
+	void *ptr;
+
 	// Linux
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
 	respawn_addr = FindAddress(CCSPlayer_RoundRespawn_Linux);
