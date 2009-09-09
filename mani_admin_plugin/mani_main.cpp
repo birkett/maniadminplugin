@@ -280,12 +280,6 @@ ConVar	*mp_allowspectators = NULL;
 
 bf_write *msg_buffer;
 
-#if defined ( WIN32 )
-	#define PATH_SLASH '\\'
-#else
-	#define PATH_SLASH '/'
-#endif
-
 // 
 // The plugin is a static singleton that is exported as an interface
 //
@@ -2010,32 +2004,22 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 	FileHandle_t vdf = filesystem->Open( path, "wt" );
 
 	// get the game dir
-	DECL_STR ( gamedir, 256 );
-	char *p_path = NULL;
-	filesystem->RelativePathToFullPath ( "gameinfo.txt", "GAME", gamedir, 256 );
-	if ( gamedir[0] != 0 ) {
-		char *p_slash = strrchr ( gamedir, PATH_SLASH );
-		if ( p_slash )
-			*p_slash = 0;
+	char gamedir[256];
+	UTIL_GetGamePath( gamedir );
 
-		p_path = strrchr ( gamedir, PATH_SLASH );
-
-		if ( p_path )
-			p_path ++;
-		else
-			return LOADUP_FAILED;
-	} else
+	if ( gamedir[0] == 0 )
 		return LOADUP_FAILED;
+	
 
 	if ( vdf != FILESYSTEM_INVALID_HANDLE ) {
 		if ( SMM ) {
 			filesystem->FPrintf ( vdf, "\"Metamod Plugin\"\n");
 			filesystem->FPrintf ( vdf, "{\n" );
-			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin/bin/mani_admin_plugin_mm\"\n", p_path );
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin/bin/mani_admin_plugin_mm\"\n", gamedir );
 		} else {
 			filesystem->FPrintf ( vdf, "\"Plugin\"\n");
 			filesystem->FPrintf ( vdf, "{\n" );
-			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin\"\n", p_path );
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin\"\n", gamedir );
 		}
 		filesystem->FPrintf ( vdf, "}" );
 		filesystem->Flush ( vdf );

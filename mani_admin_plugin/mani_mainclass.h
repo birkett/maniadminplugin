@@ -239,8 +239,6 @@ MENUALL_DEC(SlayPlayer);
 MENUALL_DEC(CExec);
 MENUALL_DEC(CExecPlayer);
 
-
-
 extern CAdminPlugin g_ManiAdminPlugin;
 extern CAdminPlugin *gpManiAdminPlugin;
 

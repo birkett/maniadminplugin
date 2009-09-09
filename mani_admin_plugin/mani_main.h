@@ -72,6 +72,12 @@ const int	gametypes_min_version = 2;
 #define PLUGIN_VERSION_ID "V" COMMON_CORE "\n"
 #define PLUGIN_VERSION_ID2 "V" COMMON_CORE
 
+#if defined ( WIN32 )
+	#define PATH_SLASH '\\'
+#else
+	#define PATH_SLASH '/'
+#endif
+
 // Define vote types
 enum
 {
