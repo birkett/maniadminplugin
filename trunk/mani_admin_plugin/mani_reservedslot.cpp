@@ -82,13 +82,13 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
-#if defined ORANGEBOX_BUILD
+#if defined ORANGE
 #define CONNECT_CALL DETOUR_MEMBER_CALL(ConnectClientDetour)(netaddr_s, something, something2, something3, name, pass, steamcert, len);
 #else
 #define CONNECT_CALL DETOUR_MEMBER_CALL(ConnectClientDetour)(netaddr_s, something, something2, something3, name, pass, steamcert, len, more, unknowns);
 #endif
 
-#if defined ORANGEBOX_BUILD
+#if defined ORANGE
 DETOUR_DECL_MEMBER8(ConnectClientDetour, void *, void *, netaddr_s, int, something, int, something2, int, something3, char  const*, name, char  const*, pass, const char*, steamcert, int, len)
 #else
 DETOUR_DECL_MEMBER10(ConnectClientDetour, void *, void *, netaddr_s, int, something, int, something2, int, something3, char  const*, name, char  const*, pass, const char*, steamcert, int, len, char const*, more, int, unknowns)
