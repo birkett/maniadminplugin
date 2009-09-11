@@ -85,6 +85,8 @@ ManiGameType::ManiGameType()
 	strcpy(var_index[MANI_VAR_ELASTICITY].name, "m_flElasticity"); var_index[MANI_VAR_ELASTICITY].index = -1;
 
 	gpManiGameType = this;
+	Q_memset ( linux_game_bin, 0, 256 );
+	Q_memset ( linux_engine_bin, 0, 256 );
 }
 
 ManiGameType::~ManiGameType()
@@ -118,23 +120,13 @@ void ManiGameType::GameFrame(void)
 void GetLinuxBins ( char *game, char *engine ) {
 	link_map *map;
 	void *handle = NULL;
-	int count = 0;
-
-	handle = dlopen ( "./bin/engine_i486.so", RTLD_NOW);
-	if ( handle ) {	
-		dlinfo(handle, RTLD_DI_LINKMAP, &map);
-
-		while (map != NULL) {
-			count ++;
-			map = map->l_next;
-		} 
-	}
-
-	if ( count > 1 ) 
+	
+	handle = dlopen ( "./bin/engine_i486.so", RTLD_NOW | RTLD_NOLOAD );
+	if ( handle ) {
 		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
-	else
+		dlclose (handle);
+	} else
 		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
-
 	
 	char gamedir[256];
 	UTIL_GetGamePath ( gamedir );
@@ -257,7 +249,6 @@ void ManiGameType::Init(void)
 	}
 
 	//base_key_ptr should now hold our core key for our game type defaults
-	//Q_strcpy(linux_game_bin, base_key_ptr->GetString("linux_bin", "nothing"));
 #ifdef __linux__
 	GetLinuxBins( linux_game_bin,  linux_engine_bin);
 	Msg("Linux game binary @ %s\n", linux_game_bin);
