@@ -248,6 +248,59 @@ void UTIL_GetGamePath ( char *path ) {
 	Q_strncpy ( path, p_path, 256 );
 
 }
+// Used when the path relative to the VALVe game system is known.
+bool UTIL_ScanValveFile ( char *path, char *text ) {
+	FileHandle_t file = FILESYSTEM_INVALID_HANDLE;
+	char line[130];
+	char lc_text[130];
+		
+	Q_memset ( line, 0, sizeof(line) );
+	Q_memset ( lc_text, 0, sizeof (lc_text) );
+
+	Q_strncpy ( lc_text, text, sizeof (lc_text) );
+	_strlwr ( lc_text );
+
+	if ( filesystem->FileExists ( path ) ) {
+		file = filesystem->Open ( path, "r" );
+		if ( file != FILESYSTEM_INVALID_HANDLE ) {
+			while ( filesystem->ReadLine( line, 128, file ) ) {
+				if ( line[0] == ';' )
+					continue;
+
+				_strlwr (line);
+				if ( strstr( line, lc_text ) )
+					break;
+			}
+
+			if ( line[0] != 0 ) {
+				filesystem->Close( file );
+				return true;
+			}
+		}
+
+		filesystem->Close( file );
+	}
+
+	return false;
+}
+
+// Used when the path relative to the VALVe game system is known.
+bool UTIL_ScanFile ( char *path, char *text ) {
+	char buffer[2048];
+	bool found = false;
+	int	pos;
+
+	FILE *file = fopen(path, "rt");
+	if (!file) return false;
+
+	while (!feof(file)) {
+		fgets(buffer, sizeof(buffer)-1, file);
+		sscanf (buffer, text);
+	}
+	fclose(file);
+
+	return found;
+}
 
 int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename)
 {

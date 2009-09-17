@@ -1948,25 +1948,8 @@ LOADUP_STATUS CAdminPlugin::MakeOrAddToINI( char *path ) {
 	FileHandle_t ini = FILESYSTEM_INVALID_HANDLE;
 	DECL_STR ( line, 128 );
 
-	if ( filesystem->FileExists ( path ) ) {
-		ini = filesystem->Open ( path, "r" );
-		if ( ini != FILESYSTEM_INVALID_HANDLE ) {
-			while ( filesystem->ReadLine( line, 128, ini ) ) {
-				if ( line[0] == ';' )
-					continue;
-
-				if ( strstr( line, "mani_admin_plugin" ) )
-					break;
-			}
-
-			if ( line[0] != 0 ) {
-				filesystem->Close( ini );
-				return LOADUP_EXISTS;
-			}
-		}
-
-		filesystem->Close( ini );
-	}
+	if ( UTIL_ScanValveFile ( path, "mani_admin_plugin" ) )
+		return LOADUP_EXISTS;
 
 	if ( filesystem->FileExists ( path ) )
 		ini = filesystem->Open ( path, "at" );
@@ -2009,7 +1992,6 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 
 	if ( gamedir[0] == 0 )
 		return LOADUP_FAILED;
-	
 
 	if ( vdf != FILESYSTEM_INVALID_HANDLE ) {
 		if ( SMM ) {
@@ -2037,10 +2019,14 @@ LOADUP_STATUS CAdminPlugin::ScanLoadup( void ) {
 	GetVDFPath ( path, ( mmpath ) ? mmpath->GetString() : NULL );
 
 	if ( mmpath ) { // sourcemm
+		Q_strcat ( path, "/metaplugins.ini", sizeof(path) );
+		if ( UTIL_ScanValveFile ( path, "mani_admin_plugin" ) )
+			return LOADUP_EXISTS;
+
 		if ( !mmver || strcmp ( mmver->GetString(), "1.7.0" ) < 0 ) { // 1.7.0 and greater allows for .vdfs for plugins ( need to check ini anyway! )
-			Q_strcat ( path, "/metaplugins.ini", sizeof(path) );
 			return MakeOrAddToINI ( path );
 		} else {
+			GetVDFPath ( path, ( mmpath ) ? mmpath->GetString() : NULL );
 			Q_strcat ( path, "/mani_admin_plugin.vdf", sizeof(path) );
 			if ( filesystem->FileExists ( path ) )
 				return LOADUP_EXISTS;

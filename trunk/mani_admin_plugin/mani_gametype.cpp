@@ -119,13 +119,14 @@ void ManiGameType::GameFrame(void)
 #include <dlfcn.h>
 void GetLinuxBins ( char *game, char *engine ) {
 	link_map *map;
-	void *handle = NULL;
-	
-	handle = dlopen ( "./bin/engine_i486.so", RTLD_NOW | RTLD_NOLOAD );
-	if ( handle ) {
+
+	pid_t pid = getpid();
+	char file[255];
+	snprintf(file, sizeof(file)-1, "/proc/%d/maps", pid);
+
+	if ( UTIL_ScanFile ( file, "engine_i486.so" ) )
 		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
-		dlclose (handle);
-	} else
+	else
 		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
 	
 	char gamedir[256];
