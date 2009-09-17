@@ -42,56 +42,6 @@
 typedef unsigned char mem_t;
 
 #define DETOUR_MEMBER_CALL(name) (this->*name##_Actual)
-#define DETOUR_STATIC_CALL(name) (name##_Actual)
-
-#define DETOUR_DECL_STATIC0(name, ret) \
-ret (*name##_Actual)(void) = NULL; \
-ret name(void)
-
-#define DETOUR_DECL_STATIC1(name, ret, p1type, p1name) \
-ret (*name##_Actual)(p1type) = NULL; \
-ret name(p1type p1name)
-
-#define DETOUR_DECL_MEMBER0(name, ret) \
-class name##Class \
-{ \
-public: \
-	ret name(); \
-	static ret (name##Class::* name##_Actual)(void); \
-}; \
-ret (name##Class::* name##Class::name##_Actual)(void) = NULL; \
-ret name##Class::name()
-
-#define DETOUR_DECL_MEMBER1(name, ret, p1type, p1name) \
-class name##Class \
-{ \
-public: \
-	ret name(p1type p1name); \
-	static ret (name##Class::* name##_Actual)(p1type); \
-}; \
-ret (name##Class::* name##Class::name##_Actual)(p1type) = NULL; \
-ret name##Class::name(p1type p1name)
-
-#define DETOUR_DECL_MEMBER2(name, ret, p1type, p1name, p2type, p2name) \
-class name##Class \
-{ \
-public: \
-	ret name(p1type p1name, p2type p2name); \
-	static ret (name##Class::* name##_Actual)(p1type, p2type); \
-}; \
-ret (name##Class::* name##Class::name##_Actual)(p1type, p2type) = NULL; \
-ret name##Class::name(p1type p1name, p2type p2name)
-
-#define DETOUR_DECL_MEMBER3(name, ret, p1type, p1name, p2type, p2name, p3type, p3name) \
-class name##Class \
-{ \
-public: \
-	ret name(p1type p1name, p2type p2name, p3type p3name); \
-	static ret (name##Class::* name##_Actual)(p1type, p2type, p3type); \
-}; \
-ret (name##Class::* name##Class::name##_Actual)(p1type, p2type, p3type) = NULL; \
-ret name##Class::name(p1type p1name, p2type p2name, p3type p3name)
-
 #define DETOUR_DECL_MEMBER8(name, ret, p1type, p1name, p2type, p2name, p3type, p3name, p4type, p4name, p5type, p5name, p6type, p6name, p7type, p7name, p8type, p8name) \
 class name##Class \
 { \
@@ -112,18 +62,8 @@ public: \
 ret (name##Class::* name##Class::name##_Actual)(p1type, p2type, p3type, p4type, p5type, p6type, p7type, p8type, p9type, p10type) = NULL; \
 ret name##Class::name(p1type p1name, p2type p2name, p3type p3name, p4type p4name, p5type p5name, p6type p6name, p7type p7name, p8type p8name, p9type p9name, p10type p10name)
 
-#define GET_MEMBER_CALLBACK(name) (void *)GetCodeAddress(&name##Class::name)
+#define GET_MEMBER_CALLBACK(name) (void *)GetFunctionAddress(&name##Class::name)
 #define GET_MEMBER_TRAMPOLINE(name) (void **)(&name##Class::name##_Actual)
-
-#define GET_MEMBER_CALLBACK(name) (void *)GetCodeAddress(&name##Class::name)
-#define GET_MEMBER_TRAMPOLINE(name) (void **)(&name##Class::name##_Actual)
-
-class GenericClass {};
-typedef void (GenericClass::*VoidFunc)();
-
-inline void *GetCodeAddr(VoidFunc mfp) {
-	return *(void **)&mfp;
-}
 
 /**
  * Converts a member function pointer to a void pointer.
@@ -131,7 +71,13 @@ inline void *GetCodeAddr(VoidFunc mfp) {
  * This is the case for both g++ and later MSVC versions on non virtual functions but may be different for other compilers
  * Based on research by Don Clugston : http://www.codeproject.com/cpp/FastDelegate.asp
  */
-#define GetCodeAddress(mfp) GetCodeAddr(reinterpret_cast<VoidFunc>(mfp))
+class GenericClass {};
+typedef void (GenericClass::*VoidFunc)();
+inline void *GetMemberFunctionAddress(VoidFunc MemberFunctionPointer) {
+	return *(void **)&MemberFunctionPointer;
+}
+#define GetFunctionAddress(MemberFunctionPointer) GetMemberFunctionAddress(reinterpret_cast<VoidFunc>(MemberFunctionPointer))
+
 
 #define MEMORY_TO_USE 20
 
