@@ -40,6 +40,7 @@
 #include <arpa/inet.h>    // Needed for inet_ntoa()
 #include <fcntl.h>
 #include <netdb.h>
+#define _strlwr strlwr
 #endif
 
 #include <math.h>
@@ -70,7 +71,7 @@ extern	ConVar	*sv_lan;
 unsigned long djb2_hash(unsigned char *str)
 {
 	unsigned long hash = 5381;
-	int c; 
+	int c;
 	while ((c = *str++) != '\0') hash = ((hash << 5) + hash) + c; // hash*33 + c
 	return hash;
 }
@@ -78,7 +79,7 @@ unsigned long djb2_hash(unsigned char *str)
 unsigned long djb2_hash(unsigned char *str1, unsigned char *str2)
 {
 	unsigned long hash = 5381;
-	int c; 
+	int c;
 	while ((c = *str1++) != '\0') hash = ((hash << 5) + hash) + c; // hash*33 + c
 	while ((c = *str2++) != '\0') hash = ((hash << 5) + hash) + c; // hash*33 + c
 	return hash;
@@ -122,13 +123,13 @@ unsigned long elf_hash(char *str1, char *str2)
 	return h;
 }
 
-/* This algorithm was created for the sdbm (a reimplementation of ndbm) 
+/* This algorithm was created for the sdbm (a reimplementation of ndbm)
  * database library and seems to work relatively well in scrambling bits
  */
 unsigned long sdbm_hash(unsigned char *str)
 {
 	unsigned long hash = 0;
-	int c; 
+	int c;
 	while ((c = *str++) != '\0') hash = c + (hash << 6) + (hash << 16) - hash;
 	return hash;
 }
@@ -136,7 +137,7 @@ unsigned long sdbm_hash(unsigned char *str)
 unsigned long sdbm_hash(unsigned char *str1, unsigned char *str2)
 {
 	unsigned long hash = 0;
-	int c; 
+	int c;
 	while ((c = *str1++) != '\0') hash = c + (hash << 6) + (hash << 16) - hash;
 	while ((c = *str2++) != '\0') hash = c + (hash << 6) + (hash << 16) - hash;
 	return hash;
@@ -154,7 +155,7 @@ void	MSleep(int	milliseconds)
 		sleep(milliseconds / 1000);
 	}
 	else
-	{	
+	{
 		usleep(milliseconds * 1000);
 	}
 #endif
@@ -175,26 +176,26 @@ char	*AsciiToHTML(char *in_string)
 	{
 		switch (in_string[index])
 		{
-		case '&' : 
+		case '&' :
 			out_string[out_index++] = '&';
 			out_string[out_index++] = 'a';
 			out_string[out_index++] = 'm';
 			out_string[out_index++] = 'p';
 			out_string[out_index++] = ';';
 			break;
-		case '<' : 
+		case '<' :
 			out_string[out_index++] = '&';
 			out_string[out_index++] = 'l';
 			out_string[out_index++] = 't';
 			out_string[out_index++] = ';';
 			break;
-		case '>' : 
+		case '>' :
 			out_string[out_index++] = '&';
 			out_string[out_index++] = 'g';
 			out_string[out_index++] = 't';
 			out_string[out_index++] = ';';
 			break;
-		case '\"' : 
+		case '\"' :
 			out_string[out_index++] = '&';
 			out_string[out_index++] = 'l';
 			out_string[out_index++] = 'd';
@@ -203,7 +204,7 @@ char	*AsciiToHTML(char *in_string)
 			out_string[out_index++] = 'o';
 			out_string[out_index++] = ';';
 			break;
-		case 0x0A : 
+		case 0x0A :
 			out_string[out_index++] = '<';
 			out_string[out_index++] = 'B';
 			out_string[out_index++] = 'R';
@@ -250,56 +251,45 @@ void UTIL_GetGamePath ( char *path ) {
 }
 // Used when the path relative to the VALVe game system is known.
 bool UTIL_ScanValveFile ( char *path, char *text ) {
+	char buffer[2048];
+	bool found = false;
 	FileHandle_t file = FILESYSTEM_INVALID_HANDLE;
-	char line[130];
-	char lc_text[130];
-		
-	Q_memset ( line, 0, sizeof(line) );
-	Q_memset ( lc_text, 0, sizeof (lc_text) );
 
-	Q_strncpy ( lc_text, text, sizeof (lc_text) );
-	_strlwr ( lc_text );
+	if ( !filesystem->FileExists ( path ) ) return false;
+	file = filesystem->Open ( path, "rt" );
+	if ( file == FILESYSTEM_INVALID_HANDLE ) return false;
 
-	if ( filesystem->FileExists ( path ) ) {
-		file = filesystem->Open ( path, "r" );
-		if ( file != FILESYSTEM_INVALID_HANDLE ) {
-			while ( filesystem->ReadLine( line, 128, file ) ) {
-				if ( line[0] == ';' )
-					continue;
-
-				_strlwr (line);
-				if ( strstr( line, lc_text ) )
-					break;
-			}
-
-			if ( line[0] != 0 ) {
-				filesystem->Close( file );
-				return true;
-			}
+	while ( !filesystem->EndOfFile(file) ) {
+		filesystem->Read( buffer, sizeof(buffer)-1, file);
+		if ( strstr( buffer, text ) ) {
+			found = true;
+			break;
 		}
-
-		filesystem->Close( file );
 	}
 
-	return false;
+	filesystem->Close( file );
+
+	return found;
 }
 
-// Used when the path relative to the VALVe game system is known.
+// Used when the path is outside the VALVe game system.
 bool UTIL_ScanFile ( char *path, char *text ) {
 	char buffer[2048];
 	bool found = false;
-	int	pos;
-
 	FILE *file = fopen(path, "rt");
 	if (!file) return false;
 
 	while (!feof(file)) {
 		fgets(buffer, sizeof(buffer)-1, file);
-		sscanf (buffer, text);
+		if ( strstr( buffer, text ) ) {
+			found = true;
+			break;
+		}
 	}
 	fclose(file);
 
-	return found;
+	return ( found );
+
 }
 
 int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename)
@@ -318,7 +308,7 @@ int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filen
 #ifndef __linux__
 	// This stuff initializes winsock
 	WSAStartup(wVersionRequested, &wsaData);
-#endif	
+#endif
 
 	// Create a socket
 	server_s = socket(AF_INET, SOCK_STREAM, 0);
@@ -385,7 +375,7 @@ int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filen
 	{
 		return -1;
 	}
-	
+
 	return (result);
 }
 
@@ -419,8 +409,8 @@ char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filen
 	printf("Getting socket ref\n");
 	server_s = socket(AF_INET, SOCK_STREAM, 0);
 
-	arg = ioctlsocket(server_s, F_GETFL, NULL); 
-	arg |= O_NONBLOCK; 
+	arg = ioctlsocket(server_s, F_GETFL, NULL);
+	arg |= O_NONBLOCK;
 	ioctlsocket(server_s, F_SETFL, arg);
 
 	server_addr.sin_family = AF_INET;
@@ -517,7 +507,7 @@ char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filen
 
 			retcode = recv(server_s, in_buf, sizeof(in_buf), 0);
 		}
-	}	
+	}
 
 	closesocket(server_s);
 	WSACleanup();
@@ -558,8 +548,8 @@ char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filen
 	printf("Getting socket ref\n");
 	server_s = socket(AF_INET, SOCK_STREAM, 0);
 
-	arg = fcntl(server_s, F_GETFL, NULL); 
-	arg |= O_NONBLOCK; 
+	arg = fcntl(server_s, F_GETFL, NULL);
+	arg |= O_NONBLOCK;
 	fcntl(server_s, F_SETFL, arg);
 
 	server_addr.sin_family = AF_INET;
@@ -658,7 +648,7 @@ char	*UTIL_GetHTTPFile(const char *ip_address, const int port, const char *filen
 
 			retcode = recv(server_s, in_buf, sizeof(in_buf), 0);
 		}
-	}	
+	}
 
 	close(server_s);
 
@@ -703,11 +693,11 @@ const char	*UTIL_FindHTTPContent(const char *buffer)
 
 void	UTIL_WriteBufferToDisk(const char *buffer, const char *filename)
 {
-	FILE *fh; 
+	FILE *fh;
 
 	fh = fopen(filename, "wt");
 	if (!fh)
-	{	
+	{
 		return;
 	}
 

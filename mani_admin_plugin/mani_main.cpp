@@ -54,8 +54,8 @@ typedef unsigned long DWORD;
 #include "Color.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineTrace.h"
-#include "shake.h" 
-#include "mrecipientfilter.h" 
+#include "shake.h"
+#include "mrecipientfilter.h"
 //#include "enginecallback.h"
 #include "IEffects.h"
 #include "engine/IEngineSound.h"
@@ -145,7 +145,7 @@ typedef unsigned long DWORD;
 #include "tier0/memdbgon.h"
 
 
-#include "beam_flags.h" 
+#include "beam_flags.h"
 
 int			menu_message_index = 10;
 int			text_message_index = 5;
@@ -164,7 +164,7 @@ int			explosion_index = 0;
 int			orangelight_index = 0;
 int			bluelight_index = 0;
 int			purplelaser_index = 0;
-int			spray_glow_index = 0; 
+int			spray_glow_index = 0;
 
 time_t	g_RealTime = 0;
 
@@ -190,19 +190,19 @@ CONVAR_CALLBACK_PROTO (ManiCSStackingNumLevels);
 CONVAR_CALLBACK_PROTO (ManiUnlimitedGrenades);
 
 
-ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSION, FCVAR_REPLICATED | FCVAR_NOTIFY, "This is the version of the plugin", CONVAR_CALLBACK_REF(ManiAdminPluginVersion)); 
-ConVar mani_war_mode ("mani_war_mode", "0", 0, "This defines whether war mode is enabled or disabled (1 = enabled)", true, 0, true, 1, CONVAR_CALLBACK_REF(WarModeChanged)); 
-ConVar mani_stats_by_steam_id ("mani_stats_by_steam_id", "1", 0, "This defines whether the steam id is used or name is used to organise the stats (1 = steam id)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiStatsBySteamID)); 
+ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSION, FCVAR_REPLICATED | FCVAR_NOTIFY, "This is the version of the plugin", CONVAR_CALLBACK_REF(ManiAdminPluginVersion));
+ConVar mani_war_mode ("mani_war_mode", "0", 0, "This defines whether war mode is enabled or disabled (1 = enabled)", true, 0, true, 1, CONVAR_CALLBACK_REF(WarModeChanged));
+ConVar mani_stats_by_steam_id ("mani_stats_by_steam_id", "1", 0, "This defines whether the steam id is used or name is used to organise the stats (1 = steam id)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiStatsBySteamID));
 ConVar mani_tickrate ("mani_tickrate", "", FCVAR_REPLICATED | FCVAR_NOTIFY, "Server tickrate information", CONVAR_CALLBACK_REF(ManiTickrate));
 ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set number of players that can build a stack", true, 1, true, 50, CONVAR_CALLBACK_REF(ManiCSStackingNumLevels));
 ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal CSS mode, 1 = Grenades replenished after throw (CSS Only)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiUnlimitedGrenades));
-ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1); 
+ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1);
 
-ConVar mani_exec_default_file1 ("mani_exec_default_file1", "mani_server.cfg", 0, "Run a default .cfg file on level change after server.cfg"); 
-ConVar mani_exec_default_file2 ("mani_exec_default_file2", "./mani_admin_plugin/defaults.cfg", 0, "Run a default .cfg file on level change after server.cfg"); 
-ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg"); 
-ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg"); 
-ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg"); 
+ConVar mani_exec_default_file1 ("mani_exec_default_file1", "mani_server.cfg", 0, "Run a default .cfg file on level change after server.cfg");
+ConVar mani_exec_default_file2 ("mani_exec_default_file2", "./mani_admin_plugin/defaults.cfg", 0, "Run a default .cfg file on level change after server.cfg");
+ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg");
+ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg");
+ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg");
 
 bool war_mode = false;
 float	next_ping_check;
@@ -257,22 +257,22 @@ int	message_type;
 float	test_val;
 
 
-ConVar	*mp_friendlyfire = NULL; 
-ConVar	*mp_freezetime = NULL; 
-ConVar	*mp_winlimit = NULL; 
-ConVar	*mp_maxrounds = NULL; 
-ConVar	*mp_timelimit = NULL; 
-ConVar	*mp_fraglimit = NULL; 
-ConVar	*mp_limitteams = NULL; 
-ConVar	*sv_lan = NULL; 
-ConVar	*sv_cheats = NULL; 
-ConVar	*sv_alltalk = NULL;  
-ConVar	*mp_restartgame = NULL; 
-ConVar	*sv_gravity = NULL; 
-ConVar  *hostname = NULL; 
-ConVar	*cs_stacking_num_levels = NULL; 
-ConVar  *phy_pushscale = NULL; 
-ConVar	*vip_version = NULL; 
+ConVar	*mp_friendlyfire = NULL;
+ConVar	*mp_freezetime = NULL;
+ConVar	*mp_winlimit = NULL;
+ConVar	*mp_maxrounds = NULL;
+ConVar	*mp_timelimit = NULL;
+ConVar	*mp_fraglimit = NULL;
+ConVar	*mp_limitteams = NULL;
+ConVar	*sv_lan = NULL;
+ConVar	*sv_cheats = NULL;
+ConVar	*sv_alltalk = NULL;
+ConVar	*mp_restartgame = NULL;
+ConVar	*sv_gravity = NULL;
+ConVar  *hostname = NULL;
+ConVar	*cs_stacking_num_levels = NULL;
+ConVar  *phy_pushscale = NULL;
+ConVar	*vip_version = NULL;
 ConVar	*mp_dynamicpricing = NULL;
 ConVar	*tv_name = NULL;
 ConVar	*mp_allowspectators = NULL;
@@ -280,7 +280,7 @@ ConVar	*mp_allowspectators = NULL;
 
 bf_write *msg_buffer;
 
-// 
+//
 // The plugin is a static singleton that is exported as an interface
 //
 // Don't forget to make an instance
@@ -299,7 +299,7 @@ CAdminPlugin::CAdminPlugin()
 	swear_list_size = 0;
 	target_player_list = NULL;
 	target_player_list_size = 0;
-	
+
 	cexec_list = NULL;
 	cexec_t_list = NULL;
 	cexec_ct_list = NULL;
@@ -387,7 +387,7 @@ CAdminPlugin::CAdminPlugin()
 
 	Q_strcpy(event_fire[ev_index].event_name, "bomb_defused");
 	event_fire[ev_index++].funcPtr = &CAdminPlugin::EvBombDefused;
-	
+
 	Q_strcpy(event_fire[ev_index].event_name, "bomb_pickup");
 	event_fire[ev_index++].funcPtr = &CAdminPlugin::EvBombPickUp;
 
@@ -530,14 +530,14 @@ bool CAdminPlugin::Load(void)
 		void	*var_address;
 
 		handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
-	
+
 		if (handle == NULL)
 		{
 			MMsg("Failed to open server image, error [%s]\n", dlerror());
 			gpManiGameType->SetAdvancedEffectsAllowed(false);
 		}
 		else
-		{ 
+		{
 			MMsg("Program Start at [%p]\n", handle);
 
 			var_address = dlsym(handle, "te");
@@ -586,7 +586,7 @@ bool CAdminPlugin::Load(void)
 	mp_limitteams = g_pCVar->FindVar( "mp_limitteams");
 	mp_restartgame = g_pCVar->FindVar( "mp_restartgame");
 	mp_dynamicpricing = g_pCVar->FindVar( "mp_dynamicpricing");
-	
+
 	if (mp_dynamicpricing)
 	{
 		mp_dynamicpricing->AddFlags(FCVAR_REPLICATED | FCVAR_NOTIFY);
@@ -633,7 +633,7 @@ bool CAdminPlugin::Load(void)
 	{
 		serverdll->GetUserMessageInfo(i, message_name, sizeof(message_name), (int &) Msg_size);
 		MMsg("Message name %s index %i\n", message_name, i);
-		if (FStrEq(message_name, "ShowMenu")) 
+		if (FStrEq(message_name, "ShowMenu"))
 		{
 			menu_message_index = i;
 //			MMsg("Hooked ShowMenu [%i]\n", i);
@@ -798,7 +798,7 @@ void CAdminPlugin::InitEvents( void )
 	gameeventmanager->AddListener( gpManiIGELCallback, "player_say", true );
 	gameeventmanager->AddListener( gpManiIGELCallback, "player_spawn", true );
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS)) 
+	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
 		gameeventmanager->AddListener( gpManiIGELCallback, "weapon_fire", true );
 		gameeventmanager->AddListener( gpManiIGELCallback, "hostage_stops_following", true);
@@ -1178,7 +1178,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			Q_strcpy(map_type_config,"");
 		}
 	}
-	
+
 	//Get rcon list
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/rconlist.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
@@ -1200,7 +1200,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddToList((void **) &rcon_list, sizeof(rcon_t), &rcon_list_size);
 			Q_strcpy(rcon_list[rcon_list_size - 1].rcon_command, rcon_command);
 			Q_strcpy(rcon_list[rcon_list_size - 1].alias, alias_command);
-//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command); 
+//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
 		filesystem->Close(file_handle);
@@ -1227,7 +1227,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddToList((void **) &cexec_list, sizeof(cexec_t), &cexec_list_size);
 			Q_strcpy(cexec_list[cexec_list_size - 1].cexec_command, rcon_command);
 			Q_strcpy(cexec_list[cexec_list_size - 1].alias, alias_command);
-//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command); 
+//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
 		filesystem->Close(file_handle);
@@ -1254,7 +1254,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddToList((void **) &cexec_all_list, sizeof(cexec_t), &cexec_all_list_size);
 			Q_strcpy(cexec_all_list[cexec_all_list_size - 1].cexec_command, rcon_command);
 			Q_strcpy(cexec_all_list[cexec_all_list_size - 1].alias, alias_command);
-//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command); 
+//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
 		filesystem->Close(file_handle);
@@ -1281,7 +1281,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddToList((void **) &cexec_t_list, sizeof(cexec_t), &cexec_t_list_size);
 			Q_strcpy(cexec_t_list[cexec_t_list_size - 1].cexec_command, rcon_command);
 			Q_strcpy(cexec_t_list[cexec_t_list_size - 1].alias, alias_command);
-//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command); 
+//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
 		filesystem->Close(file_handle);
@@ -1308,7 +1308,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddToList((void **) &cexec_ct_list, sizeof(cexec_t), &cexec_ct_list_size);
 			Q_strcpy(cexec_ct_list[cexec_ct_list_size - 1].cexec_command, rcon_command);
 			Q_strcpy(cexec_ct_list[cexec_ct_list_size - 1].alias, alias_command);
-//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command); 
+//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
 		filesystem->Close(file_handle);
@@ -1335,7 +1335,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			AddToList((void **) &cexec_spec_list, sizeof(cexec_t), &cexec_spec_list_size);
 			Q_strcpy(cexec_spec_list[cexec_spec_list_size - 1].cexec_command, rcon_command);
 			Q_strcpy(cexec_spec_list[cexec_spec_list_size - 1].alias, alias_command);
-//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command); 
+//			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
 		filesystem->Close(file_handle);
@@ -1374,7 +1374,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clientMax )
 {
-	max_players = clientMax; 
+	max_players = clientMax;
 
 	// Get team manager pointers
 	gpManiTeam->Init(edictCount);
@@ -1402,7 +1402,7 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 void CAdminPlugin::GameFrame( bool simulating )
 {
 	if (ProcessPluginPaused()) return;
- 
+
 	if (event_duplicate)
 	{
 		// Event hash table is broken !!!
@@ -1445,7 +1445,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 	if (trigger_changemap && gpGlobals->curtime >= trigger_changemap_time)
 	{
 		char	server_cmd[512];
-		
+
 		trigger_changemap = false;
 //		engine->ChangeLevel(next_map, NULL);
 		snprintf(server_cmd, sizeof(server_cmd), "changelevel %s\n", next_map);
@@ -1493,8 +1493,8 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 		pname = NULL;
 
 		if ( !pname ) {
-			UTIL_KickPlayer ( &player, "Empty name violation", 
-				"Empty name violation, change your name and come back", 
+			UTIL_KickPlayer ( &player, "Empty name violation",
+				"Empty name violation, change your name and come back",
 				"Empty name kicked" );
 			return;
 		}
@@ -1600,7 +1600,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 	{
 		if (IsLAN())
 		{
-			// Reset user id if in list 
+			// Reset user id if in list
 			for (int i = 0; i < tk_player_list_size; i++)
 			{
 				if (tk_player_list[i].user_id == player.user_id)
@@ -1640,7 +1640,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: called on 
+// Purpose: called on
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 {
@@ -1649,7 +1649,7 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 	if (level_changed)
 	{
 		level_changed = false;
-		
+
 // SetupTeamList(engine->GetEntityCount());
 
 		if (ProcessPluginPaused())	return;
@@ -1690,7 +1690,7 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 				engine->ServerCommand(custom_map_config);
 			}
 		}
- 
+
 		// Execute any post-map configs
 		ExecuteCronTabs(true);
 
@@ -1698,7 +1698,7 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 		{
 			mp_dynamicpricing->AddFlags(FCVAR_REPLICATED | FCVAR_NOTIFY);
 		}
-	}	
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -1706,7 +1706,7 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ClientSettingsChanged( edict_t *pEdict )
 {
-	if ( playerinfomanager ) 
+	if ( playerinfomanager )
 	{
 		int	player_index = engine->IndexOfEdict(pEdict);
 
@@ -1756,7 +1756,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity,  const CCommand &ar
 PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 #endif
 {
-#ifndef ORANGE 
+#ifndef ORANGE
 	CCommand args;
 #endif
 
@@ -1774,8 +1774,8 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	const char *pcmd = gpCmd->Cmd_Argv(0);
 	const char *pcmd2 = gpCmd->Cmd_Argv(1);
 
-	if (pargc == 2 && 
-		(strcmp(pcmd, "menuselect") == 0 || 
+	if (pargc == 2 &&
+		(strcmp(pcmd, "menuselect") == 0 ||
 		strcmp(pcmd, "ma_escselect") == 0))
 	{
 		if (pargc != 2)	return PLUGIN_STOP;
@@ -1812,10 +1812,10 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 		return PLUGIN_STOP;
 	}
 
-	//if ( g_command_control.ClientCommand( &player ) == PLUGIN_STOP ) 
+	//if ( g_command_control.ClientCommand( &player ) == PLUGIN_STOP )
 	//	return PLUGIN_STOP;
 
-#if 0 
+#if 0
 	//put antispam here?
 	// Check anti spam - need to make sure it is a player ... then need to parse the commands!
 	if (command_flood[player.index - 1] > gpGlobals->curtime)
@@ -1831,7 +1831,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	if (gpCmd->HandleCommand(&player, M_CCONSOLE, args) == PLUGIN_STOP) return PLUGIN_STOP;
 	else if ( FStrEq( pcmd, "jointeam")) return (gpManiTeamJoin->PlayerJoin(pEntity, (char *) gpCmd->Cmd_Argv(1)));
 	else if ( FStrEq( pcmd, "joinclass")) return (gpManiWarmupTimer->JoinClass(pEntity));
-	else if ( FStrEq( pcmd, "admin" )) 
+	else if ( FStrEq( pcmd, "admin" ))
 	{
 		MENUPAGE_CREATE_FIRST(PrimaryMenuPage, &player, 0, -1);
 		return PLUGIN_STOP;
@@ -1847,7 +1847,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 		if (mani_vote_allow_user_vote_map.GetInt() == 0) return PLUGIN_CONTINUE;
 		MENUPAGE_CREATE_FIRST(UserVoteMapPage, &player, 0, -1);
 		return PLUGIN_STOP;
-	}	
+	}
 	else if ( FStrEq( pcmd, "votekick" ) && !war_mode && !IsLAN())
 	{
 		if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
@@ -1892,7 +1892,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	else if ( FStrEq( pcmd, "damage" )) return (ProcessMaDamage(player.index));
 	else if ( FStrEq( pcmd, "deathbeam" )) return (ProcessMaDeathBeam(player.index));
 	else if ( FStrEq( pcmd, "sounds" )) return (ProcessMaSounds(player.index));
-	else if ( FStrEq( pcmd, "quake" )) return (ProcessMaQuake(player.index));	
+	else if ( FStrEq( pcmd, "quake" )) return (ProcessMaQuake(player.index));
 	else if ( FStrEq( pcmd, "ma_version" ))
 	{
 		PrintToClientConsole(pEntity, "%s\n", mani_version);
@@ -1929,7 +1929,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 
 		gpManiAdminPlugin->ProcessExplodeAtCurrentPosition (&player);
 		return PLUGIN_STOP;
-	} 
+	}
 
 	return PLUGIN_CONTINUE;
 }
@@ -1957,7 +1957,7 @@ LOADUP_STATUS CAdminPlugin::MakeOrAddToINI( char *path ) {
 		ini = filesystem->Open ( path, "wt" );
 		created = true;
 	}
-	
+
 	if ( !ini )
 		return LOADUP_FAILED;
 
@@ -2007,7 +2007,7 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 		filesystem->Flush ( vdf );
 		filesystem->Close( vdf );
 		return LOADUP_CREATED;
-	} 
+	}
 	return LOADUP_FAILED;
 }
 
@@ -2120,7 +2120,7 @@ int PrimaryMenuItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	else if (strcmp("warmode", sub_option) == 0)
 	{
 		mani_war_mode.SetValue(0);
-		AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Disabled War Mode"); 
+		AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Disabled War Mode");
 		LogCommand (player_ptr, "Disable war mode\n");
 		return RePopOption(REPOP_MENU);
 	}
@@ -2141,22 +2141,22 @@ bool PrimaryMenuPage::PopulateMenuPage(player_t *player_ptr)
 	bool allowed = false;
 	if (!war_mode)
 	{
-		if ((gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_KICK) || 
-			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN) || 
-			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN) || 
+		if ((gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_KICK) ||
+			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN) ||
+			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC_MENU) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MUTE) ||
-			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) || 
-			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN) || 
-			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SPRAY_TAG)) 
+			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) ||
+			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN) ||
+			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SPRAY_TAG))
 			 && !war_mode)
 		{
 			MENUOPTION_CREATE(PrimaryMenuItem, 102, player_options);
 			allowed = true;
 		}
 
-		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SLAY) || 
-			 (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SLAP) && gpManiGameType->IsSlapAllowed()) || 
+		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SLAY) ||
+			 (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SLAP) && gpManiGameType->IsSlapAllowed()) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BLIND) ||
 			 gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_FREEZE) ||
 			 (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_TELEPORT) && gpManiGameType->IsTeleportAllowed()) ||
@@ -2178,7 +2178,7 @@ bool PrimaryMenuPage::PopulateMenuPage(player_t *player_ptr)
 			(gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MENU_RCON_VOTE) && !gpManiVote->SysVoteInProgress()) ||
 			(gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MENU_QUESTION_VOTE) && !gpManiVote->SysVoteInProgress()) ||
 			(gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CANCEL_VOTE) && gpManiVote->SysVoteInProgress()))
-			
+
 		{
 			MENUOPTION_CREATE(PrimaryMenuItem, 105, voteoptions);
 			allowed = true;
@@ -2362,7 +2362,7 @@ bool KickPlayerPage::PopulateMenuPage(player_t *player_ptr)
 		{
 			ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
 		}
-		
+
 		ptr->SetHiddenText("%s", player.name);
 		ptr->params.AddParam("user_id", player.user_id);
 		this->AddItem(ptr);
@@ -2465,7 +2465,7 @@ bool SlapPlayerPage::PopulateMenuPage(player_t *player_ptr)
 		{
 			ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
 		}
-		
+
 		ptr->SetHiddenText("%s", player.name);
 		ptr->params.AddParam("user_id", player.user_id);
 		this->AddItem(ptr);
@@ -2519,7 +2519,7 @@ bool BlindPlayerPage::PopulateMenuPage(player_t *player_ptr)
 
 		MenuItem *ptr = new BlindPlayerItem();
 		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
-		
+
 		ptr->params.AddParam("user_id", player.user_id);
 		this->AddItem(ptr);
 	}
@@ -2562,7 +2562,7 @@ bool FreezePlayerPage::PopulateMenuPage(player_t *player_ptr)
 			gpManiClient->HasAccess(player.index,IMMUNITY, IMMUNITY_FREEZE)) continue;
 
 		MenuItem *ptr = new FreezePlayerItem();
-		ptr->SetDisplayText("%s[%s] %i", (punish_mode_list[player.index - 1].frozen) ? Translate(player_ptr, 192):"", player.name, player.user_id);		
+		ptr->SetDisplayText("%s[%s] %i", (punish_mode_list[player.index - 1].frozen) ? Translate(player_ptr, 192):"", player.name, player.user_id);
 		ptr->params.AddParam("user_id", player.user_id);
 		ptr->SetHiddenText("%s", player.name);
 		this->AddItem(ptr);
@@ -2605,7 +2605,7 @@ bool BurnPlayerPage::PopulateMenuPage(player_t *player_ptr)
 			gpManiClient->HasAccess(player.index,IMMUNITY, IMMUNITY_BURN)) continue;
 
 		MenuItem *ptr = new BurnPlayerItem();
-		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);		
+		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
 		ptr->params.AddParam("user_id", player.user_id);
 		this->AddItem(ptr);
 	}
@@ -2982,7 +2982,7 @@ bool TeleportPlayerPage::PopulateMenuPage(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //---------------------------------------------------------------------------------
 int SlayPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
@@ -3017,11 +3017,11 @@ bool SlayPlayerPage::PopulateMenuPage(player_t *player_ptr)
 		MenuItem *ptr = new SlayPlayerItem();
 		if (player.is_bot)
 		{
-			ptr->SetDisplayText("BOT [%s]",  player.name);							
+			ptr->SetDisplayText("BOT [%s]",  player.name);
 		}
 		else
 		{
-			ptr->SetDisplayText("[%s] %i",  player.name, player.user_id);							
+			ptr->SetDisplayText("[%s] %i",  player.name, player.user_id);
 		}
 
 		ptr->params.AddParam("user_id", player.user_id);
@@ -3034,7 +3034,7 @@ bool SlayPlayerPage::PopulateMenuPage(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //---------------------------------------------------------------------------------
 
 void CAdminPlugin::ProcessExplodeAtCurrentPosition( player_t *player)
@@ -3479,7 +3479,7 @@ bool CExecPlayerPage::PopulateMenuPage(player_t *player_ptr)
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.is_bot) continue;
 
-		if (player_ptr->index != player.index && 
+		if (player_ptr->index != player.index &&
 			gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_CEXEC))
 		{
 			continue;
@@ -3530,7 +3530,7 @@ int PunishTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	}
 	else if (strcmp("savelocation", sub_option) == 0)
 	{
-		g_ManiAdminPlugin.ProcessMaSaveLoc(player_ptr, "ma_saveloc", 0, M_MENU); 
+		g_ManiAdminPlugin.ProcessMaSaveLoc(player_ptr, "ma_saveloc", 0, M_MENU);
 		return RePopOption(REPOP_MENU);
 	}
 	else if (strcmp("burn", sub_option) == 0)
@@ -3845,7 +3845,7 @@ bool VoteDelayTypePage::PopulateMenuPage(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //---------------------------------------------------------------------------------
 int SlapOptionsItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
@@ -3938,7 +3938,7 @@ bool BlindOptionsPage::PopulateMenuPage(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //---------------------------------------------------------------------------------
 int BanOptionsItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
@@ -4127,7 +4127,7 @@ bool BanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 {
 	char *ban_type;
 	this->params.GetParam("ban_type", &ban_type);
-	
+
 	this->SetEscLink("%s", Translate(player_ptr, 500));
 
 	if (strcmp(ban_type, "steam_id") == 0)
@@ -4150,7 +4150,7 @@ bool BanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 		if (!FindPlayerByIndex(&player)) continue;
 		if (player.is_bot) continue;
 
-		if (player_ptr->index != player.index && 
+		if (player_ptr->index != player.index &&
 			gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
 		{
 			continue;
@@ -4167,7 +4167,7 @@ bool BanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //---------------------------------------------------------------------------------
 int KickTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 {
@@ -4397,7 +4397,7 @@ bool ConfigOptionsPage::PopulateMenuPage(player_t *player_ptr)
 void CAdminPlugin::FireGameEvent( IGameEvent * event )
 {
 	if (ProcessPluginPaused()) return;
-	if (!war_mode && 
+	if (!war_mode &&
 		mani_show_events.GetInt() != 0)
 	{
 		MMsg("Event Name [%s]\n", event->GetName());
@@ -4481,7 +4481,7 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 			show_attack = false;
 		}
 		else
-		{	
+		{
 			// Show the attack
 			tw_spam_list[attacker_index].last_time = gpGlobals->curtime;
 			tw_spam_list[attacker_index].index = victim.index;
@@ -4491,7 +4491,7 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 
 		if (show_attack)
 		{
-			// Show player attack to opposite side 
+			// Show player attack to opposite side
 			bool	ct = false;
 			bool	t = false;
 			if (attacker.team == TEAM_A)
@@ -4504,7 +4504,7 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 			}
 
 			// Show to all spectators
-			SayToTeam (ORANGE_CHAT, ct, t, true, "(%s) %s attacked a teammate", 
+			SayToTeam (ORANGE_CHAT, ct, t, true, "(%s) %s attacked a teammate",
 				Translate(NULL, gpManiGameType->GetTeamShortTranslation(attacker.team)), attacker.name);
 		}
 	}
@@ -4532,7 +4532,7 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 	if (mani_tk_protection.GetInt() == 0) return;
 
 	// TK/TW occured (both on same team)
-	// Slay them first before anything 
+	// Slay them first before anything
 
 	// Handle tracking of this player
 	// Find tkplayer list
@@ -4711,7 +4711,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 	else if (FStrEq(say_string, "quake") && !war_mode) {ProcessMaQuake(player.index); return;}
 	else if (FStrEq(say_string, "settings") && !war_mode) {MENUPAGE_CREATE_FIRST(PlayerSettingsPage, &player, 0, -1); return;}
 	else if (FStrEq(say_string, "timeleft") && !war_mode) {ProcessMaTimeLeft(&player, "timeleft", 0, M_CCONSOLE); return;}
-	else if (FStrEq(say_string, "listmaps") && !war_mode) 
+	else if (FStrEq(say_string, "listmaps") && !war_mode)
 	{
 		ProcessMaListMaps(&player, "listmaps", 0, M_CCONSOLE);
 		SayToPlayer(ORANGE_CHAT, &player, "Check your console for the list of maps !!");
@@ -4723,25 +4723,25 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 		DrawMOTD(&mrf);
 		return;
 	}
-	else if (FStrEq(say_string, "votemap") && !war_mode && 
-		mani_voting.GetInt() == 1 && 
-		mani_vote_allow_user_vote_map.GetInt() == 1) 
+	else if (FStrEq(say_string, "votemap") && !war_mode &&
+		mani_voting.GetInt() == 1 &&
+		mani_vote_allow_user_vote_map.GetInt() == 1)
 	{
 		MENUPAGE_CREATE_FIRST(UserVoteMapPage, &player, 0, -1);
 		return;
 	}
 	else if (FStrEq(say_string, "votekick") && !war_mode &&
 		!IsLAN() &&
-		mani_voting.GetInt() == 1 && 
-		mani_vote_allow_user_vote_kick.GetInt() == 1) 
+		mani_voting.GetInt() == 1 &&
+		mani_vote_allow_user_vote_kick.GetInt() == 1)
 	{
 		MENUPAGE_CREATE_FIRST(UserVoteKickPage, &player, 0, -1);
 		return;
 	}
 	else if (FStrEq(say_string, "voteban") && !war_mode &&
 		!IsLAN() &&
-		mani_voting.GetInt() == 1 && 
-		mani_vote_allow_user_vote_ban.GetInt() == 1) 
+		mani_voting.GetInt() == 1 &&
+		mani_vote_allow_user_vote_ban.GetInt() == 1)
 	{
 		MENUPAGE_CREATE_FIRST(UserVoteBanPage, &player, 0, -1);
 		return;
@@ -4819,7 +4819,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 			return;
 		}
 
-		if (FStrEq(say_string,"TOP")) 
+		if (FStrEq(say_string,"TOP"))
 		{
 			ShowTopFreePage *ptr = new ShowTopFreePage;
 			if (ptr->SetStartRank(10))
@@ -4900,7 +4900,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 		if (!ptr->Render(&player, &player))
 		{
 			g_menu_mgr.Kill();
-		}	
+		}
 	}
 	else if (FStrEq(say_string,"hitboxme") && !war_mode)
 	{
@@ -4910,7 +4910,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 		if (!ptr->Render(&player))
 		{
 			g_menu_mgr.Kill();
-		}	
+		}
 	}
 	else if (FStrEq(say_string,"weaponme") && !war_mode)
 	{
@@ -4986,11 +4986,11 @@ void CAdminPlugin::EvPlayerSpawn(IGameEvent *event)
 
 	// Reset any effects flags
 	EffectsClientDisconnect(spawn_player.index - 1, true);
-	gpManiVictimStats->PlayerSpawn(&spawn_player); 
+	gpManiVictimStats->PlayerSpawn(&spawn_player);
 	gpManiAntiRejoin->PlayerSpawn(&spawn_player);
 
-	if (mani_tk_protection.GetInt() == 1 && 
-		(mp_friendlyfire && mp_friendlyfire->GetInt() == 1) && 
+	if (mani_tk_protection.GetInt() == 1 &&
+		(mp_friendlyfire && mp_friendlyfire->GetInt() == 1) &&
 		!war_mode)
 	{
 		// Handle delayed punishments
@@ -5009,8 +5009,8 @@ void CAdminPlugin::EvPlayerSpawn(IGameEvent *event)
 
 	// Give grenade to player if unlimited grenades
 	if (!war_mode &&
-		mani_unlimited_grenades.GetInt() != 0 && 
-		sv_cheats && 
+		mani_unlimited_grenades.GetInt() != 0 &&
+		sv_cheats &&
 		gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
 		CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(spawn_player.entity), "weapon_hegrenade");
@@ -5068,9 +5068,9 @@ void CAdminPlugin::EvWeaponFire(IGameEvent *event)
 					else
 					{
 						if (!war_mode &&
-							hegrenade && 
+							hegrenade &&
 							(mani_unlimited_grenades.GetInt() != 0 || gpManiWarmupTimer->UnlimitedHE()) &&
-							sv_cheats && 
+							sv_cheats &&
 							gpManiGameType->IsGameType(MANI_GAME_CSS) &&
 							(playerinfo->GetTeamIndex() == 2 || playerinfo->GetTeamIndex() == 3))
 						{
@@ -5089,7 +5089,7 @@ void CAdminPlugin::EvWeaponFire(IGameEvent *event)
 void CAdminPlugin::EvHostageStopsFollowing(IGameEvent *event)
 {
 	if (war_mode) return;
-	// Warn player if hostage has stopped 
+	// Warn player if hostage has stopped
 
 	player_t player;
 
@@ -5396,7 +5396,7 @@ void CAdminPlugin::EvDodStatsWeaponAttack(IGameEvent *event)
 	player.user_id = event->GetInt("attacker", -1);
 	if (player.user_id == -1) return;
 	if (!FindPlayerByUserID(&player)) return;
-	
+
 	int	weapon_id = event->GetInt("weapon", -1);
 	gpManiStats->DODSPlayerFired(&player);
 	gpManiLogDODSStats->PlayerFired(player.index - 1, weapon_id);
@@ -5527,7 +5527,7 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 				PrintToClientConsole(player->entity, "You have been auto kicked for name hacking\n");
 				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
 				LogCommand (NULL, "Kick (Name change threshold) [%s] [%s] %s", player->name, player->steam_id, kick_cmd);
-				engine->ServerCommand(kick_cmd);				
+				engine->ServerCommand(kick_cmd);
 				name_changes[player->index - 1] = 0;
 				return;
 			}
@@ -5536,8 +5536,8 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 				// Ban by user id
 				SayToAll(ORANGE_CHAT, false,"Player was banned for name change hacking");
 				PrintToClientConsole(player->entity, "You have been auto banned for name hacking\n");
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-										mani_player_name_change_ban_time.GetInt(), 
+				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n",
+										mani_player_name_change_ban_time.GetInt(),
 										player->user_id);
 				LogCommand(NULL, "Banned (Name change threshold) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
 				engine->ServerCommand(ban_cmd);
@@ -5550,8 +5550,8 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 				// Ban by user ip address
 				SayToAll(ORANGE_CHAT, false,"Player was banned for name change hacking");
 				PrintToClientConsole(player->entity, "You have been auto banned for name hacking\n");
-				snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", 
-										mani_player_name_change_ban_time.GetInt(), 
+				snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n",
+										mani_player_name_change_ban_time.GetInt(),
 										player->ip_address);
 				LogCommand(NULL, "Banned IP (Name change threshold) [%s] [%s] %s", player->name, player->ip_address, ban_cmd);
 				engine->ServerCommand(ban_cmd);
@@ -5567,16 +5567,16 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 
 				if (!IsLAN())
 				{
-					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-											mani_player_name_change_ban_time.GetInt(), 
+					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n",
+											mani_player_name_change_ban_time.GetInt(),
 											player->user_id);
 					LogCommand(NULL, "Banned (Name change threshold) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
-					engine->ServerCommand(ban_cmd);	
+					engine->ServerCommand(ban_cmd);
 					engine->ServerCommand("writeid\n");
 				}
 
-				snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", 
-										mani_player_name_change_ban_time.GetInt(), 
+				snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n",
+										mani_player_name_change_ban_time.GetInt(),
 										player->ip_address);
 				LogCommand(NULL, "Banned IP (Name change threshold) [%s] [%s] %s", player->name, player->ip_address, ban_cmd);
 				engine->ServerCommand(ban_cmd);
@@ -5597,7 +5597,7 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 //---------------------------------------------------------------------------------
 void CAdminPlugin::ProcessReflectDamagePlayer
 (
- player_t *victim, 
+ player_t *victim,
  player_t *attacker,
  IGameEvent *event
  )
@@ -5663,13 +5663,13 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 	// Hurt the player
 	int sound_index = rand() % 3;
 
-//	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity(); 
+//	CBaseEntity *m_pCBaseEntity = attacker->entity->GetUnknown()->GetBaseEntity();
 
 	int health = 0;
 //	health = m_pCBaseEntity->GetHealth();
 	health = Prop_GetVal(attacker->entity, MANI_PROP_HEALTH, 0);
 	if (health <= 0) return;
-		
+
 	health -= ((damage_to_inflict >= 0) ? damage_to_inflict : damage_to_inflict * -1);
 	if (health <= 0)
 	{
@@ -5882,7 +5882,7 @@ bool CAdminPlugin::HookSayCommand(bool team_say, const CCommand &args)
 			// Copy in uppercase
 			Q_strncpy(upper_say, gpCmd->Cmd_Args(0), sizeof(upper_say));
 			Q_strupr(upper_say);
-	
+
 
 			for (int i = 0; i < swear_list_size; i ++)
 			{
@@ -6002,7 +6002,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_KICK, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Whoever issued the commmand is authorised to do it.
@@ -6037,13 +6037,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 		}
 
 		PrintToClientConsole(target_player_list[i].entity, "You have been kicked by Admin\n");
-		snprintf( kick_cmd, sizeof(kick_cmd), 
-					"kickid %i You were kicked by Admin\n", 
+		snprintf( kick_cmd, sizeof(kick_cmd),
+					"kickid %i You were kicked by Admin\n",
 					target_player_list[i].user_id);
 
 		LogCommand (player_ptr, "Kick (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].steam_id, kick_cmd);
 		engine->ServerCommand(kick_cmd);
-		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminkick_anonymous.GetInt(), "kicked player %s", target_player_list[i].name ); 
+		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminkick_anonymous.GetInt(), "kicked player %s", target_player_list[i].name );
 	}
 
 	return PLUGIN_STOP;
@@ -6065,7 +6065,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 
 		if (!(temp_ban || perm_ban)) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Try steam id next
@@ -6079,7 +6079,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 		target_steam_id[6] = '\0';
 		if (FStruEq(target_steam_id, "STEAM_"))
 		{
-			ban_by_ip = false;		
+			ban_by_ip = false;
 		}
 	}
 
@@ -6183,7 +6183,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 		LogCommand (player_ptr, "Banned (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].steam_id, ban_cmd);
 		engine->ServerCommand(ban_cmd);
 		engine->ServerCommand("writeid\n");
-		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name ); 
+		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name );
 	}
 
 	return PLUGIN_STOP;
@@ -6256,7 +6256,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 		LogCommand (player_ptr, "Banned IP (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].ip_address, ban_cmd);
 		engine->ServerCommand(ban_cmd);
 		engine->ServerCommand("writeip\n");
-		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name ); 
+		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name );
 	}
 
 	return PLUGIN_STOP;
@@ -6295,7 +6295,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSlay(player_t *player_ptr, const char *comm
 		LogCommand (player_ptr, "slayed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminslay_anonymous.GetInt(), "slayed player %s", target_player_list[i].name ); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminslay_anonymous.GetInt(), "slayed player %s", target_player_list[i].name );
 		}
 	}
 
@@ -6498,7 +6498,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSlap (player_t *player_ptr, const char *com
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
-	
+
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_SLAP))
@@ -6543,7 +6543,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaSlap (player_t *player_ptr, const char *com
 			LogCommand (player_ptr, "slapped user [%s] [%s] with %i damage\n", target_player_list[i].name, target_player_list[i].steam_id, damage);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminslap_anonymous.GetInt(), "slapped player %s with %i damage", target_player_list[i].name, damage ); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminslap_anonymous.GetInt(), "slapped player %s with %i damage", target_player_list[i].name, damage );
 			}
 			last_slapped_player = target_player_list[i].index;
 			last_slapped_time = gpGlobals->curtime;
@@ -6609,7 +6609,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash(player_t *player_ptr, const char *comm
 	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 	const char *target_string = gpCmd->Cmd_Argv(1);
 	const char *amount = gpCmd->Cmd_Argv(2);
-	
+
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, NULL))
 	{
@@ -6648,7 +6648,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash(player_t *player_ptr, const char *comm
 			case (MANI_TAKE_CASH_PERCENT) :	new_cash = (int) (((float) target_cash) * fAmount); break;
 			default : new_cash = target_cash;
 		}
-			
+
 		if (new_cash < 0) new_cash = 0;
 		else if (new_cash > 16000) new_cash = 16000;
 
@@ -6656,7 +6656,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCash(player_t *player_ptr, const char *comm
 
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincash_anonymous.GetInt(), "changed player %s cash reserves", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincash_anonymous.GetInt(), "changed player %s cash reserves", target_player_list[i].name);
 		}
 
 		Prop_SetVal(target_player_list[i].entity, MANI_PROP_ACCOUNT, new_cash);
@@ -6747,7 +6747,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth(player_t *player_ptr, const char *co
 
 		int target_health;
 		target_health = Prop_GetVal(target_player_list[i].entity, MANI_PROP_HEALTH, 0);
-//		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+//		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 //		target_health = m_pCBaseEntity->GetHealth();
 
 		int new_health = 0;
@@ -6761,7 +6761,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth(player_t *player_ptr, const char *co
 			case (MANI_TAKE_HEALTH_PERCENT) :	new_health = (int) (((float) target_health) * fAmount); break;
 			default : new_health = target_health;
 		}
-			
+
 		if (new_health < 0) new_health = 0;
 		else if (new_health > 999999) new_health = 999999;
 
@@ -6769,7 +6769,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth(player_t *player_ptr, const char *co
 
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminhealth_anonymous.GetInt(), "changed player %s health to %i", target_player_list[i].name, new_health); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminhealth_anonymous.GetInt(), "changed player %s health to %i", target_player_list[i].name, new_health);
 		}
 
 		if (new_health <= 0)
@@ -6779,7 +6779,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth(player_t *player_ptr, const char *co
 		else
 		{
 			Prop_SetVal(target_player_list[i].entity, MANI_PROP_HEALTH, new_health);
-//			m_pCBaseEntity->SetHealth(new_health);		
+//			m_pCBaseEntity->SetHealth(new_health);
 		}
 	}
 
@@ -6799,7 +6799,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBlind(player_t *player_ptr, const char *com
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BLIND, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
 	// Whoever issued the commmand is authorised to do it.
@@ -6847,7 +6847,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBlind(player_t *player_ptr, const char *com
 		LogCommand (player_ptr, "%s user [%s] [%s]\n", (blind_amount == 0) ? "unblinded":"blinded", target_player_list[i].name, target_player_list[i].steam_id);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminblind_anonymous.GetInt(), "%s player %s", (blind_amount == 0) ? "unblinded":"blinded", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminblind_anonymous.GetInt(), "%s player %s", (blind_amount == 0) ? "unblinded":"blinded", target_player_list[i].name);
 		}
 	}
 
@@ -6912,7 +6912,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFreeze(player_t *player_ptr, const char *co
 			LogCommand (player_ptr, "froze user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreeze_anonymous.GetInt(), "froze player %s", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreeze_anonymous.GetInt(), "froze player %s", target_player_list[i].name);
 			}
 		}
 		else
@@ -6921,7 +6921,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFreeze(player_t *player_ptr, const char *co
 			LogCommand (player_ptr, "defrosted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreeze_anonymous.GetInt(), "defrosted player %s", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreeze_anonymous.GetInt(), "defrosted player %s", target_player_list[i].name);
 			}
 		}
 	}
@@ -6971,12 +6971,12 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaNoClip(player_t *player_ptr, const char *co
 		if (punish_mode_list[target_player_list[i].index - 1].no_clip)
 		{
 			LogCommand (player_ptr, "noclip user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminnoclip_anonymous.GetInt(), "player %s is in no clip mode", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminnoclip_anonymous.GetInt(), "player %s is in no clip mode", target_player_list[i].name);
 		}
 		else
 		{
 			LogCommand (player_ptr, "un-noclip user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminnoclip_anonymous.GetInt(), "player %s is mortal again", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminnoclip_anonymous.GetInt(), "player %s is mortal again", target_player_list[i].name);
 		}
 	}
 
@@ -7020,7 +7020,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBurn(player_t *player_ptr, const char *comm
 		LogCommand (player_ptr, "burned user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminburn_anonymous.GetInt(), "burned player %s", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminburn_anonymous.GetInt(), "burned player %s", target_player_list[i].name);
 		}
 	}
 
@@ -7087,12 +7087,12 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDrug(player_t *player_ptr, const char *comm
 		}
 
 		if (do_action)
-		{	
+		{
 			ProcessDrugPlayer(&(target_player_list[i]), true);
 			LogCommand (player_ptr, "drugged user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admindrug_anonymous.GetInt(), "drugged player %s", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admindrug_anonymous.GetInt(), "drugged player %s", target_player_list[i].name);
 			}
 		}
 		else
@@ -7101,7 +7101,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDrug(player_t *player_ptr, const char *comm
 			LogCommand (player_ptr, "un-drugged user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admindrug_anonymous.GetInt(), "un-drugged player %s", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admindrug_anonymous.GetInt(), "un-drugged player %s", target_player_list[i].name);
 			}
 		}
 	}
@@ -7168,7 +7168,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDecal(player_t *player_ptr, const char *com
 	OutputToConsole(player_ptr, "\"z\" \"%.5f\"\n", pos.z);
 
 	filter.AddAllPlayers(max_players);
-	temp_ents->BSPDecal((IRecipientFilter &) filter, 0, &pos, 0, decal_index);	
+	temp_ents->BSPDecal((IRecipientFilter &) filter, 0, &pos, 0, decal_index);
 
 	return PLUGIN_STOP;
 }
@@ -7210,7 +7210,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGive(player_t *player_ptr, const char *comm
 		LogCommand (player_ptr, "gave user [%s] [%s] item [%s]\n", target_player_list[i].name, target_player_list[i].steam_id, item_name);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingive_anonymous.GetInt(), "gave player %s item %s", target_player_list[i].name, item_name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingive_anonymous.GetInt(), "gave player %s item %s", target_player_list[i].name, item_name);
 		}
 	}
 
@@ -7293,7 +7293,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGiveAmmo(player_t *player_ptr, const char *
 		LogCommand (player_ptr, "gave user [%s] [%s] ammo\n", target_player_list[i].name, target_player_list[i].steam_id);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingive_anonymous.GetInt(), "gave player %s ammo", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingive_anonymous.GetInt(), "gave player %s ammo", target_player_list[i].name);
 		}
 	}
 
@@ -7345,13 +7345,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColour(player_t *player_ptr, const char *co
 			continue;
 		}
 
-		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 		ProcessSetColour(target_player_list[i].entity, red, green, blue, alpha);
-		
+
 		LogCommand (player_ptr, "set user color [%s] [%s] to [%i] [%i] [%i] [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, red, blue, green, alpha);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s color", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s color", target_player_list[i].name);
 		}
 	}
 
@@ -7403,13 +7403,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaColourWeapon(player_t *player_ptr, const ch
 			continue;
 		}
 
-		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 		ProcessSetWeaponColour(m_pCBaseEntity, red, green, blue, alpha);
-		
+
 		LogCommand (player_ptr, "set user weapon color [%s] [%s] to [%i] [%i] [%i] [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, red, blue, green, alpha);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s weapon color", target_player_list[i].name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s weapon color", target_player_list[i].name);
 		}
 	}
 
@@ -7459,7 +7459,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaGravity(player_t *player_ptr, const char *c
 			LogCommand (player_ptr, "set user gravity [%s] [%s] to [%f]\n", target_player_list[i].name, target_player_list[i].steam_id, gravity);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingravity_anonymous.GetInt(), "set player %s gravity", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admingravity_anonymous.GetInt(), "set player %s gravity", target_player_list[i].name);
 			}
 		}
 
@@ -7506,14 +7506,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderMode(player_t *player_ptr, const char
 			continue;
 		}
 
-		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 		//m_pCBaseEntity->SetRenderMode((RenderMode_t) render_mode);
 		Prop_SetVal(target_player_list[i].entity, MANI_PROP_RENDER_MODE, render_mode);
-		
+
 		LogCommand (player_ptr, "set user rendermode [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s to render mode %i", target_player_list[i].name,  render_mode); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s to render mode %i", target_player_list[i].name,  render_mode);
 		}
 	}
 
@@ -7558,15 +7558,15 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRenderFX(player_t *player_ptr, const char *
 			continue;
 		}
 
-		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity(); 
+		//CBaseEntity *m_pCBaseEntity = target_player_list[i].entity->GetUnknown()->GetBaseEntity();
 		//m_pCBaseEntity->m_nRenderFX = render_mode;
-		
+
 		Prop_SetVal(target_player_list[i].entity, MANI_PROP_RENDER_FX, render_mode);
-		
+
 		LogCommand (player_ptr, "set user renderfx [%s] [%s] to [%i]\n", target_player_list[i].name, target_player_list[i].steam_id, render_mode);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s to renderfx %i", target_player_list[i].name,  render_mode); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admincolor_anonymous.GetInt(), "set player %s to renderfx %i", target_player_list[i].name,  render_mode);
 		}
 	}
 
@@ -7622,21 +7622,21 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeBomb(player_t *player_ptr, const char *
 		}
 
 		if (!do_action)
-		{	
+		{
 			ProcessUnTimeBombPlayer(&(target_player_list[i]));
 			LogCommand (player_ptr, "un-timebombed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admintimebomb_anonymous.GetInt(), "player %s is no longer a time bomb", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admintimebomb_anonymous.GetInt(), "player %s is no longer a time bomb", target_player_list[i].name);
 			}
 		}
 		else
-		{	
+		{
 			ProcessTimeBombPlayer(&(target_player_list[i]), false, true);
 			LogCommand (player_ptr, "timebomb user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admintimebomb_anonymous.GetInt(), "player %s is now a time bomb", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_admintimebomb_anonymous.GetInt(), "player %s is now a time bomb", target_player_list[i].name);
 			}
 		}
 	}
@@ -7693,21 +7693,21 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFireBomb(player_t *player_ptr, const char *
 		}
 
 		if (!do_action)
-		{	
+		{
 			ProcessUnFireBombPlayer(&(target_player_list[i]));
 			LogCommand (player_ptr, "un-firebombed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfirebomb_anonymous.GetInt(), "player %s is no longer a fire bomb", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfirebomb_anonymous.GetInt(), "player %s is no longer a fire bomb", target_player_list[i].name);
 			}
 		}
 		else
-		{	
+		{
 			ProcessFireBombPlayer(&(target_player_list[i]), false, true);
 			LogCommand (player_ptr, "timebomb user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfirebomb_anonymous.GetInt(), "player %s is now a fire bomb", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfirebomb_anonymous.GetInt(), "player %s is now a fire bomb", target_player_list[i].name);
 			}
 		}
 	}
@@ -7764,21 +7764,21 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaFreezeBomb(player_t *player_ptr, const char
 		}
 
 		if (!do_action)
-		{	
+		{
 			ProcessUnFreezeBombPlayer(&(target_player_list[i]));
 			LogCommand (player_ptr, "un-freezebombed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreezebomb_anonymous.GetInt(), "player %s is no longer a freeze bomb", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreezebomb_anonymous.GetInt(), "player %s is no longer a freeze bomb", target_player_list[i].name);
 			}
 		}
 		else
-		{	
+		{
 			ProcessFreezeBombPlayer(&(target_player_list[i]), false, true);
 			LogCommand (player_ptr, "un-freezebombed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreezebomb_anonymous.GetInt(), "player %s is now a freeze bomb", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminfreezebomb_anonymous.GetInt(), "player %s is now a freeze bomb", target_player_list[i].name);
 			}
 		}
 	}
@@ -7835,21 +7835,21 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBeacon(player_t *player_ptr, const char *co
 		}
 
 		if (!do_action)
-		{	
+		{
 			ProcessUnBeaconPlayer(&(target_player_list[i]));
 			LogCommand (player_ptr, "un-beaconed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminbeacon_anonymous.GetInt(), "player %s is no longer a beacon", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminbeacon_anonymous.GetInt(), "player %s is no longer a beacon", target_player_list[i].name);
 			}
 		}
 		else
-		{	
+		{
 			ProcessBeaconPlayer(&(target_player_list[i]), true);
 			LogCommand (player_ptr, "beaconed user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminbeacon_anonymous.GetInt(), "player %s is now a beacon", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminbeacon_anonymous.GetInt(), "player %s is now a beacon", target_player_list[i].name);
 			}
 		}
 	}
@@ -7904,12 +7904,12 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 		}
 
 		if (do_action)
-		{	
+		{
 			ProcessMutePlayer(&(target_player_list[i]));
 			LogCommand (player_ptr, "muted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmute_anonymous.GetInt(), "muted player %s", target_player_list[i].name); 
+				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmute_anonymous.GetInt(), "muted player %s", target_player_list[i].name);
 			}
 		}
 		else
@@ -7946,7 +7946,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport(player_t *player_ptr, const char *
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_TELEPORT, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	if (argc != 2 && argc != 5 || 
+	if (argc != 2 && argc != 5 ||
 		(!player_ptr && argc == 2) ||
 		(argc == 2 && !CanTeleport(player_ptr))) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
@@ -7970,7 +7970,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport(player_t *player_ptr, const char *
 	if (argc == 2)
 	{
 		player_settings_t *player_settings;
-	
+
 		player_settings = FindPlayerSettings(player_ptr);
 		if (!player_settings) return PLUGIN_STOP;
 		if (player_settings->teleport_coords_list_size == 0) return PLUGIN_STOP;
@@ -7992,7 +7992,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport(player_t *player_ptr, const char *
 	for (int i = 0; i < target_player_list_size; i++)
 	{
 		player_t *target_player_ptr;
-		
+
 		target_player_ptr = (player_t *) &(target_player_list[i]);
 
 		if (target_player_ptr->is_dead)
@@ -8000,7 +8000,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport(player_t *player_ptr, const char *
 			OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_TARGET_DEAD,"%s", target_player_ptr->name));
 			continue;
 		}
-	
+
 		ProcessTeleportPlayer(target_player_ptr, &origin);
 		// Stack them
 		origin.z += 70;
@@ -8008,7 +8008,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport(player_t *player_ptr, const char *
 		LogCommand (player_ptr, "teleported user [%s] [%s]\n", target_player_ptr->name, target_player_ptr->steam_id);
 		if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 		{
-			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminteleport_anonymous.GetInt(), "teleported player %s", target_player_ptr->name); 
+			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminteleport_anonymous.GetInt(), "teleported player %s", target_player_ptr->name);
 		}
 	}
 
@@ -8020,7 +8020,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTeleport(player_t *player_ptr, const char *
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaPosition(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
-	// Server can't run this 
+	// Server can't run this
 	if (!player_ptr) return PLUGIN_CONTINUE;
 
 	// Check if player is admin
@@ -8100,7 +8100,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDropC4(player_t *player_ptr, const char *co
 		{
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(GREEN_CHAT, player_ptr, mani_admindropc4_anonymous.GetInt(), "forced player %s to drop the C4", bomb_player.name); 
+				AdminSayToAll(GREEN_CHAT, player_ptr, mani_admindropc4_anonymous.GetInt(), "forced player %s to drop the C4", bomb_player.name);
 			}
 
 			LogCommand (player_ptr, "forced c4 drop on player [%s] [%s]\n", bomb_player.name, bomb_player.steam_id);
@@ -8120,7 +8120,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRCon(player_t *player_ptr, const char *comm
 
 	if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RCON, false)) return PLUGIN_BAD_ADMIN;
 
-	LogCommand (player_ptr, "%s %s\n", command_name, gpCmd->Cmd_Args(1)); 
+	LogCommand (player_ptr, "%s %s\n", command_name, gpCmd->Cmd_Args(1));
 	snprintf( rcon_cmd, sizeof(rcon_cmd), "%s\n", gpCmd->Cmd_Args(1));
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Executed RCON %s", gpCmd->Cmd_Args(1));
 	engine->ServerCommand(rcon_cmd);
@@ -8154,7 +8154,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExec(player_t *player_ptr, const char *com
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC, war_mode) && command_type != M_MENU) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_CEXEC))
 	{
@@ -8165,9 +8165,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExec(player_t *player_ptr, const char *com
 	char	client_cmd[2048];
 
 	snprintf(client_cmd, sizeof (client_cmd), "%s\n", say_string);
-	LogCommand (player_ptr, "%s \"%s\" %s\n", command_name, target_string, say_string); 
+	LogCommand (player_ptr, "%s \"%s\" %s\n", command_name, target_string, say_string);
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Ran %s", say_string);
-			
+
 	// Found some players to run the command on
 	for (int i = 0; i < target_player_list_size; i++)
 	{
@@ -8193,13 +8193,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecT(player_t *player_ptr, const char *co
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC, war_mode) && command_type != M_MENU) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	char	client_cmd[2048];
 
 	snprintf(client_cmd, sizeof (client_cmd), "%s\n", say_string);
-	LogCommand (player_ptr, "%s %s\n", command_name, say_string); 
+	LogCommand (player_ptr, "%s %s\n", command_name, say_string);
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Ran %s", say_string);
-			
+
 	// Found some players to run the command on
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -8228,13 +8228,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecCT(player_t *player_ptr, const char *c
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC, war_mode) && command_type != M_MENU) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	char	client_cmd[2048];
 
 	snprintf(client_cmd, sizeof (client_cmd), "%s\n", say_string);
-	LogCommand (player_ptr, "%s %s\n", command_name, say_string); 
+	LogCommand (player_ptr, "%s %s\n", command_name, say_string);
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Ran %s", say_string);
-			
+
 	// Found some players to run the command on
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -8263,13 +8263,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecAll(player_t *player_ptr, const char *
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC, war_mode) && command_type != M_MENU) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	char	client_cmd[2048];
 
 	snprintf(client_cmd, sizeof (client_cmd), "%s\n", say_string);
-	LogCommand (player_ptr, "%s %s\n", command_name, say_string); 
+	LogCommand (player_ptr, "%s %s\n", command_name, say_string);
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Ran %s", say_string);
-			
+
 	// Found some players to run the command on
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -8290,7 +8290,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecSpec(player_t *player_ptr, const char 
 {
 	const char *say_string = gpCmd->Cmd_Args(1);
 
-	if (gpCmd->Cmd_Argc() < 2 || !gpManiGameType->IsSpectatorAllowed()) 
+	if (gpCmd->Cmd_Argc() < 2 || !gpManiGameType->IsSpectatorAllowed())
 	{
 		return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 	}
@@ -8302,13 +8302,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaCExecSpec(player_t *player_ptr, const char 
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_CEXEC, war_mode) && command_type != M_MENU) return PLUGIN_BAD_ADMIN;
 	}
-	
+
 	char	client_cmd[2048];
 
 	snprintf(client_cmd, sizeof (client_cmd), "%s\n", say_string);
-	LogCommand (player_ptr, "%s %s\n", command_name, say_string); 
+	LogCommand (player_ptr, "%s %s\n", command_name, say_string);
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Ran %s", say_string);
-			
+
 	int spec_index = gpManiGameType->GetSpectatorIndex();
 
 	// Found some players to run the command on
@@ -8339,7 +8339,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUsers(player_t *player_ptr, const char *com
 
 	char	target_string[512];
 
-	if (gpCmd->Cmd_Argc() < 2) 
+	if (gpCmd->Cmd_Argc() < 2)
 	{
 		Q_strcpy(target_string, "#ALL");
 	}
@@ -8407,7 +8407,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaAdmins(player_t *player_ptr, const char *co
 
 	char	target_string[512];
 
-	if (gpCmd->Cmd_Argc() < 2) 
+	if (gpCmd->Cmd_Argc() < 2)
 	{
 		Q_strcpy(target_string, "#ALL");
 	}
@@ -8465,7 +8465,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRates(player_t *player_ptr, const char *com
 
 	char	target_string[512];
 
-	if (gpCmd->Cmd_Argc() < 2) 
+	if (gpCmd->Cmd_Argc() < 2)
 	{
 		Q_strcpy(target_string, "#ALL");
 	}
@@ -8503,7 +8503,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaRates(player_t *player_ptr, const char *com
 		int nRate = atoi( szRate );
 		float nInterp = atof( szInterp );
 
-		
+
 		OutputToConsole(player_ptr, "%s %-17s %-20s %-7i %-7i %-6i %-6i %-.2f\n",
 					(nCmdRate < 20) ? "*":" ",
 					server_player->name,
@@ -8605,15 +8605,15 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaWar(player_t *player_ptr, const char *comma
 		if (mani_war_mode.GetInt() == 1)
 		{
 			mani_war_mode.SetValue(0);
-			AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Disabled War Mode"); 
+			AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Disabled War Mode");
 			LogCommand (player_ptr, "Disable war mode\n");
 		}
 		else
 		{
-			AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Enabled War Mode"); 
+			AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Enabled War Mode");
 			LogCommand (player_ptr, "Enable war mode\n");
 			mani_war_mode.SetValue(1);
-		}	
+		}
 
 		return PLUGIN_STOP;
 	}
@@ -8624,17 +8624,17 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaWar(player_t *player_ptr, const char *comma
 	{
 		// War mode off please
 		mani_war_mode.SetValue(0);
-		AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Disabled War Mode"); 
+		AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Disabled War Mode");
 		LogCommand (player_ptr, "Disable war mode\n");
 	}
 	else if (option_val == 1)
 	{
 		// War mode on please
-		AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Enabled War Mode"); 
+		AdminSayToAll(GREEN_CHAT, player_ptr, 1, "Enabled War Mode");
 		LogCommand (player_ptr, "Enable war mode\n");
 		mani_war_mode.SetValue(1);
 	}
-	
+
 	return PLUGIN_STOP;
 }
 
@@ -8683,13 +8683,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 			}
 			else
 			{
-				snprintf(time_string, sizeof(time_string), "Timeleft %i:%02i", minutes_portion, seconds_portion, gpGlobals->curtime);	
+				snprintf(time_string, sizeof(time_string), "Timeleft %i:%02i", minutes_portion, seconds_portion, gpGlobals->curtime);
 			}
 
 			follow_string = true;
 			no_timelimit = false;
 		}
-		else 
+		else
 		{
 			snprintf(time_string, sizeof(time_string), "No timelimit for map");
 		}
@@ -8752,7 +8752,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 	}
 
 	if (player_ptr)
-	{		
+	{
 		if (mani_timeleft_player_only.GetInt() == 1)
 		{
 			SayToPlayer(GREEN_CHAT, player_ptr,"%s", final_string);
@@ -8760,7 +8760,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 		else
 		{
 			SayToAll(ORANGE_CHAT, false,"%s", final_string);
-		}	
+		}
 	}
 	else
 	{
@@ -8992,8 +8992,8 @@ CONVAR_CALLBACK_FN(ManiCSStackingNumLevels)
 
 CONVAR_CALLBACK_FN(ManiUnlimitedGrenades)
 {
-	if (!FStrEq(pOldString, mani_unlimited_grenades.GetString()) && 
-		gpManiGameType->IsGameType(MANI_GAME_CSS) && 
+	if (!FStrEq(pOldString, mani_unlimited_grenades.GetString()) &&
+		gpManiGameType->IsGameType(MANI_GAME_CSS) &&
 		sv_cheats &&
 		!war_mode)
 	{
@@ -9034,7 +9034,7 @@ CONVAR_CALLBACK_FN(ManiStatsBySteamID)
 
 		// Don't add player if steam id is not confirmed
 		if (mani_stats_by_steam_id.GetInt() == 1 && FStrEq(player.steam_id, "STEAM_ID_PENDING")) continue;
-		
+
 		gpManiStats->NetworkIDValidated(&player);
 	}
 }

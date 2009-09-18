@@ -36,7 +36,7 @@
 #include "iplayerinfo.h"
 #include "eiface.h"
 #include "igameevents.h"
-#include "mrecipientfilter.h" 
+#include "mrecipientfilter.h"
 #include "bitbuf.h"
 #include "engine/IEngineSound.h"
 #include "inetchannelinfo.h"
@@ -106,9 +106,9 @@ void ManiGameType::GameFrame(void)
 	time(&current_time);
 	if (current_time > this->next_time_check)
 	{
-		SayToAll(LIGHT_GREEN_CHAT, true, "MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!"); 
+		SayToAll(LIGHT_GREEN_CHAT, true, "MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!");
 		SayToAll(LIGHT_GREEN_CHAT, true, "Please download http://www.mani-admin-plugin.com/mani_admin_plugin/gametypes/gametypes.txt");
-		MMsg("MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!\n"); 
+		MMsg("MANI-ADMIN-PLUGIN: Warning, your server plugin gametypes.txt file is out of date which will cause instability!\n");
 		MMsg("Please download http://www.mani-admin-plugin.com/mani_admin_plugin/gametypes/gametypes.txt\n");
 		next_time_check = current_time + 30;
 	}
@@ -124,11 +124,11 @@ void GetLinuxBins ( char *game, char *engine ) {
 	char file[255];
 	snprintf(file, sizeof(file)-1, "/proc/%d/maps", pid);
 
-	if ( UTIL_ScanFile ( file, "engine_i486.so" ) )
-		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
-	else
+	if ( UTIL_ScanFile ( file, "engine_i686.so" ) )
 		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
-	
+	else
+		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
+
 	char gamedir[256];
 	UTIL_GetGamePath ( gamedir );
 	Q_snprintf ( game, 256, "./%s/bin/server_i486.so", gamedir );
@@ -519,7 +519,7 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 //---------------------------------------------------------------------------------
 #define GETWEAPONCOST(_name, _cost) \
 	weapon_cost = kv_ptr->GetInt(#_name, _cost); \
-	SetWeaponCost(#_name, weapon_cost) 
+	SetWeaponCost(#_name, weapon_cost)
 
 void	ManiGameType::GetWeaponDetails(KeyValues *kv_ptr)
 {
@@ -1106,7 +1106,7 @@ CON_COMMAND(ma_showprops, "Shows current prop types")
 {
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
-	
+
 	for (int i = 0; i < MANI_PROP_SIZE; i ++)
 	{
 		MMsg("Prop name [%s] ", gpManiGameType->prop_index[i].name);
