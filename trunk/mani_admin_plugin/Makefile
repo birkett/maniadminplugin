@@ -10,7 +10,7 @@
 
 
 ifeq ($(DEBUG_ON), TRUE)
-	DEBUG_FLAGS=-g -ggdb
+	DEBUG_FLAGS=-g -ggdb3
 endif
 
 # source files that should be compiled and linked into the binary
@@ -94,10 +94,10 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
 COMP_VER=3.4
 
-CPLUS=/usr/bin/g++-$(COMP_VER)
-CLINK=/usr/bin/gcc-$(COMP_VER)
+CPLUS=/usr/local/gcc-$(COMP_VER)/bin/g++-$(COMP_VER)
+CLINK=/usr/local/gcc-$(COMP_VER)/bin/gcc-$(COMP_VER)
 CPP_LIB=../stlport/lib/libstlport.a  \
-	/usr/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
+	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
 	$(EXTRA_LIBS)
