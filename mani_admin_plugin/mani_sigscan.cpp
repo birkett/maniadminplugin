@@ -7,7 +7,7 @@
 #include <time.h>
 #if defined _WIN32 || defined WIN32
 //   #define WIN32_LEAN_AND_MEAN
-   #include <windows.h> 
+   #include <windows.h>
    #include <winnt.h>
 #endif
 #include "interface.h"
@@ -16,7 +16,7 @@
 #include "iplayerinfo.h"
 #include "eiface.h"
 #include "igameevents.h"
-#include "mrecipientfilter.h" 
+#include "mrecipientfilter.h"
 #include "bitbuf.h"
 #include "engine/IEngineSound.h"
 #include "inetchannelinfo.h"
@@ -55,6 +55,7 @@ void *get_weapon_addr = NULL;
 void *get_black_market_price_addr = NULL;
 void *update_client_addr = NULL;
 void *connect_client_addr = NULL;
+void *netsendpacket_addr = NULL;
 
 CBaseEntityList *g_pEList = NULL;
 CGameRules *g_pGRules = NULL;
@@ -118,7 +119,7 @@ bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len)
 		return false; // GetDllMemInfo failed: pe points to a bad location
 	}
 
-	*base_len = (size_t)pe->OptionalHeader.SizeOfImage; 
+	*base_len = (size_t)pe->OptionalHeader.SizeOfImage;
 	return true;
 }
 
@@ -140,7 +141,7 @@ void	*FindAddress(char *address_name, bool gamebin)
 		return NULL;
 	}
 	else
-	{ 
+	{
 		var_address = dlsym(handle, address_name);
 		if (var_address == NULL)
 		{
@@ -176,7 +177,7 @@ bool CCSRoundRespawn(CBaseEntity *pThisPtr)
 bool	CCSUTILRemove(CBaseEntity *pCBE)
 {
 	if (!util_remove_addr) return false;
-	
+
 	if (pCBE)
 	{
 		UTILRemoveFunc(pCBE);
@@ -319,14 +320,16 @@ void LoadSigScans(void)
 
 	if (engine_success) {
 		MMsg("Found engine base %p and length %i [%p]\n", engine_base, engine_len, engine_base + engine_len);
-		connect_client_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));	
+		connect_client_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));
+		netsendpacket_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(NET_SendPacket));
 	}
 #else
-	connect_client_addr = FindAddress(CBaseServer_ConnectClient_Linux, false);	
+	connect_client_addr = FindAddress(CBaseServer_ConnectClient_Linux, false);
+	netsendpacket_addr  = FindAddress(NET_SendPacket_Linux, false);
 #endif
-	MMsg("Sigscan info\n"); 
+	MMsg("Sigscan info\n");
 	ShowSigInfo(connect_client_addr, "CBaseServer::ConnectClient");
-
+	ShowSigInfo(netsendpacket_addr, "NET_SendPacket");
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
 #ifdef WIN32
 	// Windows
@@ -396,13 +399,13 @@ void LoadSigScans(void)
 
 
 #endif
-	MMsg("Sigscan info\n"); 
+	MMsg("Sigscan info\n");
 	ShowSigInfo(respawn_addr, "A");
 	ShowSigInfo(util_remove_addr, "B");
 	if (util_remove_addr != NULL)
 	{
 		UTILRemoveFunc = (UTIL_Remove_) util_remove_addr;
-	}	
+	}
 
 	ShowSigInfo(g_pEList, "C");
 #ifdef WIN32
