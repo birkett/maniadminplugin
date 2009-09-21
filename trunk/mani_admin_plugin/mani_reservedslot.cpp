@@ -36,7 +36,7 @@
 #include "iplayerinfo.h"
 #include "eiface.h"
 #include "igameevents.h"
-#include "mrecipientfilter.h" 
+#include "mrecipientfilter.h"
 #include "bitbuf.h"
 #include "engine/IEngineSound.h"
 #include "inetchannelinfo.h"
@@ -57,6 +57,7 @@
 #include "shareddefs.h"
 #include "steamclientpublic.h"
 #include "mani_detours.h"
+#include "detour_macros.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
@@ -65,12 +66,14 @@ extern	IPlayerInfoManager *playerinfomanager;
 extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
-extern void * connect_client_addr;
+extern void *connect_client_addr;
+extern void *netsendpacket_addr;
 
 static int sort_active_players_by_ping ( const void *m1,  const void *m2);
 static int sort_active_players_by_connect_time ( const void *m1,  const void *m2);
 static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2);
-static CDetour * ccd;
+static CDetour * ManiClientConnectDetour;
+static CDetour * ManiNetSendPacketDetour;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -82,21 +85,23 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
-#if defined ORANGE
-#define CONNECT_CALL DETOUR_MEMBER_CALL(ConnectClientDetour)(netaddr_s, something, something2, something3, name, pass, steamcert, len);
-#else
-#define CONNECT_CALL DETOUR_MEMBER_CALL(ConnectClientDetour)(netaddr_s, something, something2, something3, name, pass, steamcert, len, more, unknowns);
-#endif
+#define CONNECT_CALL(name) ORIGINAL_MEMBER_CALL(name)
 
 #if defined ORANGE
-DETOUR_DECL_MEMBER8(ConnectClientDetour, void *, void *, netaddr_s, int, something, int, something2, int, something3, char  const*, name, char  const*, pass, const char*, steamcert, int, len)
-#else
-DETOUR_DECL_MEMBER10(ConnectClientDetour, void *, void *, netaddr_s, int, something, int, something2, int, something3, char  const*, name, char  const*, pass, const char*, steamcert, int, len, char const*, more, int, unknowns)
-#endif
-{
-	return CONNECT_CALL
+DECL_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int )
+	return CONNECT_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8);
 }
+#else
+DECL_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int )
+	MMsg("ConnectClient\n");
+	return CONNECT_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8,p9,pA);
+}
+#endif
 
+DECL_DETOUR5_void(NetSendPacketDetour, void *, int, void *, unsigned const char *, int) {
+	MMsg("NET_SendPacket\n");
+	return CONNECT_CALL(NetSendPacketDetour)(p1,p2,p3,p4,p5);
+}
 ManiReservedSlot::ManiReservedSlot()
 {
 	// Init
@@ -127,9 +132,13 @@ void ManiReservedSlot::CleanUp(void)
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::Load(void)
 {
-	ccd = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
-	if ( ccd )
-		ccd->DetourFunction();
+	ManiClientConnectDetour = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
+	if ( ManiClientConnectDetour )
+		ManiClientConnectDetour->DetourFunction();
+
+	ManiNetSendPacketDetour = CDetourManager::CreateDetour( "NetSendPacket", netsendpacket_addr, GET_MEMBER_CALLBACK(NetSendPacketDetour), GET_MEMBER_TRAMPOLINE(NetSendPacketDetour));
+	if ( ManiNetSendPacketDetour )
+		ManiNetSendPacketDetour->DetourFunction();
 	this->CleanUp();
 }
 
@@ -166,7 +175,7 @@ void ManiReservedSlot::LevelInit(void)
 			//			MMsg("[%s]\n", steam_id);
 		}
 
-		qsort(reserve_slot_list, reserve_slot_list_size, sizeof(reserve_slot_t), sort_reserve_slots_by_steam_id); 
+		qsort(reserve_slot_list, reserve_slot_list_size, sizeof(reserve_slot_t), sort_reserve_slots_by_steam_id);
 		filesystem->Close(file_handle);
 	}
 }
@@ -229,7 +238,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		// DirectLogCommand("[DEBUG] Player is on reserve slot list\n");
 		is_reserve_player = true;
 	}
-	else if (mani_reserve_slots_include_admin.GetInt() == 1 && 
+	else if (mani_reserve_slots_include_admin.GetInt() == 1 &&
 		gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 
 	{
@@ -245,7 +254,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 
 	for (int i = 0; i < active_player_list_size; i++)
 	{
-	DirectLogCommand("[DEBUG] Name [%s] Steam [%s] Spectator [%s] Ping [%f] TimeConnected [%f]\n", 
+	DirectLogCommand("[DEBUG] Name [%s] Steam [%s] Spectator [%s] Ping [%f] TimeConnected [%f]\n",
 	active_player_list[i].name,
 	active_player_list[i].steam_id,
 	(active_player_list[i].is_spectator) ? "YES":"NO",
@@ -385,7 +394,7 @@ void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr, int *players_on
 
 				active_player.time_connected = nci->GetTimeConnected();
 				Q_strcpy(active_player.ip_address, nci->GetAddress());
-				if (gpManiGameType->IsSpectatorAllowed() && 
+				if (gpManiGameType->IsSpectatorAllowed() &&
 					playerinfo->GetTeamIndex () == gpManiGameType->GetSpectatorIndex())
 				{
 					active_player.is_spectator = true;
@@ -399,7 +408,7 @@ void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr, int *players_on
 
 				*players_on_server = *players_on_server + 1;
 
-				Q_strcpy(temp_player.steam_id, active_player.steam_id); 
+				Q_strcpy(temp_player.steam_id, active_player.steam_id);
 				Q_strcpy(temp_player.ip_address, active_player.ip_address);
 				Q_strcpy(temp_player.name, active_player.name);
 				temp_player.is_bot = false;
@@ -437,7 +446,7 @@ void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr, int *players_on
 	{
 		// Kick by shortest connection time
 		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_connect_time);
-	}		
+	}
 }
 
 //---------------------------------------------------------------------------------
@@ -478,10 +487,10 @@ bool ManiReservedSlot::IsPlayerInReserveList(player_t *player_ptr)
 
 	if (NULL == (reserve_slot_t *) bsearch
 		(
-		&reserve_slot_key, 
-		reserve_slot_list, 
-		reserve_slot_list_size, 
-		sizeof(reserve_slot_t), 
+		&reserve_slot_key,
+		reserve_slot_list,
+		reserve_slot_list_size,
+		sizeof(reserve_slot_t),
 		sort_reserve_slots_by_steam_id
 		))
 	{
@@ -491,14 +500,14 @@ bool ManiReservedSlot::IsPlayerInReserveList(player_t *player_ptr)
 	return true;
 }
 
-static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2) 
+static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2)
 {
 	struct reserve_slot_t *mi1 = (struct reserve_slot_t *) m1;
 	struct reserve_slot_t *mi2 = (struct reserve_slot_t *) m2;
 	return strcmp(mi1->steam_id, mi2->steam_id);
 }
 
-static int sort_active_players_by_ping ( const void *m1,  const void *m2) 
+static int sort_active_players_by_ping ( const void *m1,  const void *m2)
 {
 	struct active_player_t *mi1 = (struct active_player_t *) m1;
 	struct active_player_t *mi2 = (struct active_player_t *) m2;
@@ -526,7 +535,7 @@ static int sort_active_players_by_ping ( const void *m1,  const void *m2)
 
 }
 
-static int sort_active_players_by_connect_time ( const void *m1,  const void *m2) 
+static int sort_active_players_by_connect_time ( const void *m1,  const void *m2)
 {
 	struct active_player_t *mi1 = (struct active_player_t *) m1;
 	struct active_player_t *mi2 = (struct active_player_t *) m2;

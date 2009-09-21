@@ -93,14 +93,15 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 # compiler options (gcc 3.4.1 to 3.4.6 is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
 COMP_VER=3.4
-
+#
 CPLUS=/usr/local/gcc-$(COMP_VER)/bin/g++-$(COMP_VER)
 CLINK=/usr/local/gcc-$(COMP_VER)/bin/gcc-$(COMP_VER)
 CPP_LIB=../stlport/lib/libstlport.a  \
-	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
 	$(EXTRA_LIBS)
+
+#	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 
 # put any compiler flags you want passed here
 USER_CFLAGS=
@@ -114,7 +115,7 @@ LDFLAGS=-lm -ldl tier0_i486.so vstdlib_i486.so
 
 # the CPU target for the build, must be i486 for now
 ARCH=i486
-ARCH_CFLAGS=-mtune=i686 -march=pentium3 -mmmx -O3
+ARCH_CFLAGS=-mtune=i686 -march=pentium3 -mmmx -O3 -m32 -msse2
 
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
 BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
@@ -128,7 +129,7 @@ SHLIBLDFLAGS=-shared
 
 CFLAGS=$(USER_CFLAGS) $(BASE_CFLAGS) $(ARCH_CFLAGS)
 CFLAGS+= $(DEBUG_FLAGS)
-
+# 
 DO_CC=$(CPLUS) -I../stlport/include/stlport/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 
 #####################################################################
