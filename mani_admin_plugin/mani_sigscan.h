@@ -112,10 +112,13 @@ class CBaseEntityList;
 	#define CBaseServer_ConnectClient_Linux "_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iS3_i"
 #endif
 
-#if defined ( ORANGE)
+#if defined ( ORANGE )
+	#define NET_SendPacket_Sig "\xB8\x2A\x2A\x2A\x2A\xE8\x76\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x83\x78\x2A\x2A\x53\x55\x8B"
+	#define NET_SendPacket_SigBytes 22
+	#define NET_SendPacket_Linux "_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
 #else
-	#define NET_SendPacket_Sig "\xA1\x2A\x2A\x2A\x2A\x83\xEC\x18\x83\x2A\x2A\x2A\x55\x8B\x2A\x2A\x2A\x56\x57\x8B"
-	#define NET_SendPacket_SigBytes "20"
+	#define NET_SendPacket_Sig "\xA1\x2A\x2A\x2A\x2A\x83\xEC\x2a\x83\x78\x2A\x2A\x55\x8B\x6C\x2A\x2A\x56\x57\x8B\x7C"
+	#define NET_SendPacket_SigBytes 21
 	#define NET_SendPacket_Linux "_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhi"
 #endif
 
