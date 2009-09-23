@@ -77,9 +77,9 @@ public:
 	CDetour			( const char *function, void *address_from, void *address_to, void **ret_tramp );
 
 	// write the jmp to your trampoline
-	void			DetourFunction(); //enable
+	void			DetourFunction(); 
 	// restore the original memory
-	void			RestoreFunction(); //disable
+	void			RestoreFunction();
 
 	DETOUR_STATE	DetourState();
 	void			Destroy();
@@ -101,9 +101,9 @@ private:
 	char			FunctionDetoured[32];
 
 	// allocate the trampoline space and create the pointers
-	bool			StartDetour(); //create
+	bool			StartDetour();
 	// disable the detour ( RestoreFunction() ) and free the allocated space.
-	void			EndDetour(); //delete
+	void			EndDetour();
 
 	void		   *FreeMemory ( void *addr );
 };
@@ -137,15 +137,13 @@ inline DETOUR_STATE RestoreCode( mem_t *address_from, save_memory_t *orig_bytes 
 	for ( size_t i=0; i < orig_bytes->size_stored; i++ )
 		addr[i] = orig_bytes->bytes_from_memory[i];
 
-	// do a memcpy instead?
-
 	return DEFINED;
 }
 
 class CDetourManager
 {
 public:
-	static CDetour *CreateDetour( const char *function, void *address_from, void *address_to, void **ret_tramp );
+	static CDetour *CreateDetour( const char *function, void *address_from, void *address_to, void **ret_tramp);
 	friend class CDetour;
 };
 #endif // MANI_DETOURS_H

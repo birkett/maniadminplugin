@@ -33,6 +33,24 @@ struct reserve_slot_t
 	char	steam_id[MAX_NETWORKID_LENGTH];
 };
 
+struct A2S_INFO_t {
+	char	type;
+	char	netversion;
+	char	server_name[256];
+	char	map[256];
+	char	gamedir[256];
+	char	gamedesc[256];
+	short	appid;
+	char	players;
+	char	maxplayers;
+	char	bots;
+	char	dedicated;
+	char	os;
+	bool	passwordset;
+	bool	secure;
+	char	version[256];
+};
+
 struct active_player_t
 {
 	edict_t	*entity;

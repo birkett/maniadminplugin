@@ -85,23 +85,110 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
-#define CONNECT_CALL(name) ORIGINAL_MEMBER_CALL(name)
+#define COPY_BYTE(target, source) \
+	target = source[0]; \
+	source++
 
-#if defined ORANGE
-DECL_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int )
-	return CONNECT_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8);
+#define COPY_STRING(target, source) \
+	strcount = 0; \
+	while (source[0] != 0) { \
+		target[strcount++]=source[0]; \
+		source++; \
+	} \
+	source++
+
+#define COPY_SHORT(target, source) \
+	memcpy (target, source, 2); \
+	source+=2;
+
+#define COPY_BOOL(target, source) \
+	target = ( source[0] != 0); \
+	source++
+
+// we don't actually have to fill this data structure, but thought it might be easier
+// to work with if we did when changes come about.
+void FillINFOQuery ( const mem_t* data, A2S_INFO_t &info, mem_t **pPlayers, mem_t **pPassword ) {
+	int strcount = 0;
+	if ( (data[0]!=0xFF) && (data[1]!=0xFF) && (data[2]!=0xFF) && (data[3]!=0xFF) ) return;
+
+	//byte	type;
+	//byte	netversion;
+	//char	server_name[256];
+	//char	map[256];
+	//char	gamedir[256];
+	//char	gamedesc[256];
+	//short	appid;
+	//byte	players;
+	//byte	maxplayers;
+	//byte	bots;
+	//char	dedicated;
+	//char	os;
+	//bool	passwordset;
+	//bool	secure;
+	//char	version[256];
+
+	data+=4;
+	COPY_BYTE(info.type, data);
+	COPY_BYTE(info.netversion, data);
+	COPY_STRING(info.server_name, data);
+	COPY_STRING(info.map, data);
+	COPY_STRING(info.gamedir, data);
+	COPY_STRING(info.gamedesc, data);
+	COPY_SHORT(&info.appid, data);
+	*pPlayers = (mem_t *)data;
+	COPY_BYTE(info.players, data);
+	COPY_BYTE(info.maxplayers, data);
+	COPY_BYTE(info.bots, data);
+	COPY_BYTE(info.dedicated, data);
+	COPY_BYTE(info.os, data);
+	*pPassword = (mem_t *)data;
+	COPY_BOOL(info.passwordset, data);
+	COPY_BOOL(info.secure,data);
+	COPY_STRING(info.version, data);
+}
+
+#if defined ( ORANGE )
+DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int ) {
+	MMsg("ConnectClient\n");
+	return MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8);
 }
 #else
-DECL_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int )
+DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int ) {
 	MMsg("ConnectClient\n");
-	return CONNECT_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8,p9,pA);
+	return MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8,p9,pA);
 }
 #endif
 
-DECL_DETOUR5_void(NetSendPacketDetour, void *, int, void *, unsigned const char *, int) {
-	MMsg("NET_SendPacket\n");
-	return CONNECT_CALL(NetSendPacketDetour)(p1,p2,p3,p4,p5);
+#if defined ( ORANGE )
+DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int, void *, bool) {
+#else
+DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int ) {
+#endif
+	char strIP[19]; // IPv6 capable!
+	if ( p3 ) {
+		int ip = *(int *)((const char *)p3 + 4);
+		snprintf(strIP, sizeof(strIP), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
+	}
+
+	mem_t *pPassword = NULL;
+	mem_t *pPlayers = NULL;
+	A2S_INFO_t QueryData;
+	memset (&QueryData, 0, sizeof(QueryData));
+
+	FillINFOQuery( p4, QueryData, &pPlayers, &pPassword );
+	if ( QueryData.netversion == 7 ) {
+		//need to search valid IPs here ( last IP connected by admin flag )
+		if ( pPlayers ) {
+			//		if ( pPlayers[0] == pPlayers[1] )
+			pPlayers[1]++;
+		}
+
+		if ( pPassword )
+			pPassword[0]=0;
+	}
+	return NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5);
 }
+
 ManiReservedSlot::ManiReservedSlot()
 {
 	// Init
@@ -134,11 +221,13 @@ void ManiReservedSlot::Load(void)
 {
 	ManiClientConnectDetour = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
 	if ( ManiClientConnectDetour )
-		ManiClientConnectDetour->DetourFunction();
+		ManiClientConnectDetour->DetourFunction( );
 
-	ManiNetSendPacketDetour = CDetourManager::CreateDetour( "NetSendPacket", netsendpacket_addr, GET_MEMBER_CALLBACK(NetSendPacketDetour), GET_MEMBER_TRAMPOLINE(NetSendPacketDetour));
+	ASSIGN_ORIGINAL(NET_SendPacketDetour, netsendpacket_addr);
+
+	ManiNetSendPacketDetour = CDetourManager::CreateDetour( "NETSendPacket", netsendpacket_addr, GET_NON_MEMBER_CALLBACK(NET_SendPacketDetour), GET_NON_MEMBER_TRAMPOLINE(NET_SendPacketDetour) );
 	if ( ManiNetSendPacketDetour )
-		ManiNetSendPacketDetour->DetourFunction();
+		ManiNetSendPacketDetour->DetourFunction( );
 	this->CleanUp();
 }
 
