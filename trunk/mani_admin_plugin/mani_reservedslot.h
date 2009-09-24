@@ -31,6 +31,7 @@
 struct reserve_slot_t
 {
 	char	steam_id[MAX_NETWORKID_LENGTH];
+	char	last_ip[MAX_IP_ADDRESS_LENGTH];
 };
 
 struct A2S_INFO_t {
@@ -55,7 +56,7 @@ struct active_player_t
 {
 	edict_t	*entity;
 	char	steam_id[MAX_NETWORKID_LENGTH];
-	char	ip_address[128];
+	char	ip_address[MAX_IP_ADDRESS_LENGTH];
 	char	name[MAX_PLAYER_NAME_LENGTH];
 	int		user_id;
 	float	ping;
@@ -79,13 +80,13 @@ public:
 	void		Load(void); // Run at level init
 	void		LevelInit(void); // Run at level init
 	bool		NetworkIDValidated(player_t *player_ptr);
+	bool		IsPlayerInReserveList(player_t *player_ptr);
 
 private:
 
 	bool		ProcessPlayer(player_t *player_ptr);
 	void		BuildPlayerKickList(player_t *player_ptr, int *players_on_server);
 	void		DisconnectPlayer(player_t *player_ptr);
-	bool		IsPlayerInReserveList(player_t *player_ptr);
 	void		CleanUp(void);
 
 	int	active_player_list_size;

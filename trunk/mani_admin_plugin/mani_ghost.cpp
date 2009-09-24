@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -65,7 +66,7 @@ extern	bool war_mode;
 struct	current_ip_t
 {
 	bool	in_use;
-	char	ip_address[128];
+	char	ip_address[MAX_IP_ADDRESS_LENGTH];
 };
 
 

@@ -22,9 +22,6 @@
 
 //
 
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -164,7 +161,7 @@ DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 #else
 DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int ) {
 #endif
-	char strIP[19]; // IPv6 capable!
+	char strIP[MAX_IP_ADDRESS_LENGTH]; // IPv6 capable!
 	if ( p3 ) {
 		int ip = *(int *)((const char *)p3 + 4);
 		snprintf(strIP, sizeof(strIP), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
@@ -176,17 +173,29 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 	memset (&QueryData, 0, sizeof(QueryData));
 
 	FillINFOQuery( p4, QueryData, &pPlayers, &pPassword );
-	if ( QueryData.netversion == 7 ) {
-		//need to search valid IPs here ( last IP connected by admin flag )
-		if ( pPlayers ) {
-			//		if ( pPlayers[0] == pPlayers[1] )
-			pPlayers[1]++;
-		}
+	if ( QueryData.type == 'I' ) {
+		player_t player;
+		memset (&player, 0, sizeof(player));
+		Q_strcpy (player.ip_address, strIP);
+		bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN);
+		// need to have a STEAM_ID to IP cross reference here
+		bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
 
-		if ( pPassword )
-			pPassword[0]=0;
+		if (AdminAccess || ReservedAccess) {
+			if ( pPlayers ) {
+				if ((pPlayers[0] == pPlayers[1]) && (pPlayers[0] == max_players))
+					pPlayers[1]++;
+			}
+
+			if ( AdminAccess && pPassword )
+				pPassword[0]=0;
+		}
 	}
+#if defined ( ORANGE )
+	return NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5,p6,p7);
+#else
 	return NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5);
+#endif
 }
 
 ManiReservedSlot::ManiReservedSlot()
@@ -250,6 +259,7 @@ void ManiReservedSlot::LevelInit(void)
 	}
 	else
 	{
+		//		TODO:  Add in the IP address update function and read the full line here:
 		//		MMsg("Reserve Slot list\n");
 		while (filesystem->ReadLine (steam_id, sizeof(steam_id), file_handle) != NULL)
 		{
@@ -261,6 +271,8 @@ void ManiReservedSlot::LevelInit(void)
 
 			AddToList((void **) &reserve_slot_list, sizeof(reserve_slot_t), &reserve_slot_list_size);
 			Q_strcpy(reserve_slot_list[reserve_slot_list_size - 1].steam_id, steam_id);
+			Q_strcpy(reserve_slot_list[reserve_slot_list_size - 1].last_ip, ip_address);
+
 			//			MMsg("[%s]\n", steam_id);
 		}
 

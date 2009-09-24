@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -46,7 +47,7 @@ private:
 	{
 		bool	in_use;
 		bool	is_ghost;
-		char	ip_address[128];
+		char	ip_address[MAX_IP_ADDRESS_LENGTH];
 	};
 
 	current_ip_t	current_ip_list[MANI_MAX_PLAYERS];

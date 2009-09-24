@@ -320,8 +320,8 @@ void LoadSigScans(void)
 
 	if (engine_success) {
 		MMsg("Found engine base %p and length %i [%p]\n", engine_base, engine_len, engine_base + engine_len);
-		connect_client_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));
-		netsendpacket_addr = FindSignature(engine_base, engine_len, (unsigned char*) MKSIG(NET_SendPacket));
+		connect_client_addr = FindSignature (engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));
+		netsendpacket_addr =  FindSignature (engine_base, engine_len, (unsigned char*) MKSIG(NET_SendPacket));
 	}
 #else
 	connect_client_addr = FindAddress(CBaseServer_ConnectClient_Linux, false);

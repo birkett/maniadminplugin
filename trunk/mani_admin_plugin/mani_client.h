@@ -182,7 +182,7 @@ private:
 	struct old_style_client_t
 	{
 		char		steam_id[MAX_NETWORKID_LENGTH];
-		char		ip_address[128];
+		char		ip_address[MAX_IP_ADDRESS_LENGTH];
 		char		name[128];
 		char		password[128];
 		char		group_id[128];
