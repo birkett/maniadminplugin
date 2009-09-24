@@ -23,6 +23,7 @@ extern void Msg( const char *, ... );
 * @param pc		The program counter value that needs to be set (usually the next address from the source).
 * @noreturn
 */
+
 void check_thunks(unsigned char *dest, unsigned char *pc)
 {
 #if defined WIN32
@@ -370,7 +371,7 @@ void* eval_jump(void* src) {
 	else if (addr[0] == OP_JMP_BYTE) {
 		addr = &addr[OP_JMP_BYTE_SIZE] + *(char*)&addr[1];
 		//mangled 32bit jump?
-		if (addr[0] = OP_JMP) {
+		if (addr[0] == OP_JMP) {
 			addr = addr + *(int*)&addr[1];
 		}
 		return addr;

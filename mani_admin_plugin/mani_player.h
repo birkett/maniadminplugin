@@ -30,7 +30,7 @@
 struct player_t
 {
 	char	steam_id[MAX_NETWORKID_LENGTH];
-	char	ip_address[128];
+	char	ip_address[MAX_IP_ADDRESS_LENGTH];
 	char	name[MAX_PLAYER_NAME_LENGTH];
 	char	password[128];
 	int		user_id;

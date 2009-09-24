@@ -189,7 +189,7 @@ bool ManiClient::OldAddClient
  )
 {
 	char	steam_id[MAX_NETWORKID_LENGTH]="";
-	char	ip_address[128]="";
+	char	ip_address[MAX_IP_ADDRESS_LENGTH]="";
 	char	name[MAX_PLAYER_NAME_LENGTH]="";
 	char	password[128]="";
 	int	i,j;
@@ -4631,7 +4631,9 @@ int	ManiClient::FindClientIndex
 		return -1;
 	}
 
-	const char *password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
+	const char *password = NULL;
+	if ( player_ptr->index != 0 )
+		password  = engine->GetClientConVarValue(player_ptr->index, "_password" );
 
 	//Search through admin list for match
 	for (int i = 0; i != (int) c_list.size(); i ++)
@@ -4649,7 +4651,7 @@ int	ManiClient::FindClientIndex
 		}
 
 		// Check name password combo
-		if (c_list[i]->GetPassword() && 
+		if (password && c_list[i]->GetPassword() && 
 			strcmp(c_list[i]->GetPassword(), password) == 0 &&
 			c_list[i]->nick_list.Find(player_ptr->name))
 		{
