@@ -1137,7 +1137,6 @@ void	WritePlayerSettings(player_settings_t **ps_list, int ps_list_size, char *fi
 		settings->WriteNewSubKey(i + 1);
 		settings->WriteKey("na", ps_list[i]->name);
 		settings->WriteKey("st", ps_list[i]->steam_id);
-
 		if (ps_list[i]->damage_stats != 0) settings->WriteKey("ds", ps_list[i]->damage_stats);
 		if (ps_list[i]->damage_stats_timeout != 0) settings->WriteKey("dt", ps_list[i]->damage_stats_timeout);
 		if (ps_list[i]->show_destruction != 0) settings->WriteKey("de", ps_list[i]->show_destruction);
@@ -1260,6 +1259,7 @@ void	ReadPlayerSettings(void)
 						filesystem->Read(&name, sizeof(name), file_handle);
 						strcpy(ps.name, name);
 						strcpy(ps.steam_id, steam_id);
+
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);
@@ -1304,6 +1304,7 @@ void	ReadPlayerSettings(void)
 						filesystem->Read(&name, sizeof(name), file_handle);
 						strcpy(ps.name, name);
 						strcpy(ps.steam_id, steam_id);
+
 						filesystem->Read(&(ps.damage_stats), sizeof(ps.damage_stats), file_handle);
 						filesystem->Read(&(ps.quake_sounds), sizeof(ps.quake_sounds), file_handle);
 						filesystem->Read(&(ps.server_sounds), sizeof(ps.server_sounds),	file_handle);

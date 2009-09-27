@@ -26,7 +26,6 @@
 #include "iplayerinfo.h"
 #include "mani_detours.h"
 #include "KeCodeAllocator.h"
-#include "mani_output.h"
 #include "asm.h"
 #include "jit_helpers.h"
 #include "x86/x86_macros.h"
@@ -75,7 +74,7 @@ void CDetour::RestoreFunction() {
 // understand in this area .... yet
 bool CDetour::StartDetour() {
 	if (!DetourAddress) {
-		MMsg ("Detour for %s failed - no valid pointer was provided.\n", FunctionDetoured);
+		Msg ("Detour for %s failed - no valid pointer was provided.\n", FunctionDetoured);
 		return false;
 	}
 

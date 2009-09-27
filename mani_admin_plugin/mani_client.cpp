@@ -189,7 +189,7 @@ bool ManiClient::OldAddClient
  )
 {
 	char	steam_id[MAX_NETWORKID_LENGTH]="";
-	char	ip_address[MAX_IP_ADDRESS_LENGTH]="";
+	char	ip_address[128]="";
 	char	name[MAX_PLAYER_NAME_LENGTH]="";
 	char	password[128]="";
 	int	i,j;
@@ -6089,6 +6089,38 @@ void	ManiClient::UpdateClientUserID(const int user_id, const char *name)
 	}
 }
 
+//---------------------------------------------------------------------------------
+// Loads the simple IP list into a ManiKeyValues structure
+//---------------------------------------------------------------------------------
+bool ManiClient::LoadIPList() {
+	char	core_filename[256];
+	char	version_string[32];
+	ManiKeyValues *kv_ptr;
+
+	kv_ptr = new ManiKeyValues("client_ip_history.txt");
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/client_ip_history.txt", mani_path.GetString());
+
+	if (!kv_ptr->ReadFile(core_filename)) {
+		MMsg("Failed to load %s\n", core_filename);
+		kv_ptr->DeleteThis();
+		return false;
+	}
+
+	read_t *rd_ptr = kv_ptr->GetPrimaryKey();
+	if (!rd_ptr)
+	{
+		kv_ptr->DeleteThis();
+		return false;
+	}
+
+	for (;;) {
+		read_t *ip_ptr = kv_ptr->GetNextKey(rd_ptr);
+
+		if ( !ip_ptr ) break;
+	}
+
+	return false;
+}
 //---------------------------------------------------------------------------------
 // Menus for client admin
 //---------------------------------------------------------------------------------

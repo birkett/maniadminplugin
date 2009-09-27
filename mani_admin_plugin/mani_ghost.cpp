@@ -66,7 +66,7 @@ extern	bool war_mode;
 struct	current_ip_t
 {
 	bool	in_use;
-	char	ip_address[MAX_IP_ADDRESS_LENGTH];
+	char	ip_address[128];
 };
 
 

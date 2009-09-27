@@ -27,7 +27,7 @@
 #ifndef MANI_CLIENT_H
 #define MANI_CLIENT_H
 
-#define MAX_ADMIN_FLAGS (54)
+#define MAX_ADMIN_FLAGS (55)
 #define MAX_IMMUNITY_FLAGS (29)
 
 #define ADMIN ("Admin")
@@ -45,6 +45,33 @@ class LevelList;
 class GroupList;
 
 struct read_t;
+
+class IPClient {
+public:
+	IPClient() {
+		_ip_list.clear();
+	}
+
+	~IPClient() {
+		_ip_list.clear();
+	}
+
+	bool	operator = ( const char * ip );
+	bool	SetSteam ( const char *steamid);
+	bool	AddIP ( const char *ip );
+	bool	RemoveIP ( const char *ip );
+	int		RemoveStale( float age );
+
+private:
+	struct IP_entry_t {
+		char	_ip[128];
+		time_t	_last_played;
+	};
+
+	char	_steamid[MAX_NETWORKID_LENGTH];
+	std::vector<IP_entry_t> _ip_list;
+	
+};
 
 class ClientPlayer
 {
@@ -170,6 +197,14 @@ public:
 	bool			AddFlagDesc(const char *class_name, const char *flag_name, const char *description, bool	replace_description = true );
 	void			UpdateClientUserID(const int user_id, const char *name);
 
+	// new ip list items
+	bool			LoadIPList( void );
+	int				CleanupIPList( void );
+	bool			IPLinksToAdmin ( const char *ip );
+	bool			IPLinksToReservedSlot ( const char *ip );
+	bool			UpdatePlayer( player_t *player_ptr, const char *ip );
+	bool			WriteIPList( void );
+
 private:
 
 	/******* structs required for V1.1 upgrade to new format ******/
@@ -182,7 +217,7 @@ private:
 	struct old_style_client_t
 	{
 		char		steam_id[MAX_NETWORKID_LENGTH];
-		char		ip_address[MAX_IP_ADDRESS_LENGTH];
+		char		ip_address[128];
 		char		name[128];
 		char		password[128];
 		char		group_id[128];
@@ -297,6 +332,10 @@ private:
 
 	// Stores all clients in a list
 	std::vector<ClientPlayer *> c_list;
+
+	// Store the IP access List here
+	std::vector<IPClient *> ip_list;
+
 	FlagDescList	flag_desc_list;
 };
 

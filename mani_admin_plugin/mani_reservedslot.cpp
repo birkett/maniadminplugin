@@ -161,7 +161,7 @@ DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 #else
 DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int ) {
 #endif
-	char strIP[MAX_IP_ADDRESS_LENGTH]; // IPv6 capable!
+	char strIP[128]; // IPv6 capable!
 	if ( p3 ) {
 		int ip = *(int *)((const char *)p3 + 4);
 		snprintf(strIP, sizeof(strIP), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
@@ -259,7 +259,6 @@ void ManiReservedSlot::LevelInit(void)
 	}
 	else
 	{
-		//		TODO:  Add in the IP address update function and read the full line here:
 		//		MMsg("Reserve Slot list\n");
 		while (filesystem->ReadLine (steam_id, sizeof(steam_id), file_handle) != NULL)
 		{
@@ -271,8 +270,6 @@ void ManiReservedSlot::LevelInit(void)
 
 			AddToList((void **) &reserve_slot_list, sizeof(reserve_slot_t), &reserve_slot_list_size);
 			Q_strcpy(reserve_slot_list[reserve_slot_list_size - 1].steam_id, steam_id);
-			Q_strcpy(reserve_slot_list[reserve_slot_list_size - 1].last_ip, ip_address);
-
 			//			MMsg("[%s]\n", steam_id);
 		}
 
