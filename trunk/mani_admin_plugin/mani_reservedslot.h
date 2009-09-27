@@ -31,7 +31,7 @@
 struct reserve_slot_t
 {
 	char	steam_id[MAX_NETWORKID_LENGTH];
-	char	last_ip[MAX_IP_ADDRESS_LENGTH];
+	char	last_ip[128];
 };
 
 struct A2S_INFO_t {
@@ -56,7 +56,7 @@ struct active_player_t
 {
 	edict_t	*entity;
 	char	steam_id[MAX_NETWORKID_LENGTH];
-	char	ip_address[MAX_IP_ADDRESS_LENGTH];
+	char	ip_address[128];
 	char	name[MAX_PLAYER_NAME_LENGTH];
 	int		user_id;
 	float	ping;

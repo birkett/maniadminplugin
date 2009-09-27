@@ -1044,7 +1044,7 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 
 void ManiAutoKickBan::AddAutoKickIP(char *details)
 {
-	char	ip_address[MAX_IP_ADDRESS_LENGTH];
+	char	ip_address[128];
 	autokick_ip_t	autokick_ip;
 
 	if (!AddToList((void **) &autokick_ip_list, sizeof(autokick_ip_t), &autokick_ip_list_size))

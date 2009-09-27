@@ -47,7 +47,7 @@ private:
 	{
 		bool	in_use;
 		bool	is_ghost;
-		char	ip_address[MAX_IP_ADDRESS_LENGTH];
+		char	ip_address[128];
 	};
 
 	current_ip_t	current_ip_list[MANI_MAX_PLAYERS];
