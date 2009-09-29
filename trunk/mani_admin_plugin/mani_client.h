@@ -46,31 +46,42 @@ class GroupList;
 
 struct read_t;
 
+struct IP_entry_t {
+	char	ip[128];
+	time_t	last_played;
+};
+
 class IPClient {
 public:
 	IPClient() {
-		_ip_list.clear();
+		int_ip_list.clear();
+	}
+
+	IPClient( const char *steamid, bool admin ) {
+		int_ip_list.clear();
+
+		_admin = admin;
+
+		if ( !steamid || (steamid[0] == 0) ) return;
+
+		Q_memset( _steamid, 0, sizeof(_steamid) );
+		Q_strcpy ( _steamid, steamid );
 	}
 
 	~IPClient() {
-		_ip_list.clear();
+		int_ip_list.clear();
 	}
 
-	bool	operator = ( const char * ip );
+public:
 	bool	SetSteam ( const char *steamid);
-	bool	AddIP ( const char *ip );
+	bool	AddIP ( const char *ip, int time );
 	bool	RemoveIP ( const char *ip );
-	int		RemoveStale( float age );
+	int		RemoveStale( int days );
 
-private:
-	struct IP_entry_t {
-		char	_ip[128];
-		time_t	_last_played;
-	};
+	std::vector<IP_entry_t> int_ip_list;
 
+	bool	_admin;
 	char	_steamid[MAX_NETWORKID_LENGTH];
-	std::vector<IP_entry_t> _ip_list;
-	
 };
 
 class ClientPlayer
@@ -183,6 +194,7 @@ public:
 	void		NetworkIDValidated(player_t *player_ptr);
 	// Update level masks
 	void		ClientDisconnect(player_t *player_ptr);
+	void		LevelShutdown( void );
 
 	bool			IsClient(int id);
 	PLUGIN_RESULT	ProcessMaSetFlag(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type);
@@ -199,7 +211,7 @@ public:
 
 	// new ip list items
 	bool			LoadIPList( void );
-	int				CleanupIPList( void );
+	int				CleanupIPList( int days );
 	bool			IPLinksToAdmin ( const char *ip );
 	bool			IPLinksToReservedSlot ( const char *ip );
 	bool			UpdatePlayer( player_t *player_ptr, const char *ip );

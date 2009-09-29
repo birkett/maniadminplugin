@@ -177,6 +177,9 @@ void	ManiClient::ClientDisconnect(player_t *player_ptr)
 	return;
 }
 
+void ManiClient::LevelShutdown() {
+	WriteIPList();
+}
 //---------------------------------------------------------------------------------
 // Purpose: Parses the Admin config line setting flags
 //---------------------------------------------------------------------------------
@@ -606,6 +609,7 @@ bool	ManiClient::Init(void)
 
 	flag_desc_list.WriteFlags();
 	this->SetupPlayersOnServer();
+	LoadIPList();
 
 	return true;
 }
@@ -6094,33 +6098,86 @@ void	ManiClient::UpdateClientUserID(const int user_id, const char *name)
 //---------------------------------------------------------------------------------
 bool ManiClient::LoadIPList() {
 	char	core_filename[256];
-	char	version_string[32];
-	ManiKeyValues *kv_ptr;
+	KeyValues *kv_ptr;
 
-	kv_ptr = new ManiKeyValues("client_ip_history.txt");
+	kv_ptr = new KeyValues("client_ip_history.txt");
 	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/client_ip_history.txt", mani_path.GetString());
 
-	if (!kv_ptr->ReadFile(core_filename)) {
+	ip_list.clear();
+	Q_memset( &ip_list, 0, sizeof (ip_list) );
+
+	if ( !kv_ptr->LoadFromFile(filesystem, core_filename) ) {
 		MMsg("Failed to load %s\n", core_filename);
-		kv_ptr->DeleteThis();
+		kv_ptr->deleteThis();
 		return false;
 	}
 
-	read_t *rd_ptr = kv_ptr->GetPrimaryKey();
-	if (!rd_ptr)
-	{
-		kv_ptr->DeleteThis();
-		return false;
+	KeyValues *acct_type = kv_ptr->GetFirstSubKey(); // A = Admin, R = Reserved Slot
+	while ( acct_type ) {
+		bool admin = ( FStrEq(acct_type->GetName(), "a" ) );
+		KeyValues *steam_info = acct_type->GetFirstSubKey();
+		while ( steam_info ) {
+			IPClient *client = new IPClient(steam_info->GetName(), admin );
+			ip_list.push_back(client);
+			KeyValues *data = steam_info->GetFirstValue();
+			while ( data ) {
+				client->AddIP(data->GetName(), data->GetInt());
+				data = data->GetNextValue();
+			}
+			steam_info = steam_info->GetNextKey();
+		}
+		acct_type = acct_type->GetNextKey();
 	}
 
-	for (;;) {
-		read_t *ip_ptr = kv_ptr->GetNextKey(rd_ptr);
-
-		if ( !ip_ptr ) break;
-	}
-
-	return false;
+	return true;
 }
+
+//---------------------------------------------------------------------------------
+// Writes the simple IP list into a ManiKeyValues structure
+//---------------------------------------------------------------------------------
+bool ManiClient::WriteIPList() {
+	char	core_filename[256];
+	
+
+	KeyValues *kv_ptr = new KeyValues("client_ip_history.txt");
+	KeyValues *admin = new KeyValues("A");
+	KeyValues *reserved = new KeyValues("R");
+	
+	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/client_ip_history.txt", mani_path.GetString());
+	
+	KeyValues *client = NULL;
+	CleanupIPList( 7 );
+	for ( int i = 0; i < (int)ip_list.size(); i++ ) {
+		if ( ip_list[i]->int_ip_list.size() == 0 )
+			continue;
+		client = new KeyValues(ip_list[i]->_steamid);
+		for ( int x = 0; x < (int)ip_list[i]->int_ip_list.size(); x++ ) {
+			client->SetInt(ip_list[i]->int_ip_list[x].ip, ip_list[i]->int_ip_list[x].last_played);
+		}
+		if ( ip_list[i]->_admin )
+			admin->AddSubKey(client);			
+		else 
+			reserved->AddSubKey(client);
+
+	}
+	kv_ptr->AddSubKey(admin);
+	kv_ptr->AddSubKey(reserved);
+	kv_ptr->SaveToFile( filesystem, core_filename );
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Cleans stale records from the IP list
+//---------------------------------------------------------------------------------
+int ManiClient::CleanupIPList(int days) {
+	int count = 0;
+
+	for ( int i = 0; i < (int)ip_list.size(); i++ )
+		count += ip_list[i]->RemoveStale(days);
+
+	return count;
+}
+
 //---------------------------------------------------------------------------------
 // Menus for client admin
 //---------------------------------------------------------------------------------
@@ -7939,7 +7996,43 @@ bool IPOnServerPage::PopulateMenuPage(player_t *player_ptr)
 	return true;
 }
 
+bool IPClient::SetSteam(const char *steamid) {
+	if ( !steamid || (steamid[0] == 0) ) return false;
 
+	Q_memset( _steamid, 0, sizeof(_steamid) );
+	Q_strcpy ( _steamid, steamid );
+	return true;
+}
+
+bool IPClient::AddIP ( const char *ip, int tm ) {
+	if ( !ip || (ip[0] == 0 ) ) return false;
+	time_t expire = (time_t)(tm);
+
+	IP_entry_t entry;
+	Q_memset ( &entry, 0, sizeof(entry) );
+	Q_strcpy( entry.ip, ip );
+	entry.last_played = expire;
+	int_ip_list.push_back(entry);
+	return true;
+}
+
+int IPClient::RemoveStale(int days) {
+	int count = 0;
+	int seconds = ( days * 86400 ); // 86400 seconds/day
+	time_t now;
+	time (&now);
+
+	std::vector<IP_entry_t>::iterator index;	
+
+	for ( index = int_ip_list.begin(); index != int_ip_list.end(); ) {
+		if ((index->last_played + seconds ) < now) {
+			count++;
+			index = int_ip_list.erase(index);
+		} else
+			index++;
+	}
+	return count;
+}
 ManiClient	g_ManiClient;
 ManiClient	*gpManiClient;
 
