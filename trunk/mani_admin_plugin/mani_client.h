@@ -75,8 +75,8 @@ public:
 public:
 	bool	SetSteam ( const char *steamid);
 	bool	AddIP ( const char *ip, int time );
-	bool	RemoveIP ( const char *ip );
 	int		RemoveStale( int days );
+	bool	FindIP ( const char *ip );
 
 	std::vector<IP_entry_t> int_ip_list;
 
@@ -214,7 +214,7 @@ public:
 	int				CleanupIPList( int days );
 	bool			IPLinksToAdmin ( const char *ip );
 	bool			IPLinksToReservedSlot ( const char *ip );
-	bool			UpdatePlayer( player_t *player_ptr, const char *ip );
+	bool			UpdatePlayer( player_t *player_ptr );
 	bool			WriteIPList( void );
 
 private:

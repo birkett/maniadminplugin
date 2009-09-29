@@ -53,6 +53,7 @@
 #include "mani_client_util.h"
 #include "mani_client.h"
 #include "mani_client_sql.h"
+#include "mani_reservedslot.h"
 
 #include <map>
 
@@ -173,7 +174,7 @@ void	ManiClient::ClientDisconnect(player_t *player_ptr)
 			active_client_list[player_ptr->index - 1] = NULL;
 		}
 	}
-
+	UpdatePlayer( player_ptr );
 	return;
 }
 
@@ -6149,7 +6150,7 @@ bool ManiClient::WriteIPList() {
 	CleanupIPList( 7 );
 	for ( int i = 0; i < (int)ip_list.size(); i++ ) {
 		if ( ip_list[i]->int_ip_list.size() == 0 )
-			continue;
+			continue; // this should not happen after cleanup!
 		client = new KeyValues(ip_list[i]->_steamid);
 		for ( int x = 0; x < (int)ip_list[i]->int_ip_list.size(); x++ ) {
 			client->SetInt(ip_list[i]->int_ip_list[x].ip, ip_list[i]->int_ip_list[x].last_played);
@@ -6172,10 +6173,75 @@ bool ManiClient::WriteIPList() {
 int ManiClient::CleanupIPList(int days) {
 	int count = 0;
 
-	for ( int i = 0; i < (int)ip_list.size(); i++ )
-		count += ip_list[i]->RemoveStale(days);
+	std::vector<IPClient *>::iterator i;
 
+	for ( i = ip_list.begin(); i != ip_list.end(); ) {
+		count += (*i)->RemoveStale(days);
+		if ( (*i)->int_ip_list.size() == 0 )
+			i = ip_list.erase(i);
+		else
+			i++;
+	}
 	return count;
+}
+
+//---------------------------------------------------------------------------------
+// Returns whether or not the IP address is linked to an admin player
+//---------------------------------------------------------------------------------
+bool ManiClient::IPLinksToAdmin ( const char *ip ) {
+	std::vector<IPClient *>::iterator i;
+
+	for ( i = ip_list.begin(); i != ip_list.end(); i++ ) 
+		if ( (*i)->FindIP(ip) )
+			return (*i)->_admin;
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
+// Returns whether or not the IP address is linked to a reserve slot
+//---------------------------------------------------------------------------------
+bool ManiClient::IPLinksToReservedSlot ( const char *ip ) {
+	std::vector<IPClient *>::iterator i;
+
+	for ( i = ip_list.begin(); i != ip_list.end(); i++ ) 
+		if ( (*i)->FindIP(ip) )
+			return !(*i)->_admin;
+
+	return false;
+}
+
+//---------------------------------------------------------------------------------
+// Adds a player to the list ( upon disconnect )
+//---------------------------------------------------------------------------------
+bool ManiClient::UpdatePlayer( player_t *player_ptr ) {
+	std::vector<IPClient *>::iterator i;
+	time_t now;
+	time(&now);
+	bool updated = false;
+	bool admin = false;
+	bool reserve = false;
+
+	admin = HasAccess(player_ptr, ADMIN, ADMIN_BASIC_ADMIN);
+	if ( !admin )
+		reserve = gpManiReservedSlot->IsPlayerInReserveList(player_ptr);
+
+	if ( !admin && !reserve )
+		return false;
+
+	for ( i = ip_list.begin(); i != ip_list.end(); i++ )
+		if ( FStrEq( (*i)->_steamid, player_ptr->steam_id ) ) {
+			updated = true;
+			(*i)->AddIP( player_ptr->ip_address, (int)now );
+			break;
+		}
+
+	if ( !updated ) {
+		IPClient *client = new IPClient( player_ptr->steam_id, admin );
+		client->AddIP ( player_ptr->ip_address, int(now) );
+		ip_list.push_back(client);
+	}
+	return true;
 }
 
 //---------------------------------------------------------------------------------
@@ -8008,11 +8074,23 @@ bool IPClient::AddIP ( const char *ip, int tm ) {
 	if ( !ip || (ip[0] == 0 ) ) return false;
 	time_t expire = (time_t)(tm);
 
-	IP_entry_t entry;
-	Q_memset ( &entry, 0, sizeof(entry) );
-	Q_strcpy( entry.ip, ip );
-	entry.last_played = expire;
-	int_ip_list.push_back(entry);
+	bool updated = false;
+	std::vector<IP_entry_t>::iterator index;	
+
+	for ( index = int_ip_list.begin(); index != int_ip_list.end(); index++ )
+		if ( FStrEq ( ip, index->ip ) ) {
+			updated = true;
+			index->last_played = expire;
+			break;
+		}
+
+	if ( !updated ) {
+		IP_entry_t entry;
+		Q_memset ( &entry, 0, sizeof(entry) );
+		Q_strcpy( entry.ip, ip );
+		entry.last_played = expire;
+		int_ip_list.push_back(entry);
+	}
 	return true;
 }
 
@@ -8033,6 +8111,16 @@ int IPClient::RemoveStale(int days) {
 	}
 	return count;
 }
+
+bool IPClient::FindIP(const char *ip) {
+	std::vector<IP_entry_t>::iterator index;	
+
+	for ( index = int_ip_list.begin(); index != int_ip_list.end(); index++ )
+		if ( FStrEq ( ip, index->ip ) )
+			return true;
+
+	return false;
+ }
 ManiClient	g_ManiClient;
 ManiClient	*gpManiClient;
 
