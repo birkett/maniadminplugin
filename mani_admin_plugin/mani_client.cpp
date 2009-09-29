@@ -6147,7 +6147,7 @@ bool ManiClient::WriteIPList() {
 	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/client_ip_history.txt", mani_path.GetString());
 	
 	KeyValues *client = NULL;
-	CleanupIPList( 7 );
+	CleanupIPList( mani_reserve_slots_ip_keep_history.GetInt() );
 	for ( int i = 0; i < (int)ip_list.size(); i++ ) {
 		if ( ip_list[i]->int_ip_list.size() == 0 )
 			continue; // this should not happen after cleanup!
