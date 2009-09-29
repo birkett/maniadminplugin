@@ -174,17 +174,13 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 
 	FillINFOQuery( p4, QueryData, &pPlayers, &pPassword );
 	if ( QueryData.type == 'I' ) {
-		player_t player;
-		memset (&player, 0, sizeof(player));
-		Q_strcpy (player.ip_address, strIP);
-		bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN);
-		// need to have a STEAM_ID to IP cross reference here
-		bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
+		bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP );
+		bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
 
 		if (AdminAccess || ReservedAccess) {
 			if ( pPlayers ) {
-				if ((pPlayers[0] == pPlayers[1]) && (pPlayers[0] == max_players))
-					pPlayers[1]++;
+				if (pPlayers[0] == pPlayers[1]) 
+					pPlayers[1] = (mem_t)max_players+1;
 			}
 
 			if ( AdminAccess && pPassword )

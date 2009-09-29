@@ -158,6 +158,7 @@ ConVar mani_reserve_slots_redirect ("mani_reserve_slots_redirect", "", 0, "This 
 ConVar mani_reserve_slots_allow_slot_fill ("mani_reserve_slots_allow_slot_fill", "0", 0, "This defines whether reserver slots can be used up when joining or whether the reserver slots must remain free causing player kicks instead", true, 0, true, 1); 
 ConVar mani_reserve_slots_kick_method ("mani_reserve_slots_kick_method", "0", 0, "This defines how a player is kicked, 0 = by ping, 1 = by connection time", true, 0, true, 1); 
 ConVar mani_reserve_slots_include_admin ("mani_reserve_slots_include_admin", "1", 0, "This defines whether the admins setup are part of the reserve slot list (1 = yes they are)", true, 0, true, 1); 
+ConVar mani_reserve_slots_ip_keep_history ( "mani_reserve_slots_ip_keep_history", "14", 0, "The number of days to keep players IP history for reserve slots", true, 1, true, 31 );
 
 ConVar mani_reverse_admin_flags ("mani_reverse_admin_flags", "0", 0, "Set to 1 if you want admin flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
 ConVar mani_reverse_immunity_flags ("mani_reverse_immunity_flags", "0", 0, "Set to 1 if you want immunity flags to be reversed in meaning (default = 0)", true, 0, true, 1); 

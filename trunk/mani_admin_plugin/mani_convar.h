@@ -157,7 +157,7 @@ extern ConVar mani_reserve_slots_redirect;
 extern ConVar mani_reserve_slots_allow_slot_fill;
 extern ConVar mani_reserve_slots_kick_method;
 extern ConVar mani_reserve_slots_include_admin;
-
+extern ConVar mani_reserve_slots_ip_keep_history;
 extern ConVar mani_reverse_admin_flags;
 extern ConVar mani_reverse_immunity_flags;
 
