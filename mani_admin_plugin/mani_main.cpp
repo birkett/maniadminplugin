@@ -1465,6 +1465,7 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 	gpManiStats->LevelShutdown();
 	gpManiSpawnPoints->LevelShutdown();
 	gpManiAFK->LevelShutdown();
+	gpManiClient->LevelShutdown();
 	gpManiWeaponMgr->LevelShutdown();
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
 	gpManiMPRestartGame->LevelShutdown();
