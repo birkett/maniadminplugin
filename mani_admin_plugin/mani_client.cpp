@@ -6105,7 +6105,6 @@ bool ManiClient::LoadIPList() {
 	snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/client_ip_history.txt", mani_path.GetString());
 
 	ip_list.clear();
-	Q_memset( &ip_list, 0, sizeof (ip_list) );
 
 	if ( !kv_ptr->LoadFromFile(filesystem, core_filename) ) {
 		MMsg("Failed to load %s\n", core_filename);
