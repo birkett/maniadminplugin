@@ -145,23 +145,41 @@ void FillINFOQuery ( const mem_t* data, A2S_INFO_t &info, mem_t **pPlayers, mem_
 }
 
 #if defined ( ORANGE )
+#define CCD_MEMBER_CALL MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8)
 DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int ) {
-	MMsg("ConnectClient\n");
-	return MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8);
-}
+	CSteamID SteamID;
+	Q_memset ( &SteamID, 0, sizeof(SteamID) );
+	if ( p8 >= 20 )
+		memcpy ( &SteamID, &p7[12], sizeof(SteamID) );
 #else
+#define CCD_MEMBER_CALL MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8,p9,pA)
 DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int ) {
-	MMsg("ConnectClient\n");
-	return MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8,p9,pA);
-}
+	CSteamID SteamID;
+	Q_memset ( &SteamID, 0, sizeof(SteamID) );
+	if ( pA >= 16 )
+		memcpy ( &SteamID, &p9[8], sizeof(SteamID) );
 #endif
+	if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
+		return CCD_MEMBER_CALL;
+
+	// otherwise do stuff
+	return CCD_MEMBER_CALL;
+}
+
+char * CSteamID::Render() const {
+   static char szSteamID[64];
+	_snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (m_unAccountID % 2) ? 1 : 0, (int32)m_unAccountID/2);
+	return szSteamID;
+}
 
 #if defined ( ORANGE )
+#define NSPD_NON_MEMBER_CALL NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5,p6,p7)
 DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int, void *, bool) {
 #else
+#define NSPD_NON_MEMBER_CALL NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5)
 DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int ) {
 #endif
-	char strIP[128]; // IPv6 capable!
+	char strIP[128];
 	if ( p3 ) {
 		int ip = *(int *)((const char *)p3 + 4);
 		snprintf(strIP, sizeof(strIP), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
@@ -183,15 +201,11 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 					pPlayers[1] = (mem_t)max_players+1;
 			}
 
-			if ( AdminAccess && pPassword )
+			if ( AdminAccess && pPassword && !war_mode )
 				pPassword[0]=0;
 		}
 	}
-#if defined ( ORANGE )
-	return NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5,p6,p7);
-#else
-	return NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5);
-#endif
+	return NSPD_NON_MEMBER_CALL;
 }
 
 ManiReservedSlot::ManiReservedSlot()
