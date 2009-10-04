@@ -301,19 +301,6 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 
 	gpManiClient->NetworkIDValidated(player_ptr);
 
-	if (gpManiAutoKickBan->NetworkIDValidated(player_ptr))
-	{
-		// Player was let through
-		if (mani_reserve_slots.GetInt() == 1)
-		{
-			if (!gpManiReservedSlot->NetworkIDValidated(player_ptr))
-			{
-				// Joining player was kicked so return immediately
-				return ;
-			}
-		}
-	}
-
 	gpManiVote->NetworkIDValidated(player_ptr);
 	gpManiStats->NetworkIDValidated(player_ptr);
 	gpManiPing->NetworkIDValidated(player_ptr);

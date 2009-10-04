@@ -79,7 +79,7 @@ public:
 
 	void		Load(void); // Run at level init
 	void		LevelInit(void); // Run at level init
-	bool		NetworkIDValidated(player_t *player_ptr);
+//	bool		NetworkIDValidated(player_t *player_ptr);
 	bool		IsPlayerInReserveList(player_t *player_ptr);
 
 private:

@@ -162,6 +162,19 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
 		return CCD_MEMBER_CALL;
 
+		player_t player;
+		Q_memset ( &player, 0, sizeof(player) );
+		strcpy ( player.steam_id, SteamID.Render() );
+
+		bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
+		bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
+	 
+		if ( AdminAccess || ReservedAccess ) {
+			engine->ServerCommand("kickid 2\n");
+			engine->ServerExecute();
+		}
+
+
 	// otherwise do stuff
 	return CCD_MEMBER_CALL;
 }
@@ -192,7 +205,7 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 
 	FillINFOQuery( p4, QueryData, &pPlayers, &pPassword );
 	if ( QueryData.type == 'I' ) {
-		bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP );
+		bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 		bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
 
 		if (AdminAccess || ReservedAccess) {
@@ -287,7 +300,7 @@ void ManiReservedSlot::LevelInit(void)
 		filesystem->Close(file_handle);
 	}
 }
-
+/*
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on connect
 //---------------------------------------------------------------------------------
@@ -375,7 +388,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	{
 	DirectLogCommand("[DEBUG] No players available for kicking\n");
 	}
-	*/
+
 	if (mani_reserve_slots_allow_slot_fill.GetInt() == 1)
 	{
 		BuildPlayerKickList(player_ptr, &players_on_server);
@@ -456,7 +469,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 
 	return true;
 }
-
+*/
 //---------------------------------------------------------------------------------
 // Purpose: Builds up a list of players that are 'kickable'
 //---------------------------------------------------------------------------------
@@ -562,23 +575,20 @@ void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr, int *players_on
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 {
-//	char	disconnect[512];
+	char	disconnect[512];
 
-//	if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
-//	{
+	if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
+	{
 		// No redirection required
 		UTIL_KickPlayer(player_ptr, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
 		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
-		// engine->ClientCommand( player_ptr->entity, "wait;wait;wait;wait;wait;wait;wait;disconnect\n");
-/*	}
-	else
-	{
+	} else {
 		// Redirection required
 		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
 		Q_snprintf(disconnect, sizeof (disconnect), "wait;wait;wait;wait;wait;wait;wait;connect %s\n", mani_reserve_slots_redirect.GetString());
 		engine->ClientCommand( player_ptr->entity, disconnect);
 	}
-*/
+
 	return;
 }
 
