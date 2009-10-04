@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -2751,7 +2752,7 @@ int ManiVote::GetVotesRequiredForUserVote
 	int number_of_players;
 	int votes_required;
 
-	number_of_players = GetNumberOfActivePlayers () - ((player_leaving) ? 1:0);
+	number_of_players = GetNumberOfActivePlayers ( false ) - ((player_leaving) ? 1:0);
 
 	votes_required = (int) ((float) number_of_players * (percentage * 0.01));
 

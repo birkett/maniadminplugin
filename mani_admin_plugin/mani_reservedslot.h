@@ -62,6 +62,8 @@ struct active_player_t
 	float	ping;
 	float	time_connected;
 	bool	is_spectator;
+	int		kills;
+	int		deaths;
 	int		index;
 };
 
@@ -79,14 +81,14 @@ public:
 
 	void		Load(void); // Run at level init
 	void		LevelInit(void); // Run at level init
-//	bool		NetworkIDValidated(player_t *player_ptr);
+	bool		NetworkIDValidated(player_t *player_ptr);
 	bool		IsPlayerInReserveList(player_t *player_ptr);
+	int			FindPlayerToKick( void );
+	void		DisconnectPlayer(player_t *player_ptr);
 
 private:
-
-	bool		ProcessPlayer(player_t *player_ptr);
-	void		BuildPlayerKickList(player_t *player_ptr, int *players_on_server);
-	void		DisconnectPlayer(player_t *player_ptr);
+//	bool		ProcessPlayer(player_t *player_ptr);
+	void		BuildPlayerKickList(player_t *player_ptr/*, int *players_on_server*/);
 	void		CleanUp(void);
 
 	int	active_player_list_size;
