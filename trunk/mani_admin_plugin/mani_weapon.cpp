@@ -482,7 +482,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 	char lower_alias[32];
 
 	int length = strlen(alias_name);
-	if (length > 30) return PLUGIN_CONTINUE;
+	length = ( length > 30 ) ? 30 : length; // cut off any attempts to do a weapon name > 30 characters
 
 	for (int i = 0; i <= length; i++)
 	{
