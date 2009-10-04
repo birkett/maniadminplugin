@@ -2824,7 +2824,7 @@ PLUGIN_RESULT	ProcessMaQuake
 //---------------------------------------------------------------------------------
 // Purpose: Get the number of players attached to the server.
 //---------------------------------------------------------------------------------
-int GetNumberOfActivePlayers(void)
+int GetNumberOfActivePlayers( bool include_bots)
 {
 	int	number_of_players = 0;
 	player_t	player;
@@ -2834,7 +2834,7 @@ int GetNumberOfActivePlayers(void)
 		player.index = i;
 		if (FindPlayerByIndex(&player))
 		{
-			if (!player.is_bot)
+			if ((player.is_bot && include_bots) || !player.is_bot )
 			{
 				number_of_players ++;
 			}
@@ -2858,29 +2858,33 @@ void UTIL_KickPlayer
 	char	kick_cmd[256];
 
 	// Handle a bot kick
-	if (player_ptr->is_bot)
-	{
-		int j = Q_strlen(player_ptr->name) - 1;
+	//if (player_ptr->is_bot)
+	//{
+	//	int j = Q_strlen(player_ptr->name) - 1;
 
-		while (j != -1)
-		{
-			if (player_ptr->name[j] == '\0') break;
-			if (player_ptr->name[j] == ' ') break;
-			j--;
-		}
+	//	while (j != -1)
+	//	{
+	//		if (player_ptr->name[j] == '\0') break;
+	//		if (player_ptr->name[j] == ' ') break;
+	//		j--;
+	//	}
 
-		j++;
+	//	j++;
 
-		snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(player_ptr->name[j]));
-		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] bot_kick \"%s\"\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, &(player_ptr->name[j]));
-		engine->ServerCommand(kick_cmd);
-		return;
-	}
+	//	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
+	//	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid \"%s\"\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, &(player_ptr->name[j]));
+	//	engine->ServerCommand(kick_cmd);
+	//	engine->ServerExecute();
+	//	return;
+	//}
 
-	PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
+	if ( !player_ptr->is_bot )
+		PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
+
 	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
 	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, short_reason);
-	engine->ServerCommand(kick_cmd);				
+	engine->ServerCommand(kick_cmd);	
+	engine->ServerExecute();
 }
 
 //---------------------------------------------------------------------------------

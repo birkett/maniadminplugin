@@ -117,7 +117,7 @@ extern	PLUGIN_RESULT	ProcessMaQuake( int index);
 extern	PLUGIN_RESULT	ProcessMaDeathBeam ( int index);
 extern	PLUGIN_RESULT	ProcessMaDestruction( int index);
 extern	PLUGIN_RESULT	ProcessMaVoteProgress( int index);
-extern	int				GetNumberOfActivePlayers(void );
+extern	int				GetNumberOfActivePlayers( bool include_bots );
 extern  void UTIL_KickPlayer( player_t *player_ptr,  char *short_reason,  char *long_reason,  char *log_reason );
 extern  bool UTIL_DropC4(edict_t *pEntity);
 extern	void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id);

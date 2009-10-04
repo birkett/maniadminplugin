@@ -300,7 +300,7 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	if (ProcessPluginPaused()) return ;
 
 	gpManiClient->NetworkIDValidated(player_ptr);
-
+	gpManiReservedSlot->NetworkIDValidated(player_ptr);
 	gpManiVote->NetworkIDValidated(player_ptr);
 	gpManiStats->NetworkIDValidated(player_ptr);
 	gpManiPing->NetworkIDValidated(player_ptr);

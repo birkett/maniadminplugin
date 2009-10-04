@@ -68,6 +68,9 @@ extern void *netsendpacket_addr;
 
 static int sort_active_players_by_ping ( const void *m1,  const void *m2);
 static int sort_active_players_by_connect_time ( const void *m1,  const void *m2);
+static int sort_active_players_by_kill_rate ( const void *m1,  const void *m2);
+static int sort_active_players_by_kd_ratio ( const void *m1,  const void *m2);
+
 static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2);
 static CDetour * ManiClientConnectDetour;
 static CDetour * ManiNetSendPacketDetour;
@@ -104,7 +107,7 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 
 // we don't actually have to fill this data structure, but thought it might be easier
 // to work with if we did when changes come about.
-void FillINFOQuery ( const mem_t* data, A2S_INFO_t &info, mem_t **pPlayers, mem_t **pPassword ) {
+void FillINFOQuery ( const mem_t* data, int data_len, A2S_INFO_t &info, mem_t **pPlayers, mem_t **pPassword ) {
 	int strcount = 0;
 	if ( (data[0]!=0xFF) && (data[1]!=0xFF) && (data[2]!=0xFF) && (data[3]!=0xFF) ) return;
 
@@ -159,8 +162,11 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	if ( pA >= 16 )
 		memcpy ( &SteamID, &p9[8], sizeof(SteamID) );
 #endif
-	if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
-		return CCD_MEMBER_CALL;
+
+	int total_players = GetNumberOfActivePlayers(true);
+	if ( total_players == max_players ) {
+		if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
+			return CCD_MEMBER_CALL;
 
 		player_t player;
 		Q_memset ( &player, 0, sizeof(player) );
@@ -168,14 +174,20 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 
 		bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 		bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
-	 
+
 		if ( AdminAccess || ReservedAccess ) {
-			engine->ServerCommand("kickid 2\n");
-			engine->ServerExecute();
+			int kick_index = gpManiReservedSlot->FindPlayerToKick();
+
+			if ( kick_index < 1 )
+				return CCD_MEMBER_CALL;
+
+			Q_memset ( &player, 0, sizeof(player) );
+			player.index = kick_index;
+			FindPlayerByIndex(&player);
+			gpManiReservedSlot->DisconnectPlayer(&player);
 		}
 
-
-	// otherwise do stuff
+	}
 	return CCD_MEMBER_CALL;
 }
 
@@ -202,9 +214,9 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 	mem_t *pPlayers = NULL;
 	A2S_INFO_t QueryData;
 	memset (&QueryData, 0, sizeof(QueryData));
-
-	FillINFOQuery( p4, QueryData, &pPlayers, &pPassword );
-	if ( QueryData.type == 'I' ) {
+	// length of data in p4 is p5 -- need to stop at the first \0 after p5
+	if ( (p5 > 4) && (p4[4] == 'I') ) {
+		FillINFOQuery( p4, p5, QueryData, &pPlayers, &pPassword );
 		bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 		bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
 
@@ -276,11 +288,7 @@ void ManiReservedSlot::LevelInit(void)
 	//Get reserve player list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/reserveslots.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
-	if (file_handle == NULL)
-	{
-		//		MMsg("Failed to load reserveslots.txt\n");
-	}
-	else
+	if (file_handle != NULL)
 	{
 		//		MMsg("Reserve Slot list\n");
 		while (filesystem->ReadLine (steam_id, sizeof(steam_id), file_handle) != NULL)
@@ -300,7 +308,320 @@ void ManiReservedSlot::LevelInit(void)
 		filesystem->Close(file_handle);
 	}
 }
-/*
+
+//---------------------------------------------------------------------------------
+// Purpose: Check if weapon restricted for this weapon name
+//---------------------------------------------------------------------------------
+void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
+{
+	char	disconnect[512];
+
+	if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
+	{
+		// No redirection required
+		if ( !player_ptr->is_bot )
+			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
+		UTIL_KickPlayer(player_ptr, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
+	} else {
+		// Redirection required
+		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
+		Q_snprintf(disconnect, sizeof (disconnect), "wait;wait;wait;wait;wait;wait;wait;connect %s\n", mani_reserve_slots_redirect.GetString());
+		engine->ClientCommand( player_ptr->entity, disconnect);
+	}
+
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: See if player is on reserve list
+//---------------------------------------------------------------------------------
+bool ManiReservedSlot::IsPlayerInReserveList(player_t *player_ptr)
+{
+
+	reserve_slot_t	reserve_slot_key;
+
+	// Do BSearch for steam ID
+	Q_strcpy(reserve_slot_key.steam_id, player_ptr->steam_id);
+
+	if (NULL == (reserve_slot_t *) bsearch
+		(
+		&reserve_slot_key,
+		reserve_slot_list,
+		reserve_slot_list_size,
+		sizeof(reserve_slot_t),
+		sort_reserve_slots_by_steam_id
+		))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2)
+{
+	struct reserve_slot_t *mi1 = (struct reserve_slot_t *) m1;
+	struct reserve_slot_t *mi2 = (struct reserve_slot_t *) m2;
+	return strcmp(mi1->steam_id, mi2->steam_id);
+}
+
+int	ManiReservedSlot::FindPlayerToKick ( ) {
+	// FIRST LOOK FOR BOTS!
+	for ( int i = 1; i <= max_players; i++ ) {
+		edict_t *pEdict = engine->PEntityOfEntIndex(i);
+
+		IServerUnknown *unknown = pEdict->GetUnknown();
+		if (!unknown)
+			continue;
+
+		CBaseEntity *base = unknown->GetBaseEntity();
+
+		if (!base)
+			continue;
+		
+		IPlayerInfo *pi_player = playerinfomanager->GetPlayerInfo( pEdict );
+
+		if ( !pi_player )
+			continue;
+
+		if ( FStrEq(pi_player->GetNetworkIDString(), "BOT") ) 
+			return i;
+	}
+
+	if ( active_player_list_size == 0 )
+		return 0;
+
+	int KickMethod = mani_reserve_slots_kick_method.GetInt();
+	//0 = by ping
+	//1 = by connection time
+	//2 = by kills per minute
+	//3 = kill/death ratio
+
+	if ( KickMethod == 0 ) {
+		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_ping);
+	} else if ( KickMethod == 1 ) {
+		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_connect_time);
+	} else if ( KickMethod == 2 ) {
+		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_kill_rate);
+	} else if ( KickMethod == 3 ) {
+		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_kd_ratio);
+	}
+
+	return active_player_list[0].index;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Builds up a list of players that are 'kickable'
+//---------------------------------------------------------------------------------
+void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr/*, int *players_on_server*/)
+{
+	player_t	temp_player;
+	active_player_t active_player;
+
+	FreeList((void **) &active_player_list, &active_player_list_size);
+
+	for (int i = 1; i <= max_players; i ++)
+	{
+		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+		if(pEntity && !pEntity->IsFree())
+		{
+			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
+			if (playerinfo && playerinfo->IsConnected())
+			{
+				Q_strcpy(active_player.steam_id, playerinfo->GetNetworkIDString());
+				if (FStrEq("BOT", active_player.steam_id))
+				{
+					continue;
+				}
+
+				INetChannelInfo *nci = engine->GetPlayerNetInfo(i);
+				if (!nci)
+				{
+					continue;
+				}
+
+				active_player.entity = pEntity;
+
+				active_player.ping = nci->GetAvgLatency(0);
+				const char * szCmdRate = engine->GetClientConVarValue( i, "cl_cmdrate" );
+				int nCmdRate = (20 > Q_atoi( szCmdRate )) ? 20 : Q_atoi(szCmdRate);
+				active_player.ping -= (0.5f/nCmdRate) + TICKS_TO_TIME( 1.0f ); // correct latency
+
+				// in GoldSrc we had a different, not fixed tickrate. so we have to adjust
+				// Source pings by half a tick to match the old GoldSrc pings.
+				active_player.ping -= TICKS_TO_TIME( 0.5f );
+				active_player.ping = active_player.ping * 1000.0f; // as msecs
+				active_player.ping = ((5 > active_player.ping) ? 5:active_player.ping); // set bounds, dont show pings under 5 msecs
+
+				active_player.time_connected = nci->GetTimeConnected();
+				Q_strcpy(active_player.ip_address, nci->GetAddress());
+				if (gpManiGameType->IsSpectatorAllowed() &&
+					playerinfo->GetTeamIndex () == gpManiGameType->GetSpectatorIndex())
+				{
+					active_player.is_spectator = true;
+				}
+				else
+				{
+					active_player.is_spectator = false;
+				}
+				active_player.user_id = playerinfo->GetUserID();
+				Q_strcpy(active_player.name, playerinfo->GetName());
+
+//				*players_on_server = *players_on_server + 1;
+				active_player.kills = playerinfo->GetFragCount();
+				active_player.deaths = playerinfo->GetDeathCount();
+				Q_strcpy(temp_player.steam_id, active_player.steam_id);
+				Q_strcpy(temp_player.ip_address, active_player.ip_address);
+				Q_strcpy(temp_player.name, active_player.name);
+				temp_player.is_bot = false;
+
+				if (IsPlayerInReserveList(&temp_player))
+				{
+					continue;
+				}
+
+				active_player.index = i;
+
+				if (mani_reserve_slots_include_admin.GetInt() == 1 &&
+					gpManiClient->HasAccess(active_player.index, ADMIN, ADMIN_BASIC_ADMIN))
+				{
+					continue;
+				}
+
+				if (gpManiClient->HasAccess(active_player.index, IMMUNITY, IMMUNITY_RESERVE))
+				{
+					continue;
+				}
+
+				AddToList((void **) &active_player_list, sizeof(active_player_t), &active_player_list_size);
+				active_player_list[active_player_list_size - 1] = active_player;
+			}
+		}
+	}
+}
+
+static int sort_active_players_by_ping ( const void *m1,  const void *m2)
+{
+	struct active_player_t *mi1 = (struct active_player_t *) m1;
+	struct active_player_t *mi2 = (struct active_player_t *) m2;
+
+	if (mi1->is_spectator == true && mi2->is_spectator == false)
+	{
+		return -1;
+	}
+
+	if (mi1->is_spectator == false && mi2->is_spectator == true)
+	{
+		return 1;
+	}
+
+	if (mi1->ping > mi2->ping)
+	{
+		return -1;
+	}
+	else if (mi1->ping < mi2->ping)
+	{
+		return 1;
+	}
+
+	return strcmp(mi1->steam_id, mi2->steam_id);
+
+}
+
+static int sort_active_players_by_connect_time ( const void *m1,  const void *m2)
+{
+	struct active_player_t *mi1 = (struct active_player_t *) m1;
+	struct active_player_t *mi2 = (struct active_player_t *) m2;
+
+	if (mi1->is_spectator == true && mi2->is_spectator == false)
+	{
+		return -1;
+	}
+
+	if (mi1->is_spectator == false && mi2->is_spectator == true)
+	{
+		return 1;
+	}
+
+	if (mi1->time_connected < mi2->time_connected)
+	{
+		return -1;
+	}
+	else if (mi1->time_connected > mi2->time_connected)
+	{
+		return 1;
+	}
+
+	return strcmp(mi1->steam_id, mi2->steam_id);
+
+}
+
+static int sort_active_players_by_kill_rate ( const void *m1,  const void *m2)
+{
+	struct active_player_t *mi1 = (struct active_player_t *) m1;
+	struct active_player_t *mi2 = (struct active_player_t *) m2;
+
+	if (mi1->is_spectator == true && mi2->is_spectator == false)
+	{
+		return -1;
+	}
+
+	if (mi1->is_spectator == false && mi2->is_spectator == true)
+	{
+		return 1;
+	}
+
+	float mi1_kill_rate = ( mi1->time_connected == 0.0f ) ? FLT_MAX : ( mi1->kills / mi1->time_connected );
+	float mi2_kill_rate = ( mi2->time_connected == 0.0f ) ? FLT_MAX : ( mi1->kills / mi2->time_connected );
+
+	if (mi1_kill_rate < mi2_kill_rate)
+	{
+		return -1;
+	}
+	else if (mi1_kill_rate > mi2_kill_rate)
+	{
+		return 1;
+	}
+
+	return strcmp(mi1->steam_id, mi2->steam_id);
+
+}
+
+static int sort_active_players_by_kd_ratio ( const void *m1,  const void *m2)
+{
+	struct active_player_t *mi1 = (struct active_player_t *) m1;
+	struct active_player_t *mi2 = (struct active_player_t *) m2;
+
+	if (mi1->is_spectator == true && mi2->is_spectator == false)
+	{
+		return -1;
+	}
+
+	if (mi1->is_spectator == false && mi2->is_spectator == true)
+	{
+		return 1;
+	}
+	float mi1_kd_ratio = ( mi1->deaths == 0 ) ? FLT_MAX : ( mi1->kills / mi1->deaths );
+	float mi2_kd_ratio = ( mi2->deaths == 0 ) ? FLT_MAX : ( mi1->kills / mi2->deaths );
+
+	if (mi1_kd_ratio < mi2_kd_ratio)
+	{
+		return -1;
+	}
+	else if (mi1_kd_ratio > mi2_kd_ratio)
+	{
+		return 1;
+	}
+
+	return strcmp(mi1->steam_id, mi2->steam_id);
+
+}
+
+bool ManiReservedSlot::NetworkIDValidated(player_t *player_ptr) {
+	BuildPlayerKickList(player_ptr);
+	return true;
+}
+#if 0
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on connect
 //---------------------------------------------------------------------------------
@@ -318,10 +639,11 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		return true;
 	}
 
-	total_players = GetNumberOfActivePlayers() - 1;
+	total_players = GetNumberOfActivePlayers( true ) - 1;
 	// DirectLogCommand("[DEBUG] Total players on server [%i]\n", total_players);
 
-	if (total_players < max_players - mani_reserve_slots_number_of_slots.GetInt())
+	//if (total_players < max_players - mani_reserve_slots_number_of_slots.GetInt())
+	if (total_players < max_players)
 	{
 		// DirectLogCommand("[DEBUG] No reserve slot action required\n");
 		return true;
@@ -368,7 +690,6 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	}
 
 	// DirectLogCommand("[DEBUG] Building players who can be kicked list\n");
-	/*
 	if (active_player_list_size != 0)
 	{
 	DirectLogCommand("[DEBUG] Players that can be kicked list\n");
@@ -469,217 +790,6 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 
 	return true;
 }
-*/
-//---------------------------------------------------------------------------------
-// Purpose: Builds up a list of players that are 'kickable'
-//---------------------------------------------------------------------------------
-void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr, int *players_on_server)
-{
-	player_t	temp_player;
-	active_player_t active_player;
-
-	FreeList((void **) &active_player_list, &active_player_list_size);
-
-	for (int i = 1; i <= max_players; i ++)
-	{
-		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree() && pEntity != player_ptr->entity)
-		{
-			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
-			if (playerinfo && playerinfo->IsConnected())
-			{
-				Q_strcpy(active_player.steam_id, playerinfo->GetNetworkIDString());
-				if (FStrEq("BOT", active_player.steam_id))
-				{
-					continue;
-				}
-
-				INetChannelInfo *nci = engine->GetPlayerNetInfo(i);
-				if (!nci)
-				{
-					continue;
-				}
-
-				active_player.entity = pEntity;
-
-				active_player.ping = nci->GetAvgLatency(0);
-				const char * szCmdRate = engine->GetClientConVarValue( i, "cl_cmdrate" );
-				int nCmdRate = (20 > Q_atoi( szCmdRate )) ? 20 : Q_atoi(szCmdRate);
-				active_player.ping -= (0.5f/nCmdRate) + TICKS_TO_TIME( 1.0f ); // correct latency
-
-				// in GoldSrc we had a different, not fixed tickrate. so we have to adjust
-				// Source pings by half a tick to match the old GoldSrc pings.
-				active_player.ping -= TICKS_TO_TIME( 0.5f );
-				active_player.ping = active_player.ping * 1000.0f; // as msecs
-				active_player.ping = ((5 > active_player.ping) ? 5:active_player.ping); // set bounds, dont show pings under 5 msecs
-
-				active_player.time_connected = nci->GetTimeConnected();
-				Q_strcpy(active_player.ip_address, nci->GetAddress());
-				if (gpManiGameType->IsSpectatorAllowed() &&
-					playerinfo->GetTeamIndex () == gpManiGameType->GetSpectatorIndex())
-				{
-					active_player.is_spectator = true;
-				}
-				else
-				{
-					active_player.is_spectator = false;
-				}
-				active_player.user_id = playerinfo->GetUserID();
-				Q_strcpy(active_player.name, playerinfo->GetName());
-
-				*players_on_server = *players_on_server + 1;
-
-				Q_strcpy(temp_player.steam_id, active_player.steam_id);
-				Q_strcpy(temp_player.ip_address, active_player.ip_address);
-				Q_strcpy(temp_player.name, active_player.name);
-				temp_player.is_bot = false;
-
-				if (IsPlayerInReserveList(&temp_player))
-				{
-					continue;
-				}
-
-				active_player.index = i;
-
-				if (mani_reserve_slots_include_admin.GetInt() == 1 &&
-					gpManiClient->HasAccess(active_player.index, ADMIN, ADMIN_BASIC_ADMIN))
-				{
-					continue;
-				}
-
-				if (gpManiClient->HasAccess(active_player.index, IMMUNITY, IMMUNITY_RESERVE))
-				{
-					continue;
-				}
-
-				AddToList((void **) &active_player_list, sizeof(active_player_t), &active_player_list_size);
-				active_player_list[active_player_list_size - 1] = active_player;
-			}
-		}
-	}
-
-	if (mani_reserve_slots_kick_method.GetInt() == 0)
-	{
-		// Kick by highest ping
-		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_ping);
-	}
-	else
-	{
-		// Kick by shortest connection time
-		qsort(active_player_list, active_player_list_size, sizeof(active_player_t), sort_active_players_by_connect_time);
-	}
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: Check if weapon restricted for this weapon name
-//---------------------------------------------------------------------------------
-void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
-{
-	char	disconnect[512];
-
-	if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
-	{
-		// No redirection required
-		UTIL_KickPlayer(player_ptr, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
-		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
-	} else {
-		// Redirection required
-		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
-		Q_snprintf(disconnect, sizeof (disconnect), "wait;wait;wait;wait;wait;wait;wait;connect %s\n", mani_reserve_slots_redirect.GetString());
-		engine->ClientCommand( player_ptr->entity, disconnect);
-	}
-
-	return;
-}
-
-//---------------------------------------------------------------------------------
-// Purpose: See if player is on reserve list
-//---------------------------------------------------------------------------------
-bool ManiReservedSlot::IsPlayerInReserveList(player_t *player_ptr)
-{
-
-	reserve_slot_t	reserve_slot_key;
-
-	// Do BSearch for steam ID
-	Q_strcpy(reserve_slot_key.steam_id, player_ptr->steam_id);
-
-	if (NULL == (reserve_slot_t *) bsearch
-		(
-		&reserve_slot_key,
-		reserve_slot_list,
-		reserve_slot_list_size,
-		sizeof(reserve_slot_t),
-		sort_reserve_slots_by_steam_id
-		))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2)
-{
-	struct reserve_slot_t *mi1 = (struct reserve_slot_t *) m1;
-	struct reserve_slot_t *mi2 = (struct reserve_slot_t *) m2;
-	return strcmp(mi1->steam_id, mi2->steam_id);
-}
-
-static int sort_active_players_by_ping ( const void *m1,  const void *m2)
-{
-	struct active_player_t *mi1 = (struct active_player_t *) m1;
-	struct active_player_t *mi2 = (struct active_player_t *) m2;
-
-	if (mi1->is_spectator == true && mi2->is_spectator == false)
-	{
-		return -1;
-	}
-
-	if (mi1->is_spectator == false && mi2->is_spectator == true)
-	{
-		return 1;
-	}
-
-	if (mi1->ping > mi2->ping)
-	{
-		return -1;
-	}
-	else if (mi1->ping < mi2->ping)
-	{
-		return 1;
-	}
-
-	return strcmp(mi1->steam_id, mi2->steam_id);
-
-}
-
-static int sort_active_players_by_connect_time ( const void *m1,  const void *m2)
-{
-	struct active_player_t *mi1 = (struct active_player_t *) m1;
-	struct active_player_t *mi2 = (struct active_player_t *) m2;
-
-	if (mi1->is_spectator == true && mi2->is_spectator == false)
-	{
-		return -1;
-	}
-
-	if (mi1->is_spectator == false && mi2->is_spectator == true)
-	{
-		return 1;
-	}
-
-	if (mi1->time_connected < mi2->time_connected)
-	{
-		return -1;
-	}
-	else if (mi1->time_connected > mi2->time_connected)
-	{
-		return 1;
-	}
-
-	return strcmp(mi1->steam_id, mi2->steam_id);
-
-}
-
+#endif
 ManiReservedSlot	g_ManiReservedSlot;
 ManiReservedSlot	*gpManiReservedSlot;
