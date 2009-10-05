@@ -65,6 +65,7 @@ extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern void *connect_client_addr;
 extern void *netsendpacket_addr;
+extern	ICvar *g_pCVar;
 
 static int sort_active_players_by_ping ( const void *m1,  const void *m2);
 static int sort_active_players_by_connect_time ( const void *m1,  const void *m2);
@@ -148,38 +149,37 @@ void FillINFOQuery ( const mem_t* data, int data_len, A2S_INFO_t &info, mem_t **
 }
 
 #if defined ( ORANGE )
-#define CCD_MEMBER_CALL MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8)
+#define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8)
 DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int ) {
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( p8 >= 20 )
 		memcpy ( &SteamID, &p7[12], sizeof(SteamID) );
 #else
-#define CCD_MEMBER_CALL MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,p7,p8,p9,pA)
+#define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8,p9,pA)
 DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int ) {
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( pA >= 16 )
 		memcpy ( &SteamID, &p9[8], sizeof(SteamID) );
 #endif
-
 	int total_players = GetNumberOfActivePlayers(true);
+	player_t player;
+	Q_memset ( &player, 0, sizeof(player) );
+	strcpy ( player.steam_id, SteamID.Render() );
+	bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
+
 	if ( total_players == max_players ) {
 		if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
-			return CCD_MEMBER_CALL;
+			return CCD_MEMBER_CALL(p6);
 
-		player_t player;
-		Q_memset ( &player, 0, sizeof(player) );
-		strcpy ( player.steam_id, SteamID.Render() );
-
-		bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 		bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
 
 		if ( AdminAccess || ReservedAccess ) {
 			int kick_index = gpManiReservedSlot->FindPlayerToKick();
 
 			if ( kick_index < 1 )
-				return CCD_MEMBER_CALL;
+				return CCD_MEMBER_CALL(p6);
 
 			Q_memset ( &player, 0, sizeof(player) );
 			player.index = kick_index;
@@ -188,7 +188,16 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 		}
 
 	}
-	return CCD_MEMBER_CALL;
+
+	ConVar *pwd = g_pCVar->FindVar( "sv_password" );
+	const char *newpw = p6;
+
+	if ( pwd && !FStrEq(pwd->GetString(),"")) {
+		if ( AdminAccess && !war_mode )
+				newpw = pwd->GetString();
+	}
+
+	return CCD_MEMBER_CALL(newpw);
 }
 
 char * CSteamID::Render() const {
