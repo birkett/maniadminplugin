@@ -152,7 +152,6 @@ bool SQLManager::Load(void)
 
 	kill_thread = false;
 
-#ifndef __linux__
 // Create a mutex with no initial owner.
 
 	if (!mutex.Create())
@@ -160,6 +159,9 @@ bool SQLManager::Load(void)
 		return false;
 	}
 
+// moved this line from above the create -- the call to trylock was failing with EINVAL,
+// meaning it wasn't initialized yet. -- Keeper
+#ifndef __linux__
 	thread_id = CreateThread( 
 		NULL,                        // default security attributes 
 		0,                           // use default stack size  
@@ -492,8 +494,6 @@ void	SQLManager::AddRequest
 	request_list_ptr->next_ptr = NULL;
 	request_list_ptr->prev_ptr = NULL;
 
-	// Fuxx: Well without requesting to unlock the mutex, LockWait will result in infinity loop
-	mutex.Unlock();
 	// Add it to the end of the linked list (need mutex for it)
 	mutex.LockWait();
 
