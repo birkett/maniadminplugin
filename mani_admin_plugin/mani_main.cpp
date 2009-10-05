@@ -5739,7 +5739,14 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 
 	EffectsPlayerDeath(&victim);
 	gpManiGhost->PlayerDeath(&victim);
-	gpManiStats->PlayerDeath(&victim, &attacker, weapon_name, attacker_exists, headshot);
+
+	if ( gpManiGameType->IsGameType(MANI_GAME_TF) ) {
+		int flags = event->GetInt("death_flags");
+		if ( ( flags & 32 ) == 0 ) // it is not a feign_death
+			gpManiStats->PlayerDeath(&victim, &attacker, weapon_name, attacker_exists, headshot);
+	} else
+		gpManiStats->PlayerDeath(&victim, &attacker, weapon_name, attacker_exists, headshot);
+	
 	gpManiCSSBounty->PlayerDeath(&victim, &attacker, attacker_exists);
 	gpManiObserverTrack->PlayerDeath(&victim);
 
