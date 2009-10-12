@@ -244,6 +244,10 @@ cexec_t		*cexec_all_list;
 int	rcon_list_size;
 int	swear_list_size;
 
+ban_settings_t		*ban_list;
+int	ban_list_size;
+
+
 int	cexec_list_size;
 int	cexec_t_list_size;
 int	cexec_ct_list_size;
@@ -293,6 +297,9 @@ CAdminPlugin::CAdminPlugin()
 {
 	rcon_list = NULL;
 	rcon_list_size = 0;
+
+	ban_list = NULL;
+	ban_list_size = 0;
 
 	round_number = 0;
 	swear_list = NULL;
@@ -859,6 +866,7 @@ void CAdminPlugin::Unload( void )
 	}
 
 	FreeList((void **) &rcon_list, &rcon_list_size);
+	FreeList((void **) &ban_list, &ban_list_size);
 
 	FreeList((void **) &tk_player_list, &tk_player_list_size);
 	FreeList((void **) &swear_list, &swear_list_size);
@@ -922,6 +930,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	FileHandle_t file_handle;
 	char	swear_word[128];
 	char	rcon_command[512];
+	char	ban_list_line[512];
 	int		i;
 	char	map_config_filename[256];
 	char	base_filename[256];
@@ -946,6 +955,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	InitPanels();
 
 	FreeList((void **) &rcon_list, &rcon_list_size);
+	FreeList((void **) &ban_list, &ban_list_size);
 
 	FreeList((void **) &tk_player_list, &tk_player_list_size);
 	FreeList((void **) &swear_list, &swear_list_size);
@@ -1203,6 +1213,40 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 //			MMsg("Alias[%s] Command[%s]\n", alias_command, rcon_command);
 		}
 
+		filesystem->Close(file_handle);
+	}
+
+	//Get ban list
+	char ban_cmd[512];
+	ban_settings_t banned_player;
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/banlist.txt", mani_path.GetString());
+	file_handle = filesystem->Open (base_filename,"rt",NULL);
+	if (file_handle != NULL) {
+		while (filesystem->ReadLine (ban_list_line, sizeof(ban_list_line), file_handle) != NULL)
+		{
+			Q_memset ( &banned_player, 0, sizeof(ban_settings_t) );
+			if (!ParseBanLine(ban_list_line, &banned_player, true, false))
+			{
+				// String is empty after parsing
+				continue;
+			}
+
+			time_t now;
+			time ( &now );
+			int time_to_ban = 0;
+			if ( banned_player.expire_time != 0 ) {
+				time_to_ban = banned_player.expire_time - now;
+			}
+			if ( time_to_ban >= 0 ) {
+				AddToList((void **) &ban_list, sizeof(ban_settings_t), &ban_list_size);
+				ban_list[ban_list_size - 1] = banned_player;
+				if ( banned_player.byID )
+					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s\n", time_to_ban, banned_player.key_id);
+				else
+					snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", time_to_ban, banned_player.key_id );
+				engine->ServerCommand(ban_cmd);
+			}
+		}
 		filesystem->Close(file_handle);
 	}
 
@@ -1469,6 +1513,7 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 	gpManiWeaponMgr->LevelShutdown();
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
 	gpManiMPRestartGame->LevelShutdown();
+	WriteBans();
 }
 
 //---------------------------------------------------------------------------------
@@ -2064,6 +2109,59 @@ void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
 	SET_STR ( path, local_source );
 }
 
+void CAdminPlugin::WriteBans ( void ) {
+	FileHandle_t file_handle;
+	char base_filename[256];
+
+	if ( ban_list ) {
+		snprintf(base_filename, sizeof (base_filename), "./cfg/%s/banlist.txt", mani_path.GetString());
+		file_handle = filesystem->Open (base_filename,"wt",NULL);
+		if (file_handle != NULL) {
+			PrintHeader ( file_handle, "banlist.txt", "list of steam ids and IPs that are banned" );
+			filesystem->FPrintf ( file_handle, "// This file contains the list of bans that\n" );
+			filesystem->FPrintf ( file_handle, "// have been given via the ma_ban command.\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+			filesystem->FPrintf ( file_handle, "// The first entry is the STEAM_ID or the IP.\n" );
+			filesystem->FPrintf ( file_handle, "// The second entry is the time the ban expires. 0 = permanent.\n" );
+			filesystem->FPrintf ( file_handle, "// The third entry is who executed the ban. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The fourth entry ( optional ) is why the ban was given. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+			filesystem->FPrintf ( file_handle, "// STEAM_0:0:000000 0 \"Wile E. Coyote\" \"obvious speedhack\"\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+
+			for ( int index = 0; index < ban_list_size; index++ ) {
+				if ( ban_list[index].reason[0] != 0 )
+					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].ban_initiator, ban_list[index].reason );
+				else
+					filesystem->FPrintf ( file_handle, "%s %i \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].ban_initiator );
+			}
+			filesystem->Close(file_handle);
+		}
+	}
+}
+
+void CAdminPlugin::PrintHeader ( FileHandle_t f, const char *fn, const char *ds ) {
+	if ( f == FILESYSTEM_INVALID_HANDLE )
+		return;
+
+	time_t now;
+	struct tm * timeinfo;
+	time ( &now );
+	timeinfo = localtime ( &now );
+
+	filesystem->FPrintf ( f, "// *****************************************************************************\n" );
+	filesystem->FPrintf ( f, "//    Plugin    : Mani Admin Plugin\n" );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//    Filename   : %s\n", fn );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//    Last Updated : %04d/%02d/%02d\n", timeinfo->tm_year+1900, timeinfo->tm_mon+1, timeinfo->tm_mday );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//    Description  : %s\n", ds );
+	filesystem->FPrintf ( f, "// *****************************************************************************\n" );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//\n" );
+}
 //---------------------------------------------------------------------------------
 // Purpose: Draw Primary menu
 //---------------------------------------------------------------------------------

@@ -80,6 +80,9 @@ public:
 	LOADUP_STATUS	MakeVDF ( char *path, bool SMM);
 	LOADUP_STATUS	MakeOrAddToINI ( char *path );
 
+	void			WriteBans( void );
+	void			PrintHeader ( FileHandle_t f, const char *fn, const char *ds );
+
 	void			ProcessExplodeAtCurrentPosition( player_t *player);
 	bool			CanTeleport(player_t *player);
 	void			ProcessChangeName( player_t *player, const char *new_name, char *old_name);

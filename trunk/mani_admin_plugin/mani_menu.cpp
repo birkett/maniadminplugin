@@ -1041,6 +1041,12 @@ void MenuManager::GameFrame()
 			if ( !menu_showing[i] ) continue;
 
 			MenuTemporal *mt_ptr = &player_list[i];
+			
+			if ( mt_ptr->menu_pages.size() == 0 ) {
+				ResetMenuShowing( player.index - 1, false );
+				continue;
+			}
+		
 			MenuPage *menu_page_ptr = mt_ptr->menu_pages[mt_ptr->menu_pages.size() - 1];
 				
 			if ( ( menu_expiration_time[i] != 0.0f ) && (gpGlobals->curtime > menu_expiration_time[i]) ) {

@@ -46,6 +46,7 @@
 #include "mani_vote.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
+#include "mani_memory.h"
 
 // Max alias name length
 #define ALIAS_LENGTH (50)
@@ -58,6 +59,9 @@ extern	ConVar	*hostname;
 static	char	*GetSubToken( const char *in_string, int *token_length);
 static	char	*TranslateToken( player_t *player, const char *token_string);
 static	bool	TranslateColourToken( const	char	*token_string, Color	*out_colour);
+
+args_t *args_list = NULL;
+int args_list_size = 0;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -83,6 +87,102 @@ mani_colour_t	mani_colour_list[MANI_MAX_COLOURS] =
 	{"{WHITE}",255,255,255},
 	{"{PINK}",255,192,255},
 };
+//---------------------------------------------------------------------------------
+// Purpose: Take a string, and remove comments
+//---------------------------------------------------------------------------------
+bool StripComments(char *in, bool start_only = false) {
+	int length = strlen ( in );
+	if (start_only && (length>1) && (in[0] == '/') && (in[1] == '/'))
+		return false;
+
+	if ( start_only ) return true;
+
+	if (length > 1) {
+		for (int i = 0; i < length - 1; i ++)
+		{
+			if (in[i] == '/' && in[i+1] == '/') {
+				in[i] = '\0';
+				length = i;
+				break;
+			}
+		}
+	} 
+	return ( length != 0 );
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Take a string, and remove the end of line characters
+//---------------------------------------------------------------------------------
+bool StripEOL(char *in) {
+	int length;
+	for ( length = strlen(in)-1; length >= 0; length-- ) {
+		if (( in[length] == '\r' ) || ( in[length] == '\n' ) || ( in[length] == '\f' ) ||
+			( in[length] == ' ' ) || ( in[length] == '\t') ) {
+			in[length] = '\0';
+		} else
+			break;
+	}
+	length++;
+	return ( length != 0 );
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Take a string, and trim white space at the beginning
+//---------------------------------------------------------------------------------
+bool Trim (char *in) {
+	int char_start = 0;
+	int length = strlen(in);
+	for (;;) {
+		if ( (char_start == length) || ((in[char_start] != ' ') && (in[char_start] != '\t')) )
+			break;
+
+		char_start++;
+	}
+
+	if (char_start == length) return false;
+	if (in[char_start] == '\0') return false;
+
+	for ( int i = char_start; i < length; i++ ) {
+		in[i-char_start] = in[i];
+	}
+	in[length-char_start] = 0;
+
+	return true;
+}
+
+int GetArgs ( char *in ) {
+	int count = 0;
+	FreeList ( (void **) &args_list, &count );
+	int index = 0;
+	bool quoteon = false;
+	bool afterquote = false;
+	// main loop
+ 	while ( in[index] != 0 ) {
+		if ( in[index] == '\"' ) {
+			quoteon = !quoteon;
+			if ( quoteon ) in++; 
+			else {
+				in[index] = 0;
+				afterquote = true;
+			}
+		}
+		if ( ((index != 0) && ((in[index] == ' ') || (in[index] == '\t')) && !quoteon ) ||
+				(in[index] == 0) ){
+			AddToList ( (void**) &args_list, sizeof(args_t), &count );
+			in[index] = 0;
+			Q_strcpy ( args_list[count-1].arg, in );
+			if ( afterquote ) {
+				in+=index+2;
+				afterquote = false;
+			} else
+				in+=index+1;
+			index=-1; 
+		}
+		index ++;
+	}
+
+	return count;
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Take a string, remove carriage return, remove comments, strips leading
@@ -90,104 +190,16 @@ mani_colour_t	mani_colour_list[MANI_MAX_COLOURS] =
 //---------------------------------------------------------------------------------
 bool ParseLine(char *in, bool strip_comments, bool strip_start_comments)
 {
-	int	i;
-	int length;
-	int	copy_start;
-	int copy_end;
-
-	// Cut carriage return out
 	if (!in) return false;
 
-	length = Q_strlen(in);
-	if (length == 0) return false;
+	if ( strip_comments )
+		if (!StripComments(in)) return false;
+	else if (strip_start_comments) 
+		if (!StripComments(in, true)) return false;
+	
+	if (!StripEOL(in)) return false;
 
-	if (strip_comments)
-	{
-		if (length > 1)
-		{
-			// chop out comments
-			for (i = 0; i < length - 1; i ++)
-			{
-				if (in[i] == '/' && in[i+1] == '/')
-				{
-					in[i] = '\0';
-					length = i;
-					break;
-				}
-
-			// Strip end carriage returns
-			}
-
-			if (length == 0) return false;
-		}
-	}
-	else if (strip_start_comments)
-	{
-		if (length > 1)
-		{
-			if (in[0] == '/' && in[1] == '/')
-			{
-				return false;
-			}
-		}
-	}
-	for (;;)
-	{
-		if (in[length - 1] == '\n' 
-			|| in[length - 1] == '\r'
-			|| in[length - 1] == '\f')
-		{
-			in[length - 1] = '\0';
-			length --;
-			if (length == 0) return false;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	copy_start = 0;
-
-	// find start of line
-	for (;;)
-	{
-		if (copy_start == length) return false;
-		if (in[copy_start] == '\0') return false;
-		if (in[copy_start] != ' ' && in[copy_start] != '\t') break;
-		copy_start++;
-	}
-
-	copy_end = length - 1;
-
-	// find and chop end of line
-	for (;;)
-	{
-		if (in[copy_end] != ' ' && in[copy_end] != '\t') 
-		{
-			in[copy_end + 1] = '\0';
-			break;
-		}
-		
-		copy_end--;
-	}
-
-	if (copy_start > 0)
-	{
-		i = 0;
-		for (;;)
-		{
-			if (in[copy_start] == '\0')
-			{
-				in[i] = '\0';
-				break;
-			}
-
-			in[i] = in[copy_start];
-			copy_start ++;
-			i ++;
-		}
-	}
+	if (!Trim(in)) return false;
 
 	return true;
 }
@@ -204,111 +216,26 @@ bool ParseAliasLine(char *in, char *alias, bool strip_comments, bool strip_start
 	int	i;
 	int length;
 	int	copy_start;
-	int copy_end;
 	int	end_alias_index = 0;
 	bool found_alias = false;
 
-	// Cut carriage return out
 	Q_strcpy(alias,"");
 
 	if (!in) return false;
 
+	if ( strip_comments )
+		if (!StripComments(in)) return false;
+	else if (strip_start_comments) 
+		if (!StripComments(in, true)) return false;
+	
+	if (!StripEOL(in)) return false;
+
+	if (!Trim(in)) return false;
+
 	length = Q_strlen(in);
 	if (length == 0) return false;
 
-	if (strip_comments)
-	{
-		if (length > 1)
-		{
-			// chop out comments
-			for (i = 0; i < length - 1; i ++)
-			{
-				if (in[i] == '/' && in[i+1] == '/')
-				{
-					in[i] = '\0';
-					length = i;
-					break;
-				}
-
-			}
-			
-			if (length == 0) return false;
-		}
-	}
-	else if (strip_start_comments)
-	{
-		if (length > 1)
-		{
-			if (in[0] == '/' && in[1] == '/')
-			{
-				return false;
-			}
-		}
-	}
-
-
-	// Strip end carriage returns
-
-	for (;;)
-	{
-		if (in[length - 1] == '\n' 
-			|| in[length - 1] == '\r'
-			|| in[length - 1] == '\f')
-		{
-			in[length - 1] = '\0';
-			length --;
-			if (length == 0) return false;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	copy_start = 0;
-
-	// find start of line
-	for (;;)
-	{
-		if (copy_start == length) return false;
-		if (in[copy_start] == '\0') return false;
-		if (in[copy_start] != ' ' && in[copy_start] != '\t') break;
-		copy_start++;
-	}
-
-	copy_end = length - 1;
-
-	// find and chop end of line
-	for (;;)
-	{
-		if (in[copy_end] != ' ' && in[copy_end] != '\t') 
-		{
-			in[copy_end + 1] = '\0';
-			break;
-		}
-		
-		copy_end--;
-	}
-
-	if (copy_start > 0)
-	{
-		i = 0;
-		for (;;)
-		{
-			if (in[copy_start] == '\0')
-			{
-				in[i] = '\0';
-				break;
-			}
-
-			in[i] = in[copy_start];
-			copy_start ++;
-			i ++;
-		}
-	}
-
 	// String is now devoid of end and start spaces/tabs
-
 	// Is this an alias string ?
 	if (in[0] == '\"')
 	{
@@ -396,7 +323,6 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments,
 	int	i;
 	int length;
 	int	copy_start;
-	int copy_end;
 	int	end_alias_index = 0;
 	bool found_alias = false;
 
@@ -406,100 +332,19 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments,
 
 	if (!in) return false;
 
+	if ( strip_comments )
+		if (!StripComments(in)) return false;
+	else if (strip_start_comments) 
+		if (!StripComments(in, true)) return false;
+	
+	if (!StripEOL(in)) return false;
+
+	if (!Trim(in)) return false;
+
 	length = Q_strlen(in);
 	if (length == 0) return false;
 
-	if (strip_comments)
-	{
-		if (length > 1)
-		{
-			// chop out comments
-			for (i = 0; i < length - 1; i ++)
-			{
-				if (in[i] == '/' && in[i+1] == '/')
-				{
-					in[i] = '\0';
-					length = i;
-					break;
-				}
-
-			}
-			
-			if (length == 0) return false;
-		}
-	}
-	else if (strip_start_comments)
-	{
-		if (length > 1)
-		{
-			if (in[0] == '/' && in[1] == '/')
-			{
-				return false;
-			}
-		}
-	}
-	// Strip end carriage returns
-
-	for (;;)
-	{
-		if (in[length - 1] == '\n' 
-			|| in[length - 1] == '\r'
-			|| in[length - 1] == '\f')
-		{
-			in[length - 1] = '\0';
-			length --;
-			if (length == 0) return false;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	copy_start = 0;
-
-	// find start of line
-	for (;;)
-	{
-		if (copy_start == length) return false;
-		if (in[copy_start] == '\0') return false;
-		if (in[copy_start] != ' ' && in[copy_start] != '\t') break;
-		copy_start++;
-	}
-
-	copy_end = length - 1;
-
-	// find and chop end of line
-	for (;;)
-	{
-		if (in[copy_end] != ' ' && in[copy_end] != '\t') 
-		{
-			in[copy_end + 1] = '\0';
-			break;
-		}
-		
-		copy_end--;
-	}
-
-	if (copy_start > 0)
-	{
-		i = 0;
-		for (;;)
-		{
-			if (in[copy_start] == '\0')
-			{
-				in[i] = '\0';
-				break;
-			}
-
-			in[i] = in[copy_start];
-			copy_start ++;
-			i ++;
-		}
-	}
-
 	// String is now devoid of end and start spaces/tabs
-
 	// Is this an alias string ?
 	if (in[0] == '\"')
 	{
@@ -628,8 +473,6 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments,
 {
 	int	i;
 	int length;
-	int	copy_start;
-	int copy_end;
 	int	end_alias_index = 0;
 	bool found_alias = false;
 
@@ -639,97 +482,17 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments,
 
 	if (!in) return false;
 
+	if ( strip_comments )
+		if (!StripComments(in)) return false;
+	else if (strip_start_comments) 
+		if (!StripComments(in, true)) return false;
+	
+	if (!StripEOL(in)) return false;
+
+	if (!Trim(in)) return false;
+
 	length = Q_strlen(in);
 	if (length == 0) return false;
-
-	if (strip_comments)
-	{
-		if (length > 1)
-		{
-			// chop out comments
-			for (i = 0; i < length - 1; i ++)
-			{
-				if (in[i] == '/' && in[i+1] == '/')
-				{
-					in[i] = '\0';
-					length = i;
-					break;
-				}
-
-			}
-			
-			if (length == 0) return false;
-		}
-	}
-	else if (strip_start_comments)
-	{
-		if (length > 1)
-		{
-			if (in[0] == '/' && in[1] == '/')
-			{
-				return false;
-			}
-		}
-	}
-	// Strip end carriage returns
-
-	for (;;)
-	{
-		if (in[length - 1] == '\n' 
-			|| in[length - 1] == '\r'
-			|| in[length - 1] == '\f')
-		{
-			in[length - 1] = '\0';
-			length --;
-			if (length == 0) return false;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	copy_start = 0;
-
-	// find start of line
-	for (;;)
-	{
-		if (copy_start == length) return false;
-		if (in[copy_start] == '\0') return false;
-		if (in[copy_start] != ' ' && in[copy_start] != '\t') break;
-		copy_start++;
-	}
-
-	copy_end = length - 1;
-
-	// find and chop end of line
-	for (;;)
-	{
-		if (in[copy_end] != ' ' && in[copy_end] != '\t') 
-		{
-			in[copy_end + 1] = '\0';
-			break;
-		}
-		
-		copy_end--;
-	}
-
-	if (copy_start > 0)
-	{
-		i = 0;
-		for (;;)
-		{
-			if (in[copy_start] == '\0')
-			{
-				in[i] = '\0';
-				break;
-			}
-
-			in[i] = in[copy_start];
-			copy_start ++;
-			i ++;
-		}
-	}
 
 	// String is now devoid of end and start spaces/tabs
 
@@ -826,6 +589,45 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments,
 
 //---------------------------------------------------------------------------------
 // Purpose: Take a string, remove carriage return, remove comments, strips leading
+//          and ending spaces and make a ban entry.
+//
+// Format of string is 
+// ID int time_t "initiator" "reason" //comments here
+//---------------------------------------------------------------------------------
+bool ParseBanLine( char *in, ban_settings_t *banned_user, bool strip_comments, bool strip_start_comments ) {
+	int length;
+
+	if (!in) return false;
+
+	if ( strip_comments )
+		if (!StripComments(in)) return false;
+	else if (strip_start_comments) 
+		if (!StripComments(in, true)) return false;
+	
+	if (!StripEOL(in)) return false;
+
+	if (!Trim(in)) return false;
+
+	length = Q_strlen(in);
+	if (length == 0) return false;
+	
+	args_list_size = GetArgs(in);
+
+	if ( args_list_size < 3 )
+		return false; // need at least 3 arguments ID, TIME, and INITIATOR ... Reason isn't manditory.
+
+	Q_strcpy (banned_user->key_id, args_list[0].arg);
+	banned_user->byID = ( (args_list[0].arg[0] == 'S') || (args_list[0].arg[0] == 's') );
+	banned_user->expire_time = atoi(args_list[1].arg);
+	Q_strcpy ( banned_user->ban_initiator, args_list[2].arg );
+	if ( args_list_size > 3 )
+		Q_strcpy ( banned_user->reason, args_list[3].arg );
+	
+	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Take a string, remove carriage return, remove comments, strips leading
 //          and ending spaces
 //
 // Format of string is 
@@ -835,8 +637,6 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 {
 	int	i;
 	int length;
-	int	copy_start;
-	int copy_end;
 	int	end_alias_index = 0;
 	bool found_alias = false;
 
@@ -851,69 +651,14 @@ bool ParseCommandReplace(char *in, char *alias, char *command_type, char *replac
 	if (length <= 2) return false;
 
 	// Strip leading comments
-	if (in[0] == '/' && in[1] == '/') return false;
+	if ( !StripComments (in, true) ) return false;
+	if (!StripEOL(in)) return false;
+	if (!Trim(in)) return false;
 
-	// Strip end carriage returns
-	for (;;)
-	{
-		if (in[length - 1] == '\n' 
-			|| in[length - 1] == '\r'
-			|| in[length - 1] == '\f')
-		{
-			in[length - 1] = '\0';
-			length --;
-			if (length == 0) return false;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	copy_start = 0;
-
-	// find start of line
-	for (;;)
-	{
-		if (copy_start == length) return false;
-		if (in[copy_start] == '\0') return false;
-		if (in[copy_start] != ' ' && in[copy_start] != '\t') break;
-		copy_start++;
-	}
-
-	copy_end = length - 1;
-
-	// find and chop end of line
-	for (;;)
-	{
-		if (in[copy_end] != ' ' && in[copy_end] != '\t') 
-		{
-			in[copy_end + 1] = '\0';
-			break;
-		}
-		
-		copy_end--;
-	}
-
-	if (copy_start > 0)
-	{
-		i = 0;
-		for (;;)
-		{
-			if (in[copy_start] == '\0')
-			{
-				in[i] = '\0';
-				break;
-			}
-
-			in[i] = in[copy_start];
-			copy_start ++;
-			i ++;
-		}
-	}
+	length = Q_strlen(in);
+	if (length == 0) return false;
 
 	// String is now devoid of end and start spaces/tabs
-
 	// Is this an alias string ?
 	if (in[0] == '\"')
 	{

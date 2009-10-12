@@ -565,7 +565,10 @@ void PlayQuakeSound (player_t *attacker, player_t *victim, int sound_index, int 
 	if (!esounds || mode == 0) return;
 	if (!quake_sound_list[sound_index].in_use) return;
 
-	snprintf(client_string, sizeof(client_string), "playgamesound \"%s\"\n", quake_sound_list[sound_index].sound_file);
+	if ( mani_play_sound_type.GetBool() ) 
+		snprintf(client_string, sizeof(client_string), "play \"%s\"\n", quake_sound_list[sound_index].sound_file);
+	else
+		snprintf(client_string, sizeof(client_string), "playgamesound \"%s\"\n", quake_sound_list[sound_index].sound_file);
 
 	if (mode == 1)
 	{
