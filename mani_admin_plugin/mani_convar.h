@@ -160,6 +160,7 @@ extern ConVar mani_reserve_slots_include_admin;
 extern ConVar mani_reserve_slots_ip_keep_history;
 extern ConVar mani_reverse_admin_flags;
 extern ConVar mani_reverse_immunity_flags;
+extern ConVar mani_reserve_slots_enforce_password;
 
 extern ConVar mani_military_time;
 
@@ -171,6 +172,7 @@ extern ConVar mani_sounds_per_round;
 extern ConVar mani_sounds_filter_if_dead;
 extern ConVar mani_show_victim_stats;
 extern ConVar mani_show_victim_stats_inflicted_only;
+extern ConVar mani_play_sound_type;
 
 extern ConVar mani_use_amx_style_menu;
 extern ConVar mani_autobalance_teams;

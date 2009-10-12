@@ -159,6 +159,7 @@ ConVar mani_reserve_slots_allow_slot_fill ("mani_reserve_slots_allow_slot_fill",
 ConVar mani_reserve_slots_kick_method ("mani_reserve_slots_kick_method", "0", 0, "This defines how a player is kicked, 0 = by ping, 1 = by connection time, 2 = by kills per minute, 3 = kill/death ratio", true, 0, true, 3); 
 ConVar mani_reserve_slots_include_admin ("mani_reserve_slots_include_admin", "1", 0, "This defines whether the admins setup are part of the reserve slot list (1 = yes they are)", true, 0, true, 1); 
 ConVar mani_reserve_slots_ip_keep_history ( "mani_reserve_slots_ip_keep_history", "14", 0, "The number of days to keep players IP history for reserve slots", true, 1, true, 31 );
+ConVar mani_reserve_slots_enforce_password ( "mani_reserve_slots_enforce_password", "0", 0, "This enforces the server password to be turned on even for administrators.", true, 0, true, 1 );
 
 ConVar mani_reverse_admin_flags ("mani_reverse_admin_flags", "0", 0, "Set to 1 if you want admin flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
 ConVar mani_reverse_immunity_flags ("mani_reverse_immunity_flags", "0", 0, "Set to 1 if you want immunity flags to be reversed in meaning (default = 0)", true, 0, true, 1); 
@@ -178,6 +179,8 @@ ConVar mani_sounds_per_round ("mani_sounds_per_round", "0", 0, "Number of sounds
 ConVar mani_sounds_filter_if_dead ("mani_sounds_filter_if_dead", "0", 0, "1 = If a player is dead then only other dead players will hear it", true, 0, true, 1); 
 ConVar mani_show_victim_stats ("mani_show_victim_stats", "0", 0, "Shows victim stats for each player when they die if set to 1", true, 0, true, 1); 
 ConVar mani_show_victim_stats_inflicted_only ("mani_show_victim_stats_inflicted_only", "0", 0, "If set to 1 only shows players you hurt or killed", true, 0, true, 1); 
+ConVar mani_play_sound_type ( "mani_play_sound_type", "0", 0, "The method sounds are played to the client.  0 = playgamesound, 1 = play", true, 0, true, 1);
+
 
 ConVar mani_use_amx_style_menu ("mani_use_amx_style_menu", "1", 0, "If set to 1 use amx style menus, if 0 uses Escape style menus", true, 0, true, 1); 
 ConVar mani_autobalance_teams ("mani_autobalance_teams", "0", 0, "If set to 1 autobalancing is performed at the end of each round", true, 0, true, 1); 

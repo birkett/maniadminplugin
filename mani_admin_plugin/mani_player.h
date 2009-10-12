@@ -43,6 +43,13 @@ struct player_t
 	IPlayerInfo *player_info;
 };
 
+struct ban_settings_t {
+	char	key_id[MAX_NETWORKID_LENGTH]; // steamid or IP
+	bool	byID; // this makes it easier when reading the settings to know if it's steam or IP
+	time_t	expire_time; // note not the length of time to ban for, the actual time it expires
+	char	ban_initiator[MAX_PLAYER_NAME_LENGTH];
+	char	reason[256];
+};
 
 struct	teleport_coords_t
 {

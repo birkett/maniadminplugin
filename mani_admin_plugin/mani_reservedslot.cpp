@@ -193,7 +193,7 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	const char *newpw = p6;
 
 	if ( pwd && !FStrEq(pwd->GetString(),"")) {
-		if ( AdminAccess && !war_mode )
+		if ( AdminAccess && ( !war_mode && !mani_reserve_slots_enforce_password.GetBool()) )
 				newpw = pwd->GetString();
 	}
 
