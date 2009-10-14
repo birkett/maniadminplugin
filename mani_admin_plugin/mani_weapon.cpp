@@ -771,6 +771,7 @@ bool RestrictWeaponPage::PopulateMenuPage(player_t *player_ptr)
 	// Setup weapon list
 	for( int i = 0; i < 29; i++ )
 	{
+		if ( !gpManiWeaponMgr->weapons[i] ) continue;
 		if (gpManiWeaponMgr->weapons[i]->GetDisplayID() == 0) continue;
 
 		MenuItem *ptr = new RestrictWeaponItem();
@@ -1093,7 +1094,9 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaNoSnipers(player_t *player_ptr, const char
 //---------------------------------------------------------------------------------
 int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 {
-	for (int i = 0; i < 29; i++)
+	int start = 0;
+	if ( !engine->IsDedicatedServer() ) start = 18;
+	for (int i = start; i < start+29; i++)
 	{
 		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
 		if (weapon_info == NULL)
@@ -1103,7 +1106,7 @@ int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 
 		if (strcmp(search_name, weapon_info->weapon_name) == 0) 
 		{
-			return i;
+			return i-start;
 		}
 	}
 
