@@ -1235,11 +1235,10 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			time ( &now );
 			int time_to_ban = 0;
 			if ( banned_player.expire_time != 0 ) {
-				time_to_ban = banned_player.expire_time - now;
+				time_to_ban = (int) (banned_player.expire_time - now)/60;
 			}
 			if ( time_to_ban >= 0 ) {
-				AddToList((void **) &ban_list, sizeof(ban_settings_t), &ban_list_size);
-				ban_list[ban_list_size - 1] = banned_player;
+				AddBan ( &banned_player );
 				if ( banned_player.byID )
 					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s\n", time_to_ban, banned_player.key_id);
 				else
@@ -2112,6 +2111,8 @@ void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
 void CAdminPlugin::WriteBans ( void ) {
 	FileHandle_t file_handle;
 	char base_filename[256];
+	time_t now;
+	time ( &now );
 
 	if ( ban_list ) {
 		snprintf(base_filename, sizeof (base_filename), "./cfg/%s/banlist.txt", mani_path.GetString());
@@ -2131,6 +2132,7 @@ void CAdminPlugin::WriteBans ( void ) {
 			filesystem->FPrintf ( file_handle, "//\n" );
 
 			for ( int index = 0; index < ban_list_size; index++ ) {
+				if ( (ban_list[index].expire_time != 0) && (ban_list[index].expire_time <= now) ) continue;
 				if ( ban_list[index].reason[0] != 0 )
 					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].ban_initiator, ban_list[index].reason );
 				else
@@ -2141,6 +2143,109 @@ void CAdminPlugin::WriteBans ( void ) {
 	}
 }
 
+bool CAdminPlugin::AddBan ( ban_settings_t *ban ) {
+	bool found = false;
+	int index = 0;
+	while ( !found ) {
+		if ( found || (index == ban_list_size) ) break;
+		found = FStrEq ( ban->key_id, ban_list[index++].key_id );
+	}
+
+	if ( !found ) {
+		AddToList((void **) &ban_list, sizeof(ban_settings_t), &ban_list_size);
+		ban_list[ban_list_size - 1] = *ban;
+	} else { // update ban
+		index--; // put it back to where it was found.
+		Q_strcpy ( ban_list[index].ban_initiator, ban->ban_initiator );
+		Q_strcpy ( ban_list[index].reason, ban->reason );
+		ban_list[index].expire_time = ban->expire_time;
+	}
+
+	return !found;
+}
+
+bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initiator, int ban_time, const char *prefix, const char *reason ) {
+	ban_settings_t ban;
+	time_t now;
+	time ( &now );
+	Q_memset ( &ban, 0, sizeof (ban_settings_t));
+
+	if ( !player )
+		return false;
+
+	if ( !key || (key[0] == 0))
+		return false;
+
+	if ( !initiator || (initiator[0] == 0))
+		return false; 
+
+	if ( ban_time != 0 )
+		ban_time = now + ( ban_time * 60 );
+
+	Q_strcpy ( ban.key_id, key );
+	Q_strcpy ( ban.ban_initiator, initiator );
+	ban.expire_time = (time_t)ban_time;
+	ban.byID = ( (key[0] == 'S') || (key[0] == 's') );
+	if ( reason )
+		Q_strcpy ( ban.reason, reason );
+
+	char ban_cmd[512];
+	Q_memset( &ban_cmd, 0, sizeof(ban_cmd) );
+	
+	int len;
+	if ( ban.byID ) { // ban by steamid
+		char *localprefix = ( prefix != NULL ) ? prefix : "Banned (By Admin)";
+		if ( reason ) {
+			len = snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", ban_time, player->user_id );
+			engine->ServerCommand(ban_cmd);
+			ban_cmd[len-1] = 0; // remove the \n
+			LogCommand (player, "%s [%s] [%s] %s (REASON: %s)\n", localprefix, player->name, key, ban_cmd, reason);
+			snprintf( ban_cmd, sizeof(ban_cmd), "kickid %i %s\n", player->user_id, reason );
+			engine->ServerCommand(ban_cmd);
+		} else {
+			len = snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", ban_time, player->user_id);
+			engine->ServerCommand(ban_cmd);
+ 			LogCommand (player, "%s [%s] [%s] %s\n", localprefix, player->name, key, ban_cmd);
+		}
+	} else { // ban by IP
+		char *localprefix = ( prefix != NULL ) ? prefix : "Banned IP (By Admin)";
+
+		if ( reason ) {
+			for ( int i = 1; i <= max_players; i++ ) {
+				player_t plr;
+				plr.index = i;
+				if (!FindPlayerByIndex(&plr)) continue;
+
+				if ( FStrEq ( plr.ip_address, target_player_list[i-1].ip_address ) ) 
+					UTIL_KickPlayer ( &plr, (char *)reason, localprefix, localprefix );
+			}
+		}
+
+		int len = snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", ban_time, player->ip_address);
+		engine->ServerCommand(ban_cmd);
+		if ( reason ) {
+			ban_cmd[len - 1] = 0;
+			LogCommand (player, "%s [%s] [%s] %s (REASON: %s)\n", localprefix, player->name, player->ip_address, ban_cmd, reason);
+		} else
+			LogCommand (player, "%s [%s] [%s] %s", localprefix, player->name, player->ip_address, ban_cmd);
+	}
+
+	return AddBan ( &ban );
+}
+
+bool CAdminPlugin::RemoveBan( const char *key ) {
+	bool found = false;
+	int index = 0;
+	while ( !found ) {
+		if ( found || (index == ban_list_size) ) break;
+		found = FStrEq ( key, ban_list[index++].key_id );
+	}
+
+	if ( found )
+		ban_list[--index].expire_time = 1; // this ensures the ban will be removed on next write.
+
+	return found;
+}
 void CAdminPlugin::PrintHeader ( FileHandle_t f, const char *fn, const char *ds ) {
 	if ( f == FILESYSTEM_INVALID_HANDLE )
 		return;
@@ -5612,7 +5717,6 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 	if (war_mode) return;
 
 	char	kick_cmd[512];
-	char	ban_cmd[512];
 
 	name_changes[player->index - 1] ++;
 
@@ -5635,12 +5739,8 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 				// Ban by user id
 				SayToAll(ORANGE_CHAT, false,"Player was banned for name change hacking");
 				PrintToClientConsole(player->entity, "You have been auto banned for name hacking\n");
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n",
-										mani_player_name_change_ban_time.GetInt(),
-										player->user_id);
-				LogCommand(NULL, "Banned (Name change threshold) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
+				AddBan ( player, player->steam_id, "MAP", mani_player_name_change_ban_time.GetInt(), "Banned (Name change threshold)", "Name change threshold" );
+				WriteBans();
 				name_changes[player->index - 1] = 0;
 				return;
 			}
@@ -5649,12 +5749,8 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 				// Ban by user ip address
 				SayToAll(ORANGE_CHAT, false,"Player was banned for name change hacking");
 				PrintToClientConsole(player->entity, "You have been auto banned for name hacking\n");
-				snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n",
-										mani_player_name_change_ban_time.GetInt(),
-										player->ip_address);
-				LogCommand(NULL, "Banned IP (Name change threshold) [%s] [%s] %s", player->name, player->ip_address, ban_cmd);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeip\n");
+				AddBan ( player, player->ip_address, "MAP", mani_player_name_change_ban_time.GetInt(), "Banned IP (Name change threshold)", "Name change threshold" );
+				WriteBans();
 				name_changes[player->index - 1] = 0;
 				return;
 			}
@@ -5666,20 +5762,12 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 
 				if (!IsLAN())
 				{
-					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n",
-											mani_player_name_change_ban_time.GetInt(),
-											player->user_id);
-					LogCommand(NULL, "Banned (Name change threshold) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
-					engine->ServerCommand(ban_cmd);
-					engine->ServerCommand("writeid\n");
+					AddBan ( player, player->steam_id, "MAP", mani_player_name_change_ban_time.GetInt(), "Banned (Name change threshold)", "Name change threshold" );
+					WriteBans();
 				}
 
-				snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n",
-										mani_player_name_change_ban_time.GetInt(),
-										player->ip_address);
-				LogCommand(NULL, "Banned IP (Name change threshold) [%s] [%s] %s", player->name, player->ip_address, ban_cmd);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeip\n");
+				AddBan ( player, player->ip_address, "MAP", mani_player_name_change_ban_time.GetInt(), "Banned IP (Name change threshold)", "Name change threshold" );
+				WriteBans();
 				name_changes[player->index - 1] = 0;
 				return;
 			}
@@ -6177,17 +6265,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 	// Try steam id next
 	bool ban_by_ip = true;
 
-	char	target_steam_id[2048];
 	const char *target_string = gpCmd->Cmd_Argv(1);
-	Q_strcpy(target_steam_id, target_string);
-	if (Q_strlen(target_steam_id) > 6)
-	{
-		target_steam_id[6] = '\0';
-		if (FStruEq(target_steam_id, "STEAM_"))
-		{
-			ban_by_ip = false;
-		}
-	}
+	ban_by_ip = !((target_string[0]=='S') || (target_string[0]=='s'));
 
 	char unban_cmd[128];
 	if (!ban_by_ip)
@@ -6202,14 +6281,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 	LogCommand (player_ptr, "%s", unban_cmd);
 
 	engine->ServerCommand(unban_cmd);
-	if (!ban_by_ip)
-	{
-		engine->ServerCommand("writeid\n");
-	}
-	else
-	{
-		engine->ServerCommand("writeip\n");
-	}
+	RemoveBan ( target_string );
+	WriteBans();
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Unbanned [%s], no confirmation possible", target_string);
 
@@ -6221,7 +6294,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
-	char ban_cmd[256];
 	bool perm_ban = true;
 	bool temp_ban = true;
 
@@ -6256,7 +6328,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 	}
 
 	const char *target_string = gpCmd->Cmd_Argv(2);
-
+	const char *reason = NULL;
+	if ( gpCmd->Cmd_Argc() >= 4 ) reason = gpCmd->Cmd_Args(3);
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_BAN))
 	{
@@ -6284,11 +6357,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 			PrintToClientConsole(target_player_list[i].entity, "You have been banned by Admin for %i minutes\n", time_to_ban);
 		}
 
-		snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", time_to_ban, target_player_list[i].user_id);
+		AddBan ( &target_player_list[i], target_player_list[i].steam_id, player_ptr->name, time_to_ban, "Banned (By Admin)", reason );
+		WriteBans();
 
-		LogCommand (player_ptr, "Banned (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].steam_id, ban_cmd);
-		engine->ServerCommand(ban_cmd);
-		engine->ServerCommand("writeid\n");
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name );
 	}
 
@@ -6300,7 +6371,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
-	char ban_cmd[256];
 	bool perm_ban = true;
 	bool temp_ban = true;
 
@@ -6329,6 +6399,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 	}
 
 	const char *target_string = gpCmd->Cmd_Argv(2);
+	char *reason = NULL;
+	if ( gpCmd->Cmd_Argc() >= 4 ) reason = (char *)gpCmd->Cmd_Args(3);
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_BAN))
@@ -6357,11 +6429,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 			PrintToClientConsole(target_player_list[i].entity, "You have been banned by Admin for %i minutes\n", time_to_ban);
 		}
 
-		snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", time_to_ban, target_player_list[i].ip_address);
+		AddBan ( &target_player_list[i], target_player_list[i].ip_address, player_ptr->name, time_to_ban, "Banned IP (By Admin)", reason );
+		WriteBans();
 
-		LogCommand (player_ptr, "Banned IP (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].ip_address, ban_cmd);
-		engine->ServerCommand(ban_cmd);
-		engine->ServerCommand("writeip\n");
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name );
 	}
 

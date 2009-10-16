@@ -42,6 +42,7 @@
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
 #include "mani_main.h"
+#include "mani_mainclass.h"
 #include "mani_convar.h"
 #include "mani_memory.h"
 #include "mani_player.h"
@@ -400,7 +401,6 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 			gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN))
 	{
 		player_t	player;
-		char	ban_cmd[256];
 
 		if (IsLAN())
 		{
@@ -424,13 +424,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_ban_message.GetString());
 				OutputHelpText(GREEN_CHAT, player_ptr, "%s", mani_spray_tag_ban_message.GetString());
 				// Ban by user id
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-									mani_spray_tag_ban_time.GetInt(), 
-									player.user_id);
-				LogCommand (player_ptr, "Banned player [%s] [%s] for spray tag for %i minutes\n", 
-								player.name, 
-								player.steam_id, 
-								mani_spray_tag_ban_time.GetInt());
+				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", mani_spray_tag_ban_time.GetInt(), "Spray Tag Ban", "Spray Tag Ban" );
 			}
 			else
 			{
@@ -465,25 +459,15 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				}
 
 				// Ban by steam id
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i \"%s\"\n", 
-									mani_spray_tag_ban_time.GetInt(), 
-									player.steam_id);
-				LogCommand (player_ptr, "Banned player [%s] for spray tag for %i minutes\n",  
-								player.steam_id, 
-								mani_spray_tag_ban_time.GetInt());
+				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", mani_spray_tag_ban_time.GetInt(), "Spray Tag Ban", "Spray Tag Ban" );
 			}
-
-
-			engine->ServerCommand(ban_cmd);
-			engine->ServerCommand("writeid\n");
+			gpManiAdminPlugin->WriteBans();
 		}
 	}
 	else if (FStrEq (menu_command, "pban") && 
 			gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN))
 	{
-
 		player_t	player;
-		char	ban_cmd[256];
 
 		if (IsLAN())
 		{
@@ -508,12 +492,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_perm_ban_message.GetString());
 				OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_perm_ban_message.GetString());
 				// Ban by user id
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", 
-									0, 
-									player.user_id);
-				LogCommand (player_ptr, "Banned player [%s] [%s] for spray tag permanently\n", 
-								player.name, 
-								player.steam_id);
+				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", 0, "Permanent Spray Tag Ban", "Permanent Spray Tag Ban" );
 			}
 			else
 			{
@@ -548,15 +527,9 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				}
 
 				// Ban by steam id
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i \"%s\"\n", 
-									0, 
-									player.steam_id);
-				LogCommand (player_ptr, "Banned player [%s] for spray tag for permanently\n",  
-								player.steam_id);
+				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", 0, "Permanent Spray Tag Ban", "Permanent Spray Tag Ban" );
 			}
-
-			engine->ServerCommand(ban_cmd);
-			engine->ServerCommand("writeid\n");
+			gpManiAdminPlugin->WriteBans();
 		}
 	}
 

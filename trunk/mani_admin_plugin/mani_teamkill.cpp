@@ -41,6 +41,7 @@
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
 #include "mani_main.h"
+#include "mani_mainclass.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_player.h"
@@ -838,8 +839,6 @@ bool	TKBanPlayer (player_t	*attacker, int ban_index)
 		if (tk_player_list[ban_index].violations_committed >= mani_tk_offences_for_ban.GetInt() && mani_tk_offences_for_ban.GetInt() != 0)
 		{
 			// Ban required
-			char	ban_cmd[128];
-
 			Q_strcpy(bot.steam_id, attacker->steam_id);
 			if (FindPlayerBySteamID(&bot))
 			{
@@ -860,10 +859,8 @@ bool	TKBanPlayer (player_t	*attacker, int ban_index)
 				}
 			}
 
-			snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s kick\n", mani_tk_ban_time.GetInt(), attacker->steam_id);
-
-			engine->ServerCommand(ban_cmd);
-			engine->ServerCommand("writeid\n");
+			gpManiAdminPlugin->AddBan ( attacker, attacker->steam_id, "MAP - TK", mani_tk_ban_time.GetInt(), "Team Kill Ban", "Team Kill Ban" );
+			gpManiAdminPlugin->WriteBans();
 
 			if (mani_tk_ban_time.GetInt() == 0)
 			{
