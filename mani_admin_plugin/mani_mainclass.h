@@ -82,6 +82,9 @@ public:
 
 	void			WriteBans( void );
 	void			PrintHeader ( FileHandle_t f, const char *fn, const char *ds );
+	bool			AddBan ( ban_settings_t *ban );
+	bool			AddBan ( player_t *player, const char *key, const char *initiator, int ban_time = 0, const char *prefix = NULL, const char *reason = NULL );
+	bool			RemoveBan ( const char *key );
 
 	void			ProcessExplodeAtCurrentPosition( player_t *player);
 	bool			CanTeleport(player_t *player);

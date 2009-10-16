@@ -43,6 +43,7 @@
 #include "ivoiceserver.h"
 #include "networkstringtabledefs.h"
 #include "mani_main.h"
+#include "mani_mainclass.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_player.h"
@@ -230,7 +231,6 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 	autokick_ip_t		*found_ip = NULL;
 
 	char	kick_cmd[512];
-	char	ban_cmd[512];
 
 	if (war_mode)
 	{
@@ -323,10 +323,8 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 				{
 					// Ban by user id
 					PrintToClientConsole(player_ptr->entity, "You have been auto banned\n");
-					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_name_list[i].ban_time, player_ptr->user_id);
-					LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, ban_cmd);
-					engine->ServerCommand(ban_cmd);
-					engine->ServerCommand("writeid\n");
+					gpManiAdminPlugin->AddBan ( player_ptr, player_ptr->steam_id, "MAP", autokick_name_list[i].ban_time, "Banned (Bad Name)", "Bad Name" );
+					gpManiAdminPlugin->WriteBans();
 					return false;
 				}
 			}
@@ -349,10 +347,8 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 				{
 					// Ban by user id
 					PrintToClientConsole(player_ptr->entity, "You have been auto banned\n");
-					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_pname_list[i].ban_time, player_ptr->user_id);
-					LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player_ptr->name, player_ptr->steam_id, ban_cmd);
-					engine->ServerCommand(ban_cmd);
-					engine->ServerCommand("writeid\n");
+					gpManiAdminPlugin->AddBan ( player_ptr, player_ptr->steam_id, "MAP", autokick_pname_list[i].ban_time, "Banned (Bad Name)", "Bad Name" );
+					gpManiAdminPlugin->WriteBans();
 					return false;
 				}
 			}
@@ -1782,7 +1778,6 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 {
 
 	char	kick_cmd[512];
-	char	ban_cmd[512];
 
 	if (gpManiClient->HasAccess(player->index, IMMUNITY, IMMUNITY_TAG, false, true))
 	{
@@ -1806,10 +1801,8 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 			{
 				// Ban by user id
 				PrintToClientConsole(player->entity, "You have been auto banned\n");
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_name_list[i].ban_time, player->user_id);
-				LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
+				gpManiAdminPlugin->AddBan ( player, player->steam_id, "MAP", autokick_name_list[i].ban_time, "Banned (Bad Name)", "Bad Name" );
+				gpManiAdminPlugin->WriteBans();
 				return;
 			}
 		}
@@ -1833,10 +1826,8 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 			{
 				// Ban by user id
 				PrintToClientConsole(player->entity, "You have been auto banned\n");
-				snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", autokick_pname_list[i].ban_time, player->user_id);
-				LogCommand(NULL, "Banned (Bad Name) [%s] [%s] %s", player->name, player->steam_id, ban_cmd);
-				engine->ServerCommand(ban_cmd);
-				engine->ServerCommand("writeid\n");
+				gpManiAdminPlugin->AddBan ( player, player->steam_id, "MAP", autokick_pname_list[i].ban_time, "Banned (Bad Name)", "Bad Name" );
+				gpManiAdminPlugin->WriteBans();
 				return;
 			}
 		}
