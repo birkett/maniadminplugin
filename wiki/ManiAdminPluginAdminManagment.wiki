@@ -1,4 +1,4 @@
-#summary How to set up a clients.txt
+#summary Admin Managment of Mani Admin Plugin
 #labels Phase-Deploy,Featured
 =1. Admin Managment=
 
