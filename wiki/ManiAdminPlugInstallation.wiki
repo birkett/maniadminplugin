@@ -20,6 +20,7 @@ You now need to place all 4 folders in the root folder of your gamemod (e. g. cs
 *If you want to use Mani for a dedicated rented server*
 
 upload this 4 folders via an [http://filezilla-project.org FTP File Client Tool] into the root folder of your mod (cstrike, tf etc.).
+
 Example (folder structur on your server may be completly different):
 
 /gameserver/subfolder/cstrike
@@ -28,6 +29,7 @@ Example (folder structur on your server may be completly different):
 *If you want to use Mani for a dedicated Server hosted at home*
 
 copy all 4 folders to: Installpath\steamapps\accountname\source dedicated server\yourmod
+
 Example:
 
 C:\Programms\Steam\steamapps\isias\source dedicated server\cstrike
@@ -35,6 +37,7 @@ C:\Programms\Steam\steamapps\isias\source dedicated server\cstrike
 *If you want to use Mani for a Listenserver*
 
 copy this 4 folders to: Installpath\steamapps\accountname\path of your mod\yourmod
+
 Example:
 
 C:\Programms\Steam\steamapps\isias\counter-strike source\cstrike
