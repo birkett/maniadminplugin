@@ -19,7 +19,7 @@ You now need to place all 4 folders in the root folder of your gamemod (e. g. cs
 ==2. Setting up Mani Admin Plugin for your gamemod ==
 *If you want to use Mani for a dedicated rented server*
 
-upload this 4 folders via an [url=http://filezilla-project.org FTP File Client Tool] into the root folder of your mod (cstrike, tf etc.).
+upload this 4 folders via an [http://filezilla-project.org FTP File Client Tool] into the root folder of your mod (cstrike, tf etc.).
 Example (folder structur on your server may be completly different):
 /gameserver/subfolder/cstrike
 
