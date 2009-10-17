@@ -1,0 +1,5 @@
+#summary Mani Admin Plugin Documentation
+#labels Phase-Deploy,Featured
+=Documenation of Mani Admin Plugin=
+
+You can find the documentation of Mani Admin Plugin [http://www.mani-admin-plugin.com/isias/documentation at the official homepage].
