@@ -613,15 +613,16 @@ bool ParseBanLine( char *in, ban_settings_t *banned_user, bool strip_comments, b
 	
 	args_list_size = GetArgs(in);
 
-	if ( args_list_size < 3 )
-		return false; // need at least 3 arguments ID, TIME, and INITIATOR ... Reason isn't manditory.
+	if ( args_list_size < 4 )
+		return false; // need at least 4 arguments ID, TIME, and PLAYER_NAME, INITIATOR ... Reason isn't manditory.
 
 	Q_strcpy (banned_user->key_id, args_list[0].arg);
 	banned_user->byID = ( (args_list[0].arg[0] == 'S') || (args_list[0].arg[0] == 's') );
 	banned_user->expire_time = atoi(args_list[1].arg);
-	Q_strcpy ( banned_user->ban_initiator, args_list[2].arg );
-	if ( args_list_size > 3 )
-		Q_strcpy ( banned_user->reason, args_list[3].arg );
+	Q_strcpy ( banned_user->player_name, args_list[2].arg );
+	Q_strcpy ( banned_user->ban_initiator, args_list[3].arg );
+	if ( args_list_size > 4 )
+		Q_strcpy ( banned_user->reason, args_list[4].arg );
 	
 	return true;
 }

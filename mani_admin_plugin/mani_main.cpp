@@ -2128,15 +2128,15 @@ void CAdminPlugin::WriteBans ( void ) {
 			filesystem->FPrintf ( file_handle, "// The third entry is who executed the ban. ( quotes required )\n" );
 			filesystem->FPrintf ( file_handle, "// The fourth entry ( optional ) is why the ban was given. ( quotes required )\n" );
 			filesystem->FPrintf ( file_handle, "//\n" );
-			filesystem->FPrintf ( file_handle, "// STEAM_0:0:000000 0 \"Wile E. Coyote\" \"obvious speedhack\"\n" );
+			filesystem->FPrintf ( file_handle, "// STEAM_0:0:000000 0 \"RoadRunner\" \"Wile E. Coyote\" \"obvious speedhack\"\n" );
 			filesystem->FPrintf ( file_handle, "//\n" );
 
 			for ( int index = 0; index < ban_list_size; index++ ) {
 				if ( (ban_list[index].expire_time != 0) && (ban_list[index].expire_time <= now) ) continue;
 				if ( ban_list[index].reason[0] != 0 )
-					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].ban_initiator, ban_list[index].reason );
+					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\" \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].player_name, ban_list[index].ban_initiator, ban_list[index].reason );
 				else
-					filesystem->FPrintf ( file_handle, "%s %i \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].ban_initiator );
+					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\"\n", ban_list[index].key_id, (int)ban_list[index].expire_time, ban_list[index].player_name, ban_list[index].ban_initiator );
 			}
 			filesystem->Close(file_handle);
 		}
@@ -2150,6 +2150,7 @@ bool CAdminPlugin::AddBan ( ban_settings_t *ban ) {
 		if ( found || (index == ban_list_size) ) break;
 		found = FStrEq ( ban->key_id, ban_list[index++].key_id );
 	}
+	ban->byID = ((ban->key_id[0] == 'S') || (ban->key_id[0] == 's'));
 
 	if ( !found ) {
 		AddToList((void **) &ban_list, sizeof(ban_settings_t), &ban_list_size);
@@ -2158,6 +2159,7 @@ bool CAdminPlugin::AddBan ( ban_settings_t *ban ) {
 		index--; // put it back to where it was found.
 		Q_strcpy ( ban_list[index].ban_initiator, ban->ban_initiator );
 		Q_strcpy ( ban_list[index].reason, ban->reason );
+		Q_strcpy ( ban_list[index].player_name, ban->player_name );
 		ban_list[index].expire_time = ban->expire_time;
 	}
 
@@ -2184,6 +2186,8 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 
 	Q_strcpy ( ban.key_id, key );
 	Q_strcpy ( ban.ban_initiator, initiator );
+	Q_strcpy ( ban.player_name, player->name );
+
 	ban.expire_time = (time_t)ban_time;
 	ban.byID = ( (key[0] == 'S') || (key[0] == 's') );
 	if ( reason )
@@ -3375,6 +3379,11 @@ int PlayerManagementItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_p
 		MENUPAGE_CREATE(BanTypePage, player_ptr, 0, -1);
 		return NEW_MENU;
 	}
+	else if (strcmp("unbantype", sub_option) ==0)
+	{
+		MENUPAGE_CREATE(UnBanTypePage, player_ptr, 0, -1);
+		return NEW_MENU;
+	}
 	else if (strcmp("swapteam", sub_option) ==0)
 	{
 		MENUPAGE_CREATE(SwapPlayerPage, player_ptr, 0 , -1);
@@ -3440,6 +3449,7 @@ bool PlayerManagementPage::PopulateMenuPage(player_t *player_ptr)
 		gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN)) && !war_mode)
 	{
 		MENUOPTION_CREATE(PlayerManagementItem, 614, bantype);
+		MENUOPTION_CREATE(PlayerManagementItem, 621, unbantype);
 	}
 
 	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed())
@@ -4271,6 +4281,21 @@ int BanTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	return CLOSE_MENU;
 }
 
+int UnBanTypeItem::MenuItemFired( player_t *player_ptr, MenuPage *m_page ) {
+	char *unban_type;
+
+	this->params.GetParam("unban_type", &unban_type);
+
+	if ( (strcmp(unban_type, "steam_id")==0) ||
+		 (strcmp(unban_type, "ip_address")==0) ||
+		 (strcmp(unban_type, "name")==0) ) {
+
+		MENUPAGE_CREATE_PARAM(UnBanPlayerPage, player_ptr, AddParam("unban_type", unban_type), 0, -1);
+		return NEW_MENU;
+
+	}
+	return CLOSE_MENU;
+}
 bool BanTypePage::PopulateMenuPage(player_t *player_ptr)
 {
 	this->SetEscLink("%s", Translate(player_ptr, 400));
@@ -4292,6 +4317,26 @@ bool BanTypePage::PopulateMenuPage(player_t *player_ptr)
 	ptr->SetDisplayText("%s", Translate(player_ptr, 404));
 	ptr->params.AddParam("ban_type", "name");
 	this->AddItem(ptr);
+	return true;
+}
+
+bool UnBanTypePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 405));
+	this->SetTitle("%s", Translate(player_ptr, 406));
+
+	MenuItem *ptr;
+
+	ptr = new UnBanTypeItem;
+	ptr->SetDisplayText("%s", Translate(player_ptr, 407));
+	ptr->params.AddParam("unban_type", "ip_address");
+	this->AddItem(ptr);
+
+	ptr = new UnBanTypeItem;
+	ptr->SetDisplayText("%s", Translate(player_ptr, 408));
+	ptr->params.AddParam("unban_type", "steam_id");
+	this->AddItem(ptr);
+
 	return true;
 }
 
@@ -4324,6 +4369,53 @@ int BanPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 		return RePopOption(REPOP_MENU_WAIT3);
 	}
 
+	return CLOSE_MENU;
+}
+
+int UnBanPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	int index;
+	this->params.GetParam("banlistindex", &index);
+	MENUPAGE_CREATE_PARAM(UnBanPlayerDetailsPage, player_ptr, AddParam("banlistindex", index), 0, -1);
+	return NEW_MENU;
+}
+
+bool UnBanPlayerDetailsPage::PopulateMenuPage ( player_t *player_ptr ) {
+	int index;
+	this->params.GetParam("banlistindex", &index);
+
+	char title[256];
+	Q_memset( &title, 0, sizeof(title) );
+	ban_settings_t *ban = &ban_list[index];
+
+	if ( ban->reason[0] == 0 )
+		sprintf( title, "%s was banned by\n%s using the %s\nof %s\n\nAre you sure?", ban->player_name, ban->ban_initiator, (ban->byID) ? "Steam ID" : "IP", ban->key_id );
+	else
+		sprintf( title, "%s was banned by\n%s using the %s\nof %s because\n\"%s\"\nAre you sure?", ban->player_name, ban->ban_initiator, (ban->byID) ? "Steam ID" : "IP", ban->key_id, ban->reason );
+
+	this->SetTitle(title);
+	
+	MenuItem *ptr;
+
+	ptr = new UnBanPlayerDetailsItem;
+	ptr->SetDisplayText("Yes");
+	ptr->params.AddParam("answer", true);
+	ptr->params.AddParam("banlistindex", index);
+	this->AddItem(ptr);
+
+	return true;
+}
+
+int UnBanPlayerDetailsItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page) {
+	bool answer;
+	int	index;
+
+	this->params.GetParam("answer", &answer);
+	this->params.GetParam("banlistindex", &index );
+	if ( answer ) { // remove the ban
+		ban_list[index].expire_time = 1;
+		gpManiAdminPlugin->WriteBans();
+	}
 	return CLOSE_MENU;
 }
 
@@ -4367,6 +4459,46 @@ bool BanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 	}
 
 	this->SortDisplay();
+	return true;
+}
+
+bool UnBanPlayerPage::PopulateMenuPage(player_t *player_ptr)
+{
+	char *unban_type;
+	int ubtype;
+	this->params.GetParam("unban_type", &unban_type);
+
+	this->SetEscLink("%s", Translate(player_ptr, 503));
+
+	if (strcmp(unban_type, "steam_id") == 0)
+	{
+		// unban by user id
+		this->SetTitle("%s", Translate(player_ptr, 504));
+		ubtype = 0;
+	}
+	else
+	{
+		// unban by ip
+		this->SetTitle("%s", Translate(player_ptr, 505));
+		ubtype = 1;
+	}
+
+	time_t now;
+	time (&now);
+
+	MenuItem *ptr;
+	for( int i = 0; i < ban_list_size; i++ )
+	{
+		if ( (ban_list[i].expire_time != 0) && (ban_list[i].expire_time <= now) ) continue;
+		if (((ubtype == 0) && (ban_list[i].byID)) || ((ubtype == 1) && (!ban_list[i].byID))) {
+			ptr = new UnBanPlayerItem;
+			ptr->SetDisplayText("%s", ban_list[i].player_name);
+			ptr->params.AddParam("banlistindex", i);
+			this->AddItem(ptr);
+		}
+	}
+
+	//this->SortDisplay();
 	return true;
 }
 

@@ -48,6 +48,7 @@ struct ban_settings_t {
 	bool	byID; // this makes it easier when reading the settings to know if it's steam or IP
 	time_t	expire_time; // note not the length of time to ban for, the actual time it expires
 	char	ban_initiator[MAX_PLAYER_NAME_LENGTH];
+	char	player_name[MAX_PLAYER_NAME_LENGTH];
 	char	reason[256];
 };
 

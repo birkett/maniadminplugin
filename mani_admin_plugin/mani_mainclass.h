@@ -220,10 +220,13 @@ MENUALL_DEC(BanOptions);
 MENUALL_DEC(SlapOptions);
 MENUALL_DEC(BlindOptions);
 MENUALL_DEC(BanType);
+MENUALL_DEC(UnBanType);
 MENUALL_DEC(KickType);
 MENUALL_DEC(CExecOptions);
 MENUALL_DEC(ConfigOptions);
 MENUALL_DEC(BanPlayer);
+MENUALL_DEC(UnBanPlayer);
+MENUALL_DEC(UnBanPlayerDetails);
 
 MENUALL_DEC(ChangeMap);
 MENUALL_DEC(SetNextMap);
