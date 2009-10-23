@@ -502,7 +502,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 
     // If player tried to have multiple weapons in the buy string then stop
     // the transaction from happening
-    if (matched_weapon_count > 0)
+    if (matched_weapon_count > 1)
     {
         ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
         return PLUGIN_STOP;                
