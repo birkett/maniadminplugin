@@ -19,12 +19,6 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
-//
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -491,12 +485,13 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 	
 	MWeapon *weapon = NULL;
 	std::map <BasicStr, MWeapon *>::iterator itr;
+	int matched_weapon_count = 0;
 	for (itr = alias_list.begin(); itr != alias_list.end(); ++itr)
 	{
 		if (V_stristr(lower_alias, (const char *) itr->first.str) != NULL)
 		{
 			weapon = itr->second;
-			break;
+			matched_weapon_count ++;
 		}
 	}
 
@@ -505,6 +500,14 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 		return PLUGIN_CONTINUE;
 	}
 
+    // If player tried to have multiple weapons in the buy string then stop
+    // the transaction from happening
+    if (matched_weapon_count > 0)
+    {
+        ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
+        return PLUGIN_STOP;                
+    }
+    
 	// Check if player has enough cash anyway
 	CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(weapon->GetWeaponIndex());
 	if (weapon_info)
