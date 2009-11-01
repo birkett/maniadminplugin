@@ -325,18 +325,19 @@ void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 {
 	char	disconnect[512];
 
-	if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
-	{
-		// No redirection required
-		if ( !player_ptr->is_bot )
-			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
-		UTIL_KickPlayer(player_ptr, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
-	} else {
-		// Redirection required
-		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
-		Q_snprintf(disconnect, sizeof (disconnect), "wait;wait;wait;wait;wait;wait;wait;connect %s\n", mani_reserve_slots_redirect.GetString());
-		engine->ClientCommand( player_ptr->entity, disconnect);
-	}
+	if ( !player_ptr->is_bot )
+		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
+
+	UTIL_KickPlayer(player_ptr, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
+	//if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
+	//{
+	//	// No redirection required
+	//} else {
+	//	// Redirection required
+	//	PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
+	//	Q_snprintf(disconnect, sizeof (disconnect), "wait;wait;wait;wait;wait;wait;wait;connect %s\n", mani_reserve_slots_redirect.GetString());
+	//	engine->ClientCommand( player_ptr->entity, disconnect);
+	//}
 
 	return;
 }
