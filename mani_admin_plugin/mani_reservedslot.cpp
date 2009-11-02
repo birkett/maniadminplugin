@@ -190,14 +190,13 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	}
 
 	ConVar *pwd = g_pCVar->FindVar( "sv_password" );
-	const char *newpw = p6;
 
 	if ( pwd && !FStrEq(pwd->GetString(),"")) {
-		if ( AdminAccess && ( !war_mode && !mani_reserve_slots_enforce_password.GetBool()) )
-				newpw = pwd->GetString();
+		if ( AdminAccess && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
+			return CCD_MEMBER_CALL(pwd->GetString());
 	}
 
-	return CCD_MEMBER_CALL(newpw);
+	return CCD_MEMBER_CALL(p6);
 }
 
 char * CSteamID::Render() const {
@@ -235,7 +234,7 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 					pPlayers[1] = (mem_t)max_players+1;
 			}
 
-			if ( AdminAccess && pPassword && !war_mode )
+			if ( AdminAccess && pPassword && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
 				pPassword[0]=0;
 		}
 	}
