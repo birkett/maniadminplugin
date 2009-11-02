@@ -322,8 +322,6 @@ void ManiReservedSlot::LevelInit(void)
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 {
-	char	disconnect[512];
-
 	if ( !player_ptr->is_bot )
 		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
 
