@@ -403,6 +403,8 @@ void ManiVote::GameFrame(void)
 {
 	if (war_mode) return;
 
+	if ( mani_voting.GetInt() == 0 ) return;
+
 	if (system_vote.vote_in_progress)
 	{
 		if (!system_vote.waiting_decision)
