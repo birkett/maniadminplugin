@@ -124,7 +124,8 @@ SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, 0, const CCommand &);
 #else
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, 0);
 #endif
-
+#include "mani_effects.h"
+extern	punish_mode_t	punish_mode_list[];
 static	bool hooked = false;
 
 void	ManiSMMHooks::HookVFuncs(void)
@@ -188,6 +189,9 @@ bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 {
 	bool new_listen;
 	bool return_value = true;
+
+	if ( punish_mode_list[iSender - 1].muted != 0 )
+		RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, bListen, &IVoiceServer::SetClientListening, (iReceiver, iSender, false));
 
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
 	{	

@@ -64,6 +64,7 @@ extern	IServerGameDLL	*serverdll;
 
 extern	CGlobalVars *gpGlobals;
 extern	ConVar *mp_allowspectators;
+extern	ICvar *g_pCVar;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -988,7 +989,15 @@ void	ManiGameType::DefaultValues(void)
 	advanced_effects_vfunc_offset = 12;
 	advanced_effects_code_offset = 110;
 	max_messages = 22;
+
 	voice_allowed = 0;
+
+	if ( g_pCVar ) {
+		ConVar *sv_ve = g_pCVar->FindVar("sv_voiceenable");
+		if ( sv_ve )
+			voice_allowed = sv_ve->GetBool();
+	}
+
 	spray_hook_allowed = 0;
 	spawn_point_allowed = 0;
 //	client_suicide = 1;
