@@ -6574,9 +6574,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
+
+	// 
 	bool perm_ban = true;
 	bool temp_ban = true;
-
+	bool time_given = true;
 	if (player_ptr)
 	{
 		// Check if player is admin
@@ -6586,9 +6588,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 		if (!(temp_ban || perm_ban)) return PLUGIN_BAD_ADMIN;
 	}
 
-	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	int time_to_ban = atoi(gpCmd->Cmd_Argv(1));
+	const char *testtime = gpCmd->Cmd_Argv(1);
+	int time_to_ban = atoi(testtime);
+	if ((time_to_ban == 0) && (testtime[0] != '0')) {
+		time_to_ban = 0;
+		time_given = false; // slide the other arguments left one
+	}
 	if (time_to_ban < 0) time_to_ban = 0;
 
 	// If if only temp ban if it's within limits
@@ -6607,9 +6614,16 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 		return PLUGIN_STOP;
 	}
 
-	const char *target_string = gpCmd->Cmd_Argv(2);
+	const char *target_string = NULL;
 	const char *reason = NULL;
-	if ( gpCmd->Cmd_Argc() >= 4 ) reason = gpCmd->Cmd_Args(3);
+
+	if ( time_given ) {
+		target_string = gpCmd->Cmd_Argv(2);
+		if ( gpCmd->Cmd_Argc() >= 4 ) reason = gpCmd->Cmd_Args(3);
+	} else {
+		target_string = gpCmd->Cmd_Argv(1);
+		if ( gpCmd->Cmd_Argc() >= 3 ) reason = gpCmd->Cmd_Args(2);
+	}
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_BAN))
 	{
@@ -6653,6 +6667,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 {
 	bool perm_ban = true;
 	bool temp_ban = true;
+	bool time_given = true;
 
 	if (player_ptr)
 	{
@@ -6663,9 +6678,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 		if (!(temp_ban || perm_ban)) return PLUGIN_BAD_ADMIN;
 	}
 
-	if (gpCmd->Cmd_Argc() < 3) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	int time_to_ban = atoi(gpCmd->Cmd_Argv(1));
+	const char *testtime = gpCmd->Cmd_Argv(1);
+	int time_to_ban = atoi(testtime);
+	if ((time_to_ban == 0) && (testtime[0] != '0')) {
+		time_to_ban = 0;
+		time_given = false; // slide the other arguments left one
+	}
 	if (time_to_ban < 0) time_to_ban = 0;
 
 	// If if only temp ban if it's within limits
@@ -6678,9 +6698,16 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 		}
 	}
 
-	const char *target_string = gpCmd->Cmd_Argv(2);
-	char *reason = NULL;
-	if ( gpCmd->Cmd_Argc() >= 4 ) reason = (char *)gpCmd->Cmd_Args(3);
+	const char *target_string = NULL;
+	const char *reason = NULL;
+
+	if ( time_given ) {
+		target_string = gpCmd->Cmd_Argv(2);
+		if ( gpCmd->Cmd_Argc() >= 4 ) reason = gpCmd->Cmd_Args(3);
+	} else {
+		target_string = gpCmd->Cmd_Argv(1);
+		if ( gpCmd->Cmd_Argc() >= 3 ) reason = gpCmd->Cmd_Args(2);
+	}
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_BAN))

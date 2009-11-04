@@ -1131,7 +1131,7 @@ int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 bool	ManiWeaponMgr::CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon)
 {
 	if (war_mode) return true;
-	if (mani_weapon_restrict_prevent_pickup.GetInt() == 1) return true;
+	if (mani_weapon_restrict_prevent_pickup.GetInt() == 0) return true;
 	if (gpManiWarmupTimer->KnivesOnly()) return true;
 
 	edict_t *pEdict = serverents->BaseEntityToEdict((CBasePlayer *) pPlayer);
