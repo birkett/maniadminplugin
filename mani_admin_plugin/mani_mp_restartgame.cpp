@@ -115,8 +115,10 @@ void	ManiMPRestartGame::Load(void)
 	{
 		if (!pCmd->IsCommand())
 		{
-			if (strcmp(pCmd->GetName(), "mp_restartgame") == 0)
+			if (strcmp(pCmd->GetName(), "mp_restartgame") == 0) {
 				pMPRestartGame = static_cast<ConVar *>(pCmd);
+				break;
+			}
 		}
 
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
@@ -250,7 +252,7 @@ ManiMPRestartGame	*gpManiMPRestartGame;
 
 CONVAR_CALLBACK_FN(mp_restart_game_callback)
 {
-	Msg("hooked mp_restartgame %s\n", pVar->GetString());
+	//Msg("hooked mp_restartgame %s\n", pVar->GetString());
 	if (pMPRestartGameCallback)
 	{
 		g_ManiMPRestartGame.CVarChanged(pVar);
