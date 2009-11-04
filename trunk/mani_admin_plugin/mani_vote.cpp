@@ -2692,7 +2692,7 @@ void ManiVote::ProcessUserVoteMapWin(int map_index)
 
 		override_changelevel = MANI_MAX_CHANGELEVEL_TRIES;
 		override_setnextmap = true;
-		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2526, "%s", user_vote_map_list[map_index - 1].map_name));
+		SayToAll(LIGHT_GREEN_CHAT, true, "%s", Translate(NULL, 2525, "%s", user_vote_map_list[map_index - 1].map_name));
 		trigger_changemap = true;
 		system_vote.map_decided = true;
 		trigger_changemap_time = gpGlobals->curtime + 5.0;
