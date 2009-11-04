@@ -192,10 +192,11 @@ bool ParseLine(char *in, bool strip_comments, bool strip_start_comments)
 {
 	if (!in) return false;
 
-	if ( strip_comments )
+	if ( strip_comments ) {
 		if (!StripComments(in)) return false;
-	else if (strip_start_comments) 
+	} else if (strip_start_comments) {
 		if (!StripComments(in, true)) return false;
+	}
 	
 	if (!StripEOL(in)) return false;
 
