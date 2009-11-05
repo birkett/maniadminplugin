@@ -6189,10 +6189,29 @@ int ManiClient::CleanupIPList(int days) {
 //---------------------------------------------------------------------------------
 bool ManiClient::IPLinksToAdmin ( const char *ip ) {
 	std::vector<IPClient *>::iterator i;
+	bool admin = false;
 
-	for ( i = ip_list.begin(); i != ip_list.end(); i++ ) 
-		if ( (*i)->FindIP(ip) )
-			return (*i)->_admin;
+	for ( i = ip_list.begin(); i != ip_list.end(); i++ )  {
+		if ( (*i)->FindIP(ip) ) {
+			admin = (*i)->_admin;
+		}
+
+		if ( admin ) {
+			for (int x = 0; x != (int) c_list.size(); x++)
+			{
+				ClientPlayer *client_ptr = c_list[x];
+				if ( client_ptr->steam_list.Find( (*i)->_steamid )) {
+					bool unmasked = client_ptr->unmasked_list.IsFlagSet( ADMIN, ADMIN_BASIC_ADMIN );
+					bool masked = false;
+					if (!client_ptr->level_list.IsEmpty())
+					{
+						masked = client_ptr->masked_list.IsFlagSet(ADMIN, ADMIN_BASIC_ADMIN);
+					}
+					return masked || unmasked;
+				}
+			}
+		}
+	}
 
 	return false;
 }
