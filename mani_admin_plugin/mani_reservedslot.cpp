@@ -178,8 +178,10 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 		if ( AdminAccess || ReservedAccess ) {
 			int kick_index = gpManiReservedSlot->FindPlayerToKick();
 
-			if ( kick_index < 1 )
+			if ( kick_index < 1 ) {
 				return CCD_MEMBER_CALL(p6);
+				engine->LogPrint("MAP:  Error, couldn't find anybody to kick for reserved slots!!!\n");
+			}
 
 			Q_memset ( &player, 0, sizeof(player) );
 			player.index = kick_index;
@@ -395,6 +397,8 @@ int	ManiReservedSlot::FindPlayerToKick ( ) {
 			return i;
 	}
 
+	BuildPlayerKickList();
+
 	if ( active_player_list_size == 0 )
 		return 0;
 
@@ -420,7 +424,7 @@ int	ManiReservedSlot::FindPlayerToKick ( ) {
 //---------------------------------------------------------------------------------
 // Purpose: Builds up a list of players that are 'kickable'
 //---------------------------------------------------------------------------------
-void ManiReservedSlot::BuildPlayerKickList(player_t *player_ptr/*, int *players_on_server*/)
+void ManiReservedSlot::BuildPlayerKickList( )
 {
 	player_t	temp_player;
 	active_player_t active_player;
@@ -625,7 +629,6 @@ static int sort_active_players_by_kd_ratio ( const void *m1,  const void *m2)
 }
 
 bool ManiReservedSlot::NetworkIDValidated(player_t *player_ptr) {
-	BuildPlayerKickList(player_ptr);
 	return true;
 }
 #if 0
