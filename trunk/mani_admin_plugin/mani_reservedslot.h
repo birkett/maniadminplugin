@@ -88,7 +88,7 @@ public:
 
 private:
 //	bool		ProcessPlayer(player_t *player_ptr);
-	void		BuildPlayerKickList(player_t *player_ptr/*, int *players_on_server*/);
+	void		BuildPlayerKickList();
 	void		CleanUp(void);
 
 	int	active_player_list_size;
