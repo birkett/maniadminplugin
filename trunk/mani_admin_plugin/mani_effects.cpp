@@ -1895,7 +1895,11 @@ void	ProcessSaveLocation(player_t *player)
 void	ProcessMutePlayer(player_t *player, player_t *giver, int timetomute, const char *reason)
 {
 	punish_mode_list[player->index - 1].muted = MANI_ADMIN_ENFORCED;
-	gpManiAdminPlugin->AddMute( player, player->steam_id, giver->name, timetomute, "Muted", reason);
+	if ( !giver )
+		gpManiAdminPlugin->AddMute( player, player->steam_id, "CONSOLE", timetomute, "Muted", reason);
+	else
+		gpManiAdminPlugin->AddMute( player, player->steam_id, giver->name, timetomute, "Muted", reason);
+
 	gpManiAdminPlugin->WriteMutes();
 }
 

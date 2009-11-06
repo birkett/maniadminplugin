@@ -2243,13 +2243,12 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 		return false; 
 
 	if ( ban_time != 0 )
-		ban_time = now + ( ban_time * 60 );
+		ban.expire_time = (time_t)(now + ( ban_time * 60 ));
 
 	Q_strcpy ( ban.key_id, key );
 	Q_strcpy ( ban.ban_initiator, initiator );
 	Q_strcpy ( ban.player_name, player->name );
 
-	ban.expire_time = (time_t)ban_time;
 	ban.byID = ( (key[0] == 'S') || (key[0] == 's') );
 	if ( reason )
 		Q_strcpy ( ban.reason, reason );
@@ -2387,13 +2386,12 @@ bool CAdminPlugin::AddMute ( player_t *player, const char *key, const char *init
 		return false; 
 
 	if ( mute_time != 0 )
-		mute_time = now + ( mute_time * 60 );
+		mute.expire_time = (time_t)(now + ( mute_time * 60 ));
 
 	Q_strcpy ( mute.key_id, key );
 	Q_strcpy ( mute.ban_initiator, initiator );
 	Q_strcpy ( mute.player_name, player->name );
 
-	mute.expire_time = (time_t)mute_time;
 	mute.byID = ( (key[0] == 'S') || (key[0] == 's') );
 	if ( reason )
 		Q_strcpy ( mute.reason, reason );
@@ -6652,7 +6650,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 			PrintToClientConsole(target_player_list[i].entity, "You have been banned by Admin for %i minutes\n", time_to_ban);
 		}
 
-		AddBan ( &target_player_list[i], target_player_list[i].steam_id, player_ptr->name, time_to_ban, "Banned (By Admin)", reason );
+		if ( !player_ptr )
+			AddBan ( &target_player_list[i], target_player_list[i].steam_id, "CONSOLE", time_to_ban, "Banned (By Admin)", reason );
+		else
+			AddBan ( &target_player_list[i], target_player_list[i].steam_id, player_ptr->name, time_to_ban, "Banned (By Admin)", reason );
+
 		WriteBans();
 
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name );
