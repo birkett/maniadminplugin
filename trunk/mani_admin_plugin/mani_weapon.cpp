@@ -485,14 +485,27 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 	
 	MWeapon *weapon = NULL;
 	std::map <BasicStr, MWeapon *>::iterator itr;
-	int matched_weapon_count = 0;
+	bool more_than_one_weapon = false;
 	for (itr = alias_list.begin(); itr != alias_list.end(); ++itr)
 	{
 		if (V_stristr(lower_alias, (const char *) itr->first.str) != NULL)
 		{
-			weapon = itr->second;
-			matched_weapon_count ++;
-			break; // if limiting to 1, why continue?
+			if (weapon == NULL)
+			{
+				// Found first weapon match
+				weapon = itr->second;
+			}
+			else
+			{
+				// Another weapon alias matched, check if the MWeapon ptr
+				// found matches the previous one
+				if (weapon != itr->second)
+				{
+					// Two different weapons found in buy string
+					more_than_one_weapon = true;
+					break;
+				}
+			}
 		}
 	}
 
@@ -503,11 +516,11 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 
     // If player tried to have multiple weapons in the buy string then stop
     // the transaction from happening
-    //if (matched_weapon_count > 1)
-    //{
-    //    ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
-    //    return PLUGIN_STOP;                
-    //}
+    if (more_than_one_weapon)
+    {
+        ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
+        return PLUGIN_STOP;                
+    }
     
 	// Check if player has enough cash anyway
 	CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(weapon->GetWeaponIndex());
