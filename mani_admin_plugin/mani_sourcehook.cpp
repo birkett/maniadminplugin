@@ -135,7 +135,7 @@ void	ManiSMMHooks::HookVFuncs(void)
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
 	{
 		//MMsg("Hooking voiceserver\n");
-		SH_ADD_HOOK_MEMFUNC(IVoiceServer, SetClientListening, voiceserver, &g_ManiSMMHooks, &ManiSMMHooks::SetClientListening, true);
+		SH_ADD_HOOK_MEMFUNC(IVoiceServer, SetClientListening, voiceserver, &g_ManiSMMHooks, &ManiSMMHooks::SetClientListening, false); // change to false by keeper
 	}
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
@@ -187,19 +187,15 @@ bool ManiSMMHooks::LevelInit(const char *pMapName, const char *pMapEntities, con
 
 bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 {
-	bool new_listen;
-	bool return_value = true;
+	bool new_listen = false;
 
-	if ( punish_mode_list[iSender - 1].muted != 0 )
-		RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, bListen, &IVoiceServer::SetClientListening, (iReceiver, iSender, false));
+	if ( iSender == iReceiver )
+		RETURN_META_VALUE ( MRES_IGNORED, bListen );
 
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
-	{	
-		return_value = SH_CALL(SH_GET_CALLCLASS(voiceserver), &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
-		RETURN_META_VALUE(MRES_SUPERCEDE, return_value);
-	}
+		RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, bListen, &IVoiceServer::SetClientListening, (iReceiver, iSender, new_listen));
 
-	RETURN_META_VALUE(MRES_IGNORED, return_value);
+	RETURN_META_VALUE(MRES_IGNORED, bListen );
 }
 
 void	ManiSMMHooks::PlayerDecal(IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)

@@ -651,7 +651,7 @@ void	ManiSMMHooks::HookVFuncs(void)
 	if (voiceserver && gpManiGameType->IsVoiceAllowed())
 	{
 		//MMsg("Hooking voiceserver\n");
-		SH_ADD_HOOK_MEMFUNC(IVoiceServer, SetClientListening, voiceserver, &g_ManiSMMHooks, &ManiSMMHooks::SetClientListening, true);
+		SH_ADD_HOOK_MEMFUNC(IVoiceServer, SetClientListening, voiceserver, &g_ManiSMMHooks, &ManiSMMHooks::SetClientListening, false); // changed to false by Keeper
 	}
 
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
@@ -679,20 +679,15 @@ void	ManiSMMHooks::HookVFuncs(void)
 
 bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 {
-	bool new_listen;
-	bool return_value = true;
+	bool new_listen = false;
+
+	if ( iSender == iReceiver )
+		RETURN_META_VALUE ( MRES_IGNORED, bListen );
 
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
-	{
-#if !defined ORANGE && defined SOURCEMM
-		return_value = SH_CALL(voiceserver_cc, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
-#else
-		return_value = SH_CALL(voiceserver, &IVoiceServer::SetClientListening)(iReceiver, iSender, new_listen);
-#endif
-		RETURN_META_VALUE(MRES_SUPERCEDE, return_value);
-	}
+		RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, bListen, &IVoiceServer::SetClientListening, (iReceiver, iSender, new_listen));
 
-	RETURN_META_VALUE(MRES_IGNORED, return_value);
+	RETURN_META_VALUE(MRES_IGNORED, bListen );
 }
 
 void	ManiSMMHooks::PlayerDecal(IRecipientFilter& filter, float delay, const Vector* pos, int player, int entity)

@@ -94,7 +94,6 @@ bool	ProcessDeadAllTalk
 //	MMsg("Receiver [%i] Sender [%i]\n", receiver_index, sender_index);
 	if (!voiceserver) return false;
 	if (war_mode) return false;
-	if (!gpManiGameType->IsTeamPlayAllowed()) return false;
 
 	if (punish_mode_list[sender_index - 1].muted != 0)
 	{

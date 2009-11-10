@@ -170,7 +170,7 @@ ConVar mani_chat_flood_time ("mani_chat_flood_time", "0", 0, "Amount of time bef
 ConVar mani_chat_flood_message ("mani_chat_flood_message", "STOP SPAMMING THE SERVER !!", 0, "Message to be displayed if the player spams the server"); 
 
 ConVar mani_command_flood_time ("mani_command_flood_time", "1", 0, "Amount of time to check for command spamming ( 0 = off )", true, 0, true, 4);
-ConVar mani_command_flood_total ("mani_command_flood_total", "3", 0, "Number of commands allowed in the set time to allow" );
+ConVar mani_command_flood_total ("mani_command_flood_total", "10", 0, "Number of commands allowed in the set time to allow" );
 ConVar mani_command_flood_message ("mani_command_flood_message", "This server is protected against command flooding!!!", 0, "Message to be displayed if the player floods the server with commands");
 
 ConVar mani_use_ma_in_say_command ("mani_use_ma_in_say_command", "0", 0, "If 0 then you don't need to prepend ma_ to say commands, if 1 then you do (Beetle compatabilty) ", true, 0, true, 1); 
