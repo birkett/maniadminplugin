@@ -40,7 +40,7 @@ public:
 	CCommandControl();
 	~CCommandControl();
 
-	PLUGIN_RESULT	ClientCommand ( player_t *player_ptr );
+	bool			ClientCommand ( player_t *player_ptr );
 	void			ClientDisconnect ( player_t *player_ptr );
 	void			ClientActive	( player_t *player_ptr );
 private:
