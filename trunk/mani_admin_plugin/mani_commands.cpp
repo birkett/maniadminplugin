@@ -1163,9 +1163,6 @@ int	ManiCommands::HandleCommand
 		return (int) PLUGIN_CONTINUE;
 	}
 
-	if ( g_command_control.ClientCommand( player_ptr ) == PLUGIN_STOP ) 
-		return PLUGIN_STOP;
-
 	if (command_type == M_CCONSOLE)
 	{
 		if (found_cmd->client_command || found_cmd->menu_command)

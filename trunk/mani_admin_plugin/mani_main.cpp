@@ -1851,6 +1851,10 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	player_t	player;
 	player.entity = pEntity;
 	if (!FindPlayerByEntity(&player)) return PLUGIN_CONTINUE;
+
+	if ( !g_command_control.ClientCommand( &player )) 
+		return PLUGIN_STOP;
+
 	gpCmd->ExtractClientAndServerCommand(args);
 
 	int	pargc = gpCmd->Cmd_Argc();
@@ -1894,22 +1898,6 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 		g_menu_mgr.RepopulatePage(&player);
 		return PLUGIN_STOP;
 	}
-
-	//if ( g_command_control.ClientCommand( &player ) == PLUGIN_STOP )
-	//	return PLUGIN_STOP;
-
-#if 0
-	//put antispam here?
-	// Check anti spam - need to make sure it is a player ... then need to parse the commands!
-	if (command_flood[player.index - 1] > gpGlobals->curtime)
-	{
-		OutputToConsole ( &player, "This server has command spam protection!\n" );
-		command_flood[player.index - 1] = gpGlobals->curtime + ( COMMAND_SPAM_DELAY * 2 );
-		return PLUGIN_STOP;
-	}
-
-	command_flood[player.index - 1] = gpGlobals->curtime + COMMAND_SPAM_DELAY;
-#endif
 
 	if (gpCmd->HandleCommand(&player, M_CCONSOLE, args) == PLUGIN_STOP) return PLUGIN_STOP;
 	else if ( FStrEq( pcmd, "jointeam")) return (gpManiTeamJoin->PlayerJoin(pEntity, (char *) gpCmd->Cmd_Argv(1)));

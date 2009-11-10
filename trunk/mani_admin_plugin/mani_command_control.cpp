@@ -69,25 +69,25 @@ void CCommandControl::CommandsIssuedOverTime( int player_index, int duration ) {
 	}
 }
 
-PLUGIN_RESULT CCommandControl::ClientCommand(player_t *player_ptr) {
+bool CCommandControl::ClientCommand(player_t *player_ptr) {
 	if ( !mani_command_flood_time.GetBool() )
-		return PLUGIN_CONTINUE;
+		return true;
 
 	int time_to_check = mani_command_flood_time.GetInt();
 
 	int player_index = player_ptr->index - 1;
 	if ( player_index < 0 || player_index >= max_players )
-		return PLUGIN_CONTINUE;
+		return true;
 
 	player_command_times[player_index].times.push_back(gpGlobals->curtime);
 	CommandsIssuedOverTime ( player_index, time_to_check );
 
 	if ( (int) (player_command_times[player_index].times.size() - 1)  >= mani_command_flood_total.GetInt() ) {
 		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", mani_command_flood_message.GetString()); 
-		return PLUGIN_STOP;
+		return false;
 	}
 
-	return PLUGIN_CONTINUE;
+	return true;
 }
 
 void CCommandControl::ClientActive ( player_t *player_ptr ) {
