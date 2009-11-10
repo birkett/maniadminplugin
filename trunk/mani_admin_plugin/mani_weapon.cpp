@@ -1112,12 +1112,11 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaNoSnipers(player_t *player_ptr, const char
 int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 {
 	int start = 0;
-	if ( !engine->IsDedicatedServer() ) {
-		for ( start = 0; start < 29; start++ ) {
-			CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(start);
-			if (weapon_info->weapon_name[0] != 0)
-				break;
-		}
+
+	for ( start = 0; start < 29; start++ ) {
+		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(start);
+		if (weapon_info->weapon_name[0] != 0)
+			break;
 	}
 
 	if ( start == 29 ) return -1;
