@@ -1417,7 +1417,7 @@ bool	ManiVote::AddMapToVote
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteQuestion(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+	//if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;  Issue 25
 
 	if (player_ptr)
 	{
@@ -1508,7 +1508,7 @@ bool	ManiVote::AddQuestionToVote(const char *answer)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+	// if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE; Issue 25
 
 	if (player_ptr)
 	{
