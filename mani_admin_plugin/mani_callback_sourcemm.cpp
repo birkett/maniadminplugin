@@ -360,6 +360,12 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	GET_V_IFACE(engineFactory, voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER);
 	GET_V_IFACE(serverFactory, serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 #endif
+	ConVar *testload = g_pCVar->FindVar("mani_admin_plugin_version");
+	if ( testload ) {
+		MMsg( "Error:  Version %s of Mani Admin Plugin is already loaded.\n", testload->GetString() );
+		return false;
+	}
+
 	META_LOG(g_PLAPI, "Starting plugin.\n");
 
 	ismm->AddListener(this, &g_Listener);
