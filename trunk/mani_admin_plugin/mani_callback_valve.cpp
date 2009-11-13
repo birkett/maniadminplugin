@@ -178,6 +178,12 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	GET_INTERFACE(voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER, 20, interfaceFactory)
 	GET_INTERFACE(spatialpartition, ISpatialPartition, INTERFACEVERSION_SPATIALPARTITION, 20, interfaceFactory)
 
+	ConVar *testload = g_pCVar->FindVar("mani_admin_plugin_version");
+	if ( testload ) {
+		MMsg( "Error:  Version %s of Mani Admin Plugin is already loaded.\n", testload->GetString() );
+		return false;
+	}
+
 	gamedll = serverdll;
 #ifndef ORANGE
 	InitCVars( interfaceFactory ); // register any cvars we have defined
