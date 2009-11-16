@@ -1575,6 +1575,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 			return;
 		}
 
+	gpManiAutoKickBan->NetworkIDValidated(&player);
 
 	if (!player.player_info->IsHLTV())
 	{
