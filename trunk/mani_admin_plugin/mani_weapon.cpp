@@ -488,7 +488,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 	bool more_than_one_weapon = false;
 	for (itr = alias_list.begin(); itr != alias_list.end(); ++itr)
 	{
-		if (V_stristr(lower_alias, (const char *) itr->first.str) != NULL)
+		if (V_stristr(itr->first.str, lower_alias) != NULL)
 		{
 			if (weapon == NULL)
 			{
