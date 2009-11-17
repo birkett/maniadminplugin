@@ -1575,8 +1575,6 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 			return;
 		}
 
-	gpManiAutoKickBan->NetworkIDValidated(&player);
-
 	if (!player.player_info->IsHLTV())
 	{
 		g_menu_mgr.ClientActive(&player);
@@ -1592,6 +1590,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 
 	if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) return;
 	g_command_control.ClientActive(&player);
+	gpManiAutoKickBan->NetworkIDValidated(&player);
 	gpManiGhost->ClientActive(&player);
 	gpManiVictimStats->ClientActive(&player);
 	gpManiMapAdverts->ClientActive(&player);
