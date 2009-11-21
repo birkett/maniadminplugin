@@ -153,6 +153,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP4"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;.\Knight;.\asm;..\sdk\public\steam;.\jit"
@@ -256,6 +257,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP4"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;.\asm;.\knight;.\jit;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdk\public\steam"
@@ -464,6 +466,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP4"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\game_shared;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook;.\asm;.\jit;.\knight;..\sdk_orange\public\steam"
@@ -670,6 +673,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/MP4"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\public\steam;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core;.\jit;.\knight;.\asm"
