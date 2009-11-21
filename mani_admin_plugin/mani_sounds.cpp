@@ -304,6 +304,10 @@ PLUGIN_RESULT	ProcessMaPlaySound(player_t *player_ptr, const char *command_name,
 		if (!found_match)
 		{
 			OutputHelpText(ORANGE_CHAT, player_ptr, "Did not find sound requested");
+
+			if ( !unlimited_play )
+				sounds_played[player_ptr->index - 1] --; // don't penalize them for the sound not existing!
+			
 			return PLUGIN_STOP;
 		}
 	}
