@@ -200,7 +200,9 @@ ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal C
 ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1);
 
 ConVar mani_exec_default_file1 ("mani_exec_default_file1", "mani_server.cfg", 0, "Run a default .cfg file on level change after server.cfg");
-ConVar mani_exec_default_file2 ("mani_exec_default_file2", "./mani_admin_plugin/defaults.cfg", 0, "Run a default .cfg file on level change after server.cfg");
+//birkett - removed the defaults.cfg hard coding. Allows default_file2 to be configured like 3,4 and 5. 
+//ConVar mani_exec_default_file2 ("mani_exec_default_file2", "./mani_admin_plugin/defaults.cfg", 0, "Run a default .cfg file on level change after server.cfg");
+ConVar mani_exec_default_file2 ("mani_exec_default_file2", "", 0, "Run a default .cfg file on level change after server.cfg");
 ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg");
 ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg");
 ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg");
