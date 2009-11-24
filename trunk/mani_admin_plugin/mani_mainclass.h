@@ -250,6 +250,8 @@ MENUALL_DEC(FireBombPlayer);
 MENUALL_DEC(FreezeBombPlayer);
 MENUALL_DEC(BeaconPlayer);
 MENUALL_DEC(MutePlayer);
+MENUALL_DEC(MuteType);
+MENUALL_DEC(MuteOptions);
 MENUALL_DEC(TeleportPlayer);
 MENUALL_DEC(SlayPlayer);
 MENUALL_DEC(CExec);

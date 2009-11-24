@@ -312,4 +312,6 @@ ConVar mani_hostage_follow_warning ("mani_hostage_follow_warning", "0", 0, "1 = 
 
 ConVar mani_all_see_ma_rates ("mani_all_see_ma_rates", "0", 0, "0 = Only admins can access ma_rates, 1 = Anyone can use ma_rates", true, 0, true, 1);
 
-ConVar mani_admin_temp_ban_time_limit ("mani_admin_temp_ban_time_limit", "360", 0, "Time in minutes that an admin with only Ban access can ban for, admins with Permanent Ban access can ban for as long as they wish (default is 6 hours maz)", true, 0, true, 99999999);
+ConVar mani_admin_temp_ban_time_limit ("mani_admin_temp_ban_time_limit", "360", 0, "Time in minutes that an admin with only Ban access can ban for, admins with Permanent Ban access can ban for as long as they wish (default is 6 hours max)", true, 0, true, 99999999);
+
+ConVar mani_admin_temp_mute_time_limit ("mani_admin_temp_mute_time_limit", "360", 0, "Time in minutes that an admin with only Mute access can mute for, admins with Permanent Mute access can mute for as long as they wish (default is 6 hours max)", true, 0, true, 99999999);
