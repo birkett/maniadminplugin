@@ -32,6 +32,7 @@
 struct command_record_t {
 	int	index;
 	std::vector<float> times;
+	int violation_count;
 };
 
 class CCommandControl

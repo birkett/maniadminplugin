@@ -25,6 +25,9 @@
 #include "engine/iserverplugin.h"
 #include "iplayerinfo.h"
 #include "eiface.h"
+#include "igameevents.h"
+#include "mani_mainclass.h"
+#include "mani_commands.h"
 #include "mani_player.h"
 #include "mani_output.h"
 #include "mani_command_control.h"
@@ -36,6 +39,11 @@ extern	int	max_players;
 extern ConVar mani_command_flood_time;
 extern ConVar mani_command_flood_total;
 extern ConVar mani_command_flood_message;
+
+//birkett - added chat spamming punishment
+extern ConVar mani_command_flood_punish;
+extern ConVar mani_command_flood_violation_count;
+extern ConVar mani_command_flood_punish_ban_time;
 
 CCommandControl::CCommandControl () {
 	for ( int i = 0; i < max_players; i++ ) {
@@ -83,6 +91,31 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 	CommandsIssuedOverTime ( player_index, time_to_check );
 
 	if ( (int) (player_command_times[player_index].times.size() - 1)  >= mani_command_flood_total.GetInt() ) {
+		//add one to the players violation count
+		player_command_times[player_index].violation_count += 1;
+
+		if( mani_command_flood_punish.GetInt() == 1 )
+		{
+			//kick punishment
+			if ( player_command_times[player_index].violation_count >= mani_command_flood_violation_count.GetInt() )
+			{	
+				//kick the player
+				gpCmd->NewCmd();
+				gpCmd->AddParam("ma_kick");
+				gpCmd->AddParam("%i", player_ptr->user_id);
+				gpManiAdminPlugin->ProcessMaKick(player_ptr, "ma_kick", 0, 0);
+			}
+		}
+		else if ( mani_command_flood_punish.GetInt() == 2 )
+		{
+			//ban punishment
+			if ( player_command_times[player_index].violation_count >= mani_command_flood_violation_count.GetInt() )
+			{	
+				//ban the player
+				gpManiAdminPlugin->AddBan(player_ptr, player_ptr->steam_id, "MAP", 
+					mani_command_flood_punish_ban_time.GetInt(), "Banned (Chat spam)", "Hit the flood limit");
+			}
+		}
 		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", mani_command_flood_message.GetString()); 
 		return false;
 	}
@@ -96,6 +129,7 @@ void CCommandControl::ClientActive ( player_t *player_ptr ) {
 		return;
 
 	player_command_times[player_index].times.clear();
+	player_command_times[player_index].violation_count = 0;
 }
 
 void CCommandControl::ClientDisconnect(player_t *player_ptr) {
@@ -104,5 +138,6 @@ void CCommandControl::ClientDisconnect(player_t *player_ptr) {
 		return;
 
 	player_command_times[player_index].times.clear();
+	player_command_times[player_index].violation_count = 0;
 }
 CCommandControl g_command_control;

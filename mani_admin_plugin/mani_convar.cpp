@@ -173,6 +173,11 @@ ConVar mani_command_flood_time ("mani_command_flood_time", "1", 0, "Amount of ti
 ConVar mani_command_flood_total ("mani_command_flood_total", "14", 0, "Number of commands allowed in the set time to allow" );
 ConVar mani_command_flood_message ("mani_command_flood_message", "This server is protected against command flooding!!!", 0, "Message to be displayed if the player floods the server with commands");
 
+//birkett - added chat spamming punishment
+ConVar mani_command_flood_punish ("mani_chat_flood_punish", "0", 0, "Punish players for chat spamming. 0 = Disabled, 1 = Kick player");
+ConVar mani_command_flood_violation_count ("mani_chat_flood_violation_count", "15", 0, "Number of times a player recieves the spam warning before being punished");
+ConVar mani_command_flood_punish_ban_time ("mani_chat_flood_punish_ban_time", "5", 0, "Time in seconds to ban for after chat spamming");
+
 ConVar mani_use_ma_in_say_command ("mani_use_ma_in_say_command", "0", 0, "If 0 then you don't need to prepend ma_ to say commands, if 1 then you do (Beetle compatabilty) ", true, 0, true, 1); 
 
 ConVar mani_sounds_per_round ("mani_sounds_per_round", "0", 0, "Number of sounds a regulary player can play in the course of a round", true, 0, true, 100); 
