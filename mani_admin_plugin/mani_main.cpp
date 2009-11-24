@@ -189,6 +189,7 @@ CONVAR_CALLBACK_PROTO (WarModeChanged);
 CONVAR_CALLBACK_PROTO (ManiStatsBySteamID);
 CONVAR_CALLBACK_PROTO (ManiCSStackingNumLevels);
 CONVAR_CALLBACK_PROTO (ManiUnlimitedGrenades);
+CONVAR_CALLBACK_PROTO (DefaultExecChanged);
 
 
 ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSION, FCVAR_REPLICATED | FCVAR_NOTIFY, "This is the version of the plugin", CONVAR_CALLBACK_REF(ManiAdminPluginVersion));
@@ -199,13 +200,12 @@ ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set 
 ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal CSS mode, 1 = Grenades replenished after throw (CSS Only)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiUnlimitedGrenades));
 ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1);
 
-ConVar mani_exec_default_file1 ("mani_exec_default_file1", "mani_server.cfg", 0, "Run a default .cfg file on level change after server.cfg");
 //birkett - removed the defaults.cfg hard coding. Allows default_file2 to be configured like 3,4 and 5. 
-//ConVar mani_exec_default_file2 ("mani_exec_default_file2", "./mani_admin_plugin/defaults.cfg", 0, "Run a default .cfg file on level change after server.cfg");
-ConVar mani_exec_default_file2 ("mani_exec_default_file2", "", 0, "Run a default .cfg file on level change after server.cfg");
-ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg");
-ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg");
-ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg");
+ConVar mani_exec_default_file1 ("mani_exec_default_file1", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
+ConVar mani_exec_default_file2 ("mani_exec_default_file2", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
+ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
+ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
+ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
 
 bool war_mode = false;
 float	next_ping_check;
@@ -1458,17 +1458,7 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 		gpManiWeaponMgr->LevelInit();
 	}
 
-	char	file_execute[512]="";
-	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file1.GetString());
-	engine->ServerCommand(file_execute);
-	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file2.GetString());
-	engine->ServerCommand(file_execute);
-	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file3.GetString());
-	engine->ServerCommand(file_execute);
-	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file4.GetString());
-	engine->ServerCommand(file_execute);
-	snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", mani_exec_default_file5.GetString());
-	engine->ServerCommand(file_execute);
+	engine->ServerCommand("exec mani_server.cfg\n");
 }
 
 //---------------------------------------------------------------------------------
@@ -9536,5 +9526,17 @@ CONVAR_CALLBACK_FN(ManiStatsBySteamID)
 		if (mani_stats_by_steam_id.GetInt() == 1 && FStrEq(player.steam_id, "STEAM_ID_PENDING")) continue;
 
 		gpManiStats->NetworkIDValidated(&player);
+	}
+}
+
+CONVAR_CALLBACK_FN(DefaultExecChanged) {
+	const char *tmp = pVar->GetString();
+	char file_execute[512]="";
+	
+	if ( tmp && (tmp[0] != 0) ) {
+		if ( FStrEq (tmp, "mani_server.cfg") ) return;
+		char	file_execute[512]="";
+		snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", tmp);
+		engine->ServerCommand(file_execute);
 	}
 }

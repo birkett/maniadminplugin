@@ -149,7 +149,7 @@ void ManiAutoKickBan::LevelInit(void)
 //		MMsg("autokickban IP list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false, false)) continue;
+			if (!ParseLine(autokickban_id, true, true)) continue;
 			AddAutoKickIP(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -168,7 +168,7 @@ void ManiAutoKickBan::LevelInit(void)
 //		MMsg("autokickban Steam list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false, false)) continue;
+			if (!ParseLine(autokickban_id, true, true)) continue;
 			AddAutoKickSteamID(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -187,7 +187,7 @@ void ManiAutoKickBan::LevelInit(void)
 //		MMsg("autokickban Name list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false, false)) continue;
+			if (!ParseLine(autokickban_id, true, false)) continue;
 			AddAutoKickName(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -205,7 +205,7 @@ void ManiAutoKickBan::LevelInit(void)
 //		MMsg("autokickban PName list\n");
 		while (filesystem->ReadLine (autokickban_id, sizeof(autokickban_id), file_handle) != NULL)
 		{
-			if (!ParseLine(autokickban_id, false, false)) continue;
+			if (!ParseLine(autokickban_id, true, false)) continue;
 			AddAutoKickPName(autokickban_id);
 		}
 		filesystem->Close(file_handle);
@@ -1043,13 +1043,10 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 	char	ip_address[128];
 	autokick_ip_t	autokick_ip;
 
-	if (!AddToList((void **) &autokick_ip_list, sizeof(autokick_ip_t), &autokick_ip_list_size))
-	{
+	if ( !details || (details[0]==0) )
 		return;
-	}
 
-	// default admin to have absolute power
-	autokick_ip.kick = false;
+	autokick_ip.kick = true; // they are in the list ... they are to be autokicked.
 	Q_strcpy(autokick_ip.ip_address, "");
 	Q_strcpy(ip_address, "");
 
@@ -1062,12 +1059,12 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 		{
 			// No more data
 			ip_address[j] = '\0';
-			Q_strcpy(autokick_ip.ip_address, ip_address);
-			autokick_ip.kick = true;
-			autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
-			//MMsg("%s Kick\n", ip_address);
-			return;
+			i--;
+			break;
 		}
+
+		if ( details[i] == '\"' )
+			i++;
 
 		// If reached space or tab break out of loop
 		if (details[i] == ' ' ||
@@ -1088,28 +1085,24 @@ void ManiAutoKickBan::AddAutoKickIP(char *details)
 
 	i++;
 
-	while (details[i] != '\0')
-	{
-		switch (details[i])
-		{
-			case ('k') : autokick_ip.kick = true; break;
-			default : break;
-		}
+	//while (details[i] != '\0')
+	//{
+	//	switch (details[i])
+	//	{
+	//		case ('k') : autokick_ip.kick = true; break;
+	//		default : break;
+	//	}
 
-		i++;
+	//	i++;
 
-		if (autokick_ip.kick)
-		{
-			break;
-		}
-	}
+	//	if (autokick_ip.kick)
+	//	{
+	//		break;
+	//	}
+	//}
 
-	if (autokick_ip.kick)
-	{
-		//MMsg("Kick");
-	}
-
-	//MMsg("\n");
+	if (!AddToList((void **) &autokick_ip_list, sizeof(autokick_ip_t), &autokick_ip_list_size))
+		return;
 
 	autokick_ip_list[autokick_ip_list_size - 1] = autokick_ip;
 }
@@ -1123,13 +1116,11 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 	char	steam_id[MAX_NETWORKID_LENGTH];
 	autokick_steam_t	autokick_steam;
 
-	if (!AddToList((void **) &autokick_steam_list, sizeof(autokick_steam_t), &autokick_steam_list_size))
-	{
+	if ( !details || (details[0]==0) )
 		return;
-	}
 
 	// default admin to have absolute power
-	autokick_steam.kick = false;
+	autokick_steam.kick = true; // they are in the list ... they are to be autokicked.
 	Q_strcpy(autokick_steam.steam_id, "");
 	Q_strcpy(steam_id, "");
 
@@ -1142,12 +1133,12 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 		{
 			// No more data
 			steam_id[j] = '\0';
-			Q_strcpy(autokick_steam.steam_id, steam_id);
-			autokick_steam.kick = true;
-			autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
-			//MMsg("%s Kick\n", steam_id);
-			return;
+			i--;
+			break;
 		}
+
+		if ( details[i] == '\"' )
+			i++;
 
 		// If reached space or tab break out of loop
 		if (details[i] == ' ' ||
@@ -1156,6 +1147,8 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 			steam_id[j] = '\0';
 			break;
 		}
+
+
 
 		steam_id[j] = details[i];
 		i++;
@@ -1166,30 +1159,26 @@ void ManiAutoKickBan::AddAutoKickSteamID(char *details)
 
 	//MMsg("%s ", steam_id);
 
-	i++;
+	//i++;
 
-	while (details[i] != '\0')
-	{
-		switch (details[i])
-		{
-			case ('k') : autokick_steam.kick = true; break;
-			default : break;
-		}
+	//while (details[i] != '\0')
+	//{
+	//	switch (details[i])
+	//	{
+	//		case ('k') : autokick_steam.kick = true; break;
+	//		default : break;
+	//	}
 
-		i++;
+	//	i++;
 
-		if (autokick_steam.kick)
-		{
-			break;
-		}
-	}
+	//	if (autokick_steam.kick)
+	//	{
+	//		break;
+	//	}
+	//}
 
-	if (autokick_steam.kick)
-	{
-		//MMsg("Kick");
-	}
-
-	//MMsg("\n");
+	if (!AddToList((void **) &autokick_steam_list, sizeof(autokick_steam_t), &autokick_steam_list_size))
+		return;
 
 	autokick_steam_list[autokick_steam_list_size - 1] = autokick_steam;
 }
@@ -1203,10 +1192,8 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 	char	name[MAX_PLAYER_NAME_LENGTH];
 	autokick_name_t	autokick_name;
 
-	if (!AddToList((void **) &autokick_name_list, sizeof(autokick_name_t), &autokick_name_list_size))
-	{
+	if ( !details || (details[0]==0) )
 		return;
-	}
 
 	// default admin to have absolute power
 	autokick_name.ban = false;
@@ -1220,9 +1207,8 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 
 	// Filter 
 	while (details[i] != '\"' && details[i] != '\0')
-	{
 		i++;
-	}
+
 
 	if (details[i] == '\0')
 	{
@@ -1237,11 +1223,8 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 		{
 			// No more data
 			name[j] = '\0';
-			Q_strcpy(autokick_name.name, name);
-			autokick_name.kick = true;
-			autokick_name_list[autokick_name_list_size - 1] = autokick_name;
-			//MMsg("%s Kick\n", name);
-			return;
+			i--;
+			break;
 		}
 
 		// If reached space or tab break out of loop
@@ -1319,12 +1302,9 @@ void ManiAutoKickBan::AddAutoKickName(char *details)
 			//MMsg("Ban %i minutes", autokick_name.ban_time);
 		}
 	}
-	else
-	{
-		//MMsg("Kick");
-	}
 
-	//MMsg("\n");
+	if (!AddToList((void **) &autokick_name_list, sizeof(autokick_name_t), &autokick_name_list_size))
+		return;
 
 	autokick_name_list[autokick_name_list_size - 1] = autokick_name;
 }
@@ -1337,11 +1317,6 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 {
 	char	name[MAX_PLAYER_NAME_LENGTH];
 	autokick_pname_t	autokick_pname;
-
-	if (!AddToList((void **) &autokick_pname_list, sizeof(autokick_pname_t), &autokick_pname_list_size))
-	{
-		return;
-	}
 
 	// default admin to have absolute power
 	autokick_pname.ban = false;
@@ -1372,11 +1347,8 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 		{
 			// No more data
 			name[j] = '\0';
-			Q_strcpy(autokick_pname.pname, name);
-			autokick_pname.kick = true;
-			autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
-			//MMsg("%s Kick\n", name);
-			return;
+			i--;
+			break;
 		}
 
 		// If reached space or tab break out of loop
@@ -1412,7 +1384,7 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 		{
 			// Need to get the time in minutes
 			j = 0;
-			char time_string[512];
+			char time_string[512]="0"; // default to perma
 
 			while(details[i] != '\0')
 			{
@@ -1459,7 +1431,8 @@ void ManiAutoKickBan::AddAutoKickPName(char *details)
 		//MMsg("Kick");
 	}
 
-	//MMsg("\n");
+	if (!AddToList((void **) &autokick_pname_list, sizeof(autokick_pname_t), &autokick_pname_list_size))
+		return;
 
 	autokick_pname_list[autokick_pname_list_size - 1] = autokick_pname;
 }

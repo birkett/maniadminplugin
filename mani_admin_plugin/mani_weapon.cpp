@@ -517,7 +517,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 
 	if (weapon == NULL)
 	{
-		return PLUGIN_CONTINUE;
+		return PLUGIN_STOP; //obviously not a valid weapon
 	}
 
     // If player tried to have multiple weapons in the buy string then stop

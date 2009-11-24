@@ -1,0 +1,19 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//    Filename   : autokick_ip.txt
+//
+//    Last Updated : 2009/11/24
+//
+//    Description  : list of IPs that are autokicked
+// *****************************************************************************
+//
+//
+// This file contains the list of IPs that
+// are automatically kicked upon joining
+//
+//
+// The first and only entry is the IP.
+//
+// 192.168.1.1
+//
