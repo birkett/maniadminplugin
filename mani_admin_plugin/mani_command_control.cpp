@@ -114,6 +114,7 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 				//ban the player
 				gpManiAdminPlugin->AddBan(player_ptr, player_ptr->steam_id, "MAP", 
 					mani_command_flood_punish_ban_time.GetInt(), "Banned (Chat spam)", "Hit the flood limit");
+				gpManiAdminPlugin->WriteBans();
 			}
 		}
 		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", mani_command_flood_message.GetString()); 
