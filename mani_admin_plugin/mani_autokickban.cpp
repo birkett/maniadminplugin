@@ -851,14 +851,14 @@ void	ManiAutoKickBan::WriteNameList(char *filename_string)
 	// Check if file exists, create a new one if it doesn't
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
-	if (filesystem->FileExists( base_filename))
-	{
-		filesystem->RemoveFile(base_filename);
-		if (filesystem->FileExists( base_filename))
-		{
-			MMsg("Failed to delete %s\n", filename_string);
-		}
-	}
+	//if (filesystem->FileExists( base_filename))
+	//{
+	//	filesystem->RemoveFile(base_filename);
+	//	if (filesystem->FileExists( base_filename))
+	//	{
+	//		MMsg("Failed to delete %s\n", filename_string);
+	//	}
+	//}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
@@ -901,14 +901,14 @@ void	ManiAutoKickBan::WritePNameList(char *filename_string)
 	// Check if file exists, create a new one if it doesn't
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
-	if (filesystem->FileExists( base_filename))
-	{
-		filesystem->RemoveFile(base_filename);
-		if (filesystem->FileExists( base_filename))
-		{
-			MMsg("Failed to delete %s\n", filename_string);
-		}
-	}
+	//if (filesystem->FileExists( base_filename))
+	//{
+	//	filesystem->RemoveFile(base_filename);
+	//	if (filesystem->FileExists( base_filename))
+	//	{
+	//		MMsg("Failed to delete %s\n", filename_string);
+	//	}
+	//}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
@@ -951,14 +951,14 @@ void	ManiAutoKickBan::WriteIPList(char *filename_string)
 	// Check if file exists, create a new one if it doesn't
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
-	if (filesystem->FileExists( base_filename))
-	{
-		filesystem->RemoveFile(base_filename);
-		if (filesystem->FileExists( base_filename))
-		{
-			MMsg("Failed to delete %s\n", filename_string);
-		}
-	}
+	//if (filesystem->FileExists( base_filename))
+	//{
+	//	filesystem->RemoveFile(base_filename);
+	//	if (filesystem->FileExists( base_filename))
+	//	{
+	//		MMsg("Failed to delete %s\n", filename_string);
+	//	}
+	//}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
@@ -998,14 +998,14 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 	// Check if file exists, create a new one if it doesn't
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/%s", mani_path.GetString(), filename_string);
 
-	if (filesystem->FileExists( base_filename))
-	{
-		filesystem->RemoveFile(base_filename);
-		if (filesystem->FileExists( base_filename))
-		{
-			MMsg("Failed to delete %s\n", filename_string);
-		}
-	}
+	//if (filesystem->FileExists( base_filename))
+	//{
+	//	filesystem->RemoveFile(base_filename);
+	//	if (filesystem->FileExists( base_filename))
+	//	{
+	//		MMsg("Failed to delete %s\n", filename_string);
+	//	}
+	//}
 
 	file_handle = filesystem->Open(base_filename,"wt",NULL);
 	if (file_handle == NULL)
@@ -1604,6 +1604,7 @@ int AutoBanItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	if (!this->params.GetParam("name", &name)) return CLOSE_MENU;
 
 	gpCmd->NewCmd();
+	gpCmd->AddParam("ma_ban");
 	gpCmd->AddParam("%s", name);
 	gpCmd->AddParam(time); 
 	gpManiAutoKickBan->ProcessMaAutoBanName
@@ -1631,7 +1632,7 @@ bool AutoBanPage::PopulateMenuPage(player_t *player_ptr)
 
 		MenuItem *ptr = new AutoBanItem();
 		ptr->SetDisplayText("[%s] %i", player.name, player.user_id);
-		ptr->params.AddParam("name", player.user_id);
+		ptr->params.AddParam("name", player.name);
 		ptr->SetHiddenText("%s", player.name);
 		this->AddItem(ptr);
 	}
@@ -1657,7 +1658,7 @@ int AutoKickItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	if (player.is_bot) return CLOSE_MENU;
 
 	gpCmd->NewCmd();
-
+	gpCmd->AddParam("emulate_console");
 	if (strcmp("autokicksteam", ban_type) == 0)
 	{
 		gpCmd->AddParam("%s", player.steam_id);

@@ -39,10 +39,11 @@ extern	unsigned long sdbm_hash(unsigned char *str1, unsigned char *str2);
 extern	void		  MSleep(int   milliseconds);
 extern  bool		  IsLAN();
 extern  char	*AsciiToHTML(char *in_string);
-extern  int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename);
-extern	void UTIL_GetGamePath( char *path );
+extern  int		UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename);
+extern	void	UTIL_GetGamePath( char *path );
 extern	bool	UTIL_ScanValveFile ( char *path, char *text );
 extern	bool	UTIL_ScanFile ( char *path, char *text );
+extern  void	UTIL_CleanID ( char *steamid );
 
 class BasicStr
 {

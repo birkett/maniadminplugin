@@ -292,6 +292,40 @@ bool UTIL_ScanFile ( char *path, char *text ) {
 
 }
 
+void UTIL_CleanID ( char *steamid ) {
+	bool lookforzero = false;
+	char lcl[MAX_NETWORKID_LENGTH];
+	int	coloncount = 0;
+	Q_memset ( lcl, 0, MAX_NETWORKID_LENGTH );
+
+	int i = 0;
+	int j = 0;
+	for (;;) {
+		if ( steamid[i] == 0 )
+			break;
+
+		if ( (coloncount==2) && (lookforzero)) {
+			if ( steamid[i] == '0' ) {
+				i++;
+				continue;
+			} else
+				lookforzero = false;
+		}
+
+		lcl[j] = steamid[i];
+
+		if ( steamid[i] == ':' ) {
+			lookforzero = ( coloncount == 1 );
+			coloncount++;
+		}
+
+		i++;
+		j++;
+	}
+
+	Q_strncpy ( steamid, lcl, MAX_NETWORKID_LENGTH );
+}
+
 int	UTIL_GetWebVersion(const char *ip_address, const int port, const char *filename)
 {
 #ifndef __linux__

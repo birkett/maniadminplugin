@@ -4541,7 +4541,18 @@ int UnBanPlayerDetailsItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page
 	this->params.GetParam("banlistindex", &index );
 	if ( answer ) { // remove the ban
 		ban_list[index].expire_time = 1;
+		char unban_cmd[128];
+		if ( ban_list[index].byID ) {
+			UTIL_CleanID (ban_list[index].key_id);
+			snprintf( unban_cmd, sizeof(unban_cmd), "removeid %s\n", ban_list[index].key_id);
+		}
+		else
+			snprintf( unban_cmd, sizeof(unban_cmd), "removeip %s\n", ban_list[index].key_id);
+
+		LogCommand (player_ptr, "%s", unban_cmd);
+		engine->ServerCommand(unban_cmd);
 		gpManiAdminPlugin->WriteBans();
+
 	}
 	return CLOSE_MENU;
 }
