@@ -3238,15 +3238,13 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 	this->params.GetParam("sub_option", &sub_option);
 	MenuItem *ptr;
 
-	bool perm_ban = true;
-	bool temp_ban = true;
+	bool canmute = true;
 
 	// Check if player is admin
-	perm_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode);
-	temp_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN, war_mode);
+	canmute = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MUTE, war_mode);
 	int max_time = mani_admin_temp_mute_time_limit.GetInt();
 
-	if (perm_ban)
+	if (canmute)
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 368));
@@ -3254,7 +3252,7 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 		this->AddItem(ptr);
 	}
 
-	if (perm_ban || (temp_ban && max_time >= 5))
+	if (canmute && (max_time >= 5))
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 362));
@@ -3262,7 +3260,7 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 		this->AddItem(ptr);
 	}
 
-	if (perm_ban || (temp_ban && max_time >= 30))
+	if (canmute || (max_time >= 30))
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 363));
@@ -3270,7 +3268,7 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 		this->AddItem(ptr);
 	}
 
-	if (perm_ban || (temp_ban && max_time >= 60))
+	if (canmute || (max_time >= 60))
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 364));
@@ -3278,7 +3276,7 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 		this->AddItem(ptr);
 	}
 
-	if (perm_ban || (temp_ban && max_time >= 120))
+	if (canmute || (max_time >= 120))
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 365));
@@ -3286,7 +3284,7 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 		this->AddItem(ptr);
 	}
 
-	if (perm_ban || (temp_ban && max_time >= 1440))
+	if (canmute || (max_time >= 1440))
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 366));
@@ -3294,7 +3292,7 @@ bool MuteOptionsPage::PopulateMenuPage(player_t *player_ptr)
 		this->AddItem(ptr);
 	}
 
-	if (perm_ban || (temp_ban && max_time >= 10080))
+	if (canmute || (max_time >= 10080))
 	{
 		ptr = new MuteOptionsItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 367));
@@ -3344,17 +3342,17 @@ bool MutePlayerPage::PopulateMenuPage(player_t *player_ptr)
 	char *ban_type;
 	this->params.GetParam("ban_type", &ban_type);
 
-	this->SetEscLink("%s", Translate(player_ptr, 500));
+	this->SetEscLink("%s", Translate(player_ptr, 506));
 
 	if (strcmp(ban_type, "steam_id") == 0)
 	{
 		// ban by user id
-		this->SetTitle("%s", Translate(player_ptr, 501));
+		this->SetTitle("%s", Translate(player_ptr, 507));
 	}
 	else
 	{
 		// ban by ip
-		this->SetTitle("%s", Translate(player_ptr, 502));
+		this->SetTitle("%s", Translate(player_ptr, 508));
 	}
 
 	MenuItem *ptr;
@@ -3367,12 +3365,12 @@ bool MutePlayerPage::PopulateMenuPage(player_t *player_ptr)
 		if (player.is_bot) continue;
 
 		if (player_ptr->index != player.index &&
-			gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_BAN))
+			gpManiClient->HasAccess(player.index, IMMUNITY, IMMUNITY_MUTE))
 		{
 			continue;
 		}
 
-		ptr = new BanPlayerItem;
+		ptr = new MutePlayerItem;
 		ptr->SetDisplayText("[%s] %i",  player.name, player.user_id);
 		ptr->params.AddParam("user_id", player.user_id);
 		this->AddItem(ptr);
@@ -3674,7 +3672,7 @@ int PlayerManagementItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_p
 	}
 	else if (strcmp("mute", sub_option) ==0)
 	{
-		MENUPAGE_CREATE(MutePlayerPage, player_ptr, 0, -1);
+		MENUPAGE_CREATE(MuteTypePage, player_ptr, 0, -1);
 		return NEW_MENU;
 	}
 	else if (strcmp("spray", sub_option) ==0)
@@ -4557,6 +4555,32 @@ int UnBanTypeItem::MenuItemFired( player_t *player_ptr, MenuPage *m_page ) {
 	}
 	return CLOSE_MENU;
 }
+
+int MuteTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
+{
+	char *ban_type;
+
+	this->params.GetParam("ban_type", &ban_type);
+
+	if (strcmp(ban_type, "steam_id") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(MuteOptionsPage, player_ptr, AddParam("ban_type", ban_type), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(ban_type, "ip_address") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(MuteOptionsPage, player_ptr, AddParam("ban_type", ban_type), 0, -1);
+		return NEW_MENU;
+	}
+	else if (strcmp(ban_type, "name") == 0)
+	{
+		MENUPAGE_CREATE_PARAM(MuteOptionsPage, player_ptr, AddParam("ban_type", ban_type), 0, -1);
+		return NEW_MENU;
+	}
+
+	return CLOSE_MENU;
+}
+
 bool BanTypePage::PopulateMenuPage(player_t *player_ptr)
 {
 	this->SetEscLink("%s", Translate(player_ptr, 400));
@@ -4596,6 +4620,26 @@ bool UnBanTypePage::PopulateMenuPage(player_t *player_ptr)
 	ptr = new UnBanTypeItem;
 	ptr->SetDisplayText("%s", Translate(player_ptr, 408));
 	ptr->params.AddParam("unban_type", "steam_id");
+	this->AddItem(ptr);
+
+	return true;
+}
+
+bool MuteTypePage::PopulateMenuPage(player_t *player_ptr)
+{
+	this->SetEscLink("%s", Translate(player_ptr, 409));
+	this->SetTitle("%s", Translate(player_ptr, 410));
+
+	MenuItem *ptr;
+
+	ptr = new MuteTypeItem;
+	ptr->SetDisplayText("%s", Translate(player_ptr, 411));
+	ptr->params.AddParam("ban_type", "steam_id");
+	this->AddItem(ptr);
+
+	ptr = new MuteTypeItem;
+	ptr->SetDisplayText("%s", Translate(player_ptr, 412));
+	ptr->params.AddParam("ban_type", "ip_address");
 	this->AddItem(ptr);
 
 	return true;
