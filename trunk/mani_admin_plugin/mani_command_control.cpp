@@ -38,8 +38,6 @@ extern	int	max_players;
 
 extern ConVar mani_command_flood_time;
 extern ConVar mani_command_flood_total;
-extern ConVar mani_command_flood_message;
-
 //birkett - added chat spamming punishment
 extern ConVar mani_command_flood_punish;
 extern ConVar mani_command_flood_violation_count;
@@ -85,7 +83,7 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 
 	int player_index = player_ptr->index - 1;
 	if ( player_index < 0 || player_index >= max_players )
-		return true;
+		return false;
 
 	player_command_times[player_index].times.push_back(gpGlobals->curtime);
 	CommandsIssuedOverTime ( player_index, time_to_check );
@@ -100,10 +98,10 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 			if ( player_command_times[player_index].violation_count >= mani_command_flood_violation_count.GetInt() )
 			{	
 				//kick the player
-				gpCmd->NewCmd();
-				gpCmd->AddParam("ma_kick");
-				gpCmd->AddParam("%i", player_ptr->user_id);
-				gpManiAdminPlugin->ProcessMaKick(player_ptr, "ma_kick", 0, 0);
+				char kick_cmd[256];
+				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, "Kicked due to command spam");
+				engine->ServerCommand(kick_cmd);
+				engine->ServerExecute();
 			}
 		}
 		else if ( mani_command_flood_punish.GetInt() == 2 )
@@ -113,11 +111,10 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 			{	
 				//ban the player
 				gpManiAdminPlugin->AddBan(player_ptr, player_ptr->steam_id, "MAP", 
-					mani_command_flood_punish_ban_time.GetInt(), "Banned (Chat spam)", "Hit the flood limit");
+					mani_command_flood_punish_ban_time.GetInt(), "Banned (Command spam)", "Banned (Command spam)");
 				gpManiAdminPlugin->WriteBans();
 			}
 		}
-		SayToPlayer(ORANGE_CHAT, player_ptr, "%s", mani_command_flood_message.GetString()); 
 		return false;
 	}
 
