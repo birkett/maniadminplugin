@@ -2249,6 +2249,7 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 			LogCommand (player, "%s [%s] [%s] %s (REASON: %s)\n", localprefix, player->name, key, ban_cmd, reason);
 			snprintf( ban_cmd, sizeof(ban_cmd), "kickid %i %s\n", player->user_id, reason );
 			engine->ServerCommand(ban_cmd);
+			engine->ServerExecute();
 		} else {
 			len = snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", ban_time, player->user_id);
 			engine->ServerCommand(ban_cmd);
@@ -6686,6 +6687,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 			snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(target_player_list[i].name[j]));
 			LogCommand (player_ptr, "bot_kick [%s]\n", target_player_list[i].name);
 			engine->ServerCommand(kick_cmd);
+			engine->ServerExecute();
 			continue;
 		}
 
@@ -6696,6 +6698,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 
 		LogCommand (player_ptr, "Kick (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].steam_id, kick_cmd);
 		engine->ServerCommand(kick_cmd);
+		engine->ServerExecute();
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminkick_anonymous.GetInt(), "kicked player %s", target_player_list[i].name );
 	}
 

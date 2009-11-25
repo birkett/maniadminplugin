@@ -517,6 +517,23 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 
 	if (weapon == NULL)
 	{
+		// need to check for items here:   kevlar, kevlar + helmet, nightvision and difuse kit
+		// vest - kevlar
+		// vesthelm - helmet
+		// nvgs - nightvision
+		// defuser - defuse kit
+
+		if (	V_stristr( lower_alias, "vest" ) ||
+				V_stristr( lower_alias, "vesthelm" ) ||
+				V_stristr( lower_alias, "nvgs" ) ||
+				V_stristr( lower_alias, "defuser" ) ||
+				V_stristr( lower_alias, "kevlar" ) ||
+				V_stristr( lower_alias, "helmet" ) ||
+				V_stristr( lower_alias, "nightvision" ) ||
+				V_stristr( lower_alias, "defuse" ) ||
+				V_stristr( lower_alias, "kit" ) )
+				return PLUGIN_CONTINUE;
+
 		return PLUGIN_STOP; //obviously not a valid weapon
 	}
 
@@ -1127,7 +1144,7 @@ int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 
 	if ( start == 29 ) return -1;
 
-	for (int i = start; i < start+29; i++)
+	for (int i = start; i < start+45; i++)
 	{
 		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
 		if (weapon_info == NULL)
