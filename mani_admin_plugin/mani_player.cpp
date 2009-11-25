@@ -565,6 +565,57 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: FindPlayerByIPAddress
+//---------------------------------------------------------------------------------
+bool FindPlayerByIPAddress(player_t *player_ptr)
+{
+	player_t player;
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+		if(pEntity && !pEntity->IsFree() )
+		{
+			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
+			if (playerinfo && playerinfo->IsConnected())
+			{
+				player.index = i;
+				GetIPAddressFromPlayer(&player);
+
+				if ((player.ip_address[0] != 0) && (FStrEq(player_ptr->ip_address, player.ip_address))) {
+
+					if (playerinfo->IsHLTV()) return false;
+					player_ptr->player_info = playerinfo;
+					player_ptr->index = i;
+					player_ptr->team = playerinfo->GetTeamIndex();
+					Q_strcpy(player_ptr->name, playerinfo->GetName());
+					Q_strcpy(player_ptr->steam_id, playerinfo->GetNetworkIDString());
+					player_ptr->entity = pEntity;
+					player_ptr->user_id = playerinfo->GetUserID();
+					player_ptr->health = playerinfo->GetHealth();
+					player_ptr->is_dead = playerinfo->IsObserver() | playerinfo->IsDead();
+
+					if (FStrEq(player_ptr->steam_id,"BOT"))
+					{
+						if (tv_name && strcmp(player_ptr->name, tv_name->GetString()) == 0)
+						{
+							return false;
+						}
+						player_ptr->is_bot = true;
+						Q_strcpy(player_ptr->ip_address,"");
+					}
+					else
+						player_ptr->is_bot = false;
+
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+//---------------------------------------------------------------------------------
 // Purpose: FindPlayerByUserID (Using hash table)
 //---------------------------------------------------------------------------------
 bool FindPlayerByUserID(player_t *player_ptr)

@@ -99,6 +99,7 @@ extern	bool	FindPlayerBySteamID(player_t *player_ptr);
 extern	bool	FindPlayerByUserID(player_t *player_ptr);
 extern	bool	FindPlayerByEntity(player_t *player_ptr);
 extern	bool	FindPlayerByIndex(player_t *player_ptr);
+extern	bool	FindPlayerByIPAddress(player_t *player_ptr);
 extern	void	GetIPAddressFromPlayer(player_t *player);
 
 extern	void	InitPlayerSettingsLists (void);
