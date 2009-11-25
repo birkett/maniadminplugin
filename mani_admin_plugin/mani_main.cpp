@@ -1640,6 +1640,9 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 	gpManiAntiRejoin->ClientDisconnect(&player);
 	gpManiObserverTrack->ClientDisconnect(&player);
 
+	//take off mute for this slot.
+	punish_mode_list[player.index - 1].muted = 0;
+
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
