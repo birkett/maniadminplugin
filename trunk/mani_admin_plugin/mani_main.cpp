@@ -1604,7 +1604,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	time ( &now );
 
 	for ( int index = 0; index < mute_list_size; index++ ) {
-		if ( FStrEq(mute_list[index].key_id, player.steam_id)) {
+		if ( FStrEq(mute_list[index].key_id, player.steam_id) || FStrEq(mute_list[index].key_id, player.ip_address)) {
 			if ( (mute_list[index].expire_time == 0) || ( now<mute_list[index].expire_time ) )
 				punish_mode_list[index].muted = MANI_ADMIN_ENFORCED;
 		}
@@ -3315,12 +3315,16 @@ int MutePlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	m_page_ptr->params.GetParam("ban_type", &ban_type);
 	m_page_ptr->params.GetParam("time", &time);
 	this->params.GetParam("user_id", &user_id);
+	player_t player;
+	player.user_id = user_id;
+	FindPlayerByUserID( &player );
 
 	if (strcmp(ban_type, "steam_id") == 0)
 	{
 		gpCmd->NewCmd();
 		gpCmd->AddParam("ma_mute");
-		gpCmd->AddParam("%i", user_id);
+		gpCmd->AddParam("%s", player.steam_id);
+		gpCmd->AddParam("%i", time);
 		g_ManiAdminPlugin.ProcessMaMute(player_ptr, "ma_mute", 0, M_MENU);
 		return RePopOption(REPOP_MENU_WAIT3);
 	}
@@ -3328,7 +3332,7 @@ int MutePlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	{
 		gpCmd->NewCmd();
 		gpCmd->AddParam("ma_mute");
-		gpCmd->AddParam("%i", user_id);
+		gpCmd->AddParam("%s", player.ip_address);
 		gpCmd->AddParam("%i", time);
 		g_ManiAdminPlugin.ProcessMaMute(player_ptr, "ma_mute", 0, M_MENU);
 		return RePopOption(REPOP_MENU_WAIT3);
@@ -3371,7 +3375,11 @@ bool MutePlayerPage::PopulateMenuPage(player_t *player_ptr)
 		}
 
 		ptr = new MutePlayerItem;
-		ptr->SetDisplayText("[%s] %i",  player.name, player.user_id);
+		if (punish_mode_list[i - 1].muted)
+			ptr->SetDisplayText("[MUTED] [%s] %i",  player.name, player.user_id);
+		else
+			ptr->SetDisplayText("[%s] %i",  player.name, player.user_id);
+
 		ptr->params.AddParam("user_id", player.user_id);
 		this->AddItem(ptr);
 	}
@@ -8553,8 +8561,26 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 
 	if ( !param3 && (gpCmd->Cmd_Argc() > 3) ) param3 = gpCmd->Cmd_Args(3);
 
+	player_t player;
+	bool byID = false;
+	if (target_string[0]=='S' || target_string[0]=='s' ) {
+		Q_strncpy ( player.steam_id, target_string, MAX_NETWORKID_LENGTH );
+		FindPlayerBySteamID(&player);
+		byID=true;
+	} else if (Q_stristr ( target_string, "." ) ) {
+		Q_strncpy ( player.ip_address, target_string, 128 );
+		FindPlayerByIPAddress(&player);
+	} else {
+		player.user_id = atoi(target_string);
+		FindPlayerByUserID (&player);
+		byID=true;
+	}
+
+	char uid[16];
+	Q_snprintf( uid, sizeof(uid), "%i", player.user_id );
+
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_MUTE))
+	if (!FindTargetPlayers(player_ptr, uid, IMMUNITY_MUTE))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
 		return PLUGIN_STOP;
@@ -8571,20 +8597,14 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 
 		int do_action = 0;
 
-		if ( !param2 && !param3 ) //toggle
-		{
-			if (!punish_mode_list[target_player_list[i].index - 1].muted)
-			{
-				do_action = 1;
-			}
-		} else {
+		if (!punish_mode_list[target_player_list[i].index - 1].muted) {
 			do_action = 1;
 		}
 
 		if (do_action)
 		{
 			timetomute = (param2) ? atoi(param2) : 0;
-			ProcessMutePlayer(&(target_player_list[i]), player_ptr, timetomute, param3);
+			ProcessMutePlayer(&(target_player_list[i]), player_ptr, timetomute, byID, param3);
 			LogCommand (player_ptr, "muted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
