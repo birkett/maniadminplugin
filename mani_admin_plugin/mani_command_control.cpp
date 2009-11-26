@@ -42,6 +42,7 @@ extern ConVar mani_command_flood_total;
 extern ConVar mani_command_flood_punish;
 extern ConVar mani_command_flood_violation_count;
 extern ConVar mani_command_flood_punish_ban_time;
+extern IVEngineServer* engine;
 
 CCommandControl::CCommandControl () {
 	for ( int i = 0; i < max_players; i++ ) {
