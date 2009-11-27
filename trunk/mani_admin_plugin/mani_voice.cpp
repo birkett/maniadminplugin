@@ -63,7 +63,8 @@ extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	ConVar	*sv_alltalk;
-
+extern int mute_list_size;
+extern ban_settings_t *mute_list;
 static	bool IsPlayerValid(player_t *player_ptr);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
@@ -95,12 +96,6 @@ bool	ProcessDeadAllTalk
 	if (!voiceserver) return false;
 	if (war_mode) return false;
 
-	if (punish_mode_list[sender_index - 1].muted != 0)
-	{
-		*new_listen = false;
-		return true;
-	}
-
 	if (!gpManiGameType->IsTeamPlayAllowed()) return false;
 	if (mani_dead_alltalk.GetInt() == 0) return false;
 	if (sv_alltalk && sv_alltalk->GetInt() == 1) return false;
@@ -113,6 +108,40 @@ bool	ProcessDeadAllTalk
 
 	if (!IsPlayerValid(&player_sender)) return false;
 	if (!IsPlayerValid(&player_receiver)) return false;
+
+	// Mute player output
+	time_t now;
+	time (&now);
+	int j = -1;
+	if ( mute_list_size != 0) {
+		for (;;) {
+			j = 0;
+			if ( mute_list[j].byID ) {
+				if ( FStrEq ( mute_list[j].key_id, player_sender.steam_id ) )
+					break;
+			} else {
+				if ( FStrEq ( mute_list[j].key_id, player_sender.ip_address ) )
+					break;
+			}
+			j++;
+			if ( j >= (mute_list_size - 1) ) {
+				j=-1; //not muted
+				break;
+			}
+		}
+	}
+
+	if ((j >= 0) && punish_mode_list[player_sender.index - 1].muted) {
+		if ((mute_list[j].expire_time <= now) && (mute_list[j].expire_time != 0)) 
+			punish_mode_list[player_sender.index - 1].muted = 0;
+	}
+
+	if (punish_mode_list[sender_index - 1].muted != 0)
+	{
+		*new_listen = false;
+		return true;
+	}
+
 
 	if (gpManiGameType->IsSpectatorAllowed())
 	{

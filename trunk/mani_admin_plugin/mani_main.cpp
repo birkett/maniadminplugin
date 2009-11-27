@@ -1569,9 +1569,6 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 		return;
 	}
 
-	if (!gpManiAutoKickBan->NetworkIDValidated(&player)) return;
-
-
 	if (!player.player_info->IsHLTV())
 	{
 		g_menu_mgr.ClientActive(&player);
@@ -1584,7 +1581,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	{
 		gpManiLogCSSStats->ClientActive(&player);
 	}
-
+	if (!gpManiAutoKickBan->NetworkIDValidated(&player)) return;
 	if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) return;
 	g_command_control.ClientActive(&player);
 	gpManiGhost->ClientActive(&player);
@@ -2253,7 +2250,6 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 			LogCommand (player, "%s [%s] [%s] %s (REASON: %s)\n", localprefix, player->name, key, ban_cmd, reason);
 			snprintf( ban_cmd, sizeof(ban_cmd), "kickid %i %s\n", player->user_id, reason );
 			engine->ServerCommand(ban_cmd);
-			engine->ServerExecute();
 		} else {
 			len = snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i kick\n", ban_time, player->user_id);
 			engine->ServerCommand(ban_cmd);
@@ -6512,6 +6508,32 @@ bool CAdminPlugin::HookSayCommand(bool team_say, const CCommand &args)
 	}
 
 	// Mute player output
+	time_t now;
+	time (&now);
+	int j = -1;
+	if ( mute_list_size != 0) {
+		for (;;) {
+			j = 0;
+			if ( mute_list[j].byID ) {
+				if ( FStrEq ( mute_list[j].key_id, player.steam_id ) )
+					break;
+			} else {
+				if ( FStrEq ( mute_list[j].key_id, player.ip_address ) )
+					break;
+			}
+			j++;
+			if ( j >= (mute_list_size - 1) ) {
+				j=-1; //not muted
+				break;
+			}
+		}
+	}
+
+	if ((j >= 0) && punish_mode_list[player.index - 1].muted) {
+		if ((mute_list[j].expire_time <= now) && (mute_list[j].expire_time != 0)) 
+			punish_mode_list[player.index - 1].muted = 0;
+	}
+
 	if (punish_mode_list[player.index - 1].muted && !war_mode)
 	{
 		return false;
@@ -6691,7 +6713,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 			snprintf( kick_cmd, sizeof(kick_cmd), "bot_kick \"%s\"\n", &(target_player_list[i].name[j]));
 			LogCommand (player_ptr, "bot_kick [%s]\n", target_player_list[i].name);
 			engine->ServerCommand(kick_cmd);
-			engine->ServerExecute();
 			continue;
 		}
 
@@ -6702,7 +6723,6 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 
 		LogCommand (player_ptr, "Kick (By Admin) [%s] [%s] %s", target_player_list[i].name, target_player_list[i].steam_id, kick_cmd);
 		engine->ServerCommand(kick_cmd);
-		engine->ServerExecute();
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminkick_anonymous.GetInt(), "kicked player %s", target_player_list[i].name );
 	}
 
@@ -8572,26 +8592,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 
 	if ( !param3 && (gpCmd->Cmd_Argc() > 3) ) param3 = gpCmd->Cmd_Args(3);
 
-	player_t player;
-	bool byID = false;
-	if (target_string[0]=='S' || target_string[0]=='s' ) {
-		Q_strncpy ( player.steam_id, target_string, MAX_NETWORKID_LENGTH );
-		FindPlayerBySteamID(&player);
-		byID=true;
-	} else if (Q_stristr ( target_string, "." ) ) {
-		Q_strncpy ( player.ip_address, target_string, 128 );
-		FindPlayerByIPAddress(&player);
-	} else {
-		player.user_id = atoi(target_string);
-		FindPlayerByUserID (&player);
-		byID=true;
-	}
-
-	char uid[16];
-	Q_snprintf( uid, sizeof(uid), "%i", player.user_id );
-
 	// Whoever issued the commmand is authorised to do it.
-	if (!FindTargetPlayers(player_ptr, uid, IMMUNITY_MUTE))
+	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_MUTE))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
 		return PLUGIN_STOP;
@@ -8615,6 +8617,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 		if (do_action)
 		{
 			timetomute = (param2) ? atoi(param2) : 0;
+			bool byID = (Q_stristr(target_string, ".") == NULL);
 			ProcessMutePlayer(&(target_player_list[i]), player_ptr, timetomute, byID, param3);
 			LogCommand (player_ptr, "muted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)

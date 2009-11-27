@@ -137,8 +137,13 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 	player_t *temp_player_list = NULL;
 	int temp_player_list_size = 0;
 	
-	int	target_user_id = atoi(target_string);
+	int target_user_id = 0;
+	if (!Q_stristr ( target_string, "." ) ) {
+		target_user_id = atoi(target_string);
+	}
+
 	char target_steam_id[MAX_NETWORKID_LENGTH];
+	char target_ip_address[128];
 
 	FreeList((void **) &target_player_list, &target_player_list_size);
 
@@ -384,6 +389,34 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 				target_player_list[0] = player;
 				return true;
 			}
+		}
+	}
+
+	// Try ip address next
+	Q_strcpy(target_ip_address, target_string);
+	if (Q_strlen(target_ip_address) > 7)
+	{
+		Q_strcpy(player.ip_address, target_string);
+		if (FindPlayerByIPAddress(&player))
+		{
+			if (player.is_bot ||
+				(requesting_player && 
+				requesting_player->entity && 
+				requesting_player->index == player.index))	
+			{
+				AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+				target_player_list[0] = player;
+				return true;
+			}
+
+			if (immunity_flag && gpManiClient->HasAccess(player.index, IMMUNITY, immunity_flag))
+			{
+				return false;
+			}
+
+			AddToList((void **) &target_player_list, sizeof(player_t), &target_player_list_size);
+			target_player_list[0] = player;
+			return true;
 		}
 	}
 
