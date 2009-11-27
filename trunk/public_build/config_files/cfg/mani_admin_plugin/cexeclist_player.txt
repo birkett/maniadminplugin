@@ -32,7 +32,4 @@
 // if you don't change them.
 //
 
-"Disconnect Player" disconnect
-"Say Hi" cmd say "Hi"
-"Player Vote" cmd say "Votemap"
-
+"Change playername to Flower" name Flower

@@ -31,7 +31,5 @@
 // if you don't change them.
 //
 
-"Disconnect players" disconnect
-"Everyone say Hi" cmd say "Hi"
-"Everyone vote" cmd say "Votemap"
+"Change playername to Flower" name Flower
 

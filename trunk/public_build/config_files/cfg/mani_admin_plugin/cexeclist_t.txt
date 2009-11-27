@@ -31,7 +31,4 @@
 // if you don't change them.
 //
 
-"Disconnect Terrorists" disconnect
-"Terrorists say Hi" cmd say "Hi"
-"Terrorists vote" cmd say "Votemap"
-
+"Change playername to Flower" name Flower
