@@ -1560,12 +1560,17 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if ( pname && pname[0] == 0 )
 		pname = NULL;
 
-		if ( !pname ) {
-			UTIL_KickPlayer ( &player, "Empty name violation",
-				"Empty name violation, change your name and come back",
-				"Empty name kicked" );
-			return;
-		}
+	if ( !pname ) {
+		char	kick_cmd[512];
+		PrintToClientConsole(player.entity, "Empty name violation\n");
+		snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Empty name violation\n", player.user_id);
+		LogCommand (NULL, "Kick (Empty name violation) [%s] %s", player.steam_id, kick_cmd);
+		engine->ServerCommand(kick_cmd);
+		return;
+	}
+
+	if (!gpManiAutoKickBan->NetworkIDValidated(&player)) return;
+
 
 	if (!player.player_info->IsHLTV())
 	{
@@ -1582,7 +1587,6 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 
 	if (FStrEq(player.player_info->GetNetworkIDString(),"BOT")) return;
 	g_command_control.ClientActive(&player);
-	gpManiAutoKickBan->NetworkIDValidated(&player);
 	gpManiGhost->ClientActive(&player);
 	gpManiVictimStats->ClientActive(&player);
 	gpManiMapAdverts->ClientActive(&player);
@@ -1606,7 +1610,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	for ( int index = 0; index < mute_list_size; index++ ) {
 		if ( FStrEq(mute_list[index].key_id, player.steam_id) || FStrEq(mute_list[index].key_id, player.ip_address)) {
 			if ( (mute_list[index].expire_time == 0) || ( now<mute_list[index].expire_time ) )
-				punish_mode_list[index].muted = MANI_ADMIN_ENFORCED;
+				punish_mode_list[player.index-1].muted = MANI_ADMIN_ENFORCED;
 		}
 	}
 
@@ -4671,8 +4675,8 @@ int BanPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	{
 		gpCmd->NewCmd();
 		gpCmd->AddParam("ma_ban");
-		gpCmd->AddParam("%i", time);
 		gpCmd->AddParam("%i", user_id);
+		gpCmd->AddParam("%i", time);
 		g_ManiAdminPlugin.ProcessMaBan(player_ptr, "ma_ban", 0, M_MENU);
 		return RePopOption(REPOP_MENU_WAIT3);
 	}
@@ -4680,8 +4684,8 @@ int BanPlayerItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 	{
 		gpCmd->NewCmd();
 		gpCmd->AddParam("ma_banip");
-		gpCmd->AddParam("%i", time);
 		gpCmd->AddParam("%i", user_id);
+		gpCmd->AddParam("%i", time);
 		g_ManiAdminPlugin.ProcessMaBanIP(player_ptr, "ma_banip", 0, M_MENU);
 		return RePopOption(REPOP_MENU_WAIT3);
 	}
@@ -6772,7 +6776,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	const char *testtime = gpCmd->Cmd_Argv(1);
+	const char *testtime = gpCmd->Cmd_Argv(2);
 	int time_to_ban = atoi(testtime);
 	if ((time_to_ban == 0) && (testtime[0] != '0')) {
 		time_to_ban = 0;
@@ -6799,11 +6803,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 	const char *target_string = NULL;
 	const char *reason = NULL;
 
+	target_string = gpCmd->Cmd_Argv(1);
 	if ( time_given ) {
-		target_string = gpCmd->Cmd_Argv(2);
 		if ( gpCmd->Cmd_Argc() >= 4 ) reason = gpCmd->Cmd_Args(3);
 	} else {
-		target_string = gpCmd->Cmd_Argv(1);
 		if ( gpCmd->Cmd_Argc() >= 3 ) reason = gpCmd->Cmd_Args(2);
 	}
 	// Whoever issued the commmand is authorised to do it.
@@ -6866,7 +6869,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
-	const char *testtime = gpCmd->Cmd_Argv(1);
+	const char *testtime = gpCmd->Cmd_Argv(2);
 	int time_to_ban = atoi(testtime);
 	if ((time_to_ban == 0) && (testtime[0] != '0')) {
 		time_to_ban = 0;
@@ -6887,11 +6890,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 	const char *target_string = NULL;
 	const char *reason = NULL;
 
+	target_string = gpCmd->Cmd_Argv(1);
 	if ( time_given ) {
-		target_string = gpCmd->Cmd_Argv(2);
 		if ( gpCmd->Cmd_Argc() >= 4 ) reason = gpCmd->Cmd_Args(3);
 	} else {
-		target_string = gpCmd->Cmd_Argv(1);
 		if ( gpCmd->Cmd_Argc() >= 3 ) reason = gpCmd->Cmd_Args(2);
 	}
 
@@ -6922,7 +6924,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 			PrintToClientConsole(target_player_list[i].entity, "You have been banned by Admin for %i minutes\n", time_to_ban);
 		}
 
-		AddBan ( &target_player_list[i], target_player_list[i].ip_address, player_ptr->name, time_to_ban, "Banned IP (By Admin)", reason );
+		if ( !player_ptr )
+			AddBan ( &target_player_list[i], target_player_list[i].ip_address, "CONSOLE", time_to_ban, "Banned (By Admin)", reason );
+		else
+			AddBan ( &target_player_list[i], target_player_list[i].ip_address, player_ptr->name, time_to_ban, "Banned (By Admin)", reason );
 		WriteBans();
 
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminban_anonymous.GetInt(), "banned player %s", target_player_list[i].name );
