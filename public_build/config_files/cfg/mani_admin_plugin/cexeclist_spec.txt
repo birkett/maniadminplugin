@@ -35,7 +35,4 @@
 // if you don't change them.
 //
 
-"Disconnect Spectators" disconnect
-"Spectators say Hi" cmd say "Hi"
-"Spectators vote" cmd say "Votemap"
-
+"Change playername to Flower" name Flower
