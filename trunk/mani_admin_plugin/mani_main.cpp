@@ -8619,7 +8619,11 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 			timetomute = (param2) ? atoi(param2) : 0;
 			bool byID = (Q_stristr(target_string, ".") == NULL);
 			ProcessMutePlayer(&(target_player_list[i]), player_ptr, timetomute, byID, param3);
-			LogCommand (player_ptr, "muted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
+			if (param3)
+				LogCommand (player_ptr, "muted user [%s] [%s] for %s\n", target_player_list[i].name, target_player_list[i].steam_id,param3);
+			else
+				LogCommand (player_ptr, "muted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
+
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
 				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmute_anonymous.GetInt(), "muted player %s", target_player_list[i].name);
