@@ -283,6 +283,8 @@ void ManiReservedSlot::CleanUp(void)
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::Load(void)
 {
+
+	return;
 	ManiClientConnectDetour = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
 	if ( ManiClientConnectDetour )
 		ManiClientConnectDetour->DetourFunction( );
