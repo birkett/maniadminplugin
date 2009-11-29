@@ -225,29 +225,30 @@ DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 #define NSPD_NON_MEMBER_CALL NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5)
 DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int ) {
 #endif
-	char strIP[128];
-	if ( p3 ) {
-		int ip = *(int *)((const char *)p3 + 4);
-		snprintf(strIP, sizeof(strIP), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
-	}
+	if ( (p5 > 4) && ( (p4[0]==0xFF) && (p4[1]==0xFF) && (p4[2]==0xFF) && (p4[3]==0xFF) && (p4[4]=='I') )) {
+		char strIP[128];
+		if ( p3 ) {
+			int ip = *(int *)((const char *)p3 + 4);
+			snprintf(strIP, sizeof(strIP), "%u.%u.%u.%u", ip & 0xFF, ( ip >> 8 ) & 0xFF, ( ip >> 16 ) & 0xFF, (ip >> 24) & 0xFF);
+		}
 
-	mem_t *pPassword = NULL;
-	mem_t *pPlayers = NULL;
-	A2S_INFO_t QueryData;
-	memset (&QueryData, 0, sizeof(QueryData));
-	// length of data in p4 is p5 -- need to stop at the first \0 after p5
-	if ( (p5 > 4) && (p4[4] == 'I') && FillINFOQuery( p4, p5, QueryData, &pPlayers, &pPassword ) ) {
-		bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
-		bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
+		mem_t *pPassword = NULL;
+		mem_t *pPlayers = NULL;
+		A2S_INFO_t QueryData;
+		memset (&QueryData, 0, sizeof(QueryData));
+		if ( FillINFOQuery( p4, p5, QueryData, &pPlayers, &pPassword ) ) {
+			bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
+			bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
 
-		if (AdminAccess || ReservedAccess) {
-			if ( pPlayers ) {
-				if (pPlayers[0] == pPlayers[1]) 
-					pPlayers[1] = (mem_t)max_players+1;
+			if (AdminAccess || ReservedAccess) {
+				if ( pPlayers ) {
+					if (pPlayers[0] == pPlayers[1]) 
+						pPlayers[1] = (mem_t)max_players+1;
+				}
+
+				if ( AdminAccess && pPassword && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
+					pPassword[0]=0;
 			}
-
-			if ( AdminAccess && pPassword && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
-				pPassword[0]=0;
 		}
 	}
 	return NSPD_NON_MEMBER_CALL;
@@ -284,7 +285,6 @@ void ManiReservedSlot::CleanUp(void)
 void ManiReservedSlot::Load(void)
 {
 
-	return;
 	ManiClientConnectDetour = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
 	if ( ManiClientConnectDetour )
 		ManiClientConnectDetour->DetourFunction( );
@@ -294,6 +294,7 @@ void ManiReservedSlot::Load(void)
 	ManiNetSendPacketDetour = CDetourManager::CreateDetour( "NETSendPacket", netsendpacket_addr, GET_NON_MEMBER_CALLBACK(NET_SendPacketDetour), GET_NON_MEMBER_TRAMPOLINE(NET_SendPacketDetour) );
 	if ( ManiNetSendPacketDetour )
 		ManiNetSendPacketDetour->DetourFunction( );
+
 	this->CleanUp();
 }
 
