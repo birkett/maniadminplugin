@@ -867,6 +867,15 @@ void	ManiAutoKickBan::WriteNameList(char *filename_string)
 	}
 	else
 	{
+		gpManiAdminPlugin->PrintHeader ( file_handle, filename_string, "list of names that are to be kicked/banned" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// Put the name you wish to kick/ban in quotes.\n" );
+		filesystem->FPrintf ( file_handle, "// Then whether to kick (k) or ban (b)\n" );
+		filesystem->FPrintf ( file_handle, "// Lastly put the amount of time to ban (optional)\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// \"spek\" k\n" );
+		filesystem->FPrintf ( file_handle, "// \"spek\" b 60\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
 		// Write file in human readable text format
 		for (int i = 0; i < autokick_name_list_size; i ++)
 		{
@@ -917,6 +926,15 @@ void	ManiAutoKickBan::WritePNameList(char *filename_string)
 	}
 	else
 	{
+		gpManiAdminPlugin->PrintHeader ( file_handle, filename_string, "list of name matches that are to be kicked/banned" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// Put the partial name you wish to kick/ban in quotes.\n" );
+		filesystem->FPrintf ( file_handle, "// Then whether to kick (k) or ban (b)\n" );
+		filesystem->FPrintf ( file_handle, "// Lastly put the amount of time to ban (optional)\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// \"spek\" k\n" );
+		filesystem->FPrintf ( file_handle, "// \"spek\" b 60\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );		
 		// Write file in human readable text format
 		for (int i = 0; i < autokick_pname_list_size; i ++)
 		{
@@ -967,6 +985,15 @@ void	ManiAutoKickBan::WriteIPList(char *filename_string)
 	}
 	else
 	{
+		gpManiAdminPlugin->PrintHeader ( file_handle, filename_string, "list of IPs that are to be kicked/banned" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// Put the IP you wish to kick/ban in quotes.\n" );
+		filesystem->FPrintf ( file_handle, "// Then whether to kick (k) or ban (b)\n" );
+		filesystem->FPrintf ( file_handle, "// Lastly put the amount of time to ban (optional)\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// \"192.168.0.2\" k\n" );
+		filesystem->FPrintf ( file_handle, "// \"192.168.0.2\" b 60\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
 		// Write file in human readable text format
 		for (int i = 0; i < autokick_ip_list_size; i ++)
 		{
@@ -1014,6 +1041,15 @@ void	ManiAutoKickBan::WriteSteamList(char *filename_string)
 	}
 	else
 	{
+		gpManiAdminPlugin->PrintHeader ( file_handle, filename_string, "list of steam ids that are to be kicked/banned" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// Put the steamid you wish to kick/ban in quotes.\n" );
+		filesystem->FPrintf ( file_handle, "// Then whether to kick (k) or ban (b)\n" );
+		filesystem->FPrintf ( file_handle, "// Lastly put the amount of time to ban (optional)\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
+		filesystem->FPrintf ( file_handle, "// \"STEAM_0:1:0000001\" k\n" );
+		filesystem->FPrintf ( file_handle, "// \"STEAM_0:1:0000001\" b 60\n" );
+		filesystem->FPrintf ( file_handle, "//\n" );
 		// Write file in human readable text format
 		for (int i = 0; i < autokick_steam_list_size; i ++)
 		{
