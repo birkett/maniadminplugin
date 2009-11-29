@@ -403,7 +403,7 @@ void ManiVote::GameFrame(void)
 {
 	if (war_mode) return;
 
-	if ( mani_voting.GetInt() == 0 ) return;
+	if ( !CanVote() ) return;
 
 	if (system_vote.vote_in_progress)
 	{
@@ -582,6 +582,17 @@ void ManiVote::GameFrame(void)
 	}
 }
 
+bool ManiVote::CanVote(player_t *player_ptr) {
+	if ( system_vote.vote_in_progress )
+		return true;
+
+	if (player_ptr && (mani_voting.GetInt() == 0) && (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN, war_mode))) return true;
+
+	if ( mani_voting.GetInt() == 0 )
+		return false;
+
+	return true;
+}
 //---------------------------------------------------------------------------------
 // Purpose: Load config
 //---------------------------------------------------------------------------------
@@ -1016,7 +1027,7 @@ void ManiVote::ProcessMenuSystemVoteMultiMap( player_t *admin, const char *delay
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteCancel(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1050,7 +1061,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteCancel(player_t *player_ptr, const char *co
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1140,7 +1151,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 	if (player_ptr)
 	{
 		// Check if player is admin
@@ -1274,7 +1285,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1417,7 +1428,7 @@ bool	ManiVote::AddMapToVote
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteQuestion(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	//if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;  Issue 25
+	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1508,7 +1519,7 @@ bool	ManiVote::AddQuestionToVote(const char *answer)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	// if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE; Issue 25
+	 if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -3199,7 +3210,7 @@ void ManiVote::ProcessMaRockTheVoteNominateMap(player_t *player, int argc, const
 {
 	int map_index;
 
-	if (mani_voting.GetInt() == 0) return;
+	if (!CanVote(player)) return;
 	if (mani_vote_allow_rock_the_vote.GetInt() == 0) return;
 	if (mani_vote_rock_the_vote_number_of_nominations.GetInt() == 0)
 	{
@@ -3287,7 +3298,7 @@ void ManiVote::ProcessMaRockTheVoteNominateMap(player_t *player, int argc, const
 void ManiVote::ProcessMaRockTheVote(player_t *player)
 {
 
-	if (mani_voting.GetInt() == 0) return;
+	if (!CanVote(player)) return;
 	if (mani_vote_allow_rock_the_vote.GetInt() == 0) return;
 	if (system_vote.map_decided) 
 	{

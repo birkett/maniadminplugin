@@ -70,6 +70,7 @@ public:
 	bool		SysVoteInProgress(void)	{return	system_vote.vote_in_progress;}
 	bool		SysMapDecided(void)	{return	system_vote.map_decided;}
 	void		SysSetMapDecided(bool decided) {system_vote.map_decided	= decided;}
+	bool		CanVote(player_t *player_ptr = NULL);
 
 	PLUGIN_RESULT	ProcessMaVoteRandom(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);
 	PLUGIN_RESULT	ProcessMaVoteExtend(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);

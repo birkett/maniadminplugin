@@ -174,7 +174,7 @@ char *menu_select_sound="buttons/button14.wav";
 
 CAdminPlugin g_ManiAdminPlugin;
 CAdminPlugin *gpManiAdminPlugin;
-
+extern ManiVote *gpManiVote;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -1910,14 +1910,14 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq( pcmd, "votemap" ) && !war_mode)
 	{
-		if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+		if (!gpManiVote->CanVote(&player)) return PLUGIN_CONTINUE;
 		if (mani_vote_allow_user_vote_map.GetInt() == 0) return PLUGIN_CONTINUE;
 		MENUPAGE_CREATE_FIRST(UserVoteMapPage, &player, 0, -1);
 		return PLUGIN_STOP;
 	}
 	else if ( FStrEq( pcmd, "votekick" ) && !war_mode && !IsLAN())
 	{
-		if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+		if (!gpManiVote->CanVote(&player)) return PLUGIN_CONTINUE;
 		if (mani_vote_allow_user_vote_kick.GetInt() == 0) return PLUGIN_CONTINUE;
 
 		if (!FindPlayerByEntity(&player)) return PLUGIN_CONTINUE;
@@ -1930,7 +1930,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq( pcmd, "voteban" ) && !war_mode && !IsLAN())
 	{
-		if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+		if (!gpManiVote->CanVote(&player)) return PLUGIN_CONTINUE;
 		if (mani_vote_allow_user_vote_ban.GetInt() == 0) return PLUGIN_CONTINUE;
 
 		// Stop ghosters from voting
@@ -1941,7 +1941,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq( pcmd, "nominate" ) && !war_mode)
 	{
-		if (mani_voting.GetInt() == 0) return PLUGIN_CONTINUE;
+		if (!gpManiVote->CanVote(&player)) return PLUGIN_CONTINUE;
 		if (mani_vote_allow_rock_the_vote.GetInt() == 0) return PLUGIN_CONTINUE;
 
 		gpManiVote->ProcessMaRockTheVoteNominateMap(&player, pargc, gpCmd->Cmd_Args(1));
@@ -1984,7 +1984,7 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 	}
 	else if ( FStrEq( pcmd, "mani_votemenu" ))
 	{
-		if (mani_voting.GetInt() == 0) return PLUGIN_STOP;
+		if (!gpManiVote->CanVote(&player)) return PLUGIN_STOP;
 		if (war_mode) return PLUGIN_STOP;
 		MENUPAGE_CREATE_FIRST(SystemVotemapPage, &player, 0, -1);
 		return PLUGIN_STOP;
@@ -5589,7 +5589,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 	}
 	else if ( FStrEq( say_string, "vote" ) && !war_mode)
 	{
-		if (mani_voting.GetInt() == 0) return;
+		if (!gpManiVote->CanVote(&player)) return;
 		if (war_mode) return;
 		MENUPAGE_CREATE_FIRST(SystemVotemapPage, &player, 0, -1);
 		return;
@@ -5597,7 +5597,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 
 	else if ( FStrEq( say_string, "nominate" ) && !war_mode)
 	{
-		if (mani_voting.GetInt() == 0) return;
+		if (!gpManiVote->CanVote(&player)) return;
 		if (mani_vote_allow_rock_the_vote.GetInt() == 0) return;
 
 		// Nominate allowed up to this point
@@ -5606,7 +5606,7 @@ void CAdminPlugin::EvPlayerSay(IGameEvent *event)
 	}
 	else if ( (FStrEq( say_string, "rockthevote" ) || FStrEq( say_string, "rtv" )) && !war_mode)
 	{
-		if (mani_voting.GetInt() == 0) return;
+		if (!gpManiVote->CanVote(&player)) return;
 		if (mani_vote_allow_rock_the_vote.GetInt() == 0) return;
 
 		// Nominate allowed up to this point
