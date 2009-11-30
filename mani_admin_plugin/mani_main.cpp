@@ -9757,7 +9757,7 @@ CONVAR_CALLBACK_FN(ManiStatsBySteamID)
 }
 
 CONVAR_CALLBACK_FN(DefaultExecChanged) {
-	const char *tmp = pVar->GetString();
+	const char *tmp = ((ConVar *)pVar)->GetString(); // must do this for Orange Box!!!!
 	char file_execute[512]="";
 	
 	if ( tmp && (tmp[0] != 0) ) {

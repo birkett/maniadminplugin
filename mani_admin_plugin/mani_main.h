@@ -212,13 +212,13 @@ MANI_TAKE_HEALTH_PERCENT};
 
 #ifdef ORANGE
 #define CONVAR_CALLBACK_PROTO(_name) \
-	static void _name ( ConVar *pVar, char const *pOldString, float pOldFloat)
+	void _name ( IConVar *pVar, char const *pOldString, float pOldFloat)
 
 #define CONVAR_CALLBACK_REF(_name) \
-	(FnChangeCallback_t) &_name
+	(FnChangeCallback_t) _name
 
 #define CONVAR_CALLBACK_FN(_name) \
-	static void _name ( ConVar *pVar, char const *pOldString, float pOldFloat)
+	void _name ( IConVar *pVar, char const *pOldString, float pOldFloat)
 #else
 #define CONVAR_CALLBACK_PROTO(_name) \
 	static void _name ( ConVar *pVar, char const *pOldString)
