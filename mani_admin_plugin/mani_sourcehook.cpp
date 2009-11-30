@@ -192,6 +192,9 @@ bool	ManiSMMHooks::SetClientListening(int iReceiver, int iSender, bool bListen)
 	if ( iSender == iReceiver )
 		RETURN_META_VALUE ( MRES_IGNORED, bListen );
 
+	if (ProcessMuteTalk(iReceiver, iSender, &new_listen))
+		RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, bListen, &IVoiceServer::SetClientListening, (iReceiver, iSender, new_listen));
+
 	if (ProcessDeadAllTalk(iReceiver, iSender, &new_listen))
 		RETURN_META_VALUE_NEWPARAMS(MRES_IGNORED, bListen, &IVoiceServer::SetClientListening, (iReceiver, iSender, new_listen));
 

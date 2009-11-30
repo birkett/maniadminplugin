@@ -33,6 +33,13 @@ extern	bool	ProcessDeadAllTalk
  bool	*new_listen
 );
 
+extern bool ProcessMuteTalk
+(
+ int	receiver_index,
+ int	sender_index,
+ bool	*new_listen
+);
+
 extern ConVar mani_dead_alltalk;
 
 #endif
