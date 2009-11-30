@@ -109,6 +109,43 @@ bool	ProcessDeadAllTalk
 	if (!IsPlayerValid(&player_sender)) return false;
 	if (!IsPlayerValid(&player_receiver)) return false;
 
+	if (gpManiGameType->IsSpectatorAllowed())
+	{
+		if (player_sender.team == gpManiGameType->GetSpectatorIndex()) return false;
+		if (player_receiver.team == gpManiGameType->GetSpectatorIndex()) return false;
+	}
+
+	if (gpManiGameType->IsValidActiveTeam(player_sender.team) && gpManiGameType->IsValidActiveTeam(player_receiver.team))
+	{
+		if (player_sender.team != player_receiver.team)
+		{
+			*new_listen = true;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ProcessMuteTalk 
+(
+ int	receiver_index,
+ int	sender_index,
+ bool	*new_listen
+)
+{
+	if (!voiceserver) return false;
+	if (war_mode) return false;
+
+	player_t player_receiver;
+	player_t player_sender;
+
+	player_sender.index = sender_index;
+	player_receiver.index = receiver_index;
+
+	if (!IsPlayerValid(&player_sender)) return false;
+	if (!IsPlayerValid(&player_receiver)) return false;
+
 	// Mute player output
 	time_t now;
 	time (&now);
@@ -142,25 +179,8 @@ bool	ProcessDeadAllTalk
 		return true;
 	}
 
-
-	if (gpManiGameType->IsSpectatorAllowed())
-	{
-		if (player_sender.team == gpManiGameType->GetSpectatorIndex()) return false;
-		if (player_receiver.team == gpManiGameType->GetSpectatorIndex()) return false;
-	}
-
-	if (gpManiGameType->IsValidActiveTeam(player_sender.team) && gpManiGameType->IsValidActiveTeam(player_receiver.team))
-	{
-		if (player_sender.team != player_receiver.team)
-		{
-			*new_listen = true;
-			return true;
-		}
-	}
-
 	return false;
 }
-
 //---------------------------------------------------------------------------------
 // Purpose: Faster version of FindPlayerByIndex
 //---------------------------------------------------------------------------------
