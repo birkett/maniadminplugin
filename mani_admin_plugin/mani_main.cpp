@@ -196,11 +196,10 @@ ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSI
 ConVar mani_war_mode ("mani_war_mode", "0", 0, "This defines whether war mode is enabled or disabled (1 = enabled)", true, 0, true, 1, CONVAR_CALLBACK_REF(WarModeChanged));
 ConVar mani_stats_by_steam_id ("mani_stats_by_steam_id", "1", 0, "This defines whether the steam id is used or name is used to organise the stats (1 = steam id)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiStatsBySteamID));
 ConVar mani_tickrate ("mani_tickrate", "", FCVAR_REPLICATED | FCVAR_NOTIFY, "Server tickrate information", CONVAR_CALLBACK_REF(ManiTickrate));
-ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set number of players that can build a stack", true, 1, true, 50, CONVAR_CALLBACK_REF(ManiCSStackingNumLevels));
+//ConVar mani_cs_stacking_num_levels ("mani_cs_stacking_num_levels", "1", 0, "Set number of players that can build a stack", true, 1, true, 50, CONVAR_CALLBACK_REF(ManiCSStackingNumLevels));
 ConVar mani_unlimited_grenades ("mani_unlimited_grenades", "0", 0, "0 = normal CSS mode, 1 = Grenades replenished after throw (CSS Only)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiUnlimitedGrenades));
 ConVar mani_show_events ("mani_show_events", "0", 0, "Shows events in server console, enabled or disabled (1 = enabled)", true, 0, true, 1);
 
-//birkett - removed the defaults.cfg hard coding. Allows default_file2 to be configured like 3,4 and 5. 
 ConVar mani_exec_default_file1 ("mani_exec_default_file1", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
 ConVar mani_exec_default_file2 ("mani_exec_default_file2", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
 ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
@@ -278,7 +277,7 @@ ConVar	*sv_alltalk = NULL;
 ConVar	*mp_restartgame = NULL;
 ConVar	*sv_gravity = NULL;
 ConVar  *hostname = NULL;
-ConVar	*cs_stacking_num_levels = NULL;
+//ConVar	*cs_stacking_num_levels = NULL;
 ConVar  *phy_pushscale = NULL;
 ConVar	*vip_version = NULL;
 ConVar	*mp_dynamicpricing = NULL;
@@ -605,7 +604,7 @@ bool CAdminPlugin::Load(void)
 
 	sv_lan = g_pCVar->FindVar( "sv_lan");
 	sv_gravity = g_pCVar->FindVar( "sv_gravity");
-	cs_stacking_num_levels = g_pCVar->FindVar( "cs_stacking_num_levels");
+	//cs_stacking_num_levels = g_pCVar->FindVar( "cs_stacking_num_levels");
 
 	sv_cheats = g_pCVar->FindVar( "sv_cheats");
 	sv_alltalk = g_pCVar->FindVar( "sv_alltalk");
@@ -988,7 +987,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 
 	sv_lan = g_pCVar->FindVar( "sv_lan");
 	sv_gravity = g_pCVar->FindVar( "sv_gravity");
-	cs_stacking_num_levels = g_pCVar->FindVar( "cs_stacking_num_levels");
+	//cs_stacking_num_levels = g_pCVar->FindVar( "cs_stacking_num_levels");
 
 	sv_cheats = g_pCVar->FindVar( "sv_cheats");
 	sv_alltalk = g_pCVar->FindVar( "sv_alltalk");
@@ -9697,6 +9696,7 @@ CONVAR_CALLBACK_FN(ManiTickrate)
 
 CONVAR_CALLBACK_FN(ManiCSStackingNumLevels)
 {
+	/*
 	if (!FStrEq(pOldString, mani_tickrate.GetString()))
 	{
 		if (cs_stacking_num_levels)
@@ -9705,6 +9705,7 @@ CONVAR_CALLBACK_FN(ManiCSStackingNumLevels)
 			cs_stacking_num_levels->SetValue(mani_tickrate.GetInt());
 		}
 	}
+	*/
 }
 
 CONVAR_CALLBACK_FN(ManiUnlimitedGrenades)
@@ -9762,7 +9763,6 @@ CONVAR_CALLBACK_FN(DefaultExecChanged) {
 	
 	if ( tmp && (tmp[0] != 0) ) {
 		if ( FStrEq (tmp, "mani_server.cfg") ) return;
-		char	file_execute[512]="";
 		snprintf(file_execute, sizeof(file_execute), "exec \"%s\"\n", tmp);
 		engine->ServerCommand(file_execute);
 	}
