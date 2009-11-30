@@ -255,7 +255,7 @@ CONVAR_CALLBACK_FN(mp_restart_game_callback)
 	//Msg("hooked mp_restartgame %s\n", pVar->GetString());
 	if (pMPRestartGameCallback)
 	{
-		g_ManiMPRestartGame.CVarChanged(pVar);
+		g_ManiMPRestartGame.CVarChanged((ConVar*)pVar);
 #ifdef ORANGE
 		pMPRestartGameCallback(pVar, pOldString, pOldFloat);
 #else
