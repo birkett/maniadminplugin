@@ -6512,8 +6512,8 @@ bool CAdminPlugin::HookSayCommand(bool team_say, const CCommand &args)
 	time (&now);
 	int j = -1;
 	if ( mute_list_size != 0) {
+		j = 0;
 		for (;;) {
-			j = 0;
 			if ( mute_list[j].byID ) {
 				if ( FStrEq ( mute_list[j].key_id, player.steam_id ) )
 					break;
@@ -6522,7 +6522,7 @@ bool CAdminPlugin::HookSayCommand(bool team_say, const CCommand &args)
 					break;
 			}
 			j++;
-			if ( j >= (mute_list_size - 1) ) {
+			if ( j > (mute_list_size - 1) ) {
 				j=-1; //not muted
 				break;
 			}
