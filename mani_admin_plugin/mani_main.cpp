@@ -8625,7 +8625,17 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{
-				AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmute_anonymous.GetInt(), "muted player %s", target_player_list[i].name);
+				char perm[64] = "";
+
+				if ( !timetomute )
+					_snprintf( perm, sizeof(perm), "permanently" );
+				else
+					_snprintf( perm, sizeof(perm), "for %i minutes", timetomute );
+
+				if ( param3)
+					AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmute_anonymous.GetInt(), "muted player %s %s for %s", target_player_list[i].name, perm, param3);
+				else
+					AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminmute_anonymous.GetInt(), "muted player %s %s", target_player_list[i].name, perm);
 			}
 		}
 		else

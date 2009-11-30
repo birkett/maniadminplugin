@@ -137,6 +137,8 @@ bool ProcessMuteTalk
 	if (!voiceserver) return false;
 	if (war_mode) return false;
 
+	if (sv_alltalk && sv_alltalk->GetInt() == 1) return false;
+
 	player_t player_receiver;
 	player_t player_sender;
 
@@ -202,9 +204,7 @@ bool IsPlayerValid(player_t *player_ptr)
 		{
 			if (playerinfo->IsHLTV()) return false;
 			if (FStrEq(playerinfo->GetNetworkIDString(),"BOT")) return false;
-			player_ptr->team = playerinfo->GetTeamIndex();
-			if (playerinfo->IsDead()) return true;
-			return false;
+			return true;
 		}
 	}
 
