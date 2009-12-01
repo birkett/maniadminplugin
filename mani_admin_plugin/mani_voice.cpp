@@ -117,7 +117,7 @@ bool	ProcessDeadAllTalk
 
 	if (gpManiGameType->IsValidActiveTeam(player_sender.team) && gpManiGameType->IsValidActiveTeam(player_receiver.team))
 	{
-		if (player_sender.team != player_receiver.team)
+		if ((player_sender.team != player_receiver.team) && player_sender.is_dead && player_receiver.is_dead)
 		{
 			*new_listen = true;
 			return true;
@@ -137,16 +137,14 @@ bool ProcessMuteTalk
 	if (!voiceserver) return false;
 	if (war_mode) return false;
 
-	if (sv_alltalk && sv_alltalk->GetInt() == 1) return false;
-
 	player_t player_receiver;
 	player_t player_sender;
 
 	player_sender.index = sender_index;
 	player_receiver.index = receiver_index;
 
-	if (!IsPlayerValid(&player_sender)) return false;
 	if (!IsPlayerValid(&player_receiver)) return false;
+	if (!IsPlayerValid(&player_sender)) return false;
 
 	// Mute player output
 	time_t now;
@@ -204,6 +202,8 @@ bool IsPlayerValid(player_t *player_ptr)
 		{
 			if (playerinfo->IsHLTV()) return false;
 			if (FStrEq(playerinfo->GetNetworkIDString(),"BOT")) return false;
+			player_ptr->team = playerinfo->GetTeamIndex();
+			player_ptr->is_dead = playerinfo->IsDead();
 			return true;
 		}
 	}
