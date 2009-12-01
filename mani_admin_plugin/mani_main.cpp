@@ -1252,6 +1252,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		}
 		filesystem->Close(file_handle);
 	}
+	WriteBans(); // flush out expired temp bans
 
 	//Get muted list
 	ban_settings_t muted_player;
@@ -1279,6 +1280,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		}
 		filesystem->Close(file_handle);
 	}
+	WriteMutes(); // flush out expired temp mutes 
 
 	//Get single player cexec list
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cexeclist_player.txt", mani_path.GetString());
@@ -1533,8 +1535,6 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 	gpManiWeaponMgr->LevelShutdown();
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
 	gpManiMPRestartGame->LevelShutdown();
-	WriteBans();
-	WriteMutes();
 }
 
 //---------------------------------------------------------------------------------
