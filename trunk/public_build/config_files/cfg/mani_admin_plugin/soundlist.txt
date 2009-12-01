@@ -37,22 +37,14 @@
 // in order to work.
 
 
-"Waiting For Suspect" admin_plugin/waitingforsuspect.mp3
-"Don't just stand there, pick up the gun and shoot it !" admin_plugin/dontjuststandthere.wav
-"Who ate all the donuts ?" admin_plugin/donuteater.wav
-"Do you smell something ?" admin_plugin/doyousmell.wav
-"With my brains and your brawn we'll make an excellent team" admin_plugin/excellentteam.wav
-
-"Hello" admin_plugin/hellosoft.wav
-"Don't ask me" admin_plugin/dontaskme.wav
-"Could it get any worse than this ?" admin_plugin/getanyworse.wav
-"See ya later" admin_plugin/seeya.wav
-"Oh you'll pay, you will definately pay !!" admin_plugin/youwillpay.wav
-
-"Laughing sounds" admin_plugin/laugh.wav
-"Move !!" admin_plugin/move.wav
-"Good luck out there, you're gonna need it" admin_plugin/goodluck.mp3
-"1069er 1069er We got whores in the city, we need backup now, cmon" admin_plugin/whores.wav
-"I am the great Cornholio" admin_plugin/cornholio.wav
-
+"Best man won" admin_plugin/bestman.wav
+"Boo!" admin_plugin/boo.wav
+"Cry some more!" admin_plugin/crysomemore.wav
+"Didn't happen" admin_plugin/didnot.wav
+"Evil laugh" admin_plugin/evillaugh.wav
+"Owning You!" admin_plugin/owningyou1.wav
+"Personal" admin_plugin/personal.wav
+"Pffft!" admin_plugin/pfft.wav
+"This sucks!" admin_plugin/thissucks.wav
+"Wath the... !" admin_plugin/wth.wav
 
