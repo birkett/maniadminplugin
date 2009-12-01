@@ -1,0 +1,83 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : crontablist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Commands that should be executed at a specific time
+// *****************************************************************************
+//
+//
+// Place all your server commands that you want
+// executed at the start of each map during
+// specified times of particular days
+//
+// The first field defines the days of the week
+// that the command will be run. If the field
+// is left as "" the command will be run every day of the week
+//
+// Days of the week are
+//
+// 1 = Sunday
+// 2 = Monday
+// 3 = Tuesday
+// 4 = Wednesday
+// 5 = Thursday
+// 6 = Friday
+// 7 = Saturday
+//
+// To have a command run on Tuesday and Friday use
+// the day string
+// 
+// "36"
+//
+// For Monday, Wednesday and Saturday use: -
+//
+// "247"
+//
+// The second field defines the time of day that
+// the server should run the command and is setup
+// in the following format "HH:MI-HH:MI"
+//
+// Start time to End time
+//
+// "09:30-14:10"
+//
+// The above time range is from 9.30am to 2:10pm. The time
+// format MUST be in military 24 hour style, any hours below 10:00 must
+// start with a preceeding 0 as in 01:00, 02:00, 03:00, you must
+// not use 1:10 for instance.
+//
+// The third field instructs the server the command
+// to run at the start of each map during that time
+// period. For example 
+//
+// "" "09:30-15:10" exec daytime_config.cfg
+//
+// The above line will run the command 'exec daytime_config.cfg' 
+// on the start of each map during the time period 09.30 upto and
+// including 15:10 for every day of the week. 
+// If you only wanted it to run on Monday, Wednesday and Friday
+// the line would look like
+//
+// "246" "09:30-15:10" exec daytime_config.cfg
+//
+// The default configuration is to run your command before
+// any custom map config is run (see map_configs folder)
+//
+// If you place a # symbol before the server command it will
+// be run after any custom map config is exectuted.
+//
+// "" "19:00-21:59" #sv_gravity 800
+//
+// The above command will be run from 19:00 to and including
+// 21:59 each time a map starts but after any custom map configs.
+// In this case if you have a low grav map that uses a custom map
+// config to set sv_gravity to say 150. The above command will 
+// override that setting.
+//
+// You can have as many entries in this file as you wish.
+//
+
+

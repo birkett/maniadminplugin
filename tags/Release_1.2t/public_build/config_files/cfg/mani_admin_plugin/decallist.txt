@@ -1,0 +1,33 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : decallist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : List decal textures to be available for custom effects via
+//                ma_effect and for the map adverts
+// *****************************************************************************
+
+
+"decallist.txt"
+{
+	// The first label is the name you use within the ma_effect command and ma_decal to reference
+	// the decal texture, the second is the location of the decal itself
+	// You can view the decals from the Valve Hammer Editor.
+
+	"lambda"	"decals/lambdaspray_2a"
+	"mani_logo"	"decals/custom/mani_admin_plugin/mani_logo"
+
+	"downloads"
+	{
+		// Add your auto downloads here, each player will be forced
+		// to download this content. Try to make your own decal filenames to
+		// be unique as possible as your download will NOT overwrite an
+		// existing file with the same name.
+		//
+
+		"mani_logo.vmt"	"materials/decals/custom/mani_admin_plugin/mani_logo.vmt"
+		"mani_logo.vtf"	"materials/decals/custom/mani_admin_plugin/mani_logo.vtf"
+	}
+}

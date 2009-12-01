@@ -1,0 +1,56 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : commandlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Change the in game say commands by replacing them with your
+//                own commands
+// *****************************************************************************
+//
+//
+// The format is "yourcommand" type replacement command
+//
+// The type refers to either: -
+//
+// R = an RCON command to be executed (User must be admin with RCONSay
+//     authorisation
+//
+// An example would be: -
+// 
+// "@botadd" R bot_add
+// "@alltalk" R sv_alltalk 1
+// "@rr" R mp_restartgame 2
+//
+//
+// C = run a client command on your machine, anyone can use these
+//
+// An example would be: -
+//
+// "@menu" C admin
+// "@vote" C say votemap
+// "@kickmenu" C admin kick
+//
+// S = replace an @say command with your own version
+//
+// An example would be: -
+//
+// "@torch" S @ma_burn
+// "@kill" S @ma_slay
+//
+// Note that comments must be started on a new line
+// Do not do "@botadd" R bot_add // command to add bots
+//
+
+"@botadd" R bot_add
+"@alltalk" R sv_alltalk 1
+"@rr" R mp_restartgame 2
+
+"@menu" C admin
+"@vote" C say votemap
+
+"@torch" S @ma_burn
+"@kill" S @ma_slay
+
+

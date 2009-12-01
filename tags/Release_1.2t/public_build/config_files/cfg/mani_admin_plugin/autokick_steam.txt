@@ -1,0 +1,19 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//    Filename   : autokick_steam.txt
+//
+//    Last Updated : 2009/11/24
+//
+//    Description  : list of steam ids that are autokicked
+// *****************************************************************************
+//
+//
+// This file contains the list of steam_id that
+// are automatically kicked upon joining
+//
+//
+// The first and only entry is the steam_id.
+//
+// STEAM_0:0:0000000
+//

@@ -1,0 +1,36 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : texturelist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : List textures to be available for being used with ma_effect
+// *****************************************************************************
+
+
+"texturelist.txt"
+{
+	// The first label is the name you use within the ma_effect command to reference
+	// the sprite texture, the second is the location of the sprite itself withing /hl2/materials/
+	// You can view the sprites from the Valve Hammer Editor.
+
+	// "lightning"		"sprites/lgtning.vmt"
+	// "smoke"			"sprites/steam1.vmt"
+	// "blueglow"		"sprites/blueglow1.vmt"
+	// "crystalbeam"		"sprites/crystal_beam1.vmt"
+	// "rib"			"models/gibs/hgibs_rib.mdl"
+	// "scapula"		"models/gibs/hgibs_scapula.mdl"
+	// "spine"			"models/gibs/hgibs_spine.mdl"
+	// "skull1"		"models/gibs/hgibs.mdl"
+
+	"downloads"
+	{
+		// Add your auto downloads here, each player will be forced
+		// to download this content
+		//
+
+		// "my_vmtfile.vmt"	"materials/sprites/custom/mani_admin_plugin/mani_logo.vmt"
+		// "my_vtffile.vtf"	"materials/sprites/custom/mani_admin_plugin/mani_logo.vtf"
+	}
+}
