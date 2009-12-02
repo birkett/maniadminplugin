@@ -46,5 +46,5 @@
 "Personal" admin_plugin/personal.wav
 "Pffft!" admin_plugin/pfft.wav
 "This sucks!" admin_plugin/thissucks.wav
-"Wath the... !" admin_plugin/wth.wav
+"What the... !" admin_plugin/wth.wav
 
