@@ -343,6 +343,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	GET_V_IFACE(GetServerFactory, serverdll, IServerGameDLL, INTERFACEVERSION_SERVERGAMEDLL);
 	GET_V_IFACE(GetEngineFactory, voiceserver, IVoiceServer, INTERFACEVERSION_VOICESERVER);
 	GET_V_IFACE(GetServerFactory, serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
+	g_pCVar = GetICVar();
 #else
 	GET_V_IFACE(serverFactory, playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER);
 	GET_V_IFACE(engineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
@@ -372,13 +373,10 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	//Init our cvars/concmds
 #if defined ORANGE
-	g_pCVar = GetICVar();
 	ConVar_Register(0, this);
 #else
 	ConCommandBaseMgr::OneTimeInit(this);
 #endif
-//	ConCommandBaseMgr::OneTimeInit(&g_Accessor);
-
 	//We're hooking the following things as POST, in order to seem like Server Plugins.
 	//However, I don't actually know if Valve has done server plugins as POST or not.
 	//Change the last parameter to 'false' in order to change this to PRE.
