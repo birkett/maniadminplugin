@@ -162,6 +162,8 @@ bool FillINFOQuery ( const mem_t* data, int data_len, A2S_INFO_t &info, mem_t **
 #if defined ( ORANGE )
 #define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8)
 DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int ) {
+	if ( !mani_reserve_slots.GetBool() )
+		return CCD_MEMBER_CALL(p6);
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( p8 >= 20 )
@@ -169,6 +171,8 @@ DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char 
 #else
 #define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8,p9,pA)
 DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int ) {
+	if ( !mani_reserve_slots.GetBool() )
+		return CCD_MEMBER_CALL(p6);
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( pA >= 16 )
@@ -190,8 +194,8 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 			int kick_index = gpManiReservedSlot->FindPlayerToKick();
 
 			if ( kick_index < 1 ) {
-				return CCD_MEMBER_CALL(p6);
 				engine->LogPrint("MAP:  Error, couldn't find anybody to kick for reserved slots!!!\n");
+				return CCD_MEMBER_CALL(p6);
 			}
 
 			Q_memset ( &player, 0, sizeof(player) );
@@ -240,15 +244,14 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 			bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 			bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
 
-			if (AdminAccess || ReservedAccess) {
+			if ( mani_reserve_slots.GetBool() && (AdminAccess || ReservedAccess)) {
 				if ( pPlayers ) {
 					if (pPlayers[0] == pPlayers[1]) 
 						pPlayers[1] = (mem_t)max_players+1;
 				}
-
-				if ( AdminAccess && pPassword && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
-					pPassword[0]=0;
 			}
+			if ( AdminAccess && pPassword && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
+				pPassword[0]=0;
 		}
 	}
 	return NSPD_NON_MEMBER_CALL;
