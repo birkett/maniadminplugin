@@ -183,7 +183,7 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 
 
 CONVAR_CALLBACK_PROTO (ManiAdminPluginVersion);
-CONVAR_CALLBACK_PROTO (ManiAdminPluginBetaBuild);
+CONVAR_CALLBACK_PROTO (ManiAdminBuildDate);
 CONVAR_CALLBACK_PROTO (ManiTickrate);
 CONVAR_CALLBACK_PROTO (WarModeChanged);
 CONVAR_CALLBACK_PROTO (ManiStatsBySteamID);
@@ -193,6 +193,7 @@ CONVAR_CALLBACK_PROTO (DefaultExecChanged);
 
 
 ConVar mani_admin_plugin_version ("mani_admin_plugin_version", PLUGIN_CORE_VERSION, FCVAR_REPLICATED | FCVAR_NOTIFY, "This is the version of the plugin", CONVAR_CALLBACK_REF(ManiAdminPluginVersion));
+ConVar mani_admin_build_date ( "mani_admin_build_date", __DATE__, 0, "The date this binary was built.", CONVAR_CALLBACK_REF(ManiAdminBuildDate));
 ConVar mani_war_mode ("mani_war_mode", "0", 0, "This defines whether war mode is enabled or disabled (1 = enabled)", true, 0, true, 1, CONVAR_CALLBACK_REF(WarModeChanged));
 ConVar mani_stats_by_steam_id ("mani_stats_by_steam_id", "1", 0, "This defines whether the steam id is used or name is used to organise the stats (1 = steam id)", true, 0, true, 1, CONVAR_CALLBACK_REF(ManiStatsBySteamID));
 ConVar mani_tickrate ("mani_tickrate", "", FCVAR_REPLICATED | FCVAR_NOTIFY, "Server tickrate information", CONVAR_CALLBACK_REF(ManiTickrate));
@@ -9693,6 +9694,13 @@ CONVAR_CALLBACK_FN(ManiAdminPluginVersion)
 	if (!FStrEq(pOldString, mani_admin_plugin_version.GetString()))
 	{
 		mani_admin_plugin_version.SetValue(PLUGIN_CORE_VERSION);
+	}
+}
+
+CONVAR_CALLBACK_FN(ManiAdminBuildDate) {
+	if (!FStrEq(pOldString, mani_admin_build_date.GetString()))
+	{
+		mani_admin_build_date.SetValue(__DATE__);
 	}
 }
 
