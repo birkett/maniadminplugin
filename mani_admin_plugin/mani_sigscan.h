@@ -103,8 +103,8 @@ class CBaseEntityList;
 
 // Used in Reserve Slots - Thanks to *pRED
 #if defined ( ORANGE )
-	#define CBaseServer_ConnectClient_Sig "\x56\x68\x2A\x2A\x2A\x2A\x8B\xF1\xFF\x15\x2A\x2A\x2A\x2A\x8B\x06\x8B\x50"
-	#define CBaseServer_ConnectClient_SigBytes 18
+	#define CBaseServer_ConnectClient_Sig "\x83\x2A\x2A\x56\x68\x2A\x2A\x2A\x2A\x8B\xF1\xFF\x15\x2A\x2A\x2A\x2A\x8B\x06\x8B\x50"
+	#define CBaseServer_ConnectClient_SigBytes 21
 	#define CBaseServer_ConnectClient_Linux "_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
 #else
 	#define CBaseServer_ConnectClient_Sig "\x56\x68\x2A\x2A\x2A\x2A\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x8B\x06\x83\xC4\x04\x8B\xCE"
