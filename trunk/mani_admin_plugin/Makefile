@@ -115,7 +115,7 @@ LDFLAGS=-lm -ldl tier0_i486.so vstdlib_i486.so
 
 # the CPU target for the build, must be i486 for now
 ARCH=i486
-ARCH_CFLAGS=-mtune=i686 -march=pentium3 -mmmx -O3 -m32 -msse2
+ARCH_CFLAGS=-mfpmath=sse -msse -O3 -m32
 
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
 BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
