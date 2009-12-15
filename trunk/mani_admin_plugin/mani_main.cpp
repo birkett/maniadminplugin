@@ -2079,13 +2079,13 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 }
 
 LOADUP_STATUS CAdminPlugin::ScanLoadup( void ) {
+	DECL_STR ( path, 256 );
+#if defined ( SOURCEMM )
 	ConVar *mmpath = g_pCVar->FindVar ( "mm_pluginsfile" );
 	ConVar *mmver = g_pCVar->FindVar ( "metamod_version" );
-	DECL_STR ( path, 256 );
-
-	GetVDFPath ( path, ( mmpath ) ? mmpath->GetString() : NULL );
 
 	if ( mmpath ) { // sourcemm
+		GetVDFPath ( path, mmpath->GetString() );
 		Q_strcat ( path, "/metaplugins.ini", sizeof(path) );
 		if ( UTIL_ScanValveFile ( path, "mani_admin_plugin" ) )
 			return LOADUP_EXISTS;
@@ -2100,14 +2100,17 @@ LOADUP_STATUS CAdminPlugin::ScanLoadup( void ) {
 
 			return MakeVDF ( path, true );
 		}
-	} else {
-		Q_strcat ( path, "/mani_admin_plugin.vdf", sizeof(path) );
-		if ( filesystem->FileExists ( path ) )
-			return LOADUP_EXISTS;
-
-		return MakeVDF ( path, false );
 	}
 	return LOADUP_FAILED;
+
+#else
+	SET_STR ( path, "addons" );
+	Q_strcat ( path, "/mani_admin_plugin.vdf", sizeof(path) );
+	if ( filesystem->FileExists ( path ) )
+		return LOADUP_EXISTS;
+
+	return MakeVDF ( path, false );
+#endif
 }
 
 void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
@@ -2123,10 +2126,7 @@ void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
 				local_source[source_slash] = 0;
 		}
 	}
-
-	if ( local_source[0]==0 )
-		SET_STR ( local_source, "addons" );
-
+	
 	SET_STR ( path, local_source );
 }
 
