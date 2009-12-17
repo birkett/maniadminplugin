@@ -127,8 +127,10 @@ void GetLinuxBins ( char *game, char *engine ) {
 
 	if ( UTIL_ScanFile ( file, "engine_i686.so" ) )
 		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
-	else
+	else if ( UTIL_ScanFile ( file, "engine_i486.so" ) )
 		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
+	else
+		Q_strncpy ( engine, "./bin/engine_amd.so", 256 );
 
 	char gamedir[256];
 	UTIL_GetGamePath ( gamedir );
