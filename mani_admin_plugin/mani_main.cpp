@@ -522,6 +522,7 @@ bool CAdminPlugin::Load(void)
 //MMsg("Gametypes version [%i]\n", ver);
 
 	gpManiGameType->Init();
+	filesystem->CreateDirHierarchy( "./cfg/mani_admin_plugin/data/");
 	gpCmd->Load();
 	g_menu_mgr.Load();
 
@@ -760,8 +761,6 @@ bool CAdminPlugin::Load(void)
 
 	gpManiAutoMap->Load();
 
-	filesystem->CreateDirHierarchy( "./cfg/mani_admin_plugin/data/");
-
 	// Work out server tickrate
 #ifdef __linux__
 	server_tickrate = (int) ((1.0 / serverdll->GetTickInterval()) + 0.5);
@@ -894,6 +893,7 @@ void CAdminPlugin::Unload( void )
 	gpManiAutoMap->Unload();
 	gpManiAntiRejoin->Unload();
 	gpManiMPRestartGame->Unload();
+	gpManiReservedSlot->Unload();
 	gpManiObserverTrack->Unload();
 
 }
@@ -1560,7 +1560,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if ( pname && pname[0] == 0 )
 		pname = NULL;
 
-	if ( !pname ) {
+	if ( !pname && !player.is_bot ) {
 		char	kick_cmd[512];
 		PrintToClientConsole(player.entity, "Empty name violation\n");
 		snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Empty name violation\n", player.user_id);
