@@ -1717,8 +1717,8 @@ void	ProcessNoClipPlayer(player_t *player)
 		sv_cheats->SetValue(1);
 		helpers->ClientCommand(player->entity, "noclip");
 		sv_cheats->SetValue(0);
-        sv_cheats->m_nFlags &= ~FCVAR_SPONLY;
-        sv_cheats->m_nFlags &= ~FCVAR_NOTIFY;
+        sv_cheats->m_nFlags |= FCVAR_SPONLY;
+        sv_cheats->m_nFlags |= FCVAR_NOTIFY;
 	}
 	else
 	{

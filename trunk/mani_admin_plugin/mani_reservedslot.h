@@ -85,7 +85,7 @@ public:
 	bool		IsPlayerInReserveList(player_t *player_ptr);
 	int			FindPlayerToKick( void );
 	void		DisconnectPlayer(player_t *player_ptr);
-
+	void		Unload(void); //run at plugin unload
 private:
 //	bool		ProcessPlayer(player_t *player_ptr);
 	void		BuildPlayerKickList();

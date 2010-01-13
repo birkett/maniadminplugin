@@ -162,8 +162,6 @@ bool FillINFOQuery ( const mem_t* data, int data_len, A2S_INFO_t &info, mem_t **
 #if defined ( ORANGE )
 #define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8)
 DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int ) {
-	if ( !mani_reserve_slots.GetBool() )
-		return CCD_MEMBER_CALL(p6);
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( p8 >= 20 )
@@ -171,8 +169,6 @@ DECL_MEMBER_DETOUR8_void(ConnectClientDetour, void *, int, int, int, const char 
 #else
 #define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8,p9,pA)
 DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int ) {
-	if ( !mani_reserve_slots.GetBool() )
-		return CCD_MEMBER_CALL(p6);
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( pA >= 16 )
@@ -184,26 +180,28 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	strcpy ( player.steam_id, SteamID.Render() );
 	bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 
-	if ( total_players == max_players ) {
-		if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
-			return CCD_MEMBER_CALL(p6);
+	if ( mani_reserve_slots.GetBool() ) {
 
-		bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
-
-		if ( AdminAccess || ReservedAccess ) {
-			int kick_index = gpManiReservedSlot->FindPlayerToKick();
-
-			if ( kick_index < 1 ) {
-				engine->LogPrint("MAP:  Error, couldn't find anybody to kick for reserved slots!!!\n");
+		if ( total_players == max_players ) {
+			if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
 				return CCD_MEMBER_CALL(p6);
+
+			bool ReservedAccess = gpManiReservedSlot->IsPlayerInReserveList(&player);
+
+			if ( AdminAccess || ReservedAccess ) {
+				int kick_index = gpManiReservedSlot->FindPlayerToKick();
+
+				if ( kick_index < 1 ) {
+					engine->LogPrint("MAP:  Error, couldn't find anybody to kick for reserved slots!!!\n");
+					return CCD_MEMBER_CALL(p6);
+				}
+
+				Q_memset ( &player, 0, sizeof(player) );
+				player.index = kick_index;
+				FindPlayerByIndex(&player);
+				gpManiReservedSlot->DisconnectPlayer(&player);
 			}
-
-			Q_memset ( &player, 0, sizeof(player) );
-			player.index = kick_index;
-			FindPlayerByIndex(&player);
-			gpManiReservedSlot->DisconnectPlayer(&player);
 		}
-
 	}
 
 	ConVar *pwd = g_pCVar->FindVar( "sv_password" );
@@ -355,6 +353,17 @@ void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 	//}
 
 	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Remove the detours
+//---------------------------------------------------------------------------------
+void ManiReservedSlot::Unload() {
+	if ( ManiClientConnectDetour )
+		ManiClientConnectDetour->Destroy();
+
+	if ( ManiNetSendPacketDetour )
+		ManiNetSendPacketDetour->Destroy();
 }
 
 //---------------------------------------------------------------------------------
