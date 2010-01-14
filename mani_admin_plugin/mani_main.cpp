@@ -1490,6 +1490,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 		client_sql_manager->GameFrame();
 	}
 
+	gpManiReservedSlot->GameFrame();
 	gpManiSprayRemove->GameFrame();
 	gpManiWarmupTimer->GameFrame();
 	gpManiAFK->GameFrame();
