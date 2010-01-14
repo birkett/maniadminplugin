@@ -86,6 +86,7 @@ public:
 	int			FindPlayerToKick( void );
 	void		DisconnectPlayer(player_t *player_ptr);
 	void		Unload(void); //run at plugin unload
+	void		GameFrame(void);
 private:
 //	bool		ProcessPlayer(player_t *player_ptr);
 	void		BuildPlayerKickList();
