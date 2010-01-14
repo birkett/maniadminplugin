@@ -424,6 +424,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_ban_message.GetString());
 				OutputHelpText(GREEN_CHAT, player_ptr, "%s", mani_spray_tag_ban_message.GetString());
 				// Ban by user id
+				LogCommand (NULL,"Ban (Spray Tag) [%s] [%s]", player.name, player.steam_id);
 				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", mani_spray_tag_ban_time.GetInt(), "Spray Tag Ban", "Spray Tag Ban" );
 			}
 			else
@@ -459,6 +460,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				}
 
 				// Ban by steam id
+				LogCommand (NULL,"Ban (Spray Tag) [%s] [%s]", player.name, player.steam_id);
 				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", mani_spray_tag_ban_time.GetInt(), "Spray Tag Ban", "Spray Tag Ban" );
 			}
 			gpManiAdminPlugin->WriteBans();
@@ -492,6 +494,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				OutputHelpText(LIGHT_GREEN_CHAT, &player, "%s", mani_spray_tag_perm_ban_message.GetString());
 				OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_perm_ban_message.GetString());
 				// Ban by user id
+				LogCommand (NULL,"Ban (Spray Tag - permanent) [%s] [%s]", player.name, player.steam_id);
 				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", 0, "Permanent Spray Tag Ban", "Permanent Spray Tag Ban" );
 			}
 			else
@@ -527,6 +530,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 				}
 
 				// Ban by steam id
+				LogCommand (NULL,"Ban (Spray Tag - permanent) [%s] [%s]", player.name, player.steam_id);
 				gpManiAdminPlugin->AddBan ( &player, player.steam_id, "MAP", 0, "Permanent Spray Tag Ban", "Permanent Spray Tag Ban" );
 			}
 			gpManiAdminPlugin->WriteBans();
