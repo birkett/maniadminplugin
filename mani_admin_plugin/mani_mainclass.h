@@ -80,11 +80,17 @@ public:
 	LOADUP_STATUS	MakeVDF ( char *path, bool SMM);
 	LOADUP_STATUS	MakeOrAddToINI ( char *path );
 
-	void			WriteBans( void );
 	void			PrintHeader ( FileHandle_t f, const char *fn, const char *ds );
+
+	void			WriteBans( void );
 	bool			AddBan ( ban_settings_t *ban );
 	bool			AddBan ( player_t *player, const char *key, const char *initiator, int ban_time = 0, const char *prefix = NULL, const char *reason = NULL );
 	bool			RemoveBan ( const char *key );
+
+	void			WriteMutes( void );
+	bool			AddMute ( ban_settings_t *ban );
+	bool			AddMute ( player_t *player, const char *key, const char *initiator, int ban_time = 0, const char *prefix = NULL, const char *reason = NULL );
+	bool			RemoveMute ( const char *key );
 
 	void			ProcessExplodeAtCurrentPosition( player_t *player);
 	bool			CanTeleport(player_t *player);
@@ -216,15 +222,16 @@ MENUALL_DEC(PlayerManagement);
 MENUALL_DEC(PunishType);
 MENUALL_DEC(VoteType);
 MENUALL_DEC(VoteDelayType);
-MENUALL_DEC(BanOptions);
 MENUALL_DEC(SlapOptions);
 MENUALL_DEC(BlindOptions);
-MENUALL_DEC(BanType);
-MENUALL_DEC(UnBanType);
 MENUALL_DEC(KickType);
 MENUALL_DEC(CExecOptions);
 MENUALL_DEC(ConfigOptions);
 MENUALL_DEC(BanPlayer);
+MENUALL_DEC(BanType);
+MENUALL_DEC(BanOptions);
+
+MENUALL_DEC(UnBanType);
 MENUALL_DEC(UnBanPlayer);
 MENUALL_DEC(UnBanPlayerDetails);
 
