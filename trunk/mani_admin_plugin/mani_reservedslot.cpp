@@ -366,7 +366,7 @@ void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 		kv->SetString("time","10");
 		kv->SetString("title", mani_reserve_slots_redirect.GetString());
 		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
-		helpers->CreateMessage( player_ptr->entity, 4, kv, gpManiISPCCallback);
+		helpers->CreateMessage( player_ptr->entity, DIALOG_ASKCONNECT, kv, gpManiISPCCallback);
 		memcpy ( &kick_player, player_ptr, sizeof(player_t) );
 		kick_time=gpGlobals->absoluteframetime;
 	}
@@ -468,7 +468,7 @@ int	ManiReservedSlot::FindPlayerToKick ( ) {
 //---------------------------------------------------------------------------------
 // Purpose: Builds up a list of players that are 'kickable'
 //---------------------------------------------------------------------------------
-void ManiReservedSlot::BuildPlayerKickList( )
+void ManiReservedSlot::BuildPlayerKickList( player_t *player_ptr, int *players_on_server )
 {
 	player_t	temp_player;
 	active_player_t active_player;
@@ -478,7 +478,7 @@ void ManiReservedSlot::BuildPlayerKickList( )
 	for (int i = 1; i <= max_players; i ++)
 	{
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree())
+		if(pEntity && !pEntity->IsFree() && pEntity != player_ptr->entity)
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
 			if (playerinfo && playerinfo->IsConnected())
@@ -522,7 +522,9 @@ void ManiReservedSlot::BuildPlayerKickList( )
 				active_player.user_id = playerinfo->GetUserID();
 				Q_strcpy(active_player.name, playerinfo->GetName());
 
-//				*players_on_server = *players_on_server + 1;
+				if ( players_on_server )
+					*players_on_server = *players_on_server + 1;
+
 				active_player.kills = playerinfo->GetFragCount();
 				active_player.deaths = playerinfo->GetDeathCount();
 				Q_strcpy(temp_player.steam_id, active_player.steam_id);
@@ -672,10 +674,6 @@ static int sort_active_players_by_kd_ratio ( const void *m1,  const void *m2)
 
 }
 
-bool ManiReservedSlot::NetworkIDValidated(player_t *player_ptr) {
-	return true;
-}
-#if 0
 //---------------------------------------------------------------------------------
 // Purpose: Check Player on connect
 //---------------------------------------------------------------------------------
@@ -844,6 +842,6 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 
 	return true;
 }
-#endif
+
 ManiReservedSlot	g_ManiReservedSlot;
 ManiReservedSlot	*gpManiReservedSlot;
