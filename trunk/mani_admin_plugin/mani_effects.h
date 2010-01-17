@@ -89,7 +89,7 @@ extern	void	ProcessFreezePlayer(player_t *player_ptr, bool admin_called);
 extern	void	ProcessUnFreezePlayer(player_t *player_ptr);
 extern	void	ProcessDrugPlayer(player_t *player, bool admin_called);
 extern	void	ProcessUnDrugPlayer(player_t *player);
-extern	void	ProcessMutePlayer(player_t *player);
+extern	void	ProcessMutePlayer(player_t *player, player_t *giver, int timetomute, const char *reason = NULL);
 extern	void	ProcessUnMutePlayer(player_t *player);
 extern	void	ProcessTeleportPlayer(player_t *player_to_teleport, Vector *origin_ptr);
 extern	void	ProcessSaveLocation(player_t *player);

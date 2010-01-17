@@ -246,7 +246,8 @@ int	swear_list_size;
 
 ban_settings_t		*ban_list;
 int	ban_list_size;
-
+ban_settings_t		*mute_list;
+int mute_list_size;
 
 int	cexec_list_size;
 int	cexec_t_list_size;
@@ -931,6 +932,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	char	swear_word[128];
 	char	rcon_command[512];
 	char	ban_list_line[512];
+	char	mute_list_line[512];
 	int		i;
 	char	map_config_filename[256];
 	char	base_filename[256];
@@ -1249,6 +1251,33 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		filesystem->Close(file_handle);
 	}
 
+	//Get muted list
+	ban_settings_t muted_player;
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/mutelist.txt", mani_path.GetString());
+	file_handle = filesystem->Open (base_filename,"rt",NULL);
+	if (file_handle != NULL) {
+		while (filesystem->ReadLine (mute_list_line, sizeof(mute_list_line), file_handle) != NULL)
+		{
+			Q_memset ( &muted_player, 0, sizeof(ban_settings_t) );
+			if (!ParseBanLine(mute_list_line, &muted_player, true, false))
+			{
+				// String is empty after parsing
+				continue;
+			}
+
+			time_t now;
+			time ( &now );
+			int time_to_mute = 0;
+			if ( muted_player.expire_time != 0 ) {
+				time_to_mute = (int) (muted_player.expire_time - now)/60;
+			}
+			if ( time_to_mute >= 0 ) {
+				AddMute ( &muted_player );
+			}
+		}
+		filesystem->Close(file_handle);
+	}
+
 	//Get single player cexec list
 	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cexeclist_player.txt", mani_path.GetString());
 	file_handle = filesystem->Open (base_filename,"rt",NULL);
@@ -1513,6 +1542,7 @@ void CAdminPlugin::LevelShutdown( void ) // !!!!this can get called multiple tim
 	gameeventmanager->RemoveListener(gpManiIGELCallback);
 	gpManiMPRestartGame->LevelShutdown();
 	WriteBans();
+	WriteMutes();
 }
 
 //---------------------------------------------------------------------------------
@@ -1573,13 +1603,20 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 
 		// Player settings
 		PlayerJoinedInitSettings(&player);
-	}
 
-
-	if (!player.is_bot)
-	{
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_JOINSERVER);
 	}
+
+	time_t now;
+	time ( &now );
+
+	for ( int index = 0; index < mute_list_size; index++ ) {
+		if ( FStrEq(mute_list[index].key_id, player.steam_id)) {
+			if ( (mute_list[index].expire_time == 0) || ( now<mute_list[index].expire_time ) )
+				punish_mode_list[index].muted = MANI_ADMIN_ENFORCED;
+		}
+	}
+
 }
 
 
@@ -2108,6 +2145,29 @@ void CAdminPlugin::GetVDFPath ( char *path, const char *SourceMMPath ) {
 	SET_STR ( path, local_source );
 }
 
+void CAdminPlugin::PrintHeader ( FileHandle_t f, const char *fn, const char *ds ) {
+	if ( f == FILESYSTEM_INVALID_HANDLE )
+		return;
+
+	time_t now;
+	struct tm * timeinfo;
+	time ( &now );
+	timeinfo = localtime ( &now );
+
+	filesystem->FPrintf ( f, "// *****************************************************************************\n" );
+	filesystem->FPrintf ( f, "//    Plugin    : Mani Admin Plugin\n" );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//    Filename   : %s\n", fn );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//    Last Updated : %04d/%02d/%02d\n", timeinfo->tm_year+1900, timeinfo->tm_mon+1, timeinfo->tm_mday );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//    Description  : %s\n", ds );
+	filesystem->FPrintf ( f, "// *****************************************************************************\n" );
+	filesystem->FPrintf ( f, "//\n" );
+	filesystem->FPrintf ( f, "//\n" );
+}
+
+// BANS
 void CAdminPlugin::WriteBans ( void ) {
 	FileHandle_t file_handle;
 	char base_filename[256];
@@ -2250,26 +2310,114 @@ bool CAdminPlugin::RemoveBan( const char *key ) {
 
 	return found;
 }
-void CAdminPlugin::PrintHeader ( FileHandle_t f, const char *fn, const char *ds ) {
-	if ( f == FILESYSTEM_INVALID_HANDLE )
-		return;
 
+// MUTES
+void CAdminPlugin::WriteMutes ( void ) {
+	FileHandle_t file_handle;
+	char base_filename[256];
 	time_t now;
-	struct tm * timeinfo;
 	time ( &now );
-	timeinfo = localtime ( &now );
 
-	filesystem->FPrintf ( f, "// *****************************************************************************\n" );
-	filesystem->FPrintf ( f, "//    Plugin    : Mani Admin Plugin\n" );
-	filesystem->FPrintf ( f, "//\n" );
-	filesystem->FPrintf ( f, "//    Filename   : %s\n", fn );
-	filesystem->FPrintf ( f, "//\n" );
-	filesystem->FPrintf ( f, "//    Last Updated : %04d/%02d/%02d\n", timeinfo->tm_year+1900, timeinfo->tm_mon+1, timeinfo->tm_mday );
-	filesystem->FPrintf ( f, "//\n" );
-	filesystem->FPrintf ( f, "//    Description  : %s\n", ds );
-	filesystem->FPrintf ( f, "// *****************************************************************************\n" );
-	filesystem->FPrintf ( f, "//\n" );
-	filesystem->FPrintf ( f, "//\n" );
+	if ( mute_list ) {
+		snprintf(base_filename, sizeof (base_filename), "./cfg/%s/mutelist.txt", mani_path.GetString());
+		file_handle = filesystem->Open (base_filename,"wt",NULL);
+		if (file_handle != NULL) {
+			PrintHeader ( file_handle, "mutelist.txt", "list of steam ids and IPs that are muted" );
+			filesystem->FPrintf ( file_handle, "// This file contains the list of mutes that\n" );
+			filesystem->FPrintf ( file_handle, "// have been given via the ma_mute command.\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+			filesystem->FPrintf ( file_handle, "// The first entry is the STEAM_ID or the IP.\n" );
+			filesystem->FPrintf ( file_handle, "// The second entry is the time the mute expires. 0 = permanent.\n" );
+			filesystem->FPrintf ( file_handle, "// The third entry is who executed the mute. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The fourth entry ( optional ) is why the mute was given. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+			filesystem->FPrintf ( file_handle, "// STEAM_0:0:000000 0 \"RoadRunner\" \"Wile E. Coyote\" \"mic spam\"\n" );
+			filesystem->FPrintf ( file_handle, "//\n" );
+
+			for ( int index = 0; index < mute_list_size; index++ ) {
+				if ( (mute_list[index].expire_time != 0) && (mute_list[index].expire_time <= now) ) continue;
+				if ( mute_list[index].reason[0] != 0 )
+					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\" \"%s\"\n", mute_list[index].key_id, (int)mute_list[index].expire_time, mute_list[index].player_name, mute_list[index].ban_initiator, mute_list[index].reason );
+				else
+					filesystem->FPrintf ( file_handle, "%s %i \"%s\" \"%s\"\n", mute_list[index].key_id, (int)mute_list[index].expire_time, mute_list[index].player_name, mute_list[index].ban_initiator );
+			}
+			filesystem->Close(file_handle);
+		}
+	}
+}
+
+bool CAdminPlugin::AddMute ( ban_settings_t *mute ) {
+	bool found = false;
+	int index = 0;
+	while ( !found ) {
+		if ( found || (index == mute_list_size) ) break;
+		found = FStrEq ( mute->key_id, mute_list[index++].key_id );
+	}
+	mute->byID = ((mute->key_id[0] == 'S') || (mute->key_id[0] == 's'));
+
+	if ( !found ) {
+		AddToList((void **) &mute_list, sizeof(ban_settings_t), &mute_list_size);
+		mute_list[mute_list_size - 1] = *mute;
+	} else { // update mute
+		index--; // put it back to where it was found.
+		Q_strcpy ( mute_list[index].ban_initiator, mute->ban_initiator );
+		Q_strcpy ( mute_list[index].reason, mute->reason );
+		Q_strcpy ( mute_list[index].player_name, mute->player_name );
+		mute_list[index].expire_time = mute->expire_time;
+	}
+
+	return !found;
+}
+
+bool CAdminPlugin::AddMute ( player_t *player, const char *key, const char *initiator, int mute_time, const char *prefix, const char *reason ) {
+	ban_settings_t mute;
+	time_t now;
+	time ( &now );
+	Q_memset ( &mute, 0, sizeof (ban_settings_t));
+
+	if ( !player )
+		return false;
+
+	if ( !key || (key[0] == 0))
+		return false;
+
+	if ( !initiator || (initiator[0] == 0))
+		return false; 
+
+	if ( mute_time != 0 )
+		mute_time = now + ( mute_time * 60 );
+
+	Q_strcpy ( mute.key_id, key );
+	Q_strcpy ( mute.ban_initiator, initiator );
+	Q_strcpy ( mute.player_name, player->name );
+
+	mute.expire_time = (time_t)mute_time;
+	mute.byID = ( (key[0] == 'S') || (key[0] == 's') );
+	if ( reason )
+		Q_strcpy ( mute.reason, reason );
+
+	char *localprefix = ( prefix != NULL ) ? prefix : "Muted (By Admin)";
+	if ( reason )
+		LogCommand (player, "%s [%s] [%s] (REASON: %s)\n", localprefix, player->name, key, reason);
+	else
+		LogCommand (player, "%s [%s] [%s]\n", localprefix, player->name, key);
+
+	return AddMute ( &mute );
+}
+
+bool CAdminPlugin::RemoveMute( const char *key ) {
+	bool found = false;
+	int index = 0;
+	while ( !found ) {
+		if ( found || (index == mute_list_size) ) break;
+		found = FStrEq ( key, mute_list[index++].key_id );
+	}
+
+	if ( found )
+		mute_list[--index].expire_time = 1; // this ensures the mute will be removed on next write.
+
+	return found;
 }
 //---------------------------------------------------------------------------------
 // Purpose: Draw Primary menu
@@ -8170,8 +8318,17 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBeacon(player_t *player_ptr, const char *co
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
-	const char *target_string = gpCmd->Cmd_Argv(1);
-	const char *toggle = gpCmd->Cmd_Argv(2);
+	// ok, rewrite time ... two methods:  ma_mute <<
+	//		was
+	//  02089;;ma_mute <target> [optional mode 0 = disable mute, 1 = enable mute]
+	//  02090;;Mutes a target from chatting and speaking. Command works in toggle mode if optional parameter is not used
+	//		needs to be
+	//  02089;;ma_mute <target> [optional length of mute 0 = permanent] [optional reason]
+	//	02090;;Mutes a target from chatting and speaking.  Command works in toggle mode if only target is supplied.
+	//	if the command ma_mute <target> [reason] is given, then assume perma mute!
+	//		PARAM1 = <target>  ALWAYS
+	//		if PARAM2 = integer then PARAM3 = string/reason ( if it exists )
+	//		if PARAM2 = string, then no integer, reason `only.  ASSUME perma
 
 	if (player_ptr)
 	{
@@ -8180,6 +8337,22 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
+
+	const char *target_string = gpCmd->Cmd_Argv(1);
+	const char *param2 = NULL;
+	const char *param3 = NULL;
+	int timetomute = 0; // default to perma
+
+	if  ( gpCmd->Cmd_Argc() > 2 ) {
+		param2 = gpCmd->Cmd_Argv(2);
+		timetomute = atoi(param2);
+		if ( (timetomute == 0) && (param2[0] != '0' ) ) {
+			param3 = gpCmd->Cmd_Args(2);
+			param2 = "0";
+		}
+	}
+
+	if ( !param3 && (gpCmd->Cmd_Argc() > 3) ) param3 = gpCmd->Cmd_Args(3);
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_MUTE))
@@ -8197,23 +8370,22 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 			continue;
 		}
 
-		int	do_action = 0;
+		int do_action = 0;
 
-		if (gpCmd->Cmd_Argc() == 3)
-		{
-			do_action = atoi(toggle);
-		}
-		else
+		if ( !param2 && !param3 ) //toggle
 		{
 			if (!punish_mode_list[target_player_list[i].index - 1].muted)
 			{
 				do_action = 1;
 			}
+		} else {
+			do_action = 1;
 		}
 
 		if (do_action)
 		{
-			ProcessMutePlayer(&(target_player_list[i]));
+			timetomute = (param2) ? atoi(param2) : 0;
+			ProcessMutePlayer(&(target_player_list[i]), player_ptr, timetomute, param3);
 			LogCommand (player_ptr, "muted user [%s] [%s]\n", target_player_list[i].name, target_player_list[i].steam_id);
 			if (player_ptr || mani_mute_con_command_spam.GetInt() == 0)
 			{

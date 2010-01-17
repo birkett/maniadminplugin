@@ -42,6 +42,7 @@
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
 #include "mani_main.h"
+#include "mani_mainclass.h"
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_player.h"
@@ -1891,9 +1892,11 @@ void	ProcessSaveLocation(player_t *player)
 //---------------------------------------------------------------------------------
 // Purpose: Mute a player
 //---------------------------------------------------------------------------------
-void	ProcessMutePlayer(player_t *player)
+void	ProcessMutePlayer(player_t *player, player_t *giver, int timetomute, const char *reason)
 {
 	punish_mode_list[player->index - 1].muted = MANI_ADMIN_ENFORCED;
+	gpManiAdminPlugin->AddMute( player, player->steam_id, giver->name, timetomute, "Muted", reason);
+	gpManiAdminPlugin->WriteMutes();
 }
 
 //---------------------------------------------------------------------------------
@@ -1902,6 +1905,8 @@ void	ProcessMutePlayer(player_t *player)
 void	ProcessUnMutePlayer(player_t *player)
 {
 	punish_mode_list[player->index - 1].muted = 0;
+	gpManiAdminPlugin->RemoveMute(player->steam_id);
+	gpManiAdminPlugin->WriteMutes();
 }
 //---------------------------------------------------------------------------------
 // Purpose: Drug a player
