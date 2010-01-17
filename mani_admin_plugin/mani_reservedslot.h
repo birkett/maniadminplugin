@@ -89,7 +89,7 @@ public:
 	void		GameFrame(void);
 private:
 //	bool		ProcessPlayer(player_t *player_ptr);
-	void		BuildPlayerKickList();
+	void		BuildPlayerKickList( player_t *player_ptr = NULL, int *players_on_server = NULL);
 	void		CleanUp(void);
 
 	int	active_player_list_size;
