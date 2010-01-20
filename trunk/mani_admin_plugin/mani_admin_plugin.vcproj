@@ -51,7 +51,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdk\public\steam;.\knight;.\asm;.\jit"
+				AdditionalIncludeDirectories="..\sdks\ep1\public;..\sdks\ep1\public\tier0;..\sdks\ep1\public\tier1;..\sdks\ep1\public\dlls;..\sdks\ep1\dlls;..\sdks\ep1\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdks\ep1\public\steam;.\knight;.\asm;.\jit"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -85,7 +85,7 @@
 				OutputFile="..\plugin_output\legacy_bin\VSP\mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql5.1\win_32\lib"
+				AdditionalLibraryDirectories="..\sdks\ep1\lib\public;..\sdks\ep1\lib\common;.\mysql5.1\win_32\lib"
 				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\legacy_bin\VSP\mani_admin_plugin.pdb"
@@ -156,7 +156,7 @@
 				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;.\Knight;.\asm;..\sdk\public\steam;.\jit"
+				AdditionalIncludeDirectories="..\sdks\ep1\public;..\sdks\ep1\public\tier0;..\sdks\ep1\public\tier1;..\sdks\ep1\public\dlls;..\sdks\ep1\dlls;..\sdks\ep1\game_shared;.\mysql5.1\win_32\include\;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;.\Knight;.\asm;..\sdks\ep1\public\steam;.\jit"
 				PreprocessorDefinitions="WIN32;NDEBUG;MAPBETA;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -188,7 +188,7 @@
 				OutputFile="..\plugin_output\legacy_bin\vsp\mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\sdk\lib\public;..\sdk\lib\common;.\mysql5.1\win_32\lib"
+				AdditionalLibraryDirectories="..\sdks\ep1\lib\public;..\sdks\ep1\lib\common;.\mysql5.1\win_32\lib"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="LIBC"
 				GenerateDebugInformation="true"
@@ -260,7 +260,7 @@
 				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;.\asm;.\knight;.\jit;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdk\public\steam"
+				AdditionalIncludeDirectories="..\sdks\ep1\public;..\sdks\ep1\public\tier0;..\sdks\ep1\public\tier1;..\sdks\ep1\public\dlls;..\sdks\ep1\dlls;..\sdks\ep1\game_shared;.\mysql5.1\win_32\include\;.\asm;.\knight;.\jit;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdks\ep1\public\steam"
 				PreprocessorDefinitions="WIN32;MAPBETA;NDEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -364,7 +364,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk\public;..\sdk\public\tier0;..\sdk\public\tier1;..\sdk\public\dlls;..\sdk\dlls;..\sdk\game_shared;.\mysql5.1\win_32\include\;.\asm;.\knight;.\jit;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdk\public\steam"
+				AdditionalIncludeDirectories="..\sdks\ep1\public;..\sdks\ep1\public\tier0;..\sdks\ep1\public\tier1;..\sdks\ep1\public\dlls;..\sdks\ep1\dlls;..\sdks\ep1\game_shared;.\mysql5.1\win_32\include\;.\asm;.\knight;.\jit;&quot;..\sourcemm_1_7\core-legacy\sourcehook&quot;;&quot;..\sourcemm_1_7\core-legacy&quot;;..\sdks\ep1\public\steam"
 				PreprocessorDefinitions="WIN32;MAPBETA;_DEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM;PROFILING"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="1"
@@ -469,7 +469,7 @@
 				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\game_shared;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook;.\asm;.\jit;.\knight;..\sdk_orange\public\steam"
+				AdditionalIncludeDirectories="..\sdks\ob\public\mathlib;..\sdks\ob\public;..\sdks\ob\public\tier0;..\sdks\ob\public\tier1;..\sdks\ob\dlls;..\sdks\ob\game\server;..\sdks\ob\game_shared;..\sdks\ob\public\game\server;..\sdks\ob\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook;.\asm;.\jit;.\knight;..\sdks\ob\public\steam"
 				PreprocessorDefinitions="ORANGE;WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -502,7 +502,7 @@
 				OutputFile="..\plugin_output\orange_bin\SourceMM\mani_admin_plugin_mm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\sdk_orange\lib\public;.\mysql5.1\win_32\lib"
+				AdditionalLibraryDirectories="..\sdks\ob\lib\public;.\mysql5.1\win_32\lib"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="LIBC"
 				GenerateDebugInformation="true"
@@ -572,7 +572,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game\server;..\sdk_orange\game_shared;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook;.\asm;.\jit;.\knight;..\sdk_orange\public\steam"
+				AdditionalIncludeDirectories="..\sdks\ob\public\mathlib;..\sdks\ob\public;..\sdks\ob\public\tier0;..\sdks\ob\public\tier1;..\sdks\ob\dlls;..\sdks\ob\game\server;..\sdks\ob\game_shared;..\sdks\ob\public\game\server;..\sdks\ob\game\shared;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core;..\sourcemm_1_7\core\sourcehook;.\asm;.\jit;.\knight;..\sdks\ob\public\steam"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY;SOURCEMM;PROFILING"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="1"
@@ -605,7 +605,7 @@
 				OutputFile="..\plugin_output\orange_bin\SourceMM\mani_admin_plugin_mm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\sdk_orange\lib\public;.\mysql5.1\win_32\lib"
+				AdditionalLibraryDirectories="..\sdks\ob\lib\public;.\mysql5.1\win_32\lib"
 				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\orange_bin\SourceMM\mani_admin_plugin_mm.pdb"
@@ -676,7 +676,7 @@
 				AdditionalOptions="/MP"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\public\steam;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core;.\jit;.\knight;.\asm"
+				AdditionalIncludeDirectories="..\sdks\ob\public\mathlib;..\sdks\ob\public;..\sdks\ob\public\tier0;..\sdks\ob\public\tier1;..\sdks\ob\dlls;..\sdks\ob\game_shared;..\sdks\ob\game\server;..\sdks\ob\public\game\server;..\sdks\ob\game\shared;..\sdks\ob\public\steam;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core;.\jit;.\knight;.\asm"
 				PreprocessorDefinitions="ORANGE;WIN32;NDEBUG;_WINDOWS;mani_admin_pluginONLY"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -709,7 +709,7 @@
 				OutputFile="..\plugin_output\orange_bin\VSP\mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\sdk_orange\lib\public;..\sdk_orange\lib\common;.\mysql5.1\win_32\lib"
+				AdditionalLibraryDirectories="..\sdks\ob\lib\public;..\sdks\ob\lib\common;.\mysql5.1\win_32\lib"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="LIBC"
 				GenerateDebugInformation="true"
@@ -779,7 +779,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\sdk_orange\public\mathlib;..\sdk_orange\public;..\sdk_orange\public\tier0;..\sdk_orange\public\tier1;..\sdk_orange\dlls;..\sdk_orange\game_shared;..\sdk_orange\game\server;..\sdk_orange\public\game\server;..\sdk_orange\game\shared;..\sdk_orange\public\steam;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core;.\jit;.\knight;.\asm"
+				AdditionalIncludeDirectories="..\sdks\ob\public\mathlib;..\sdks\ob\public;..\sdks\ob\public\tier0;..\sdks\ob\public\tier1;..\sdks\ob\dlls;..\sdks\ob\game_shared;..\sdks\ob\game\server;..\sdks\ob\public\game\server;..\sdks\ob\game\shared;..\sdks\ob\public\steam;.\mysql5.1\win_32\include\;..\sourcemm_1_7\core\sourcehook;..\sourcemm_1_7\core;.\jit;.\knight;.\asm"
 				PreprocessorDefinitions="ORANGE;WIN32;_DEBUG;_WINDOWS;mani_admin_pluginONLY"
 				GeneratePreprocessedFile="0"
 				BasicRuntimeChecks="3"
@@ -813,7 +813,7 @@
 				OutputFile="..\plugin_output\orange_bin\VSP\mani_admin_plugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\sdk_orange\lib\public;..\sdk_orange\lib\common;.\mysql5.1\win_32\lib"
+				AdditionalLibraryDirectories="..\sdks\ob\lib\public;..\sdks\ob\lib\common;.\mysql5.1\win_32\lib"
 				IgnoreDefaultLibraryNames="LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\plugin_output\orange_bin\VSP\mani_admin_plugin.pdb"
@@ -1497,7 +1497,7 @@
 				Name="Headers"
 				>
 				<File
-					RelativePath="..\sdk\game_shared\base_playeranimstate.h"
+					RelativePath="..\sdks\ep1\game_shared\base_playeranimstate.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1525,7 +1525,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\dlls\baseanimating.h"
+					RelativePath="..\sdks\ep1\dlls\baseanimating.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1553,7 +1553,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\dlls\basecombatcharacter.h"
+					RelativePath="..\sdks\ep1\dlls\basecombatcharacter.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1581,7 +1581,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\game_shared\basecombatweapon_shared.h"
+					RelativePath="..\sdks\ep1\game_shared\basecombatweapon_shared.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1609,7 +1609,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\dlls\baseentity.h"
+					RelativePath="..\sdks\ep1\dlls\baseentity.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1637,7 +1637,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\game_shared\baseentity_shared.h"
+					RelativePath="..\sdks\ep1\game_shared\baseentity_shared.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1665,7 +1665,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\game_shared\baseplayer_shared.h"
+					RelativePath="..\sdks\ep1\game_shared\baseplayer_shared.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1693,7 +1693,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\basetypes.h"
+					RelativePath="..\sdks\ep1\public\basetypes.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1721,7 +1721,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\bitbuf.h"
+					RelativePath="..\sdks\ep1\public\tier1\bitbuf.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1749,7 +1749,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\Color.h"
+					RelativePath="..\sdks\ep1\public\Color.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1777,7 +1777,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\convar.h"
+					RelativePath="..\sdks\ep1\public\tier1\convar.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1832,7 +1832,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier0\dbg.h"
+					RelativePath="..\sdks\ep1\public\tier0\dbg.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1860,7 +1860,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\eiface.h"
+					RelativePath="..\sdks\ep1\public\eiface.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1888,7 +1888,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\filesystem.h"
+					RelativePath="..\sdks\ep1\public\filesystem.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1916,7 +1916,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\vstdlib\ICommandLine.h"
+					RelativePath="..\sdks\ep1\public\vstdlib\ICommandLine.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1944,7 +1944,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\igameevents.h"
+					RelativePath="..\sdks\ep1\public\igameevents.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -1972,7 +1972,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\inetchannel.h"
+					RelativePath="..\sdks\ep1\public\inetchannel.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2000,7 +2000,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\inetchannelinfo.h"
+					RelativePath="..\sdks\ep1\public\inetchannelinfo.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2028,7 +2028,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\interface.h"
+					RelativePath="..\sdks\ep1\public\tier1\interface.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2056,7 +2056,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\dlls\iplayerinfo.h"
+					RelativePath="..\sdks\ep1\public\dlls\iplayerinfo.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2084,7 +2084,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\engine\iserverplugin.h"
+					RelativePath="..\sdks\ep1\public\engine\iserverplugin.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2112,7 +2112,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\KeyValues.h"
+					RelativePath="..\sdks\ep1\public\tier1\KeyValues.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2168,7 +2168,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\networkvar.h"
+					RelativePath="..\sdks\ep1\public\networkvar.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2196,7 +2196,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\dlls\player.h"
+					RelativePath="..\sdks\ep1\dlls\player.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2224,7 +2224,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\vstdlib\random.h"
+					RelativePath="..\sdks\ep1\public\vstdlib\random.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2252,7 +2252,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\vstdlib\strtools.h"
+					RelativePath="..\sdks\ep1\public\vstdlib\strtools.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2280,7 +2280,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\utlbuffer.h"
+					RelativePath="..\sdks\ep1\public\tier1\utlbuffer.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2308,7 +2308,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\utlmemory.h"
+					RelativePath="..\sdks\ep1\public\tier1\utlmemory.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2336,7 +2336,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier1\utlvector.h"
+					RelativePath="..\sdks\ep1\public\tier1\utlvector.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2364,7 +2364,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\vstdlib\vstdlib.h"
+					RelativePath="..\sdks\ep1\public\vstdlib\vstdlib.h"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2396,7 +2396,7 @@
 				Name="Source"
 				>
 				<File
-					RelativePath="..\sdk\tier1\bitbuf.cpp"
+					RelativePath="..\sdks\ep1\tier1\bitbuf.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2432,7 +2432,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\tier1\convar.cpp"
+					RelativePath="..\sdks\ep1\tier1\convar.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2468,7 +2468,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\tier1\interface.cpp"
+					RelativePath="..\sdks\ep1\tier1\interface.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Release|Win32"
@@ -2520,7 +2520,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\tier0\memoverride.cpp"
+					RelativePath="..\sdks\ep1\public\tier0\memoverride.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2556,7 +2556,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\public\networkvar.cpp"
+					RelativePath="..\sdks\ep1\public\networkvar.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2592,7 +2592,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\utils\serverplugin_sample\serverplugin_convar.cpp"
+					RelativePath="..\sdks\ep1\utils\serverplugin_sample\serverplugin_convar.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2628,7 +2628,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\tier1\utlbuffer.cpp"
+					RelativePath="..\sdks\ep1\tier1\utlbuffer.cpp"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2668,7 +2668,7 @@
 				Name="Libraries"
 				>
 				<File
-					RelativePath="..\sdk\lib\public\mathlib.lib"
+					RelativePath="..\sdks\ep1\lib\public\mathlib.lib"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2704,7 +2704,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\lib\public\tier0.lib"
+					RelativePath="..\sdks\ep1\lib\public\tier0.lib"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2740,7 +2740,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\lib\public\tier1.lib"
+					RelativePath="..\sdks\ep1\lib\public\tier1.lib"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2776,7 +2776,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk\lib\public\vstdlib.lib"
+					RelativePath="..\sdks\ep1\lib\public\vstdlib.lib"
 					>
 					<FileConfiguration
 						Name="SourceMM Orange Release|Win32"
@@ -2876,7 +2876,7 @@
 				Name="Source"
 				>
 				<File
-					RelativePath="..\sdk_orange\tier1\bitbuf.cpp"
+					RelativePath="..\sdks\ob\tier1\bitbuf.cpp"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -2956,7 +2956,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\tier1\convar.cpp"
+					RelativePath="..\sdks\ob\tier1\convar.cpp"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3040,7 +3040,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\mathlib\mathlib_base.cpp"
+					RelativePath="..\sdks\ob\mathlib\mathlib_base.cpp"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3076,7 +3076,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\public\tier0\memoverride.cpp"
+					RelativePath="..\sdks\ob\public\tier0\memoverride.cpp"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3156,7 +3156,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\public\networkvar.cpp"
+					RelativePath="..\sdks\ob\public\networkvar.cpp"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3240,7 +3240,7 @@
 				Name="Libraries"
 				>
 				<File
-					RelativePath="..\sdk_orange\lib\public\mathlib.lib"
+					RelativePath="..\sdks\ob\lib\public\mathlib.lib"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3276,7 +3276,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\lib\public\tier0.lib"
+					RelativePath="..\sdks\ob\lib\public\tier0.lib"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3312,7 +3312,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\lib\public\tier1.lib"
+					RelativePath="..\sdks\ob\lib\public\tier1.lib"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3348,7 +3348,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\lib\public\tier2.lib"
+					RelativePath="..\sdks\ob\lib\public\tier2.lib"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3384,7 +3384,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\lib\public\tier3.lib"
+					RelativePath="..\sdks\ob\lib\public\tier3.lib"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
@@ -3420,7 +3420,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sdk_orange\lib\public\vstdlib.lib"
+					RelativePath="..\sdks\ob\lib\public\vstdlib.lib"
 					>
 					<FileConfiguration
 						Name="VSP Debug|Win32"
