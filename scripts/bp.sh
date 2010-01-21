@@ -147,7 +147,7 @@ then
 	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
 	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include -I../sourcemm_1_7/core-legacy -I../sourcemm_1_7/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib -I./jit -I./asm -I./Knight -I../sdks/map/ep1/public/steam"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include -I../sourcemm_1_7/core-legacy -I../sourcemm_1_7/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib -I./jit -I./asm -I./Knight -I../sdks/map/ep1/public/steam"
 
 	export NAME="mani_admin_plugin"
 
@@ -177,7 +177,7 @@ then
 	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
 	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core-legacy -I../sourcemm_1_7/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib -I./jit -I./asm -I./Knight -I../sdks/map/ep1/public/steam"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core-legacy -I../sourcemm_1_7/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib -I./jit -I./asm -I./Knight -I../sdks/map/ep1/public/steam"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/convar.o $TIER1_OBJ_DIR/KeyValues.o $TIER1_OBJ_DIR/bitbuf.o $TIER1_OBJ_DIR/utlbuffer.o"
@@ -205,7 +205,7 @@ then
 	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
 	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core -I../sourcemm_1_7/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I../sdks/map/ob/public/steam"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core -I../sourcemm_1_7/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I../sdks/map/ob/public/steam"
 
 	export NAME="mani_admin_plugin"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
@@ -233,7 +233,7 @@ else
 	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
 	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core -I../sourcemm_1_7/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I../sdks/map/ob/public/steam"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_1_7/core -I../sourcemm_1_7/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I../sdks/map/ob/public/steam"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
