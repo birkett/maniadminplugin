@@ -185,7 +185,7 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	strcpy ( player.steam_id, SteamID.Render() );
 	bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 
-	if ( mani_reserve_slots.GetBool() ) {
+	if ( !war_mode && mani_reserve_slots.GetBool() && (mani_reserve_slots_number_of_slots.GetInt() == 0) ) {
 
 		if ( total_players == max_players ) {
 			if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
@@ -232,6 +232,9 @@ DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 #define NSPD_NON_MEMBER_CALL NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5)
 DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int ) {
 #endif
+	if (war_mode)
+		return NSPD_NON_MEMBER_CALL;
+
 	if ( (p5 > 4) && ( (p4[0]==0xFF) && (p4[1]==0xFF) && (p4[2]==0xFF) && (p4[3]==0xFF) && (p4[4]=='I') )) {
 		char strIP[128];
 		if ( p3 ) {
@@ -244,15 +247,17 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 		A2S_INFO_t QueryData;
 		memset (&QueryData, 0, sizeof(QueryData));
 		if ( FillINFOQuery( p4, p5, QueryData, &pPlayers, &pPassword ) ) {
+
 			bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 			bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
 
-			if ( mani_reserve_slots.GetBool() && (AdminAccess || ReservedAccess)) {
+			if ( mani_reserve_slots.GetBool() && !mani_reserve_slots_number_of_slots.GetBool() && (AdminAccess || ReservedAccess)) {
 				if ( pPlayers ) {
 					if (pPlayers[0] == pPlayers[1]) 
 						pPlayers[1] = (mem_t)max_players+1;
 				}
 			}
+
 			if ( AdminAccess && pPassword && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
 				pPassword[0]=0;
 		}
@@ -686,16 +691,15 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	int			allowed_players;
 	int			total_players;
 
-	if (war_mode)
-	{
-		return true;
+	if ((war_mode) || (mani_reserve_slots_number_of_slots.GetInt() == 0))   // with the other method ( zero slots )
+	{																		// other player is kicked BEFORE
+		return true;														// NetworkIDValidated
 	}
 
 	total_players = GetNumberOfActivePlayers( true ) - 1;
 	// DirectLogCommand("[DEBUG] Total players on server [%i]\n", total_players);
 
-	//if (total_players < max_players - mani_reserve_slots_number_of_slots.GetInt())
-	if (total_players < max_players)
+	if (total_players < (max_players - mani_reserve_slots_number_of_slots.GetInt()))
 	{
 		// DirectLogCommand("[DEBUG] No reserve slot action required\n");
 		return true;
@@ -733,7 +737,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		// DirectLogCommand("[DEBUG] Player is on reserve slot list\n");
 		is_reserve_player = true;
 	}
-	else if (mani_reserve_slots_include_admin.GetInt() == 1 &&
+	else if (mani_reserve_slots_include_admin.GetBool() &&
 		gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 
 	{
