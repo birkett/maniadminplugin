@@ -91,6 +91,20 @@ inline bool FStrEq(const char *sz1, const char *sz2)
 	return(Q_stricmp(sz1, sz2) == 0);
 }
 
+bool FillSlotMode() {
+	if ( war_mode )
+		return false;
+
+	if ( !mani_reserve_slots.GetBool() )
+		return false;
+
+	if ( (mani_reserve_slots_allow_slot_fill.GetInt() == 0) && (mani_reserve_slots_number_of_slots.GetInt() != 0))
+		return false;
+
+	return true;
+	
+}
+
 #define COPY_BYTE(target) \
 	target = data[0]; \
 	data++; \
@@ -185,7 +199,7 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	strcpy ( player.steam_id, SteamID.Render() );
 	bool AdminAccess = gpManiClient->HasAccess(&player, ADMIN, ADMIN_BASIC_ADMIN) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 
-	if ( !war_mode && mani_reserve_slots.GetBool() && (mani_reserve_slots_number_of_slots.GetInt() == 0) ) {
+	if ( FillSlotMode() ) {
 
 		if ( total_players == max_players ) {
 			if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
@@ -250,8 +264,7 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 
 			bool AdminAccess = gpManiClient->IPLinksToAdmin ( strIP ) && ( mani_reserve_slots_include_admin.GetInt() == 1 );
 			bool ReservedAccess = gpManiClient->IPLinksToReservedSlot( strIP );
-
-			if ( mani_reserve_slots.GetBool() && !mani_reserve_slots_number_of_slots.GetBool() && (AdminAccess || ReservedAccess)) {
+			if ( FillSlotMode() && (AdminAccess || ReservedAccess)) {
 				if ( pPlayers ) {
 					if (pPlayers[0] == pPlayers[1]) 
 						pPlayers[1] = (mem_t)max_players+1;
@@ -264,6 +277,8 @@ DECL_DETOUR5_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int
 	}
 	return NSPD_NON_MEMBER_CALL;
 }
+
+
 
 ManiReservedSlot::ManiReservedSlot()
 {
@@ -748,98 +763,83 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	// DirectLogCommand("[DEBUG] Building players who can be kicked list\n");
 	if (active_player_list_size != 0)
 	{
-	DirectLogCommand("[DEBUG] Players that can be kicked list\n");
+		DirectLogCommand("[DEBUG] Players that can be kicked list\n");
 
-	for (int i = 0; i < active_player_list_size; i++)
-	{
-	DirectLogCommand("[DEBUG] Name [%s] Steam [%s] Spectator [%s] Ping [%f] TimeConnected [%f]\n",
-	active_player_list[i].name,
-	active_player_list[i].steam_id,
-	(active_player_list[i].is_spectator) ? "YES":"NO",
-	active_player_list[i].ping,
-	active_player_list[i].time_connected
-	);
-	}
-	}
-	else
-	{
-	DirectLogCommand("[DEBUG] No players available for kicking\n");
-	}
-
-	if (mani_reserve_slots_allow_slot_fill.GetInt() == 1)
-	{
-		BuildPlayerKickList(player_ptr, &players_on_server);
-		// Allow reserve slots to fill first
-		allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
-		// DirectLogCommand("[DEBUG] Allowed players = [%i]\n", allowed_players);
-		if (active_player_list_size >= allowed_players)
+		for (int i = 0; i < active_player_list_size; i++)
 		{
-			// standard players are exceeding slot allocation
-			players_to_kick = active_player_list_size - allowed_players;
-			for (int i = 0; i < players_to_kick; i++)
-			{
-				if (i == active_player_list_size)
-				{
-					break;
-				}
-
-				// Disconnect other players that got on (safe guard)
-				// DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
-				temp_player.index = active_player_list[i].index;
-				FindPlayerByIndex(&temp_player);
-				DisconnectPlayer(&temp_player);
-			}
-
-			if (!is_reserve_player)
-			{
-				// DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
-				DisconnectPlayer(player_ptr);
-				return false;
-			}
+			DirectLogCommand("[DEBUG] Name [%s] Steam [%s] Spectator [%s] Ping [%f] TimeConnected [%f]\n",
+				active_player_list[i].name,
+				active_player_list[i].steam_id,
+				(active_player_list[i].is_spectator) ? "YES":"NO",
+				active_player_list[i].ping,
+				active_player_list[i].time_connected
+				);
 		}
 	}
 	else
 	{
+		DirectLogCommand("[DEBUG] No players available for kicking\n");
+	}
+
+	if (mani_reserve_slots_allow_slot_fill.GetInt() != 1)
+	{
+		//// fill slots with any player.  if a player is a reserve slot player, then kick another person 
+		//// allow the slots to fill 
+		//BuildPlayerKickList(player_ptr, &players_on_server);
+		//// Allow reserve slots to fill
+		//allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
+		//// DirectLogCommand("[DEBUG] Allowed players = [%i]\n", allowed_players);
+		//if (active_player_list_size >= allowed_players)
+		//{
+		//	// standard players are exceeding slot allocation
+		//	players_to_kick = active_player_list_size - allowed_players;
+		//	for (int i = 0; i < players_to_kick; i++)
+		//	{
+		//		if (i == active_player_list_size)
+		//		{
+		//			break;
+		//		}
+
+		//		// Disconnect other players that got on (safe guard)
+		//		// DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
+		//		temp_player.index = active_player_list[i].index;
+		//		FindPlayerByIndex(&temp_player);
+		//		DisconnectPlayer(&temp_player);
+		//	}
+
+		//	if (!is_reserve_player)
+		//	{
+		//		// DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
+		//		DisconnectPlayer(player_ptr);
+		//		return false;
+		//	}
+		//}
+	//}
+	//else
+	//{
 		// Keep reserve slots free at all times
 		allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
 		if (total_players >= allowed_players)
 		{
-			players_to_kick = total_players - allowed_players;
-			if (is_reserve_player)
-			{
-				players_to_kick ++;
-			}
-			else
-			{
+			if (!is_reserve_player) {
 				// Disconnect this player as they are not allowed on and redirect them
 				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
 				DisconnectPlayer(player_ptr);
-			}
-
-			if (players_to_kick != 0)
-			{
-				BuildPlayerKickList(player_ptr, &players_on_server);
-			}
-
-			for (int i = 0; i < players_to_kick; i++)
-			{
-				if (i == active_player_list_size)
-				{
-					break;
-				}
-
-				// Disconnect other players that got on (safe guard)
-				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
-				temp_player.index = active_player_list[i].index;
-				FindPlayerByIndex(&temp_player);
-				DisconnectPlayer(&temp_player);
-			}
-
-			if (!is_reserve_player)
-			{
 				return false;
 			}
+
+			//		// Disconnect other players that got on (safe guard)
+			//		//DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
+			temp_player.index = FindPlayerToKick();
+			FindPlayerByIndex(&temp_player);
+			DisconnectPlayer(&temp_player);
 		}
+
+		//if (!is_reserve_player)
+		//{
+		//	return false;
+		//}
+
 	}
 
 	// DirectLogCommand("[DEBUG] Player [%s] is allowed to join\n", player_ptr->steam_id);

@@ -155,7 +155,7 @@ ConVar mani_reserve_slots_number_of_slots ("mani_reserve_slots_number_of_slots",
 ConVar mani_reserve_slots_kick_message ("mani_reserve_slots_kick_message", "", 0, "This defines the message displayed in the client console when kicked for taking up a reserve slot"); 
 ConVar mani_reserve_slots_redirect_message ("mani_reserve_slots_redirect_message", "", 0, "This defines the message displayed in the client console when redirected for taking up a reserve slot"); 
 ConVar mani_reserve_slots_redirect ("mani_reserve_slots_redirect", "", 0, "This defines another server to redirect the player to"); 
-ConVar mani_reserve_slots_allow_slot_fill ("mani_reserve_slots_allow_slot_fill", "0", 0, "This defines whether reserver slots can be used up when joining or whether the reserver slots must remain free causing player kicks instead", true, 0, true, 1); 
+ConVar mani_reserve_slots_allow_slot_fill ("mani_reserve_slots_allow_slot_fill", "0", 0, "This defines whether reserved slots can be used up when joining or whether the reserved slots must remain free causing player kicks instead", true, 0, true, 1); 
 ConVar mani_reserve_slots_kick_method ("mani_reserve_slots_kick_method", "0", 0, "This defines how a player is kicked, 0 = by ping, 1 = by connection time, 2 = by kills per minute, 3 = kill/death ratio", true, 0, true, 3); 
 ConVar mani_reserve_slots_include_admin ("mani_reserve_slots_include_admin", "1", 0, "This defines whether the admins setup are part of the reserve slot list (1 = yes they are)", true, 0, true, 1); 
 ConVar mani_reserve_slots_ip_keep_history ( "mani_reserve_slots_ip_keep_history", "14", 0, "The number of days to keep players IP history for reserve slots", true, 1, true, 31 );
