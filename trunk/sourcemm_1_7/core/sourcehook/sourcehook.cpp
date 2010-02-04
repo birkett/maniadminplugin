@@ -700,14 +700,14 @@ namespace SourceHook
 			}
 		}
 
-		void CSourceHookImpl::SetIgnoreHooks(void *vfnptr)
+		void CSourceHookImpl::SetIgnoreHooks(/*void *vfnptr*/)
 		{
 			CHookContext ctx;
 			ctx.m_State = CHookContext::State_Ignore;
 			m_ContextStack.push(ctx);
 		}
 
-		void CSourceHookImpl::ResetIgnoreHooks(void *vfnptr)
+		void CSourceHookImpl::ResetIgnoreHooks(/*void *vfnptr*/)
 		{
 			if (!m_ContextStack.empty() && m_ContextStack.front().m_State == CHookContext::State_Ignore)
 				m_ContextStack.pop();
@@ -853,7 +853,7 @@ namespace SourceHook
 			return pCtx;
 		}
 
-		void CSourceHookImpl::EndContext(IHookContext *pCtx)
+		void CSourceHookImpl::EndContext(/*IHookContext *pCtx*/)
 		{
 			m_ContextStack.pop();
 		}
