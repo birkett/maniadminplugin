@@ -111,7 +111,7 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 			if ( player_command_times[player_index].violation_count >= mani_command_flood_violation_count.GetInt() )
 			{	
 				//ban the player
-				LogCommand (NULL,"Ban (Command Spam) [%s] [%s]", player_ptr->name, player_ptr->steam_id);
+				LogCommand (NULL,"Ban (Command Spam) [%s] [%s]\n", player_ptr->name, player_ptr->steam_id);
 				gpManiAdminPlugin->AddBan(player_ptr, player_ptr->steam_id, "MAP", 
 					mani_command_flood_punish_ban_time.GetInt(), "Banned (Command spam)", "Banned (Command spam)");
 				gpManiAdminPlugin->WriteBans();
