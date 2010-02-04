@@ -303,15 +303,15 @@ namespace SourceHook
 
 			void RemoveHookManager(Plugin plug, HookManagerPubFunc pubFunc);
 
-			void SetIgnoreHooks(void *vfnptr);
-			void ResetIgnoreHooks(void *vfnptr);
+			void SetIgnoreHooks(/*void *vfnptr*/);
+			void ResetIgnoreHooks(/*void *vfnptr*/);
 
 			void DoRecall();
 
 			IHookContext *SetupHookLoop(IHookManagerInfo *hi, void *vfnptr, void *thisptr, void **origentry, META_RES *statusPtr,
 				META_RES *prevResPtr, META_RES *curResPtr, const void *origRetPtr, void *overrideRetPtr);
 
-			void EndContext(IHookContext *pCtx);
+			void EndContext(/*IHookContext *pCtx*/);
 
 			void *GetOrigVfnPtrEntry(void *vfnptr);
 

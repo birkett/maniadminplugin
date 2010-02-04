@@ -24,11 +24,9 @@ extern void Msg( const char *, ... );
 * @noreturn
 */
 
+#if !defined WIN32
 void check_thunks(unsigned char *dest, unsigned char *pc)
 {
-#if defined WIN32
-	return;
-#else
 	/* Step write address back 4 to the start of the function address */
 	unsigned char *writeaddr = dest - 4;
 	unsigned char *calloffset = *(unsigned char **)writeaddr;
@@ -84,8 +82,8 @@ void check_thunks(unsigned char *dest, unsigned char *pc)
 	}
 
 	return;
-#endif
 }
+#endif
 
 //if dest is NULL, returns minimum number of bytes needed to be copied
 //if dest is not NULL, it will copy the bytes to dest as well as fix CALLs and JMPs
@@ -286,10 +284,12 @@ int copy_bytes(unsigned char *func, unsigned char* dest, int required_len) {
 							*(long*)dest = ((func + *(long*)func) - dest);
 
 							//pRED* edit. func is the current address of the call address, +4 is the next instruction, so the value of $pc
+#if !defined WIN32
 							check_thunks(dest+4, func+4);
+#endif
 						}
 						else
-							*(short*)dest = ((func + *(short*)func) - dest);
+							*(short*)dest = *(short*)((func + *(short*)func) - dest);
 
 					} else {
 						if (operandSize == 4)
