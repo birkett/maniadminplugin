@@ -6821,6 +6821,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBan(player_t *player_ptr, const char *comma
 		if ( gpCmd->Cmd_Argc() >= 3 ) reason = gpCmd->Cmd_Args(2);
 	}
 	// Whoever issued the commmand is authorised to do it.
+
+	if ( (!reason || reason[0]==0) && (!FStrEq(mani_admin_default_ban_reason.GetString(),"")))
+		reason = mani_admin_default_ban_reason.GetString();
+
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_BAN))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "%s", Translate(player_ptr, M_NO_TARGET, "%s", target_string));
@@ -6910,6 +6914,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaBanIP(player_t *player_ptr, const char *com
 	} else {
 		if ( gpCmd->Cmd_Argc() >= 3 ) reason = gpCmd->Cmd_Args(2);
 	}
+
+	if ( (!reason || reason[0]==0) && (!FStrEq(mani_admin_default_ban_reason.GetString(),"")))
+		reason = mani_admin_default_ban_reason.GetString();
+
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_BAN))
@@ -8575,7 +8583,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 
 	const char *target_string = gpCmd->Cmd_Argv(1);
 	const char *param2 = NULL;
-	const char *param3 = NULL;
+	const char *param3 = NULL;  // reason
 	int timetomute = 0; // default to perma
 
 	if  ( gpCmd->Cmd_Argc() > 2 ) {
@@ -8588,6 +8596,10 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaMute(player_t *player_ptr, const char *comm
 	}
 
 	if ( !param3 && (gpCmd->Cmd_Argc() > 3) ) param3 = gpCmd->Cmd_Args(3);
+
+	if ( (!param3 || param3[0]==0) && (!FStrEq(mani_admin_default_mute_reason.GetString(),"")))
+		param3 = mani_admin_default_mute_reason.GetString();
+
 
 	// Whoever issued the commmand is authorised to do it.
 	if (!FindTargetPlayers(player_ptr, target_string, IMMUNITY_MUTE))

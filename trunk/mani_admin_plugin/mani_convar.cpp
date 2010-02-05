@@ -314,3 +314,6 @@ ConVar mani_all_see_ma_rates ("mani_all_see_ma_rates", "0", 0, "0 = Only admins 
 ConVar mani_admin_temp_ban_time_limit ("mani_admin_temp_ban_time_limit", "360", 0, "Time in minutes that an admin with only Ban access can ban for, admins with Permanent Ban access can ban for as long as they wish (default is 6 hours max)", true, 0, true, 99999999);
 
 ConVar mani_admin_temp_mute_time_limit ("mani_admin_temp_mute_time_limit", "360", 0, "Time in minutes that an admin with only Mute access can mute for, admins with Permanent Mute access can mute for as long as they wish (default is 6 hours max)", true, 0, true, 99999999);
+
+ConVar mani_admin_default_ban_reason ("mani_admin_default_ban_reason","", 0, "If set, this will be put in for the reason if no reason is given by the admin who bans the player." );
+ConVar mani_admin_default_mute_reason ("mani_admin_default_mute_reason","", 0, "If set, this will be put in for the reason if no reason is given by the admin who mutes the player." );

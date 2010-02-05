@@ -699,10 +699,8 @@ static int sort_active_players_by_kd_ratio ( const void *m1,  const void *m2)
 //---------------------------------------------------------------------------------
 bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 {
-	int			players_on_server = 0;
 	bool		is_reserve_player = false;
 	player_t	temp_player;
-	int		 	players_to_kick = 0;
 	int			allowed_players;
 	int			total_players;
 
