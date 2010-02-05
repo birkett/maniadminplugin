@@ -301,4 +301,6 @@ extern ConVar mani_all_see_ma_rates;
 extern ConVar mani_admin_temp_ban_time_limit;
 
 extern ConVar mani_admin_temp_mute_time_limit;
+extern ConVar mani_admin_default_ban_reason ;
+extern ConVar mani_admin_default_mute_reason ;
 #endif
