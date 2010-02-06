@@ -55,6 +55,8 @@
 #include "steamclientpublic.h"
 #include "mani_detours.h"
 #include "detour_macros.h"
+#include "inetchannel.h"
+#include "iclient.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
@@ -78,8 +80,18 @@ static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2);
 static CDetour * ManiClientConnectDetour;
 static CDetour * ManiNetSendPacketDetour;
 
-player_t kick_player;
-float kick_time;
+struct player_kick_t {
+
+	player_kick_t() {
+		memset(&kick_player,0, sizeof(player_t));
+		kick_time = 0.0f;
+	}
+
+	player_t kick_player;
+	float kick_time;
+};
+
+CUtlVector<player_kick_t> kick_list;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -288,7 +300,7 @@ ManiReservedSlot::ManiReservedSlot()
 	reserve_slot_list = NULL;
 	reserve_slot_list_size = 0;
 	gpManiReservedSlot = this;
-	memset ( &kick_player, 0, sizeof(player_t) );
+	kick_list.RemoveAll();
 }
 
 ManiReservedSlot::~ManiReservedSlot()
@@ -298,14 +310,25 @@ ManiReservedSlot::~ManiReservedSlot()
 }
 
 void ManiReservedSlot::GameFrame() {
-	if ( kick_player.index == 0 )
+	if ( kick_list.Count() == 0 )
 		return;
 
-	if ( kick_time == gpGlobals->absoluteframetime )
-		return;
-	UTIL_KickPlayer( &kick_player, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
-	kick_time = gpGlobals->absoluteframetime;
-	memset ( &kick_player, 0, sizeof(player_t) );
+	for ( int i=0; i<kick_list.Count(); i++ ) {
+		if ( kick_list.Element(i).kick_time <= gpGlobals->curtime ) {
+			LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", mani_reserve_slots_kick_message.GetString(), kick_list.Element(i).kick_player.name, kick_list.Element(i).kick_player.steam_id, kick_list.Element(i).kick_player.ip_address, kick_list.Element(i).kick_player.user_id, mani_reserve_slots_kick_message.GetString());
+			if ( !kick_list.Element(i).kick_player.is_bot ) {
+				INetChannel *pNetChan = static_cast<INetChannel *>(engine->GetPlayerNetInfo(kick_list.Element(i).kick_player.index));
+				IClient *pClient = static_cast<IClient *>(pNetChan->GetMsgHandler());
+				pClient->Disconnect("%s", mani_reserve_slots_kick_message.GetString());
+			} else {
+				char kick_cmd[1024];
+				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i\n", kick_list.Element(i).kick_player.user_id);
+				engine->ServerCommand(kick_cmd);	
+				engine->ServerExecute();
+			}
+			kick_list.Remove(i);
+		}
+	}
 }
 //---------------------------------------------------------------------------------
 // Purpose: Init stuff for plugin load
@@ -374,23 +397,33 @@ void ManiReservedSlot::LevelInit(void)
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 {
-	if (FStrEq(mani_reserve_slots_redirect.GetString(), ""))
+	if ( !mani_reserve_slots_allow_slot_fill.GetBool() && !FStrEq(mani_reserve_slots_redirect.GetString(), "") )
 	{
-		if ( !player_ptr->is_bot )
-			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
-
-		UTIL_KickPlayer(player_ptr, (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString(), (char *) mani_reserve_slots_kick_message.GetString());
+		// Redirect
+		if ( !player_ptr->is_bot ) {
+			KeyValues *kv = new KeyValues("msg");
+			kv->SetString("time","10");
+			kv->SetString("title", mani_reserve_slots_redirect.GetString());
+			helpers->CreateMessage( player_ptr->entity, DIALOG_ASKCONNECT, kv, gpManiISPCCallback);
+		}
+		player_kick_t future_kick;
+		memcpy ( &future_kick.kick_player, player_ptr, sizeof(player_t) );
+		future_kick.kick_time=gpGlobals->curtime+1.0f;
+		kick_list.AddToTail(future_kick);
 	} else {
-		// Redirection required
-		KeyValues *kv = new KeyValues("msg");
-		kv->SetString("time","10");
-		kv->SetString("title", mani_reserve_slots_redirect.GetString());
-		PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_redirect_message.GetString());
-		helpers->CreateMessage( player_ptr->entity, DIALOG_ASKCONNECT, kv, gpManiISPCCallback);
-		memcpy ( &kick_player, player_ptr, sizeof(player_t) );
-		kick_time=gpGlobals->absoluteframetime;
+		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", mani_reserve_slots_kick_message.GetString(), player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, mani_reserve_slots_kick_message.GetString());
+		if ( !player_ptr->is_bot ) {
+			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
+			INetChannel *pNetChan = static_cast<INetChannel *>(engine->GetPlayerNetInfo(player_ptr->index));
+			IClient *pClient = static_cast<IClient *>(pNetChan->GetMsgHandler());
+			pClient->Disconnect("%s", mani_reserve_slots_kick_message.GetString());
+		} else {
+			char kick_cmd[1024];
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i\n", player_ptr->user_id);
+			engine->ServerCommand(kick_cmd);	
+			engine->ServerExecute();
+		}
 	}
-
 	return;
 }
 

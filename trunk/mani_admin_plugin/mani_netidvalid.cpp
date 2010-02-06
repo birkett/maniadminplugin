@@ -157,6 +157,7 @@ void ManiNetIDValid::LevelInit(void)
 void ManiNetIDValid::ClientActive(player_t *player_ptr)
 {
 	// Ignore bots
+
 	if (FStrEq(player_ptr->steam_id, "BOT")) return;
 	if (FStrEq(player_ptr->steam_id, MANI_STEAM_PENDING))
 	{

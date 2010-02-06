@@ -2962,13 +2962,14 @@ void UTIL_KickPlayer
 	//	return;
 	//}
 
+	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, short_reason);
+
 	if ( !player_ptr->is_bot )
 		PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
 
 	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
 	engine->ServerCommand(kick_cmd);	
 	engine->ServerExecute();
-	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, short_reason);
 }
 
 //---------------------------------------------------------------------------------
