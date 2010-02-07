@@ -59,6 +59,7 @@
 #include "mani_help.h"
 #include "mani_autokickban.h"
 #include "shareddefs.h"
+#include "mani_playerkick.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
@@ -269,9 +270,9 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 			{
 				player_ptr->user_id = engine->GetPlayerUserId(player_ptr->entity);
 				PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
+				gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "You were autokicked" );
 				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 				LogCommand (NULL, "Kick (Bad Steam ID) [%s] [%s] %s\n", player_ptr->name, player_ptr->steam_id, kick_cmd);
-				engine->ServerCommand(kick_cmd);				
 				return false;
 			}
 		}
@@ -296,9 +297,9 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 			{
 				player_ptr->user_id = engine->GetPlayerUserId(player_ptr->entity);
 				PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
+				gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "You were autokicked" );
 				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 				LogCommand (NULL, "Kick (Bad IP Address) [%s] [%s] %s\n", player_ptr->name, player_ptr->steam_id, kick_cmd);
-				engine->ServerCommand(kick_cmd);				
 				return false;
 			}
 		}
@@ -314,9 +315,9 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 				if (autokick_name_list[i].kick)
 				{
 					PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
+					gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "You were autokicked" );
 					snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 					LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s\n", player_ptr->name, player_ptr->steam_id, kick_cmd);
-					engine->ServerCommand(kick_cmd);				
 					return false;
 				}
 				else if (autokick_name_list[i].ban && !IsLAN())
@@ -339,9 +340,9 @@ bool ManiAutoKickBan::NetworkIDValidated(player_t	*player_ptr)
 				if (autokick_pname_list[i].kick)
 				{
 					PrintToClientConsole(player_ptr->entity, "You have been autokicked\n");
+					gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "You were autokicked" );
 					snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were autokicked\n", player_ptr->user_id);
 					LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s\n", player_ptr->name, player_ptr->steam_id, kick_cmd);
-					engine->ServerCommand(kick_cmd);				
 					return false;
 				}
 				else if (autokick_pname_list[i].ban && !IsLAN())
@@ -1804,9 +1805,9 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 			if (autokick_name_list[i].kick)
 			{
 				PrintToClientConsole(player->entity, "You have been autokicked\n");
+				gpManiPlayerKick->AddPlayer( player->index, 0, "You were autokicked" );
 				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
 				LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s\n", player->name, player->steam_id, kick_cmd);
-				engine->ServerCommand(kick_cmd);				
 				return;
 			}
 			else if (autokick_name_list[i].ban && !IsLAN())
@@ -1830,9 +1831,9 @@ void ManiAutoKickBan::ProcessChangeName(player_t *player, const char *new_name, 
 			if (autokick_pname_list[i].kick)
 			{
 				PrintToClientConsole(player->entity, "You have been autokicked\n");
+				gpManiPlayerKick->AddPlayer( player->index, 0, "You were autokicked" );
 				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
 				LogCommand (NULL, "Kick (Bad Name) [%s] [%s] %s\n", player->name, player->steam_id, kick_cmd);
-				engine->ServerCommand(kick_cmd);				
 				return;
 			}
 			else if (autokick_pname_list[i].ban && !IsLAN())

@@ -55,15 +55,16 @@
 #include "steamclientpublic.h"
 #include "mani_detours.h"
 #include "detour_macros.h"
-#include "inetchannel.h"
-#include "iclient.h"
+#include "mani_mainclass.h"
+#include "mani_playerkick.h" 
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
 extern IFileSystem	*filesystem;
+
 extern	IPlayerInfoManager *playerinfomanager;
-extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
+extern	int	max_players;
 extern	bool war_mode;
 extern void *connect_client_addr;
 extern void *netsendpacket_addr;
@@ -79,19 +80,6 @@ static int sort_active_players_by_kd_ratio ( const void *m1,  const void *m2);
 static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2);
 static CDetour * ManiClientConnectDetour;
 static CDetour * ManiNetSendPacketDetour;
-
-struct player_kick_t {
-
-	player_kick_t() {
-		memset(&kick_player,0, sizeof(player_t));
-		kick_time = 0.0f;
-	}
-
-	player_t kick_player;
-	float kick_time;
-};
-
-CUtlVector<player_kick_t> kick_list;
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -308,28 +296,6 @@ ManiReservedSlot::~ManiReservedSlot()
 	// Cleanup
 	this->CleanUp();
 }
-
-void ManiReservedSlot::GameFrame() {
-	if ( kick_list.Count() == 0 )
-		return;
-
-	for ( int i=0; i<kick_list.Count(); i++ ) {
-		if ( kick_list.Element(i).kick_time <= gpGlobals->curtime ) {
-			LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", mani_reserve_slots_kick_message.GetString(), kick_list.Element(i).kick_player.name, kick_list.Element(i).kick_player.steam_id, kick_list.Element(i).kick_player.ip_address, kick_list.Element(i).kick_player.user_id, mani_reserve_slots_kick_message.GetString());
-			if ( !kick_list.Element(i).kick_player.is_bot ) {
-				INetChannel *pNetChan = static_cast<INetChannel *>(engine->GetPlayerNetInfo(kick_list.Element(i).kick_player.index));
-				IClient *pClient = static_cast<IClient *>(pNetChan->GetMsgHandler());
-				pClient->Disconnect("%s", mani_reserve_slots_kick_message.GetString());
-			} else {
-				char kick_cmd[1024];
-				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i\n", kick_list.Element(i).kick_player.user_id);
-				engine->ServerCommand(kick_cmd);	
-				engine->ServerExecute();
-			}
-			kick_list.Remove(i);
-		}
-	}
-}
 //---------------------------------------------------------------------------------
 // Purpose: Init stuff for plugin load
 //---------------------------------------------------------------------------------
@@ -406,24 +372,15 @@ void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 			kv->SetString("title", mani_reserve_slots_redirect.GetString());
 			helpers->CreateMessage( player_ptr->entity, DIALOG_ASKCONNECT, kv, gpManiISPCCallback);
 		}
-		player_kick_t future_kick;
-		memcpy ( &future_kick.kick_player, player_ptr, sizeof(player_t) );
-		future_kick.kick_time=gpGlobals->curtime+1.0f;
-		kick_list.AddToTail(future_kick);
+		gpManiPlayerKick->AddPlayer( player_ptr->index, 10.0f, mani_reserve_slots_kick_message.GetString() );
 	} else {
-		LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", mani_reserve_slots_kick_message.GetString(), player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, mani_reserve_slots_kick_message.GetString());
-		if ( !player_ptr->is_bot ) {
+		if ( !player_ptr->is_bot )
 			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
-			INetChannel *pNetChan = static_cast<INetChannel *>(engine->GetPlayerNetInfo(player_ptr->index));
-			IClient *pClient = static_cast<IClient *>(pNetChan->GetMsgHandler());
-			pClient->Disconnect("%s", mani_reserve_slots_kick_message.GetString());
-		} else {
-			char kick_cmd[1024];
-			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i\n", player_ptr->user_id);
-			engine->ServerCommand(kick_cmd);	
-			engine->ServerExecute();
-		}
+
+		// need to kick them NOW!!!!  Use KickPlayer instead of AddPlayer
+		gpManiPlayerKick->KickPlayer (player_ptr->index, mani_reserve_slots_kick_message.GetString());
 	}
+	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", mani_reserve_slots_kick_message.GetString(), player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, mani_reserve_slots_kick_message.GetString());
 	return;
 }
 
@@ -531,8 +488,11 @@ void ManiReservedSlot::BuildPlayerKickList( player_t *player_ptr, int *players_o
 	for (int i = 1; i <= max_players; i ++)
 	{
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
-		if(pEntity && !pEntity->IsFree() && pEntity != player_ptr->entity)
+		if( pEntity && !pEntity->IsFree())
 		{
+			if ( player_ptr && ( pEntity == player_ptr->entity ) )
+				continue;
+
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
 			if (playerinfo && playerinfo->IsConnected())
 			{
@@ -764,116 +724,34 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 		Q_strcpy(player_ptr->name,"");
 	}
 
-	// DirectLogCommand("[DEBUG] Index = [%i] IP Address [%s] Steam ID [%s]\n",
-	//									player_ptr->index, player_ptr->ip_address, player_ptr->steam_id);
-
-	// DirectLogCommand("[DEBUG] Processing player\n");
-
 	if (FStrEq("BOT", player_ptr->steam_id))
-	{
-		// DirectLogCommand("[DEBUG] Player joining is bot, ignoring\n");
 		return true;
-	}
 
 	player_ptr->is_bot = false;
 
 
 	if (IsPlayerInReserveList(player_ptr))
-	{
-		// DirectLogCommand("[DEBUG] Player is on reserve slot list\n");
 		is_reserve_player = true;
-	}
-	else if (mani_reserve_slots_include_admin.GetBool() &&
-		gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 
-	{
-		// DirectLogCommand("[DEBUG] Player is admin\n");
+	else if (mani_reserve_slots_include_admin.GetBool() && gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BASIC_ADMIN))
 		is_reserve_player = true;
-	}
-
-	// DirectLogCommand("[DEBUG] Building players who can be kicked list\n");
-	if (active_player_list_size != 0)
-	{
-		DirectLogCommand("[DEBUG] Players that can be kicked list\n");
-
-		for (int i = 0; i < active_player_list_size; i++)
-		{
-			DirectLogCommand("[DEBUG] Name [%s] Steam [%s] Spectator [%s] Ping [%f] TimeConnected [%f]\n",
-				active_player_list[i].name,
-				active_player_list[i].steam_id,
-				(active_player_list[i].is_spectator) ? "YES":"NO",
-				active_player_list[i].ping,
-				active_player_list[i].time_connected
-				);
-		}
-	}
-	else
-	{
-		DirectLogCommand("[DEBUG] No players available for kicking\n");
-	}
 
 	if (mani_reserve_slots_allow_slot_fill.GetInt() != 1)
 	{
-		//// fill slots with any player.  if a player is a reserve slot player, then kick another person 
-		//// allow the slots to fill 
-		//BuildPlayerKickList(player_ptr, &players_on_server);
-		//// Allow reserve slots to fill
-		//allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
-		//// DirectLogCommand("[DEBUG] Allowed players = [%i]\n", allowed_players);
-		//if (active_player_list_size >= allowed_players)
-		//{
-		//	// standard players are exceeding slot allocation
-		//	players_to_kick = active_player_list_size - allowed_players;
-		//	for (int i = 0; i < players_to_kick; i++)
-		//	{
-		//		if (i == active_player_list_size)
-		//		{
-		//			break;
-		//		}
-
-		//		// Disconnect other players that got on (safe guard)
-		//		// DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
-		//		temp_player.index = active_player_list[i].index;
-		//		FindPlayerByIndex(&temp_player);
-		//		DisconnectPlayer(&temp_player);
-		//	}
-
-		//	if (!is_reserve_player)
-		//	{
-		//		// DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
-		//		DisconnectPlayer(player_ptr);
-		//		return false;
-		//	}
-		//}
-	//}
-	//else
-	//{
 		// Keep reserve slots free at all times
 		allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
 		if (total_players >= allowed_players)
 		{
 			if (!is_reserve_player) {
-				// Disconnect this player as they are not allowed on and redirect them
-				//DirectLogCommand("[DEBUG] Kicking player [%s]\n", player_ptr->steam_id);
 				DisconnectPlayer(player_ptr);
 				return false;
 			}
 
-			//		// Disconnect other players that got on (safe guard)
-			//		//DirectLogCommand("[DEBUG] Kicking player [%s]\n", active_player_list[i].name);
 			temp_player.index = FindPlayerToKick();
 			FindPlayerByIndex(&temp_player);
 			DisconnectPlayer(&temp_player);
 		}
-
-		//if (!is_reserve_player)
-		//{
-		//	return false;
-		//}
-
 	}
-
-	// DirectLogCommand("[DEBUG] Player [%s] is allowed to join\n", player_ptr->steam_id);
 
 	return true;
 }

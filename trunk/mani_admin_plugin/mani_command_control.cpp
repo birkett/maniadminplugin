@@ -31,6 +31,7 @@
 #include "mani_player.h"
 #include "mani_output.h"
 #include "mani_command_control.h"
+#include "mani_playerkick.h"
 
 // needed by Keeper
 extern	CGlobalVars *gpGlobals;
@@ -97,13 +98,7 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 		{
 			//kick punishment
 			if ( player_command_times[player_index].violation_count >= mani_command_flood_violation_count.GetInt() )
-			{	
-				//kick the player
-				char kick_cmd[256];
-				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, "Kicked due to command spam");
-				engine->ServerCommand(kick_cmd);
-				engine->ServerExecute();
-			}
+				gpManiPlayerKick->KickPlayer ( player_ptr->index, "Kicked due to command spam" ); //kick the player immediately
 		}
 		else if ( mani_command_flood_punish.GetInt() == 2 )
 		{
