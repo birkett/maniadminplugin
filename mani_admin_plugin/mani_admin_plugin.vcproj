@@ -1061,6 +1061,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_playerkick.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mani_quake.cpp"
 					>
 				</File>
@@ -1378,6 +1382,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_player.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_playerkick.h"
 					>
 				</File>
 				<File

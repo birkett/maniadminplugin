@@ -64,6 +64,7 @@
 #include "mani_ping.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
+#include "mani_playerkick.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IServerGameDLL	*serverdll;
@@ -264,9 +265,9 @@ bool ManiNetIDValid::TimeoutKick(player_t *player_ptr, time_t timeout)
 			}
 
 			char kick_cmd[512];
+			gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "Steam ID is invalid ! Try again" );
 			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Steam ID is invalid ! Try again\n", player_ptr->user_id);
 			LogCommand (NULL, "Kick (STEAM_ID_PENDING) [%s] [%s] %s\n", player_ptr->name, player_ptr->steam_id, kick_cmd);
-			engine->ServerCommand(kick_cmd);
 			return true;
 		}
 	}
@@ -301,7 +302,6 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	if (ProcessPluginPaused()) return ;
 
 	gpManiClient->NetworkIDValidated(player_ptr);
-	gpManiReservedSlot->NetworkIDValidated(player_ptr);
 	gpManiVote->NetworkIDValidated(player_ptr);
 	gpManiStats->NetworkIDValidated(player_ptr);
 	gpManiPing->NetworkIDValidated(player_ptr);
@@ -314,6 +314,8 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	gpManiSaveScores->NetworkIDValidated(player_ptr);
 	gpManiAFK->NetworkIDValidated(player_ptr);
 	gpManiObserverTrack->NetworkIDValidated(player_ptr);
+
+	gpManiReservedSlot->NetworkIDValidated(player_ptr); // leave this until last!
 	return ;
 }
 

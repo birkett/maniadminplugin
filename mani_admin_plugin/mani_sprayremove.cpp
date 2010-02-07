@@ -58,6 +58,7 @@
 #include "mani_sprayremove.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
+#include "mani_playerkick.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IServerGameDLL	*serverdll;
@@ -386,14 +387,12 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 		for (int i = 0; i < target_player_list_size; i++)
 		{
 			player_t *target_player_ptr;
-			char	kick_cmd[256];
 	
 			target_player_ptr = (player_t *) &(target_player_list[i]);
 			OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_kick_message.GetString());
 			OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_kick_message.GetString());
 			LogCommand (player_ptr, "Kicked player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
-			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i See console for reason\n", target_player_ptr->user_id);
-			engine->ServerCommand(kick_cmd);				
+			gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "For spray tag" );
 			break;
 		}
 	}

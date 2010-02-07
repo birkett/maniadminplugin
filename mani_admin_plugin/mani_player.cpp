@@ -57,6 +57,7 @@
 #include "mani_commands.h"
 #include "mani_trackuser.h"
 #include "cbaseentity.h"
+#include "mani_playerkick.h"
 
 extern IFileSystem	*filesystem;
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
@@ -2939,37 +2940,12 @@ void UTIL_KickPlayer
  char *log_reason
  )
 {
-	char	kick_cmd[256];
-
-	// Handle a bot kick
-	//if (player_ptr->is_bot)
-	//{
-	//	int j = Q_strlen(player_ptr->name) - 1;
-
-	//	while (j != -1)
-	//	{
-	//		if (player_ptr->name[j] == '\0') break;
-	//		if (player_ptr->name[j] == ' ') break;
-	//		j--;
-	//	}
-
-	//	j++;
-
-	//	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
-	//	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid \"%s\"\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, &(player_ptr->name[j]));
-	//	engine->ServerCommand(kick_cmd);
-	//	engine->ServerExecute();
-	//	return;
-	//}
-
 	LogCommand (NULL, "Kick (%s) [%s] [%s] [%s] kickid %i %s\n", log_reason, player_ptr->name, player_ptr->steam_id, player_ptr->ip_address, player_ptr->user_id, short_reason);
 
 	if ( !player_ptr->is_bot )
 		PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
 
-	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player_ptr->user_id, short_reason);
-	engine->ServerCommand(kick_cmd);	
-	engine->ServerExecute();
+	gpManiPlayerKick->AddPlayer( player_ptr->index, 0, long_reason );
 }
 
 //---------------------------------------------------------------------------------
