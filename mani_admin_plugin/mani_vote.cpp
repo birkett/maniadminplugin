@@ -3524,7 +3524,7 @@ void ManiVote::ProcessUserVoteKickWin(player_t *player_ptr)
 	char	kick_cmd[256];
 
 	PrintToClientConsole(player_ptr->entity, "You have been kicked by vote\n");
-	gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "You were vote kicked" );
+	gpManiPlayerKick->AddPlayer( player_ptr->index, 0.5f, "You were vote kicked" );
 	snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were vote kicked\n", player_ptr->user_id);
 	LogCommand (NULL, "User vote kick using %s\n", kick_cmd);
 	SayToAll(GREEN_CHAT, true, "%s", Translate(player_ptr, 2574, "%s", player_ptr->name));

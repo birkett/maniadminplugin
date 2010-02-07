@@ -2945,7 +2945,7 @@ void UTIL_KickPlayer
 	if ( !player_ptr->is_bot )
 		PrintToClientConsole(player_ptr->entity, "%s\n", long_reason);
 
-	gpManiPlayerKick->AddPlayer( player_ptr->index, 0, long_reason );
+	gpManiPlayerKick->AddPlayer( player_ptr->index, 0.5f, long_reason );
 }
 
 //---------------------------------------------------------------------------------

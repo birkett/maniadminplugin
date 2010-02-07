@@ -265,7 +265,7 @@ bool ManiNetIDValid::TimeoutKick(player_t *player_ptr, time_t timeout)
 			}
 
 			char kick_cmd[512];
-			gpManiPlayerKick->AddPlayer( player_ptr->index, 0, "Steam ID is invalid ! Try again" );
+			gpManiPlayerKick->AddPlayer( player_ptr->index, 0.5f, "Steam ID is invalid ! Try again" );
 			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Steam ID is invalid ! Try again\n", player_ptr->user_id);
 			LogCommand (NULL, "Kick (STEAM_ID_PENDING) [%s] [%s] %s\n", player_ptr->name, player_ptr->steam_id, kick_cmd);
 			return true;

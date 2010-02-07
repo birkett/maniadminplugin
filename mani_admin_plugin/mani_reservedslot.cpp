@@ -373,7 +373,12 @@ void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 			helpers->CreateMessage( player_ptr->entity, DIALOG_ASKCONNECT, kv, gpManiISPCCallback);
 		}
 		gpManiPlayerKick->AddPlayer( player_ptr->index, 10.0f, mani_reserve_slots_kick_message.GetString() );
-	} else {
+	} else if (!mani_reserve_slots_allow_slot_fill.GetBool()) {
+		if ( !player_ptr->is_bot )
+			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
+
+		gpManiPlayerKick->AddPlayer (player_ptr->index, 0.5f, mani_reserve_slots_kick_message.GetString());
+	}else {
 		if ( !player_ptr->is_bot )
 			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
 
