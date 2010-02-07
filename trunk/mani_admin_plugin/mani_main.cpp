@@ -1564,7 +1564,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if ( !pname && !player.is_bot ) {
 		char	kick_cmd[512];
 		PrintToClientConsole(player.entity, "Empty name violation\n");
-		gpManiPlayerKick->AddPlayer( player.index, 0, "Empty name violation" );
+		gpManiPlayerKick->AddPlayer( player.index, 0.5f, "Empty name violation" );
 		snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i Empty name violation\n", player.user_id);
 		LogCommand (NULL, "Kick (Empty name violation) [%s] %s\n", player.steam_id, kick_cmd);
 		return;
@@ -2245,9 +2245,9 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 		if ( reason ) {
 			snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", ban_time, player->user_id );
 			engine->ServerCommand(ban_cmd);
-			gpManiPlayerKick->AddPlayer ( player->index, 0, reason );
+			gpManiPlayerKick->AddPlayer ( player->index, 0.5f, reason );
 		} else {
-			gpManiPlayerKick->AddPlayer ( player->index );
+			gpManiPlayerKick->AddPlayer ( player->index, 0.5f );
 		}
 	} else { // ban by IP
 		char *localprefix = ( prefix != NULL ) ? prefix : "Banned IP (By Admin)";
@@ -6171,7 +6171,7 @@ void CAdminPlugin::ProcessChangeName(player_t *player, const char *new_name, cha
 			{
 				SayToAll(ORANGE_CHAT, false,"Player was kicked for name change hacking");
 				PrintToClientConsole(player->entity, "You have been auto kicked for name hacking\n");
-				gpManiPlayerKick->AddPlayer ( player->index, 0, "You were auto kicked" );
+				gpManiPlayerKick->AddPlayer ( player->index, 0.5f, "You were auto kicked" );
 				snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were auto kicked\n", player->user_id);
 				LogCommand (NULL, "Kick (Name change threshold) [%s] [%s] %s\n", player->name, player->steam_id, kick_cmd);
 				name_changes[player->index - 1] = 0;
@@ -6704,7 +6704,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 		}
 
 		PrintToClientConsole(target_player_list[i].entity, "You have been kicked by Admin\n");
-		gpManiPlayerKick->AddPlayer( target_player_list[i].index, 0, "You have been kicked by Admin" );
+		gpManiPlayerKick->AddPlayer( target_player_list[i].index, 0.5f, "You have been kicked by Admin" );
 		snprintf( kick_cmd, sizeof(kick_cmd),
 					"kickid %i You were kicked by Admin\n",
 					target_player_list[i].user_id);
