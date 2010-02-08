@@ -2237,6 +2237,8 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 	ban.byID = ( (key[0] == 'S') || (key[0] == 's') );
 	if ( reason )
 		Q_strcpy ( ban.reason, reason );
+	else
+		Q_strcpy ( ban.reason, prefix );
 
 	char ban_cmd[512];
 	Q_memset( &ban_cmd, 0, sizeof(ban_cmd) );
