@@ -72,7 +72,10 @@ void ManiPlayerKick::KickPlayer ( int player_index, const char *reason ) {
 	} else {
 		INetChannel *pNetChan = static_cast<INetChannel *>(engine->GetPlayerNetInfo(player_index));
 		IClient *pClient = static_cast<IClient *>(pNetChan->GetMsgHandler());
-		pClient->Disconnect("%s", reason);
+		if ( reason[0] == 0 )
+			pClient->Disconnect("Kicked by Console");
+		else
+			pClient->Disconnect("%s", reason);
 	}
 }
 
@@ -80,7 +83,8 @@ void ManiPlayerKick::AddPlayer(int player_index, float kick_time, const char *re
 	player_kick_t temp;
 	temp.kick_time = gpGlobals->curtime+kick_time;
 	temp.player_index = player_index;
-	strncpy ( temp.reason, reason, sizeof(temp.reason) );
+	if ( reason )
+		strncpy ( temp.reason, reason, sizeof(temp.reason) );
 	kick_list.AddToTail(temp);
 }
 
