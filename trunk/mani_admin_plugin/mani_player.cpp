@@ -365,8 +365,8 @@ bool FindTargetPlayers(player_t *requesting_player, const char *target_string, c
 	Q_strcpy(target_steam_id, target_string);
 	if (Q_strlen(target_steam_id) > 6)
 	{
-		target_steam_id[6] = '\0';
-		if (FStruEq(target_steam_id, "STEAM_"))
+		target_steam_id[6] = 0;
+		if (FStrEq(target_steam_id, "STEAM_"))
 		{
 			Q_strcpy(player.steam_id, target_string);
 			if (FindPlayerBySteamID(&player))

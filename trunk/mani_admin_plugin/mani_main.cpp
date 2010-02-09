@@ -2244,10 +2244,10 @@ bool CAdminPlugin::AddBan ( player_t *player, const char *key, const char *initi
 	Q_memset( &ban_cmd, 0, sizeof(ban_cmd) );
 	
 	if ( ban.byID ) { // ban by steamid
-		if ( reason ) {
-			snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", ban_time, player->user_id );
-			engine->ServerCommand(ban_cmd);
-			gpManiPlayerKick->AddPlayer ( player->index, 0.5f, reason );
+		snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %i\n", ban_time, player->user_id );
+		engine->ServerCommand(ban_cmd);
+		if ( ban.reason ) {
+			gpManiPlayerKick->AddPlayer ( player->index, 0.5f, ban.reason );
 		} else {
 			gpManiPlayerKick->AddPlayer ( player->index, 0.5f );
 		}
