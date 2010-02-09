@@ -392,7 +392,7 @@ int SprayItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 			OutputHelpText(LIGHT_GREEN_CHAT, target_player_ptr, "%s", mani_spray_tag_kick_message.GetString());
 			OutputHelpText(LIGHT_GREEN_CHAT, player_ptr, "%s", mani_spray_tag_kick_message.GetString());
 			LogCommand (player_ptr, "Kicked player [%s] [%s] for spray tag\n", target_player_ptr->name, target_player_ptr->steam_id);
-			gpManiPlayerKick->AddPlayer( player_ptr->index, 0.5f, "For spray tag" );
+			gpManiPlayerKick->AddPlayer( target_player_ptr->index, 0.5f, "For spray tag" );
 			break;
 		}
 	}
