@@ -1582,7 +1582,7 @@ void	ManiCommands::WriteHelpHTML(void)
 	fprintf(filehandle, "\t<META NAME=\"AUTHOR\" CONTENT=\"Mani\">\n");
 	fprintf(filehandle, "</HEAD>\n");
 	fprintf(filehandle, "<BODY LANG=\"en-GB\" DIR=\"LTR\">\n");
-	fprintf(filehandle, "<P ALIGN=CENTER STYLE=\"page-break-before: always\"><FONT SIZE=4 STYLE=\"font-size: 16pt\"><B>Mani Admin Plugin Flags List %s</B></FONT></P>\n", PLUGIN_VERSION_ID2);
+	fprintf(filehandle, "<P ALIGN=CENTER STYLE=\"page-break-before: always\"><FONT SIZE=4 STYLE=\"font-size: 16pt\"><B>Mani Admin Plugin CVar List %s</B></FONT></P>\n", PLUGIN_VERSION_ID2);
 	fprintf(filehandle, "<TABLE WIDTH=100%% BORDER=1 BORDERCOLOR=\"%s\" CELLPADDING=4 CELLSPACING=0>\n", border_colour);
 	fprintf(filehandle, "\t<COL WIDTH=43*>\n");
 	fprintf(filehandle, "\t<COL WIDTH=61*>\n");
