@@ -63,6 +63,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
 		mani_parser.cpp \
 		mani_ping.cpp \
 		mani_player.cpp \
+		mani_playerkick.cpp \
 		mani_quake.cpp \
 		mani_replace.cpp \
 		mani_reservedslot.cpp \
