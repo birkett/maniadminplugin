@@ -48,6 +48,7 @@ if ($^O eq "MSWin32")
 	$WINDOWS="TRUE";
 	$DEV_BASE=$WINDOWS_BASE;
 	$FILE_EXT=".dll";
+	$SMM_FILE_EXT=".dll";
 }
 else
 {
@@ -55,6 +56,7 @@ else
 	print "Linux platform\n";
 	$DEV_BASE=$LINUX_BASE;
 	$FILE_EXT="_i486.so";
+	$SMM_FILE_EXT=".so";
 }
 
 $BIN_FOLDER=$DEV_BASE . "/plugin_output";
@@ -135,19 +137,21 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg");
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
-	#Copy Meta Mod Source 1.7 binary
-	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/server_i486.so",
-		"$mod_dir/addons/metamod/bin/server_i486.so");
+	#Copy Meta Mod Source 1.8 binary
+	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/server" . $FILE_EXT,
+		"$mod_dir/addons/metamod/bin/server" . $FILE_EXT);
 	
 	if ($ORANGE)
 	{
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/metamod.2.ep2.so",
-			"$mod_dir/addons/metamod/bin/metamod.2.ep2.so");
+		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/metamod.2.ep2" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/metamod.2.ep2" . $SMM_FILE_EXT);
+		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/metamod.2.ep2v" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/metamod.2.ep2v" . $SMM_FILE_EXT);
 	}
 	else
 	{
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_7/metamod.1.ep1.so",
-			"$mod_dir/addons/metamod/bin/metamod.1.ep1.so");
+		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/metamod.1.ep1" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/metamod.1.ep1" . $SMM_FILE_EXT);
 	}
 
 	if ($ORANGE)
