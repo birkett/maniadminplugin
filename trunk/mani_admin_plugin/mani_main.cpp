@@ -2171,8 +2171,9 @@ void CAdminPlugin::WriteBans ( void ) {
 			filesystem->FPrintf ( file_handle, "//\n" );
 			filesystem->FPrintf ( file_handle, "// The first entry is the STEAM_ID or the IP.\n" );
 			filesystem->FPrintf ( file_handle, "// The second entry is the time the ban expires. 0 = permanent.\n" );
-			filesystem->FPrintf ( file_handle, "// The third entry is who executed the ban. ( quotes required )\n" );
-			filesystem->FPrintf ( file_handle, "// The fourth entry ( optional ) is why the ban was given. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The third entry is the players name. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The fourth entry is who executed the ban. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The fifth entry ( optional ) is why the ban was given. ( quotes required )\n" );
 			filesystem->FPrintf ( file_handle, "//\n" );
 			filesystem->FPrintf ( file_handle, "// STEAM_0:0:000000 0 \"RoadRunner\" \"Wile E. Coyote\" \"obvious speedhack\"\n" );
 			filesystem->FPrintf ( file_handle, "//\n" );
@@ -2304,8 +2305,9 @@ void CAdminPlugin::WriteMutes ( void ) {
 			filesystem->FPrintf ( file_handle, "//\n" );
 			filesystem->FPrintf ( file_handle, "// The first entry is the STEAM_ID or the IP.\n" );
 			filesystem->FPrintf ( file_handle, "// The second entry is the time the mute expires. 0 = permanent.\n" );
-			filesystem->FPrintf ( file_handle, "// The third entry is who executed the mute. ( quotes required )\n" );
-			filesystem->FPrintf ( file_handle, "// The fourth entry ( optional ) is why the mute was given. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The third entry is the players name. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The fourth entry is who executed the mute. ( quotes required )\n" );
+			filesystem->FPrintf ( file_handle, "// The fifth entry ( optional ) is why the mute was given. ( quotes required )\n" );
 			filesystem->FPrintf ( file_handle, "//\n" );
 			filesystem->FPrintf ( file_handle, "// STEAM_0:0:000000 0 \"RoadRunner\" \"Wile E. Coyote\" \"mic spam\"\n" );
 			filesystem->FPrintf ( file_handle, "//\n" );
