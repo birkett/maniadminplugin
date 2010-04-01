@@ -93,6 +93,7 @@ bool g_PluginLoadedOnce = false;
 
 CGlobalVars *gpGlobals = NULL;
 char *mani_version = PLUGIN_VERSION;
+char *mani_build_date = __DATE__;
 
 IServerPluginCallbacks *gpManiISPCCallback = NULL;
 IGameEventListener2 *gpManiIGELCallback = NULL;

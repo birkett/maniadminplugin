@@ -1983,6 +1983,10 @@ PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 #endif
 		return PLUGIN_STOP;
 	}
+	else if ( FStrEq( pcmd, "mani_build_date" ))
+	{
+		PrintToClientConsole(pEntity, "%s\n", mani_build_date);
+	}
 	else if ( FStrEq( pcmd, "mani_votemenu" ))
 	{
 		if (!gpManiVote->CanVote(&player)) return PLUGIN_STOP;
@@ -9667,6 +9671,14 @@ CON_COMMAND(ma_version, "Prints the version of the plugin")
 #else
 		MMsg("Linux server\n");
 #endif
+	return;
+}
+
+CON_COMMAND(ma_build_date, "Prints the build date of the plugin")
+{
+	if (!IsCommandIssuedByServerAdmin()) return;
+	if (ProcessPluginPaused()) return;
+	MMsg( "%s\n", mani_build_date );
 	return;
 }
 

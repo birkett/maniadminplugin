@@ -56,7 +56,7 @@ extern	bool g_PluginLoadedOnce;
 
 extern	CGlobalVars *gpGlobals;
 extern	char *mani_version;
-
+extern  char *mani_build_date;
 extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IGameEventListener2 *gpManiIGELCallback;
 extern	int	con_command_index;
