@@ -52,6 +52,7 @@ extern void	ParseColourStrings( const char	*in_string, char	*out_string, Color	*
 extern bool ParseBanLine ( char *in, ban_settings_t *banned_user, bool strip_comments, bool strip_start_comments );
 extern bool StripComments (char * in, bool start_only);
 extern bool	StripEOL (char *in);
+extern bool StripBOM (char *in);
 extern bool Trim(char *in);
 extern int	GetArgs(char *in);
 #endif

@@ -557,8 +557,8 @@ void	ManiCustomEffects::TEBeamPoints(void)
 	int speed;
 
 	if (!EffectAllowed()) return;
-	// We are looking at 24 parameters for this !
-	if (!EnoughParams(24)) return;
+	// We are looking at 22 parameters for this !
+	if (!EnoughParams(22)) return;
 
 	SetupFilter(&filter);
 	delay = GetFloat();

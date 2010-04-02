@@ -127,6 +127,28 @@ bool StripEOL(char *in) {
 }
 
 //---------------------------------------------------------------------------------
+// Purpose: Take a string, and remove the BOM ( for encoded text files )
+//---------------------------------------------------------------------------------
+bool StripBOM(char *in) {
+	int length;
+	length = strlen(in);
+	if ( length <= 3 ) 
+		return false;
+
+	char copy_text[512];
+	unsigned char bom[3];
+	Q_memcpy ( bom, in, 3 );
+
+	if ( bom[0]==0xEF && bom[1]==0xBB && bom[2]==0xBF ) { // utf8
+		Q_memcpy ( copy_text, &in[3], length-3 );
+		Q_memset ( in, 0, length );
+		Q_memcpy ( in, copy_text, length-3 );
+	}
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------
 // Purpose: Take a string, and trim white space at the beginning
 //---------------------------------------------------------------------------------
 bool Trim (char *in) {
@@ -191,6 +213,8 @@ int GetArgs ( char *in ) {
 bool ParseLine(char *in, bool strip_comments, bool strip_start_comments)
 {
 	if (!in) return false;
+
+	StripBOM(in);
 
 	if ( strip_comments ) {
 		if (!StripComments(in)) return false;
