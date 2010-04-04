@@ -3711,6 +3711,9 @@ bool PlayerManagementPage::PopulateMenuPage(player_t *player_ptr)
 		gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN)) && !war_mode)
 	{
 		MENUOPTION_CREATE(PlayerManagementItem, 614, bantype);
+	}
+
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_UNBAN) && !war_mode) {
 		MENUOPTION_CREATE(PlayerManagementItem, 621, unbantype);
 	}
 
@@ -6729,16 +6732,15 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type)
 {
-	bool perm_ban = true;
+	bool unban = true;
 	bool temp_ban = true;
 
 	if (player_ptr)
 	{
 		// Check if player is admin
-		perm_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_PERM_BAN, war_mode);
-		temp_ban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_BAN, war_mode);
+		unban = gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_UNBAN, war_mode);
 
-		if (!(temp_ban || perm_ban)) return PLUGIN_BAD_ADMIN;
+		if (!unban) return PLUGIN_BAD_ADMIN;
 	}
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
