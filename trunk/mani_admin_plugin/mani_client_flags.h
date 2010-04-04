@@ -219,6 +219,9 @@
 #define	ALLOW_GRAVITY_FLAG	("grav")
 #define	ALLOW_GRAVITY_DESC ("Gravity")
 
+#define ALLOW_UNBAN (54)					//Unban Access
+#define ALLOW_UNBAN_FLAG ("unban")
+#define ALLOW_UNBAN_DESC ("Unban players")
 
 //*******************************************************************
 //*******************************************************************
@@ -433,6 +436,7 @@
 #define	ADMIN_PERM_BAN		("pban")
 #define	ADMIN_SPRAY_TAG		("spray")
 #define	ADMIN_GRAVITY		("grav")
+#define ADMIN_UNBAN			("unban")
 
 #define IMMUNITY_GIMP		("j")
 #define IMMUNITY_KICK		("k")

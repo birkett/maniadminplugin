@@ -4404,6 +4404,8 @@ void	ManiClient::InitAdminFlags(void)
 	Q_strcpy(admin_flag_list[ALLOW_GRAVITY].flag, ALLOW_GRAVITY_FLAG);
 	Q_strcpy(admin_flag_list[ALLOW_GRAVITY].flag_desc,ALLOW_GRAVITY_DESC);
 
+	Q_strcpy(admin_flag_list[ALLOW_UNBAN].flag, ALLOW_UNBAN_FLAG);
+	Q_strcpy(admin_flag_list[ALLOW_UNBAN].flag_desc, ALLOW_UNBAN_DESC);
 }
 
 //---------------------------------------------------------------------------------
@@ -4489,6 +4491,7 @@ void	ManiClient::AddBuiltInFlags(void)
 	flag_desc_list.AddFlag(ADMIN, ADMIN_PERM_BAN, Translate(NULL, 1553));
 	flag_desc_list.AddFlag(ADMIN, ADMIN_SPRAY_TAG, Translate(NULL, 1554));
 	flag_desc_list.AddFlag(ADMIN, ADMIN_GRAVITY, Translate(NULL, 1555));
+	flag_desc_list.AddFlag(ADMIN, ADMIN_UNBAN, Translate(NULL, 1556));
 
 	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_KICK, Translate(NULL, 1701));
 	flag_desc_list.AddFlag(IMMUNITY, IMMUNITY_SLAY, Translate(NULL, 1702));
