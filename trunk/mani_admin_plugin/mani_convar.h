@@ -207,7 +207,8 @@ extern ConVar mani_vote_map_percent_required;
 extern ConVar mani_vote_random_map_percent_required;
 extern ConVar mani_vote_extend_percent_required;
 extern ConVar mani_vote_show_vote_mode;
-extern ConVar  mani_vote_end_of_map_swap_team;
+extern ConVar mani_vote_end_of_map_swap_team;
+extern ConVar mani_vote_randomize_extend_vote;
 
 extern ConVar mani_vote_user_vote_map_percentage;
 extern ConVar mani_vote_user_vote_map_time_before_vote;
