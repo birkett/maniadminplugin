@@ -6683,6 +6683,9 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 
 	if (gpCmd->Cmd_Argc() < 2) return gpManiHelp->ShowHelp(player_ptr, command_name, help_id, command_type);
 
+	const char *reason = NULL;
+	if ( gpCmd->Cmd_Argc() > 2 )
+		reason = gpCmd->Cmd_Args(2);
 	// Whoever issued the commmand is authorised to do it.
 	const char *target_string = gpCmd->Cmd_Argv(1);
 
@@ -6714,11 +6717,15 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaKick(player_t *player_ptr, const char *comm
 			continue;
 		}
 
-		PrintToClientConsole(target_player_list[i].entity, "You have been kicked by Admin\n");
-		gpManiPlayerKick->AddPlayer( target_player_list[i].index, 0.5f, "You have been kicked by Admin" );
-		snprintf( kick_cmd, sizeof(kick_cmd),
-					"kickid %i You were kicked by Admin\n",
-					target_player_list[i].user_id);
+		if ( reason ) {
+			PrintToClientConsole(target_player_list[i].entity, "You were kicked for %s\n", reason);
+			gpManiPlayerKick->AddPlayer( target_player_list[i].index, 0.5f, reason );
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were kicked for %s\n", target_player_list[i].user_id, reason);
+		} else {
+			PrintToClientConsole(target_player_list[i].entity, "You were kicked by an Admin\n");
+			gpManiPlayerKick->AddPlayer( target_player_list[i].index, 0.5f, "You were kicked by an Admin" );
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i You were kicked by an admin\n", target_player_list[i].user_id);
+		}
 
 		LogCommand (player_ptr, "Kick (By Admin) [%s] [%s] %s\n", target_player_list[i].name, target_player_list[i].steam_id, kick_cmd);
 		AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminkick_anonymous.GetInt(), "kicked player %s", target_player_list[i].name );
