@@ -378,7 +378,7 @@ void ManiReservedSlot::DisconnectPlayer(player_t *player_ptr)
 			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
 
 		gpManiPlayerKick->AddPlayer (player_ptr->index, 0.5f, mani_reserve_slots_kick_message.GetString());
-	}else {
+	} else {
 		if ( !player_ptr->is_bot )
 			PrintToClientConsole( player_ptr->entity, "%s\n", mani_reserve_slots_kick_message.GetString());
 
