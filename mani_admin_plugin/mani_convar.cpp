@@ -219,7 +219,7 @@ ConVar mani_vote_rcon_percent_required ("mani_vote_rcon_percent_required", "60",
 ConVar mani_vote_rounds_before_end_of_map_vote ("mani_vote_rounds_before_end_of_map_vote", "3", 0, "Defines how rounds before mp_winlimit is hit that a random map vote is started", true, 3, true, 99999); 
 ConVar mani_vote_show_vote_mode ("mani_vote_show_vote_mode", "3", 0, "0 = quiet mode, 1 = show players as they vote but not their choice, 2 = Show voted choice but not player, 3 = show player name and their choice", true, 0, true, 3); 
 ConVar mani_vote_time_before_end_of_map_vote ("mani_vote_time_before_end_of_map_vote", "3", 0, "Defines how many minutes before the end of the map that a random map vote is started", true, 2, true, 99999); 
-
+ConVar mani_vote_randomize_extend_vote ("mani_vote_randomize_extend_vote", "0",0, "Randomize slot number the option \"Extend Map\" will be displayed", true, 0, true, 1);
 ConVar mani_vote_end_of_map_swap_team ("mani_vote_end_of_map_swap_team", "0", 0, "Defines if teams are swapped on an extend vote win for end of map vote", true, 0, true, 1); 
 
 ConVar mani_vote_user_vote_ban_minimum_votes( "mani_vote_user_vote_ban_minimum_votes", "4", 0, "This defines the minimum amount of votes required from players to ban a player",true, 0, true, 64 );	

@@ -2161,7 +2161,8 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 {
 	last_map_t *last_maps;
 	int	maps_to_skip;
-	vote_option_t vote_option;
+	vote_option_t vote_option, extend_option;
+	bool	extend_added = false;
 	map_t	*m_list;
 	int		m_list_size;
 	int		map_index;
@@ -2268,24 +2269,27 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 		if (mp_winlimit && mp_winlimit->GetInt() != 0) winlimit_change = true;
 		if (mp_maxrounds && mp_maxrounds->GetInt() != 0) maxrounds_change = true;
 
-		if (timelimit_change && winlimit_change && maxrounds_change)
+		if (timelimit_change && winlimit_change && maxrounds_change) 
 		{
-			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s%s", Translate(NULL, 2510, "%i%i", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt()), swap_team_str);
+			snprintf(extend_option.vote_name, sizeof(extend_option.vote_name) , "%s%s", Translate(NULL, 2510, "%i%i", mani_vote_extend_time.GetInt(), mani_vote_extend_rounds.GetInt()), swap_team_str);
 		}
 		else if (timelimit_change)
 		{
-			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s%s", Translate(NULL, 2511, "%i", mani_vote_extend_time.GetInt()),swap_team_str);
+			snprintf(extend_option.vote_name, sizeof(extend_option.vote_name) , "%s%s", Translate(NULL, 2511, "%i", mani_vote_extend_time.GetInt()),swap_team_str);
 		}
 		else
 		{
-			snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s%s", Translate(NULL, 2512, "%i", mani_vote_extend_rounds.GetInt()),swap_team_str);
+			snprintf(extend_option.vote_name, sizeof(extend_option.vote_name) , "%s%s", Translate(NULL, 2512, "%i", mani_vote_extend_rounds.GetInt()),swap_team_str);
 		}
 
-		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "mani_extend_map");
-		vote_option.votes_cast = 0;
-		vote_option.null_command = false;
-		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
-		vote_option_list[vote_option_list_size - 1] = vote_option;
+		snprintf(extend_option.vote_command, sizeof(extend_option.vote_command) , "mani_extend_map");
+		extend_option.votes_cast = 0;
+		extend_option.null_command = false;
+		if (!mani_vote_randomize_extend_vote.GetBool()) {
+			AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
+			vote_option_list[vote_option_list_size - 1] = extend_option;
+			extend_added = true;
+		}
 	}
 
 	// Generate a bit more randomness
@@ -2294,6 +2298,11 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 	{
 		map_index = rand() % select_list_size;
 
+		if ( allow_extend && mani_vote_randomize_extend_vote.GetBool() && !extend_added && (i > 0) && (rand() % 2) ) {
+			AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
+			vote_option_list[vote_option_list_size - 1] = extend_option;
+			extend_added = true;
+		}
 		// Add map to vote options list
 		snprintf(vote_option.vote_name, sizeof(vote_option.vote_name) , "%s", select_list[map_index].map_name);
 		snprintf(vote_option.vote_command, sizeof(vote_option.vote_command) , "%s", select_list[map_index].map_name);
@@ -2323,6 +2332,12 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 			select_list_size = 0;
 			break;
 		}
+	}
+
+	if ( allow_extend && mani_vote_randomize_extend_vote.GetBool() && !extend_added ) {
+		AddToList((void **) &vote_option_list, sizeof(vote_option_t), &vote_option_list_size);
+		vote_option_list[vote_option_list_size - 1] = extend_option;
+		extend_added = true;
 	}
 
 	if (select_list != NULL)
