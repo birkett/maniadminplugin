@@ -58,6 +58,9 @@
 #include "mani_mainclass.h"
 #include "mani_playerkick.h" 
 
+
+int m_iUnaccountedPlayers = 0;
+
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
 extern IFileSystem	*filesystem;
@@ -193,7 +196,7 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	if ( pA >= 16 )
 		memcpy ( &SteamID, &p9[8], sizeof(SteamID) );
 #endif
-	int total_players = GetNumberOfActivePlayers(true);
+	int total_players = m_iUnaccountedPlayers + GetNumberOfActivePlayers(true);
 	player_t player;
 	Q_memset ( &player, 0, sizeof(player) );
 	strcpy ( player.steam_id, SteamID.Render() );
@@ -226,8 +229,9 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 	ConVar *pwd = g_pCVar->FindVar( "sv_password" );
 
 	if ( pwd && !FStrEq(pwd->GetString(),"")) {
-		if ( AdminAccess && !war_mode && !mani_reserve_slots_enforce_password.GetBool() )
+		if ( AdminAccess && !war_mode && !mani_reserve_slots_enforce_password.GetBool() ) {
 			return CCD_MEMBER_CALL(pwd->GetString());
+		}
 	}
 
 	return CCD_MEMBER_CALL(p6);
@@ -311,6 +315,8 @@ void ManiReservedSlot::CleanUp(void)
 void ManiReservedSlot::Load(void)
 {
 
+	m_iUnaccountedPlayers = 0;
+
 	ManiClientConnectDetour = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
 	if ( ManiClientConnectDetour )
 		ManiClientConnectDetour->DetourFunction( );
@@ -333,6 +339,8 @@ void ManiReservedSlot::LevelInit(void)
 	char	steam_id[MAX_NETWORKID_LENGTH];
 	char	base_filename[256];
 
+	m_iUnaccountedPlayers = 0;
+	
 	this->CleanUp();
 	//Get reserve player list
 	Q_snprintf(base_filename, sizeof (base_filename), "./cfg/%s/reserveslots.txt", mani_path.GetString());
@@ -701,13 +709,15 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	player_t	temp_player;
 	int			allowed_players;
 	int			total_players;
-
+	
+	m_iUnaccountedPlayers--;
+	
 	if ((war_mode) || (mani_reserve_slots_number_of_slots.GetInt() == 0))   // with the other method ( zero slots )
 	{																		// other player is kicked BEFORE
 		return true;														// NetworkIDValidated
 	}
 
-	total_players = GetNumberOfActivePlayers( true ) - 1;
+	total_players = m_iUnaccountedPlayers + GetNumberOfActivePlayers(true);
 	// DirectLogCommand("[DEBUG] Total players on server [%i]\n", total_players);
 
 	if (total_players < (max_players - mani_reserve_slots_number_of_slots.GetInt()))
@@ -757,9 +767,20 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 			DisconnectPlayer(&temp_player);
 		}
 	}
-
+	
 	return true;
 }
 
+void ManiReservedSlot::ClientDisconnect( player_t *player_ptr ) {
+	if ( !player_ptr )
+		m_iUnaccountedPlayers--;
+
+	// for sanity
+	if ( m_iUnaccountedPlayers < 0 ) m_iUnaccountedPlayers = 0;
+}
+
+void ManiReservedSlot::ClientConnect() {
+	m_iUnaccountedPlayers++;
+}
 ManiReservedSlot	g_ManiReservedSlot;
 ManiReservedSlot	*gpManiReservedSlot;

@@ -87,6 +87,8 @@ public:
 	void		DisconnectPlayer(player_t *player_ptr);
 	void		Unload(void); //run at plugin unload
 	void		GameFrame(void);
+	void		ClientDisconnect(player_t *player_ptr);
+	void		ClientConnect(void);
 private:
 //	bool		ProcessPlayer(player_t *player_ptr);
 	void		BuildPlayerKickList( player_t *player_ptr = NULL, int *players_on_server = NULL);
