@@ -1625,8 +1625,11 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 
 	player.entity = pEntity;
 
+	
+
 	if (!FindPlayerByEntity(&player))
 	{
+		gpManiReservedSlot->ClientDisconnect(NULL); // must be human and still connecting!
 		return;
 	}
 
@@ -1823,7 +1826,7 @@ PLUGIN_RESULT CAdminPlugin::ClientConnect( bool *bAllowConnect, edict_t *pEntity
 //	{
 //		MMsg("Mani -> Client Connected [%s] [%s]\n", pszName, engine->GetPlayerNetworkIDString( pEntity ));
 //	}
-
+	gpManiReservedSlot->ClientConnect();
 	return PLUGIN_CONTINUE;
 }
 
