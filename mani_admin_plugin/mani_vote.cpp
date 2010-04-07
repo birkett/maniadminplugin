@@ -784,11 +784,11 @@ bool SystemVoteRandomMapPage::PopulateMenuPage(player_t *player_ptr)
 		m_list_size = map_list_size;
 	}
 
-	for( int i = 0; i < m_list_size; i++ )
+	for( int i = 1; i <= m_list_size; i++ )
 	{
 		MenuItem *ptr = new SystemVoteRandomMapItem;
 		ptr->params.AddParam("no_of_maps", i);
-		ptr->SetDisplayText(" [%i]",  i + 1);
+		ptr->SetDisplayText(" [%i]",  i);
 		this->AddItem(ptr);
 	}
 
