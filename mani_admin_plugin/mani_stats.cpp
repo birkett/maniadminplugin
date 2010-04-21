@@ -1860,7 +1860,7 @@ void ManiStats::PlayerDeath
 
 	if (v_player_found && a_player_found)
 	{
-		SetPointsDeltas(a_player_found, v_player_found, team_kill, attacker_ptr->is_bot, victim_ptr->is_bot, attacker_ptr->index - 1, victim_ptr->index - 1, weapon_weight);
+		SetPointsDeltas(a_player_found, v_player_found, team_kill, attacker_ptr->is_bot, victim_ptr->is_bot, attacker_ptr->index - 1, victim_ptr->index - 1, weapon_weight, suicide);
 	}
 
 }
@@ -2012,7 +2012,7 @@ void ManiStats::DODSPlayerDeath
 
 	if (v_player_found && a_player_found)
 	{
-		SetPointsDeltas(a_player_found, v_player_found, team_kill, attacker_ptr->is_bot, victim_ptr->is_bot, attacker_ptr->index - 1, victim_ptr->index - 1, weapon_weight);
+		SetPointsDeltas(a_player_found, v_player_found, team_kill, attacker_ptr->is_bot, victim_ptr->is_bot, attacker_ptr->index - 1, victim_ptr->index - 1, weapon_weight, suicide);
 	}
 
 }
@@ -2061,7 +2061,8 @@ void ManiStats::SetPointsDeltas
  bool	v_is_bot,
  int	a_index,
  int	v_index,
- float	weapon_weight
+ float	weapon_weight,
+ bool	suicide
  )
 {
 	rank_t	*temp_player_ptr;
@@ -2105,12 +2106,14 @@ void ManiStats::SetPointsDeltas
 	}
 
 	// Update players pointss
-	a_player_ptr->points += a_bonus;
+	if ( !suicide )
+		a_player_ptr->points += a_bonus;
+
 	if (mani_stats_points_add_only.GetInt() == 0)
 	{
 		// Thiz is to stop new players on the stats leeching experienced player points until
 		// the new player has a minimum amount of deaths + kills
-		if (team_kill ||
+		if (suicide || team_kill ||
 			(!team_kill && ((a_player_ptr->kills + a_player_ptr->deaths) > mani_stats_kills_before_points_removed.GetInt())))
 		{
 			v_player_ptr->points -= v_bonus;
