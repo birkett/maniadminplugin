@@ -1242,6 +1242,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 			int time_to_ban = 0;
 			if ( banned_player.expire_time != 0 ) {
 				time_to_ban = (int) (banned_player.expire_time - now)/60;
+				if ( time_to_ban <= 0 ) continue;  // time has expired!
 			}
 			if ( time_to_ban >= 0 ) {
 				AddBan ( &banned_player );
