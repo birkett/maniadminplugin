@@ -267,7 +267,7 @@ private:
 	void		ReBuildStatsList(bool use_steam_id);
 	void		ReadStats(bool use_steam_id);
 	void		WriteStats(bool use_steam_id);
-	void		SetPointsDeltas( rank_t	*a_player_ptr, rank_t	*v_player_ptr, bool team_kill, bool a_is_bot, bool v_is_bot, int a_index, int v_index, float weapon_weight );
+	void		SetPointsDeltas( rank_t	*a_player_ptr, rank_t	*v_player_ptr, bool team_kill, bool a_is_bot, bool v_is_bot, int a_index, int v_index, float weapon_weight, bool suicide );
 	bool		MoreThanOnePlayer(void);
 	char		*GetBar(float percent);
 	int			GetCSSWeaponHashIndex(char *weapon_string);
