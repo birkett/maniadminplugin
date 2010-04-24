@@ -39,10 +39,21 @@ extern	int				ban_list_size;
 
 class CManiHandleBans {
 public:
+	void	LevelInit(void);
+
 	void	WriteBans(void);
 	bool	AddBan ( ban_settings_t *ban );
 	bool	AddBan ( player_t *player, const char *key, const char *initiator, int ban_time, const char *prefix, const char *reason );
 	bool	RemoveBan( const char *key );
+	void	ReadBans(void);
+	void	GameFrame(void);
+
+	bool	DoneProcessing(void) { return current_index == starting_count; }
+private:
+	void	SendBanToServer(int ban_index);
+
+	int		current_index;
+	int		starting_count;
 };
 
 extern CManiHandleBans *gpManiHandleBans;
