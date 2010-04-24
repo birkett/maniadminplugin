@@ -68,6 +68,7 @@
 #include "mani_commands.h"
 #include "shareddefs.h"
 #include "mani_playerkick.h"
+#include "mani_handlebans.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
@@ -3788,15 +3789,15 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 	{
 		// Ban by user id
 		LogCommand (NULL,"Ban (User Vote) [%s] [%s]\n", player->name, player->steam_id);
-		gpManiAdminPlugin->AddBan ( player, player->steam_id, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
-		gpManiAdminPlugin->WriteBans();
+		gpManiHandleBans->AddBan ( player, player->steam_id, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
+		gpManiHandleBans->WriteBans();
 	}
 	else if (mani_vote_user_vote_ban_type.GetInt() == 1)
 	{
 		// Ban by user ip address
 		LogCommand (NULL,"Ban (User Vote) [%s] [%s]\n", player->name, player->ip_address);
-		gpManiAdminPlugin->AddBan ( player, player->ip_address, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
-		gpManiAdminPlugin->WriteBans();
+		gpManiHandleBans->AddBan ( player, player->ip_address, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
+		gpManiHandleBans->WriteBans();
 	}
 	else if (mani_vote_user_vote_ban_type.GetInt() == 2)
 	{
@@ -3804,12 +3805,12 @@ void ManiVote::ProcessUserVoteBanWin(player_t *player)
 		if (!IsLAN())
 		{
 			LogCommand (NULL,"Ban (User Vote) [%s] [%s]\n", player->name, player->steam_id);
-			gpManiAdminPlugin->AddBan ( player, player->steam_id, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
+			gpManiHandleBans->AddBan ( player, player->steam_id, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
 		}
 
 		LogCommand (NULL,"Ban (User Vote) [%s] [%s]\n", player->name, player->ip_address);
-		gpManiAdminPlugin->AddBan ( player, player->ip_address, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
-		gpManiAdminPlugin->WriteBans();
+		gpManiHandleBans->AddBan ( player, player->ip_address, "MAP - Vote", mani_vote_user_vote_ban_time.GetInt(), "User vote banned", "User vote banned" );
+		gpManiHandleBans->WriteBans();
 	}
 
 	PrintToClientConsole(player->entity, "You have been banned by vote\n");

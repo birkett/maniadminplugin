@@ -47,6 +47,7 @@
 #include "mani_convar.h"
 #include "mani_parser.h"
 #include "mani_memory.h"
+#include "mani_handlebans.h"
 
 // Max alias name length
 #define ALIAS_LENGTH (50)

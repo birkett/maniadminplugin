@@ -969,6 +969,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_handlebans.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mani_help.cpp"
 					>
 				</File>
@@ -1286,6 +1290,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_globals.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_handlebans.h"
 					>
 				</File>
 				<File

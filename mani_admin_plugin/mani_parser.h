@@ -30,6 +30,8 @@
 #include "iplayerinfo.h"
 #include "mani_player.h"
 
+struct ban_settings_t;
+
 struct mani_colour_t
 {
 	char	*alias;
