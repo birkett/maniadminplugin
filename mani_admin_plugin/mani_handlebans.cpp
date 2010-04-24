@@ -40,7 +40,11 @@
 #include "mani_mainclass.h"
 #include "mani_playerkick.h"
 #include "mani_memory.h"
+#include "mani_parser.h"
 
+#define MAX_BANS_PER_TICK	200
+
+extern	IVEngineServer	*engine;
 extern	IFileSystem	*filesystem;
 extern	int max_players;
 
@@ -184,6 +188,75 @@ bool CManiHandleBans::RemoveBan( const char *key ) {
 		ban_list[--index].expire_time = 1; // this ensures the ban will be removed on next write.
 
 	return found;
+}
+
+void CManiHandleBans::ReadBans(void) {
+	char	base_filename[256];
+	FileHandle_t file_handle;
+	char	ban_list_line[512];
+
+	ban_settings_t banned_player;
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/banlist.txt", mani_path.GetString());
+	file_handle = filesystem->Open (base_filename,"rt",NULL);
+	if (file_handle != NULL) {
+		while (filesystem->ReadLine (ban_list_line, sizeof(ban_list_line), file_handle) != NULL)
+		{
+			Q_memset ( &banned_player, 0, sizeof(ban_settings_t) );
+			if (!ParseBanLine(ban_list_line, &banned_player, true, false))
+			{
+				// String is empty after parsing
+				continue;
+			}
+
+			time_t now;
+			time ( &now );
+			int time_to_ban = 0;
+			if ( banned_player.expire_time != 0 ) {
+				time_to_ban = (int) (banned_player.expire_time - now)/60;
+				if ( time_to_ban <= 0 ) continue;  // time has expired!
+			}
+			if ( time_to_ban >= 0 ) 
+				gpManiHandleBans->AddBan ( &banned_player );
+		}
+		filesystem->Close(file_handle);
+	}
+}
+
+
+void CManiHandleBans::LevelInit() {
+	ReadBans();
+	current_index = 0;
+	starting_count = ban_list_size;
+}
+
+void CManiHandleBans::GameFrame() {
+	int stopping_point = current_index + MAX_BANS_PER_TICK;
+	if ( stopping_point > starting_count ) stopping_point = starting_count;
+
+	for ( int i = current_index; i <stopping_point; i++ )
+		SendBanToServer(i);
+
+	current_index = stopping_point;
+}
+
+void CManiHandleBans::SendBanToServer(int ban_index) {
+	char ban_cmd[512];
+	ban_settings_t banned_player;
+	if ( ban_index > ban_list_size ) return;
+
+	banned_player = ban_list[ban_index];
+	time_t now;
+	time ( &now );
+
+	int time_to_ban = 0;
+	if ( banned_player.expire_time != 0 ) 
+		time_to_ban = (int) (banned_player.expire_time - now)/60;
+
+	if ( banned_player.byID )
+		snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s\n", time_to_ban, banned_player.key_id);
+	else
+		snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", time_to_ban, banned_player.key_id );
+	engine->ServerCommand(ban_cmd);
 }
 
 CManiHandleBans g_ManiHandleBans;

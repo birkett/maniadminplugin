@@ -934,7 +934,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	FileHandle_t file_handle;
 	char	swear_word[128];
 	char	rcon_command[512];
-	char	ban_list_line[512];
 	char	mute_list_line[512];
 	int		i;
 	char	map_config_filename[256];
@@ -1221,40 +1220,8 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		filesystem->Close(file_handle);
 	}
 
-	//Get ban list
-	char ban_cmd[512];
-	ban_settings_t banned_player;
-	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/banlist.txt", mani_path.GetString());
-	file_handle = filesystem->Open (base_filename,"rt",NULL);
-	if (file_handle != NULL) {
-		while (filesystem->ReadLine (ban_list_line, sizeof(ban_list_line), file_handle) != NULL)
-		{
-			Q_memset ( &banned_player, 0, sizeof(ban_settings_t) );
-			if (!ParseBanLine(ban_list_line, &banned_player, true, false))
-			{
-				// String is empty after parsing
-				continue;
-			}
-
-			time_t now;
-			time ( &now );
-			int time_to_ban = 0;
-			if ( banned_player.expire_time != 0 ) {
-				time_to_ban = (int) (banned_player.expire_time - now)/60;
-				if ( time_to_ban <= 0 ) continue;  // time has expired!
-			}
-			if ( time_to_ban >= 0 ) {
-				gpManiHandleBans->AddBan ( &banned_player );
-				if ( banned_player.byID )
-					snprintf( ban_cmd, sizeof(ban_cmd), "banid %i %s\n", time_to_ban, banned_player.key_id);
-				else
-					snprintf( ban_cmd, sizeof(ban_cmd), "addip %i \"%s\"\n", time_to_ban, banned_player.key_id );
-				engine->ServerCommand(ban_cmd);
-			}
-		}
-		filesystem->Close(file_handle);
-	}
-	gpManiHandleBans->WriteBans(); // flush out expired temp bans
+	// handle the ban initialization in a more "threaded" way
+	gpManiHandleBans->LevelInit();
 
 	//Get muted list
 	ban_settings_t muted_player;
@@ -1495,6 +1462,8 @@ void CAdminPlugin::GameFrame( bool simulating )
 	gpManiWarmupTimer->GameFrame();
 	gpManiAFK->GameFrame();
 	gpManiPing->GameFrame();
+	if ( !gpManiHandleBans->DoneProcessing() )
+		gpManiHandleBans->GameFrame();
 
 	if (war_mode && mani_war_mode_force_overview_zero.GetInt() == 1)
 	{
