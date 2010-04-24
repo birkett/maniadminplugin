@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 
@@ -60,6 +61,7 @@
 #include "mani_teamkill.h"
 #include "mani_commands.h"
 #include "cbaseentity.h"
+#include "mani_handlebans.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IFileSystem	*filesystem;
@@ -860,8 +862,8 @@ bool	TKBanPlayer (player_t	*attacker, int ban_index)
 			}
 
 			LogCommand (NULL,"Ban (Team Kill) [%s] [%s]\n", attacker->name, attacker->steam_id);
-			gpManiAdminPlugin->AddBan ( attacker, attacker->steam_id, "MAP - TK", mani_tk_ban_time.GetInt(), "Team Kill Ban", "Team Kill Ban" );
-			gpManiAdminPlugin->WriteBans();
+			gpManiHandleBans->AddBan ( attacker, attacker->steam_id, "MAP - TK", mani_tk_ban_time.GetInt(), "Team Kill Ban", "Team Kill Ban" );
+			gpManiHandleBans->WriteBans();
 
 			if (mani_tk_ban_time.GetInt() == 0)
 			{

@@ -32,6 +32,7 @@
 #include "mani_output.h"
 #include "mani_command_control.h"
 #include "mani_playerkick.h"
+#include "mani_handlebans.h"
 
 // needed by Keeper
 extern	CGlobalVars *gpGlobals;
@@ -107,9 +108,9 @@ bool CCommandControl::ClientCommand(player_t *player_ptr) {
 			{	
 				//ban the player
 				LogCommand (NULL,"Ban (Command Spam) [%s] [%s]\n", player_ptr->name, player_ptr->steam_id);
-				gpManiAdminPlugin->AddBan(player_ptr, player_ptr->steam_id, "MAP", 
+				gpManiHandleBans->AddBan(player_ptr, player_ptr->steam_id, "MAP", 
 					mani_command_flood_punish_ban_time.GetInt(), "Banned (Command spam)", "Banned (Command spam)");
-				gpManiAdminPlugin->WriteBans();
+				gpManiHandleBans->WriteBans();
 			}
 		}
 		return false;

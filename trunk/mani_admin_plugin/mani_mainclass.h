@@ -40,6 +40,8 @@ enum LOADUP_STATUS {
 	LOADUP_FAILED,
 };
 
+struct ban_settings_t;
+
 //---------------------------------------------------------------------------------
 // Purpose: Core class 
 //---------------------------------------------------------------------------------
@@ -82,10 +84,10 @@ public:
 
 	void			PrintHeader ( FileHandle_t f, const char *fn, const char *ds );
 
-	void			WriteBans( void );
-	bool			AddBan ( ban_settings_t *ban );
-	bool			AddBan ( player_t *player, const char *key, const char *initiator, int ban_time = 0, const char *prefix = NULL, const char *reason = NULL );
-	bool			RemoveBan ( const char *key );
+	//void			WriteBans( void );
+	//bool			AddBan ( ban_settings_t *ban );
+	//bool			AddBan ( player_t *player, const char *key, const char *initiator, int ban_time = 0, const char *prefix = NULL, const char *reason = NULL );
+	//bool			RemoveBan ( const char *key );
 
 	void			WriteMutes( void );
 	bool			AddMute ( ban_settings_t *ban );

@@ -55,6 +55,7 @@
 #include "mani_gametype.h"
 #include "mani_effects.h"
 #include "mani_voice.h"
+#include "mani_handlebans.h"
 
 extern	IVEngineServer *engine;
 extern	IVoiceServer *voiceserver;
