@@ -42,7 +42,7 @@
 #include "mani_memory.h"
 #include "mani_parser.h"
 
-#define MAX_BANS_PER_TICK	200
+#define MAX_BANS_PER_TICK	(25)
 
 extern	IVEngineServer	*engine;
 extern	IFileSystem	*filesystem;
