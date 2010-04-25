@@ -40,6 +40,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_gametype.cpp \
                 mani_globals.cpp \
                 mani_ghost.cpp \
+		mani_handlebans.cpp \
                 mani_help.cpp \
                 mani_hlxinterface.cpp \
                 mani_keyvalues.cpp \
