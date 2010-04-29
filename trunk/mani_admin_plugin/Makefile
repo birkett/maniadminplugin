@@ -109,7 +109,7 @@ CPP_LIB=../stlport/lib/libstlport.a  \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl tier0_i486.so vstdlib_i486.so
+LDFLAGS=-lm -ldl libtier0.so libvstdlib.so
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -172,8 +172,8 @@ dirs:
 	@echo "KNIGHT_OBJ_DIR = $(KNIGHT_OBJ_DIR)"
 	@echo ""
 
-	@if [ ! -f "tier0_i486.so" ]; then ln -s $(HL2BIN_DIR)/tier0_i486.so .; fi
-	@if [ ! -f "vstdlib_i486.so" ]; then ln -s $(HL2BIN_DIR)/vstdlib_i486.so .; fi
+	@if [ ! -f "libtier0.so" ]; then ln -s $(HL2BIN_DIR)/libtier0.so .; fi
+	@if [ ! -f "libvstdlib.so" ]; then ln -s $(HL2BIN_DIR)/libvstdlib.so .; fi
 	@if [ ! -d $(BUILD_DIR) ]; then mkdir $(BUILD_DIR); fi
 	@if [ ! -d $(BUILD_OBJ_DIR) ]; then mkdir $(BUILD_OBJ_DIR); fi
 	@if [ ! -d $(PLUGIN_OBJ_DIR) ]; then mkdir $(PLUGIN_OBJ_DIR); fi
@@ -210,4 +210,4 @@ $(SOURCEHOOK_OBJ_DIR)/%.o: $(SOURCEHOOK_SRC_DIR)/%.cpp
 
 clean:
 	-rm -Rf $(PLUGIN_OBJ_DIR)
-	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) tier0_i486.so vstdlib_i486.so
+	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) libtier0.so libvstdlib.so

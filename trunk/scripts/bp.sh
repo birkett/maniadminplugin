@@ -250,7 +250,7 @@ then
 	make clean
 fi
 
-make -j 6
+make -j 2
 
 COPY_SMM=""
 COPY_ORANGE=""
