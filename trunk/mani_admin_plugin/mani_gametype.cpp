@@ -125,6 +125,10 @@ void GetLinuxBins ( char *game, char *engine ) {
 	char file[255];
 	snprintf(file, sizeof(file)-1, "/proc/%d/maps", pid);
 
+	char gamedir[256];
+	UTIL_GetGamePath ( gamedir );
+
+#if !defined ( ORANGE )
 	if ( UTIL_ScanFile ( file, "engine_i686.so" ) )
 		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
 	else if ( UTIL_ScanFile ( file, "engine_i486.so" ) )
@@ -132,9 +136,12 @@ void GetLinuxBins ( char *game, char *engine ) {
 	else
 		Q_strncpy ( engine, "./bin/engine_amd.so", 256 );
 
-	char gamedir[256];
-	UTIL_GetGamePath ( gamedir );
 	Q_snprintf ( game, 256, "./%s/bin/server_i486.so", gamedir );
+
+#else
+	Q_strncpy ( engine, "./bin/engine.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server.so", gamedir );
+#endif
 }
 #endif
 //---------------------------------------------------------------------------------
