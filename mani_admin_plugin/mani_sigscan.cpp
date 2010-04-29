@@ -163,6 +163,7 @@ void	*FindAddress(char *address_name, bool gamebin)
 		dlclose(handle);
 	}
 #else
+		// Borrowed from SourceMod.  Hidden symbols SUCK!!!!
 		int dlfile;
 		struct link_map *dlmap;
 		struct stat dlstat;
