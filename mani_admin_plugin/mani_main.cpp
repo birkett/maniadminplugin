@@ -146,7 +146,6 @@ typedef unsigned long DWORD;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-
 #include "beam_flags.h"
 
 int			menu_message_index = 10;
@@ -538,33 +537,16 @@ bool CAdminPlugin::Load(void)
 	{
 
 #ifdef __linux__
-		void	*handle;
-		void	*var_address;
-
-		handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
-
-		if (handle == NULL)
+		void *var_address = FindAddress("te");
+		if (var_address == NULL)
 		{
-			MMsg("Failed to open server image, error [%s]\n", dlerror());
+			MMsg("dlsym failure : Error [%s]\n", dlerror());
 			gpManiGameType->SetAdvancedEffectsAllowed(false);
 		}
 		else
 		{
-			MMsg("Program Start at [%p]\n", handle);
-
-			var_address = dlsym(handle, "te");
-			if (var_address == NULL)
-			{
-				MMsg("dlsym failure : Error [%s]\n", dlerror());
-				gpManiGameType->SetAdvancedEffectsAllowed(false);
-			}
-			else
-			{
-				MMsg("var_address = %p\n", var_address);
-				temp_ents = *(ITempEntsSystem **) var_address;
-			}
-
-			dlclose(handle);
+			MMsg("var_address = %p\n", var_address);
+			temp_ents = *(ITempEntsSystem **) var_address;
 		}
 #else
 		temp_ents = **(ITempEntsSystem***)(VFN2(effects, gpManiGameType->GetAdvancedEffectsVFuncOffset()) + (gpManiGameType->GetAdvancedEffectsCodeOffset()));
