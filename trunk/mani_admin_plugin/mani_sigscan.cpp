@@ -9,6 +9,12 @@
 //   #define WIN32_LEAN_AND_MEAN
    #include <windows.h>
    #include <winnt.h>
+#else
+   #include <elf.h>
+   #include <fcntl.h>
+   #include <link.h>
+   #include <sys/mman.h>
+   #include <sys/stat.h>
 #endif
 #include "interface.h"
 #include "filesystem.h"
@@ -65,10 +71,10 @@ CCSGetFileWeaponInfoHandle_ CCSGetFileWeaponInfoHandleFunc;
 static void ShowSigInfo(void *ptr, char *sig_name);
 
 #ifdef WIN32
-static	void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
-static  bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
+static void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
+static bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
 #else
-static void	*FindAddress(char *address_name, bool gamebin = true);
+static void *FindAddress(char *address_name, bool gamebin = true);
 #endif
 
 class ManiEmptyClass {};
@@ -130,6 +136,8 @@ void	*FindAddress(char *address_name, bool gamebin)
 	void	*handle;
 	void	*var_address;
 
+	var_address = NULL;
+
 	if ( gamebin )
 		handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
 	else
@@ -142,6 +150,9 @@ void	*FindAddress(char *address_name, bool gamebin)
 	}
 	else
 	{
+
+#if !defined ( ORANGE )
+
 		var_address = dlsym(handle, address_name);
 		if (var_address == NULL)
 		{
@@ -151,8 +162,101 @@ void	*FindAddress(char *address_name, bool gamebin)
 
 		dlclose(handle);
 	}
+#else
+		int dlfile;
+		struct link_map *dlmap;
+		struct stat dlstat;
+		Elf32_Ehdr *file_hdr;
+		uintptr_t map_base;
+		Elf32_Shdr *sections, *shstrtab_hdr, *symtab_hdr, *strtab_hdr;
+		Elf32_Sym *symtab;
+		uint16_t section_count;
+		const char *shstrtab, *strtab;
+		uint32_t symbol_count;
+
+		symtab_hdr = NULL;
+		strtab_hdr = NULL;
+
+		dlmap = (struct link_map *)handle;
+
+		dlfile = open(dlmap->l_name, O_RDONLY);
+		if (dlfile == -1 || fstat(dlfile, &dlstat) == -1)
+		{
+			close(dlfile);
+			return NULL;
+		}
+
+		/* Map library file into memory */
+		file_hdr = (Elf32_Ehdr *)mmap(NULL, dlstat.st_size, PROT_READ, MAP_PRIVATE, dlfile, 0);
+		map_base = (uintptr_t)file_hdr;
+		if (file_hdr == MAP_FAILED)
+		{
+			close(dlfile);
+			return NULL;
+		}
+		close(dlfile);
+
+		if (file_hdr->e_shoff == 0 || file_hdr->e_shstrndx == SHN_UNDEF)
+		{
+			munmap(file_hdr, dlstat.st_size);
+			return NULL;
+		}
+
+		sections = (Elf32_Shdr *)(map_base + file_hdr->e_shoff);
+		section_count = file_hdr->e_shnum;
+		/* Get ELF section header string table */
+		shstrtab_hdr = &sections[file_hdr->e_shstrndx];
+		shstrtab = (const char *)(map_base + shstrtab_hdr->sh_offset);
+
+		/* Iterate sections while looking for ELF symbol table and string table */
+		for (uint16_t i = 0; i < section_count; i++)
+		{
+			Elf32_Shdr &hdr = sections[i];
+			const char *section_name = shstrtab + hdr.sh_name;
+
+			if (strcmp(section_name, ".symtab") == 0)
+			{
+				symtab_hdr = &hdr;
+			}
+			else if (strcmp(section_name, ".strtab") == 0)
+			{
+				strtab_hdr = &hdr;
+			}
+		}
+
+		/* Uh oh, we don't have a symbol table or a string table */
+		if (symtab_hdr == NULL || strtab_hdr == NULL)
+		{
+			munmap(file_hdr, dlstat.st_size);
+			return NULL;
+		}
+
+		symtab = (Elf32_Sym *)(map_base + symtab_hdr->sh_offset);
+		strtab = (const char *)(map_base + strtab_hdr->sh_offset);
+		symbol_count = symtab_hdr->sh_size / symtab_hdr->sh_entsize;
+
+		for (uint32_t i = 0; i < symbol_count; i++)
+		{
+			Elf32_Sym &sym = symtab[i];
+			unsigned char sym_type = ELF32_ST_TYPE(sym.st_info);
+			const char *sym_name = strtab + sym.st_name;
+
+			// Skip symbols that are undefined or do not refer to functions or objects 
+			if (sym.st_shndx == SHN_UNDEF || (sym_type != STT_FUNC && sym_type != STT_OBJECT))
+			{
+				continue;
+			}
+
+			if (strcmp(address_name, sym_name) == 0) {
+				var_address = (void *)(dlmap->l_addr + sym.st_value);
+				break;
+			}
+		}
+		munmap(file_hdr, dlstat.st_size);
+	}
 
 	return var_address;
+#endif
 }
 #endif
 
