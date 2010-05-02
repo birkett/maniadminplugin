@@ -15,6 +15,7 @@
    #include <link.h>
    #include <sys/mman.h>
    #include <sys/stat.h>
+   #include <demangle.h>
 #endif
 #include "interface.h"
 #include "filesystem.h"
@@ -130,18 +131,34 @@ bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len)
 }
 
 #else
+
+
 static
 void	*FindAddress(char *address_name, bool gamebin)
 {
 	void	*handle;
 	void	*var_address;
 
+	MMsg("FindAddress %s\n", address_name);
+
+	char *name = cplus_demangle(address_name, DMGL_PARAMS);
+	if (name != NULL)
+	{
+		MMsg("Demangled [%s]\n", name);
+		free(name);
+	}
+
 	var_address = NULL;
 
+
 	if ( gamebin )
+	{
 		handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
+	}
 	else
+	{
 		handle = dlopen(gpManiGameType->GetLinuxEngine(), RTLD_NOW);
+	}
 
 	if (handle == NULL)
 	{
@@ -151,18 +168,6 @@ void	*FindAddress(char *address_name, bool gamebin)
 	else
 	{
 
-#if !defined ( ORANGE )
-
-		var_address = dlsym(handle, address_name);
-		if (var_address == NULL)
-		{
-			dlclose(handle);
-			return (void *) NULL;
-		}
-
-		dlclose(handle);
-	}
-#else
 		// Borrowed from SourceMod.  Hidden symbols SUCK!!!!
 		int dlfile;
 		struct link_map *dlmap;
@@ -257,7 +262,6 @@ void	*FindAddress(char *address_name, bool gamebin)
 	}
 
 	return var_address;
-#endif
 }
 #endif
 
