@@ -109,7 +109,7 @@ CPP_LIB=../stlport/lib/libstlport.a  \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl libtier0.so libvstdlib.so
+LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -132,7 +132,7 @@ SHLIBLDFLAGS=-shared
 CFLAGS=$(USER_CFLAGS) $(BASE_CFLAGS) $(ARCH_CFLAGS)
 CFLAGS+= $(DEBUG_FLAGS)
 # 
-DO_CC=$(CPLUS) -I../stlport/include/stlport/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
+DO_CC=$(CPLUS) -I../stlport/include/stlport/ -I./demangle/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 
 #####################################################################
 
@@ -170,10 +170,15 @@ dirs:
 	@echo "PLUGIN_OBJS = $(PLUGIN_OBJS)"
 	@echo "ASM_OBJ_DIR = $(ASM_OBJ_DIRs)"
 	@echo "KNIGHT_OBJ_DIR = $(KNIGHT_OBJ_DIR)"
+	@echo "TIER0_SO = $(TIER0_SO)"
+	@echo "VSTDLIB_SO = $(VSTDLIB_SO)"
+	@echo "DEMANGLE_OBJ_DIR = $(DEMANGLE_OBJ_DIR)"
+	@echo "DEMANGLE_OBJS = $(DEMANGLE_OBJS)"
+	@echo "DEMANGLE_SRC_DIR = $(DEMANGLE_SRC_DIR)"
 	@echo ""
 
-	@if [ ! -f "libtier0.so" ]; then ln -s $(HL2BIN_DIR)/libtier0.so .; fi
-	@if [ ! -f "libvstdlib.so" ]; then ln -s $(HL2BIN_DIR)/libvstdlib.so .; fi
+	@if [ ! -f $(TIER0_SO) ]; then ln -s $(HL2BIN_DIR)/$(TIER0_SO) .; fi
+	@if [ ! -f $(VSTDLIB_SO) ]; then ln -s $(HL2BIN_DIR)/$(VSTDLIB_SO) .; fi
 	@if [ ! -d $(BUILD_DIR) ]; then mkdir $(BUILD_DIR); fi
 	@if [ ! -d $(BUILD_OBJ_DIR) ]; then mkdir $(BUILD_OBJ_DIR); fi
 	@if [ ! -d $(PLUGIN_OBJ_DIR) ]; then mkdir $(PLUGIN_OBJ_DIR); fi
@@ -184,11 +189,12 @@ dirs:
 	@if [ ! -d $(SOURCEHOOK_OBJ_DIR) ]; then mkdir $(SOURCEHOOK_OBJ_DIR); fi
 	@if [ ! -d $(ASM_OBJ_DIR) ]; then mkdir $(ASM_OBJ_DIR); fi
 	@if [ ! -d $(KNIGHT_OBJ_DIR) ]; then mkdir $(KNIGHT_OBJ_DIR); fi
+	@if [ ! -d $(DEMANGLE_OBJ_DIR) ]; then mkdir $(DEMANGLE_OBJ_DIR); fi
 
 
-$(NAME)_$(ARCH).$(SHLIBEXT): $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) $(SOURCEHOOK_OBJS)
+$(NAME)_$(ARCH).$(SHLIBEXT): $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) $(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS)
 	$(CLINK) $(DEBUG_FLAGS) -o $(BUILD_DIR)/$@ $(SHLIBLDFLAGS) $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) \
-	$(SOURCEHOOK_OBJS) $(CPP_LIB) $(EXTRA_LIBS) $(LDFLAGS)
+	$(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS) $(CPP_LIB) $(EXTRA_LIBS) $(LDFLAGS)
 
 $(PLUGIN_OBJ_DIR)/%.o: $(PLUGIN_SRC_DIR)/%.cpp
 	$(DO_CC)
@@ -208,6 +214,8 @@ $(MATHLIB_OBJ_DIR)/%.o: $(MATHLIB_SRC_DIR)/%.cpp
 $(SOURCEHOOK_OBJ_DIR)/%.o: $(SOURCEHOOK_SRC_DIR)/%.cpp
 	$(DO_CC)
 
+$(DEMANGLE_OBJ_DIR)/%.o: $(DEMANGLE_SRC_DIR)/%.cpp
+	$(DO_CC)
 clean:
 	-rm -Rf $(PLUGIN_OBJ_DIR)
 	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) libtier0.so libvstdlib.so
