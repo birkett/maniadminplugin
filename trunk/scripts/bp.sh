@@ -129,6 +129,9 @@ export PUBLIC_OBJ_DIR="$BUILD_OBJ_DIR/public"
 export TIER0_OBJ_DIR="$BUILD_OBJ_DIR/tier0"
 export TIER1_OBJ_DIR="$BUILD_OBJ_DIR/tier1"
 export MATHLIB_OBJ_DIR="$BUILD_OBJ_DIR/mathlib"
+export DEMANGLE_OBJ_DIR="$BUILD_OBJ_DIR/demangle"
+export DEMANGLE_OBJS="$DEMANGLE_OBJ_DIR/cp-demangle.o $DEMANGLE_OBJ_DIR/cp-demint.o $DEMANGLE_OBJ_DIR/cplus-dem.o $DEMANGLE_OBJ_DIR/safe-ctype.o $DEMANGLE_OBJ_DIR/xmalloc.o $DEMANGLE_OBJ_DIR/xstrdup.o"
+export DEMANGLE_SRC_DIR="./demangle"
 
 if [ "$ORANGE_BUILD" = "FALSE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then
@@ -157,8 +160,9 @@ then
 	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o"
 	export EXTRA_FILES_1="serverplugin_convar.cpp mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdks/map/ep1/linux_sdk/tier1_i486.a ../sdks/map/ep1/linux_sdk/mathlib_i486.a"
-
-
+	export TIER0_SO="tier0_i486.so"
+	export VSTDLIB_SO="vstdlib_i486.so"
+	export LIBSUFFIX="_i486"
 
 elif [ "$ORANGE_BUILD" = "FALSE" ] && [ "$VSP_BUILD" = "FALSE" ]
 then
@@ -185,7 +189,9 @@ then
 	export SOURCEMM="-DSOURCEMM"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdks/map/ep1/linux_sdk/tier1_i486.a ../sdks/map/ep1/linux_sdk/mathlib_i486.a"
-
+	export TIER0_SO="tier0_i486.so"
+	export VSTDLIB_SO="vstdlib_i486.so"
+	export LIBSUFFIX="_i486"
 
 elif [ "$ORANGE_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then
@@ -215,7 +221,9 @@ then
 	export ORANGE="-DORANGE"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
-
+	export TIER0_SO="libtier0.so"
+	export VSTDLIB_SO="libvstdlib.so"
+	export LIBSUFFIX=""
 
 else
 ###############################
@@ -243,6 +251,10 @@ else
 	export ORANGE="-DORANGE"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
+	export TIER0_SO="libtier0.so"
+	export VSTDLIB_SO="libvstdlib.so"
+	export LIBSUFFIX="_i486"
+
 fi
 
 if [ "$CLEAN" = "TRUE" ]
@@ -272,17 +284,17 @@ cd -
 
 if [ "$VSP_BUILD" = "TRUE" ]
 then
-	if [ -f $EXE_DIR/mani_admin_plugin_i486.so ]
+	if [ -f $EXE_DIR/mani_admin_plugin$LIBSUFFIX.so ]
 	then
 		cp -f $EXE_DIR/mani_admin_plugin_i486.so $OUTPUT_DIR/VSP
-		./setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
+		setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 else
 	COPY_SMM="-s"	
 	if [ -f $EXE_DIR/mani_admin_plugin_mm_i486.so ]
 	then
-		cp -f $EXE_DIR/mani_admin_plugin_mm_i486.so $OUTPUT_DIR/SourceMM
-		./setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
+		cp -f $EXE_DIR/mani_admin_plugin_mm$LIBSUFFIX.so $OUTPUT_DIR/SourceMM
+		setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 fi
 
