@@ -88,6 +88,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
 		mani_vote.cpp \
 		mani_warmuptimer.cpp \
 		mani_weapon.cpp \
+		mani_linuxutils.cpp \
 		mrecipientfilter.cpp
 
 PLUGIN_FILES+= $(EXTRA_FILES_1)
