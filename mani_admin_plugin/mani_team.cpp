@@ -103,9 +103,6 @@ void	ManiTeam::Init(int edict_count)
 {
 	int number_of_entries = 0;
 
-#ifdef __linux__
-	bool first_time = true;
-#endif
 	this->CleanUp();
 	change_team = false;
 	swap_team = false;
@@ -120,13 +117,7 @@ void	ManiTeam::Init(int edict_count)
 			{
 				continue;
 			}
-#ifdef __linux__
-			if (first_time)
-			{
-				DumpVFuncClass((DWORD *) pEntity->m_pNetworkable, 15);
-				first_time = false;
-			}
-#endif
+
 			const char *class_name = pEntity->GetClassName();
 			if (!class_name)
 			{

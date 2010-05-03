@@ -48,6 +48,7 @@
 #include "mani_client_flags.h"
 #include "mani_client.h"
 #include "mani_convar.h"
+#include "mani_memory.h"
 #include "cbaseentity.h"
 #include "mani_vfuncs.h"
 
@@ -60,8 +61,10 @@ extern	ITempEntsSystem *temp_ents;
 extern	int	max_players;
 
 #ifdef __linux__
-static	void	CheckVFunc(DWORD *class_ptr, char *class_name, char *class_function, char *gametype_ptr, int vfunc_type);
-static	int		FindVFunc(DWORD *class_ptr, char *class_name, char *class_function, char *mangled_ptr);
+#include "mani_linuxutils.h"
+
+static	void	CheckVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name, char *class_function, char *gametype_ptr, int vfunc_type);
+static	int	FindVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name, char *class_function, char *mangled_ptr);
 #endif
 
 inline bool FStruEq(const char *sz1, const char *sz2)
@@ -319,6 +322,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 #endif
         player_t player;
 
+
         player.entity = NULL;
 
         if (!IsCommandIssuedByServerAdmin()) return;
@@ -498,6 +502,14 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 		return;
 	}
 
+	SymbolMap *sym_map_ptr = new SymbolMap();
+	if (!sym_map_ptr->GetLib(gpManiGameType->GetLinuxBin()))
+	{
+		MMsg("Failed to get library [%s]\n", gpManiGameType->GetLinuxBin());
+		delete sym_map_ptr;
+		return;
+	}
+
 	bool	found_player = false;
 
 	for (int i = 1; i <= max_players; i++)
@@ -522,6 +534,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	if (!found_player)
 	{
 		MMsg("Need a target player to work the magic\n");
+		delete sym_map_ptr;
 		return;
 	}
 
@@ -564,6 +577,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 		if (!pCombat)
 		{
 			MMsg("Failed to get combat character\n");
+			delete sym_map_ptr;
 			return;
 		}
 
@@ -572,6 +586,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 		if (!pWeapon)
 		{
 			MMsg("Failed to get weapon info\n");
+			delete sym_map_ptr;
 			return;
 		}
 
@@ -580,6 +595,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 	else
 	{
 		MMsg("Invalid 2nd arg\n");
+		delete sym_map_ptr;
 		return;
 	}
 
@@ -589,20 +605,22 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 	if (args.ArgC() < 4)
 	{
-		index = FindVFunc(type_ptr, args.Arg(2), NULL, mangled_name);
+		index = FindVFunc(sym_map_ptr, type_ptr, args.Arg(2), NULL, mangled_name);
 	}
 	else
 	{
-		index = FindVFunc(type_ptr, args.Arg(2), args.Arg(3), mangled_name);
+		index = FindVFunc(sym_map_ptr, type_ptr, args.Arg(2), args.Arg(3), mangled_name);
 	}
 
 	if (index == -1)
 	{
 		MMsg("Did not find index :(\n");
+		delete sym_map_ptr;
 		return;
 	}
 
 	MMsg("Found Index [%i] [0x%x] [%s]\n", index, index, mangled_name);
+	delete sym_map_ptr;
 }
 
 CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
@@ -620,6 +638,14 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 	if (args.ArgC() < 2)
 	{
 		MMsg("Need more args :)\n");
+		return;
+	}
+
+	SymbolMap *sym_map_ptr = new SymbolMap();
+	if (!sym_map_ptr->GetLib(gpManiGameType->GetLinuxBin()))
+	{
+		MMsg("Failed to get library [%s]\n", gpManiGameType->GetLinuxBin());
+		delete sym_map_ptr;
 		return;
 	}
 
@@ -647,6 +673,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 	if (!found_player)
 	{
 		MMsg("Need a target player to work the magic\n");
+		delete sym_map_ptr;
 		return;
 	}
 
@@ -669,41 +696,41 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 	{
 		type_ptr = (DWORD *) pPlayer;
 
-		CheckVFunc(type_ptr, "CBasePlayer", "EyeAngles", "eye_angles", MANI_VFUNC_EYE_ANGLES);
-		CheckVFunc(type_ptr, "CBaseEntity", "SetModelIndex", "set_model_index", MANI_VFUNC_SET_MODEL_INDEX);
-		CheckVFunc(type_ptr, "CBaseAnimating", "Teleport", "teleport", MANI_VFUNC_TELEPORT);
-		CheckVFunc(type_ptr, "CBasePlayer", "EyePosition", "eye_position", MANI_VFUNC_EYE_POSITION);
-		CheckVFunc(type_ptr, "CBasePlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "EyeAngles", "eye_angles", MANI_VFUNC_EYE_ANGLES);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseEntity", "SetModelIndex", "set_model_index", MANI_VFUNC_SET_MODEL_INDEX);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseAnimating", "Teleport", "teleport", MANI_VFUNC_TELEPORT);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "EyePosition", "eye_position", MANI_VFUNC_EYE_POSITION);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
 		// Dods and CS inherit from CBasePlayer
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(type_ptr, "CCSPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
-		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(type_ptr, "CDODPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
+		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(sym_map_ptr, type_ptr, "CDODPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
 
-		CheckVFunc(type_ptr, "CBaseCombatCharacter", "MyCombatCharacterPointer", "my_combat_character", MANI_VFUNC_MY_COMBAT_CHARACTER);
-		CheckVFunc(type_ptr, "CBaseAnimating", "GetVelocity", "get_velocity", MANI_VFUNC_GET_VELOCITY);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatCharacter", "MyCombatCharacterPointer", "my_combat_character", MANI_VFUNC_MY_COMBAT_CHARACTER);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseAnimating", "GetVelocity", "get_velocity", MANI_VFUNC_GET_VELOCITY);
 
-		CheckVFunc(type_ptr, "CBaseEntity", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
-		CheckVFunc(type_ptr, "CBasePlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(type_ptr, "CCSPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
-		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(type_ptr, "CDODPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
-		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(type_ptr, "CTFPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseEntity", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(sym_map_ptr, type_ptr, "CDODPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(sym_map_ptr, type_ptr, "CTFPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 
 		type_ptr = (DWORD *) pBase;
 
-		CheckVFunc(type_ptr, "CBaseAnimating", "Ignite", "ignite", MANI_VFUNC_IGNITE);
-		CheckVFunc(type_ptr, "CBasePlayer", "Weapon_Drop", "weapon_drop", MANI_VFUNC_WEAPON_DROP);
-		CheckVFunc(type_ptr, "CBasePlayer", "ProcessUsercmds", "user_cmds", MANI_VFUNC_USER_CMDS);
-		CheckVFunc(type_ptr, "CBasePlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
-		CheckVFunc(type_ptr, "CBasePlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseAnimating", "Ignite", "ignite", MANI_VFUNC_IGNITE);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "Weapon_Drop", "weapon_drop", MANI_VFUNC_WEAPON_DROP);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "ProcessUsercmds", "user_cmds", MANI_VFUNC_USER_CMDS);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
 
 		if (gpManiGameType->IsGameType(MANI_GAME_TF)) 
 		{
-			CheckVFunc(type_ptr, "CTFPlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
+			CheckVFunc(sym_map_ptr, type_ptr, "CTFPlayer", "SetObserverTarget", "set_observer_target", MANI_VFUNC_SET_OBSERVER_TARGET);
 		}
 
-		CheckVFunc(type_ptr, "CCSPlayer", "Weapon_CanUse", "canuse_weapon", MANI_VFUNC_WEAPON_CANUSE);
-		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(type_ptr, "CDODPlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
+		CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "Weapon_CanUse", "canuse_weapon", MANI_VFUNC_WEAPON_CANUSE);
+		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(sym_map_ptr, type_ptr, "CDODPlayer", "CommitSuicide", "commit_suicide", MANI_VFUNC_COMMIT_SUICIDE);
 
-		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(type_ptr, "CBaseFlex", "Teleport", "teleport", MANI_VFUNC_TELEPORT);
+		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(sym_map_ptr, type_ptr, "CBaseFlex", "Teleport", "teleport", MANI_VFUNC_TELEPORT);
 	}
 
 	if (level > 1)
@@ -711,10 +738,10 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		type_ptr = (DWORD *) pCombat;
 
-		CheckVFunc(type_ptr, "CBasePlayer", "RemovePlayerItem", "remove_player_item", MANI_VFUNC_REMOVE_PLAYER_ITEM);
-		CheckVFunc(type_ptr, "CBaseCombatCharacter", "Weapon_GetSlot", "get_weapon_slot", MANI_VFUNC_GET_WEAPON_SLOT);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(type_ptr, "CCSPlayer", "Weapon_Switch", "weapon_switch", MANI_VFUNC_WEAPON_SWITCH);
-		CheckVFunc(type_ptr, "CBaseCombatCharacter", "GiveAmmo", "give_ammo", MANI_VFUNC_GIVE_AMMO);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "RemovePlayerItem", "remove_player_item", MANI_VFUNC_REMOVE_PLAYER_ITEM);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatCharacter", "Weapon_GetSlot", "get_weapon_slot", MANI_VFUNC_GET_WEAPON_SLOT);
+		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "Weapon_Switch", "weapon_switch", MANI_VFUNC_WEAPON_SWITCH);
+		CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatCharacter", "GiveAmmo", "give_ammo", MANI_VFUNC_GIVE_AMMO);
 	}
 
 	if (level > 2)
@@ -725,21 +752,23 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		{
 
 			type_ptr = (DWORD *) pWeapon;
-			CheckVFunc(type_ptr, "CBaseCombatWeapon", "GetPrimaryAmmoType", "get_primary_ammo_type", MANI_VFUNC_GET_PRIMARY_AMMO_TYPE);
-			CheckVFunc(type_ptr, "CBaseCombatWeapon", "GetSecondaryAmmoType", "get_secondary_ammo_type", MANI_VFUNC_GET_SECONDARY_AMMO_TYPE);
-			CheckVFunc(type_ptr, "CBaseCombatWeapon", "GetName", "weapon_get_name", MANI_VFUNC_WEAPON_GET_NAME);
+			CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatWeapon", "GetPrimaryAmmoType", "get_primary_ammo_type", MANI_VFUNC_GET_PRIMARY_AMMO_TYPE);
+			CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatWeapon", "GetSecondaryAmmoType", "get_secondary_ammo_type", MANI_VFUNC_GET_SECONDARY_AMMO_TYPE);
+			CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatWeapon", "GetName", "weapon_get_name", MANI_VFUNC_WEAPON_GET_NAME);
 		}
 	}
+	
+	delete sym_map_ptr;
 }
 
 
 
-static	void CheckVFunc(DWORD *class_ptr, char *class_name, char *class_function, char *gametype_ptr, int vfunc_type)
+static	void CheckVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name, char *class_function, char *gametype_ptr, int vfunc_type)
 {
 	int index;
 	char mangled_ptr[256]="";
 
-	index = FindVFunc(class_ptr, class_name, class_function, mangled_ptr);
+	index = FindVFunc(sym_map_ptr, class_ptr, class_name, class_function, mangled_ptr);
 
 	if (index != -1)
 	{
@@ -754,91 +783,144 @@ static	void CheckVFunc(DWORD *class_ptr, char *class_name, char *class_function,
 	}
 }
 
-static	int		FindVFunc(DWORD *class_ptr, char *class_name, char *class_function, char *mangled_ptr)
+static	int FindVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name, char *class_function, char *mangled_ptr)
 {
-        void    *handle;
         void    *var_address;
-        Dl_info d;
 
-        handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
-
-        if (handle == NULL)
+        for (int i = 0; i < 1000; i++)
         {
-                MMsg("Failed to open server image, error [%s]\n", dlerror());
-                gpManiGameType->SetAdvancedEffectsAllowed(false);
-        }
-        else
-        {
-                for (int i = 0; i < 1000; i++)
+        	DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) class_ptr)) + (i * 4)));
+                symbol_t *symbol_ptr = sym_map_ptr->GetAddr((void *)FuncPtr);
+                if (symbol_ptr)
                 {
-                        DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) class_ptr)) + (i * 4)));
-
-                        int status = dladdr(FuncPtr, &d);
-
-                        if (status)
-                        {
-							if (class_function)
-							{
-								if (Q_stristr(d.dli_sname, class_name) != NULL &&
-									Q_stristr(d.dli_sname, class_function) != NULL)
-								{
-									// Found Match
-									Q_strcpy(mangled_ptr, d.dli_sname);
-									dlclose(handle);
-									return i;
-								}
-							}
-							else
-							{
-								// Just match one parameter
- 								if (Q_stristr(d.dli_sname, class_name) != NULL)
-								{
-									// Found Match
-									Q_strcpy(mangled_ptr, d.dli_sname);
-									dlclose(handle);
-									return i;
-								}
-							}
+			if (class_function)
+			{
+				if (Q_stristr(symbol_ptr->mangled_name, class_name) != NULL &&
+					Q_stristr(symbol_ptr->mangled_name, class_function) != NULL)
+				{
+					// Found Match
+					Q_strcpy(mangled_ptr, symbol_ptr->mangled_name);
+					return i;
+				}
+				else
+				{
+					// Just match one parameter
+ 					if (Q_stristr(symbol_ptr->mangled_name, class_name) != NULL)
+					{
+						// Found Match
+						Q_strcpy(mangled_ptr, symbol_ptr->mangled_name);
+						return i;
+					}
+				}
                        }
                 }
-
-                dlclose(handle);
         }
 
-		return -1;
+	return -1;
 }
 
-
-void DumpVFuncClass(DWORD *class_ptr, int count)
+CON_COMMAND(ma_vfunc_dumpall, "Dump all vfuncs to file vfuncs_dumpall.out")
 {
-	void    *handle;
-	void    *var_address;
-	Dl_info d;
+#ifndef ORANGE
+	const CCommand args;
+#endif
+        FileHandle_t file_handle;
+        char    base_filename[512];
+        char    temp_string[2048];
 
-	handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
+        if (!IsCommandIssuedByServerAdmin()) return;
+        if (ProcessPluginPaused()) return;
 
-	if (handle == NULL)
+	SymbolMap *symbol_map = new SymbolMap();
+
+	if (!symbol_map->GetLib(gpManiGameType->GetLinuxBin()))
 	{
-		MMsg("Failed to open server image, error [%s]\n", dlerror());
-	}
-	else
-	{
-		for (int i = 0; i < count; i++)
-		{
-			DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) class_ptr)) + (i * 4)));
-
-			int status = dladdr(FuncPtr, &d);
-
-			if (status)
-			{
-				MMsg("Index %d\t Function Name %s\n", i, d.dli_sname);
-			}
-		}
-
-		dlclose(handle);
+		MMsg("Failed to get library [%s]\n", gpManiGameType->GetLinuxBin());
+		delete symbol_map;
+		return;
 	}
 
-	return;
+        //Write to disk
+        snprintf(base_filename, sizeof (base_filename), 
+			"./cfg/%s/vfuncs_dumpall.out", mani_path.GetString());
+
+        file_handle = filesystem->Open (base_filename,"wt", NULL);
+        if (file_handle == NULL)
+        {
+                MMsg("Failed to open file [%s] for writing\n", base_filename);
+		delete symbol_map;
+		return;
+        }
+
+        for ( int i = 0; i < symbol_map->GetMapSize(); i++)
+        {
+		symbol_t *symbol = symbol_map->GetAddr(i);
+
+                if (strncmp(symbol->demangled_name, "vtable", 6) == 0)
+                {
+        		int temp_length = snprintf(temp_string, 
+					sizeof(temp_string), 
+					"\n*** Class [%s] [%s] ****\n", 
+					symbol->mangled_name, 
+					symbol->demangled_name);
+
+			MMsg("%s", temp_string);
+	
+        		if (filesystem->Write((void *) temp_string, 
+						temp_length, file_handle) == 0)
+        		{
+        			MMsg("Failed to write data !!\n");
+                		filesystem->Close(file_handle);
+				delete symbol_map;
+                		return;
+        		}
+
+			void **vtable = (void **) symbol->ptr;
+
+		        int vtable_index = 2;
+        		while (vtable_index < 1000)
+        		{
+		                void *FuncPtr = vtable[vtable_index];
+		                if (FuncPtr == NULL)
+		                {
+		                        break;
+		                }
+
+				symbol_t *symbol_ptr = symbol_map->GetAddr(FuncPtr);
+		                if (symbol_ptr != NULL)
+		                {
+					if (strncmp(symbol_ptr->mangled_name, "_ZTI", 4) == 0)
+					{
+						break;
+					}
+
+        				temp_length = snprintf(temp_string, 
+						sizeof(temp_string), "  %03i [%s] [%s]\n", 
+						vtable_index - 2, 
+						symbol_ptr->mangled_name, 
+						symbol_ptr->demangled_name);
+
+					MMsg("%s", temp_string);
+
+		        		if (filesystem->Write((void *) temp_string, 
+							temp_length, file_handle) == 0)
+		        		{
+		        			MMsg("Failed to write data !!\n");
+		                		filesystem->Close(file_handle);
+						delete symbol_map;
+		                		return;
+		        		}
+		                }
+
+		                vtable_index+=1;
+		        }
+                }
+
+        }
+
+
+        filesystem->Close(file_handle);
+	delete symbol_map;
 }
 
 #endif
