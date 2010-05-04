@@ -307,6 +307,9 @@ void SymbolMap::FreeSymbols()
 		free(addr_list);
 		free(mangled_list);
 		free(demangled_list);
+		addr_list = NULL;
+		mangled_list = NULL;
+		demangled_list = NULL;
 		symbol_list_size = 0;
 	}
 }
