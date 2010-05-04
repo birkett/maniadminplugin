@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright (c) 2009 Giles Millward (Mani). All rights reserved.
+// Copyright (c) 2010 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -18,11 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
-
-
-//
-
-
 
 
 #include <stdio.h>
@@ -334,153 +329,150 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
                 return;
         }
 
-		bool	found_player = false;
+	SymbolMap *sym_map_ptr = new SymbolMap();
+	if (!sym_map_ptr->GetLib(gpManiGameType->GetLinuxBin()))
+	{
+		MMsg("Failed to get library [%s]\n", gpManiGameType->GetLinuxBin());
+		delete sym_map_ptr;
+		return;
+	}
 
+	bool	found_player = false;
+
+	for (int i = 1; i <= max_players; i++)
+	{
+		player.index = i;
+		if (!FindPlayerByIndex(&player)) continue;
+		if (player.is_bot) continue;
+		found_player = true;
+	}
+
+	if (!found_player)
+	{
 		for (int i = 1; i <= max_players; i++)
 		{
 			player.index = i;
 			if (!FindPlayerByIndex(&player)) continue;
-			if (player.is_bot) continue;
 			found_player = true;
 		}
+	}
 
-		if (!found_player)
-		{
-			for (int i = 1; i <= max_players; i++)
-			{
-				player.index = i;
-				if (!FindPlayerByIndex(&player)) continue;
-				found_player = true;
-			}
-		}
-
-		// Whoever issued the commmand is authorised to do it.
-		if (!found_player)
-		{
-			MMsg("Need a target player to work the magic\n");
-			return;
-		}
+	// Whoever issued the commmand is authorised to do it.
+	if (!found_player)
+	{
+		MMsg("Need a target player to work the magic\n");
+		delete sym_map_ptr;
+		return;
+	}
 
 
         CBaseEntity *pPlayer = player.entity->GetUnknown()->GetBaseEntity();
 
-        Dl_info d;
+        FileHandle_t file_handle;
+        char    base_filename[512];
+        DWORD   *type_ptr;
 
-        void    *handle;
-        void    *var_address;
-
-        handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
-
-        if (handle == NULL)
+        //Write to disk
+        if (FStrEq("CBE", args.Arg(2)))
         {
-                MMsg("Failed to open server image, error [%s]\n", dlerror());
+       		snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbe.out", mani_path.GetString());
+	        type_ptr = (DWORD *) pPlayer;
+        }
+        else if (FStrEq("VOICE", args.Arg(2)))
+        {
+	        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/voice.out", mani_path.GetString());
+	        type_ptr = (DWORD *) voiceserver;
+        }
+	else if (FStrEq("TE", args.Arg(2)))
+        {
+	        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/te.out", mani_path.GetString());
+	        type_ptr = (DWORD *) temp_ents;
+        }
+	else if (FStrEq("CBCC", args.Arg(2)))
+        {
+	        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbcc.out", mani_path.GetString());
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	        if (pCombat)
+	        {
+		        type_ptr = (DWORD *)pCombat;
+	        }
+	        else
+	        {
+		        MMsg("Failed to get Combat Character\n");
+			delete sym_map_ptr;
+		        return;
+	        }
+        }
+        else if (FStrEq("CBCW", args.Arg(2)))
+        {
+	        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbcw.out", mani_path.GetString());
+		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
+	        if (!pCombat)
+	        {
+		        MMsg("Failed to get combat character\n");
+			delete sym_map_ptr;
+		        return;
+	        }
+
+        	// Get pistol type
+		CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
+	        if (!pWeapon)
+	        {
+		        MMsg("Failed to get weapon info\n");
+			delete sym_map_ptr;
+		        return;
+	        }
+
+	        type_ptr = (DWORD *) pWeapon;
         }
         else
         {
-                FileHandle_t file_handle;
-                char    base_filename[512];
-                DWORD   *type_ptr;
-
-                //Write to disk
-                if (FStrEq("CBE", args.Arg(2)))
-                {
-                        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbe.out", mani_path.GetString());
-                        type_ptr = (DWORD *) pPlayer;
-                }
-                else if (FStrEq("VOICE", args.Arg(2)))
-                {
-                        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/voice.out", mani_path.GetString());
-                        type_ptr = (DWORD *) voiceserver;
-                }
-				else if (FStrEq("TE", args.Arg(2)))
-                {
-                        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/te.out", mani_path.GetString());
-                        type_ptr = (DWORD *) temp_ents;
-                }
-				else if (FStrEq("CBCC", args.Arg(2)))
-                {
-                        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbcc.out", mani_path.GetString());
-//                        CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-						CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-                        if (pCombat)
-                        {
-                                type_ptr = (DWORD *)pCombat;
-                        }
-                        else
-                        {
-                                MMsg("Failed to get Combat Character\n");
-								dlclose(handle);
-                                return;
-                        }
-                }
-                else if (FStrEq("CBCW", args.Arg(2)))
-                {
-                        snprintf(base_filename, sizeof (base_filename), "./cfg/%s/cbcw.out", mani_path.GetString());
-						CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
-//                        CBaseCombatCharacter *pCombat = pPlayer->MyCombatCharacterPointer();
-                        if (!pCombat)
-                        {
-                                MMsg("Failed to get combat character\n");
-								dlclose(handle);
-                                return;
-                        }
-
-                        // Get pistol type
-//                        CBaseCombatWeapon *pWeapon = pCombat->Weapon_GetSlot(1);
-						CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 1);
-                        if (!pWeapon)
-                        {
-                                MMsg("Failed to get weapon info\n");
-								dlclose(handle);
-                                return;
-                        }
-
-                        type_ptr = (DWORD *) pWeapon;
-                }
-                else
-                {
-                        MMsg("Invalid 3rd arg\n");
-						dlclose(handle);
-                        return;
-                }
-
-                file_handle = filesystem->Open (base_filename,"wt", NULL);
-                if (file_handle == NULL)
-                {
-                        MMsg("Failed to open file [%s] for writing\n", base_filename);
-						dlclose(handle);
-                        return;
-                }
-
-                for (int i = 0; i < atoi(args.Arg(3)); i++)
-                {
-                        DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) type_ptr)) + (i * 4)));
-
-                        int status = dladdr(FuncPtr, &d);
-
-                        if (status)
-                        {
-                                char temp_string[2048];
-                                int temp_length = snprintf(temp_string, sizeof(temp_string), "%s\n", d.dli_sname);
-
-                                if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
-                                {
-                                        MMsg("Failed to write data !!\n");
-                                        filesystem->Close(file_handle);
-                                        return;
-                                }
-
-                                MMsg("%s\n", d.dli_sname);
-                        }
-                        else
-                        {
-                                MMsg("Failed offset [%i]\n", i);
-                        }
-                }
-
-                filesystem->Close(file_handle);
-                dlclose(handle);
+	        MMsg("Invalid 3rd arg\n");
+		delete sym_map_ptr;
+	        return;
         }
+
+        file_handle = filesystem->Open (base_filename,"wt", NULL);
+        if (file_handle == NULL)
+        {
+	        MMsg("Failed to open file [%s] for writing\n", base_filename);
+		delete sym_map_ptr;
+	        return;
+        }
+
+        DWORD   *class_address = type_ptr;
+	DWORD	*vtable_address = (DWORD *) *class_address;
+
+	void **vtable = (void **) vtable_address;
+
+        for (int i = 2; i < atoi(args.Arg(3)); i++)
+        {
+        	void *FuncPtr = (void *) vtable[i];
+                symbol_t *symbol_ptr = sym_map_ptr->GetAddr((void *)FuncPtr);
+                if (symbol_ptr)
+                {
+			if (strncmp(symbol_ptr->mangled_name, "_ZTI", 4) == 0)
+			{
+				break;
+			}
+
+		        char temp_string[2048];
+		        int temp_length = snprintf(temp_string, sizeof(temp_string), "%03i  %s\n", i, symbol_ptr->mangled_name);
+
+		        if (filesystem->Write((void *) temp_string, temp_length, file_handle) == 0)
+		        {
+			        MMsg("Failed to write data !!\n");
+			        filesystem->Close(file_handle);
+				delete sym_map_ptr;
+			        return;
+		        }
+
+		        MMsg("%03i  %s\n", i, symbol_ptr->mangled_name);
+                }
+        }
+
+        filesystem->Close(file_handle);
+	delete sym_map_ptr;
 }
 
 CON_COMMAND(ma_getvfunc, "Debug Tool")
@@ -785,11 +777,14 @@ static	void CheckVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_nam
 
 static	int FindVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name, char *class_function, char *mangled_ptr)
 {
-        void    *var_address;
+        DWORD   *class_address = class_ptr;
+	DWORD	*vtable_address = (DWORD *) *class_address;
 
-        for (int i = 0; i < 1000; i++)
+	void **vtable = (void **) vtable_address;
+
+        for (int i = 2; i < 1000; i++)
         {
-        	DWORD *FuncPtr = (DWORD *)(*(DWORD *)((*((DWORD *) class_ptr)) + (i * 4)));
+        	void *FuncPtr = (void *) vtable[i];
                 symbol_t *symbol_ptr = sym_map_ptr->GetAddr((void *)FuncPtr);
                 if (symbol_ptr)
                 {
@@ -802,17 +797,22 @@ static	int FindVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name,
 					Q_strcpy(mangled_ptr, symbol_ptr->mangled_name);
 					return i;
 				}
-				else
+			}
+			else
+			{
+				// Just match one parameter
+ 				if (Q_stristr(symbol_ptr->mangled_name, class_name) != NULL)
 				{
-					// Just match one parameter
- 					if (Q_stristr(symbol_ptr->mangled_name, class_name) != NULL)
-					{
-						// Found Match
-						Q_strcpy(mangled_ptr, symbol_ptr->mangled_name);
-						return i;
-					}
+					// Found Match
+					Q_strcpy(mangled_ptr, symbol_ptr->mangled_name);
+					return i;
 				}
-                       }
+			}
+
+			if (strncmp(symbol_ptr->mangled_name, "_ZTI", 4) == 0)
+			{
+				break;
+			}
                 }
         }
 
@@ -900,8 +900,6 @@ CON_COMMAND(ma_vfunc_dumpall, "Dump all vfuncs to file vfuncs_dumpall.out")
 						symbol_ptr->mangled_name, 
 						symbol_ptr->demangled_name);
 
-					MMsg("%s", temp_string);
-
 		        		if (filesystem->Write((void *) temp_string, 
 							temp_length, file_handle) == 0)
 		        		{
@@ -921,6 +919,7 @@ CON_COMMAND(ma_vfunc_dumpall, "Dump all vfuncs to file vfuncs_dumpall.out")
 
         filesystem->Close(file_handle);
 	delete symbol_map;
+	Msg("Written details to [%s]\n", base_filename);
 }
 
 #endif
