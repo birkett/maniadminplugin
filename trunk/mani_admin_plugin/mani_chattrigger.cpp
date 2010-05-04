@@ -182,11 +182,11 @@ bool		ManiChatTriggers::ProcessIgnore
 
 	if ( teamonly )
 	{
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
+		UTILLogPrintf("\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
 	}
 	else
 	{
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
+		UTILLogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
 	}
 
 	// Fire the event so other plugins can see it
@@ -242,11 +242,11 @@ bool		ManiChatTriggers::ProcessIgnoreX
 
 	if ( teamonly )
 	{
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
+		UTILLogPrintf( "\"%s<%i><%s><%s>\" say_team \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name , chat_string );
 	}
 	else
 	{
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
+		UTILLogPrintf( "\"%s<%i><%s><%s>\" say \"%s\"\n", player_ptr->name, player_ptr->user_id, player_ptr->steam_id, team_name, chat_string );
 	}
 
 	// Fire the event so other plugins can see it

@@ -1455,7 +1455,7 @@ void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 }
 
 // Log to srcds core log
-void UTIL_LogPrintf( char *fmt, ... )
+void UTILLogPrintf( char *fmt, ... )
 {
 	va_list		argptr;
 	char		tempString[1024];
