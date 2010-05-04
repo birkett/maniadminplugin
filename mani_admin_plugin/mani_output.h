@@ -62,7 +62,7 @@ extern void ClientMsgSinglePlayer( edict_t *pEntity, const unsigned int seconds,
 extern void	PrintToClientConsole(edict_t *pEntity, char *fmt, ... );
 extern void OutputHelpText(const int colour, player_t *player_ptr, char *fmt, ...);
 extern void	ParseSayString(const char *say_string, char *trimmed_string_out, int *say_argc);
-extern void UTIL_LogPrintf( char *fmt, ... );
+extern void UTILLogPrintf( char *fmt, ... );
 extern void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text);
 extern void WriteDebug ( char *fmt, ...);
 extern void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr);

@@ -347,7 +347,7 @@ void ManiLogDODSStats::CaptureBlocked(player_t *player_ptr, const char *cp_name)
 
 	if (player_ptr->team == 2)
 	{
-        UTIL_LogPrintf( "\"%s<%i><%s><%s>\" triggered a \"allies_blocked_capture\" - \"%s\"\n",
+        UTILLogPrintf( "\"%s<%i><%s><%s>\" triggered a \"allies_blocked_capture\" - \"%s\"\n",
 												player_ptr->name, 
 												player_ptr->user_id, 
 												player_ptr->steam_id, 
@@ -356,7 +356,7 @@ void ManiLogDODSStats::CaptureBlocked(player_t *player_ptr, const char *cp_name)
 	}
 	else
 	{
-        UTIL_LogPrintf( "\"%s<%i><%s><%s>\" triggered a \"axis_blocked_capture\" - \"%s\"\n",
+        UTILLogPrintf( "\"%s<%i><%s><%s>\" triggered a \"axis_blocked_capture\" - \"%s\"\n",
 												player_ptr->name, 
 												player_ptr->user_id, 
 												player_ptr->steam_id, 
@@ -384,7 +384,7 @@ void ManiLogDODSStats::PointCaptured(const char *cappers, int cappers_length, co
 
 		if (player.team == 2)
 		{
-			UTIL_LogPrintf( "\"%s<%i><%s><%s>\" triggered a \"allies_capture_flag\" - \"%s\"\n",
+			UTILLogPrintf( "\"%s<%i><%s><%s>\" triggered a \"allies_capture_flag\" - \"%s\"\n",
 				player.name, 
 				player.user_id, 
 				player.steam_id, 
@@ -393,7 +393,7 @@ void ManiLogDODSStats::PointCaptured(const char *cappers, int cappers_length, co
 		}
 		else
 		{
-			UTIL_LogPrintf( "\"%s<%i><%s><%s>\" triggered a \"axis_capture_flag\" - \"%s\"\n",
+			UTILLogPrintf( "\"%s<%i><%s><%s>\" triggered a \"axis_capture_flag\" - \"%s\"\n",
 				player.name, 
 				player.user_id, 
 				player.steam_id, 
@@ -497,7 +497,7 @@ void ManiLogDODSStats::DumpPlayerStats(int	index)
 
 		weapon_stats_t *weapon_stats_ptr = &(player_stats_list[index].weapon_stats_list[i]);
 
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" triggered \"weaponstats\" (weapon \"%s\") (shots \"%i\") (hits \"%i\") (kills \"%i\") (headshots \"%i\") (tks \"%i\") (damage \"%i\") (deaths \"%i\")\n",
+		UTILLogPrintf( "\"%s<%i><%s><%s>\" triggered \"weaponstats\" (weapon \"%s\") (shots \"%i\") (hits \"%i\") (kills \"%i\") (headshots \"%i\") (tks \"%i\") (damage \"%i\") (deaths \"%i\")\n",
 												name, user_id, steam_id, team_name,
 												weapon_stats_ptr->weapon_name,
 												weapon_stats_ptr->total_shots_fired,
@@ -508,7 +508,7 @@ void ManiLogDODSStats::DumpPlayerStats(int	index)
 												weapon_stats_ptr->total_damage,
 												weapon_stats_ptr->total_deaths);
 
-		UTIL_LogPrintf( "\"%s<%i><%s><%s>\" triggered \"weaponstats2\" (weapon \"%s\") (head \"%i\") (chest \"%i\") (stomach \"%i\") (leftarm \"%i\") (rightarm \"%i\") (leftleg \"%i\") (rightleg \"%i\")\n",
+		UTILLogPrintf( "\"%s<%i><%s><%s>\" triggered \"weaponstats2\" (weapon \"%s\") (head \"%i\") (chest \"%i\") (stomach \"%i\") (leftarm \"%i\") (rightarm \"%i\") (leftleg \"%i\") (rightleg \"%i\")\n",
 												name, user_id, steam_id, team_name,
 												weapon_stats_ptr->weapon_name,
 												weapon_stats_ptr->hit_groups[HITGROUP_HEAD],
