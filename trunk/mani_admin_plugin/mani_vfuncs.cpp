@@ -864,7 +864,7 @@ CON_COMMAND(ma_vfunc_dumpall, "Dump all vfuncs to file vfuncs_dumpall.out")
 					symbol->mangled_name, 
 					symbol->demangled_name);
 
-			MMsg("%s", temp_string);
+//			MMsg("%s", temp_string);
 	
         		if (filesystem->Write((void *) temp_string, 
 						temp_length, file_handle) == 0)
@@ -900,6 +900,7 @@ CON_COMMAND(ma_vfunc_dumpall, "Dump all vfuncs to file vfuncs_dumpall.out")
 						symbol_ptr->mangled_name, 
 						symbol_ptr->demangled_name);
 
+//			MMsg("%s", temp_string);
 		        		if (filesystem->Write((void *) temp_string, 
 							temp_length, file_handle) == 0)
 		        		{
