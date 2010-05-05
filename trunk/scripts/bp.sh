@@ -15,6 +15,14 @@ echo "DEBUG_ON = $DEBUG_ON"
 echo ""
 }
 
+#########################################
+create_folder()
+{
+if [ ! -d "$1" ]; then
+	mkdir $1
+fi
+}
+
 ##########################################
 show_build_mode()
 {
@@ -278,6 +286,15 @@ fi
 
 cd -
 
+# Create output folders if they don't already exist
+create_folder "$BASE_FOLDER/plugin_output"
+create_folder "$BASE_FOLDER/plugin_output/orange_bin"
+create_folder "$BASE_FOLDER/plugin_output/orange_bin/VSP"
+create_folder "$BASE_FOLDER/plugin_output/orange_bin/SourceMM"
+create_folder "$BASE_FOLDER/plugin_output/legacy_bin"
+create_folder "$BASE_FOLDER/plugin_output/legacy_bin/VSP"
+create_folder "$BASE_FOLDER/plugin_output/legacy_bin/SourceMM"
+
 if [ "$VSP_BUILD" = "TRUE" ]
 then
 	if [ -f $EXE_DIR/mani_admin_plugin_i486.so ]
@@ -296,4 +313,5 @@ fi
 
 show_build_mode
 echo "Finished option $REPLY"
+
 

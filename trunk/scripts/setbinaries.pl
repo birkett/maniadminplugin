@@ -250,7 +250,15 @@ my $search_curly = 0;
 		open(DAT, ">$mod_dir/addons/$CORE_BIN.vdf");
 		print DAT "\"Plugin\"\n";
 		print DAT "{\n";
-		print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN."_i486\"\n";
+		if ($ORANGE)
+		{
+			print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN."_i486\"\n";
+		}
+		else
+		{
+			print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN."\"\n";
+		}
+
 		print DAT "}\n";
 		close(DAT);
 	}

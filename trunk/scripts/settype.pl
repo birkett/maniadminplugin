@@ -62,7 +62,7 @@ foreach $listitem ( @contents )
 	{
 		if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
 		{
-			copy_binaries($listitem);	
+			copy_binaries($listitem, "TRUE");	
 		}
 	}
 }
@@ -84,7 +84,7 @@ foreach $listitem ( @contents )
 	{
 		if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
 		{
-			copy_binaries($listitem);	
+			copy_binaries($listitem, "FALSE");	
 		}
 	}
 }
@@ -97,6 +97,7 @@ sub copy_binaries
 {
 my $mod_dir = $ENGINE_BASE . "/" . $_[0];
 my $search_curly = 0;
+my $orange_copy = $_[1];
 
 
 	print "Setting up mod " . $_[0] . "\n";
@@ -166,7 +167,15 @@ my $search_curly = 0;
 		open(DAT, ">$mod_dir/addons/$CORE_BIN.vdf");
 		print DAT "\"Plugin\"\n";
 		print DAT "{\n";
-		print DAT "\t\"file\" \"../$_[0]/addons/$CORE_BIN\"\n";
+		if ($orange_copy eq "TRUE")
+		{
+			print DAT "\t\"file\" \"../$_[0]/addons/" . $CORE_BIN . "_i486\"\n";
+		}
+		else
+		{
+			print DAT "\t\"file\" \"../$_[0]/addons/$CORE_BIN\"\n";
+		}
+
 		print DAT "}\n";
 		close(DAT);
 	}
