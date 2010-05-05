@@ -143,8 +143,6 @@ extern void LoadSigScans(void);
 #ifdef WIN32
 extern void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
 extern bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
-#else
-extern void *FindAddress(char *address_name, bool gamebin = true);
 #endif
 
 #endif

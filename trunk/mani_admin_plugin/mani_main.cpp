@@ -38,7 +38,7 @@
 #include <mysql.h>
 
 #ifdef __linux__
-#include <dlfcn.h>
+#include "mani_linuxutils.h"
 #else
 typedef unsigned long DWORD;
 #define PVFN2( classptr , offset ) ((*(DWORD*) classptr ) + offset)
@@ -537,7 +537,13 @@ bool CAdminPlugin::Load(void)
 	{
 
 #ifdef __linux__
-		void *var_address = FindAddress("te");
+		SymbolMap *sym_ptr = new SymbolMap;
+		if (!sym_ptr->GetLib(gpManiGameType->GetLinuxBin()))
+		{
+			MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxBin());
+		}
+
+		void *var_address = sym_ptr->FindAddress("te");
 		if (var_address == NULL)
 		{
 			MMsg("dlsym failure : Error [%s]\n", dlerror());
@@ -548,6 +554,7 @@ bool CAdminPlugin::Load(void)
 			MMsg("var_address = %p\n", var_address);
 			temp_ents = *(ITempEntsSystem **) var_address;
 		}
+		delete sym_ptr;
 #else
 		temp_ents = **(ITempEntsSystem***)(VFN2(effects, gpManiGameType->GetAdvancedEffectsVFuncOffset()) + (gpManiGameType->GetAdvancedEffectsCodeOffset()));
 #endif

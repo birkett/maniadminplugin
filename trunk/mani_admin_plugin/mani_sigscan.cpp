@@ -16,6 +16,7 @@
    #include <sys/mman.h>
    #include <sys/stat.h>
    #include <demangle.h>
+   #include "mani_linuxutils.h"
 #endif
 #include "interface.h"
 #include "filesystem.h"
@@ -74,8 +75,6 @@ static void ShowSigInfo(void *ptr, char *sig_name);
 #ifdef WIN32
 static void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
 static bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
-#else
-static void *FindAddress(char *address_name, bool gamebin = true);
 #endif
 
 class ManiEmptyClass {};
@@ -130,139 +129,6 @@ bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len)
 	return true;
 }
 
-#else
-
-
-static
-void	*FindAddress(char *address_name, bool gamebin)
-{
-	void	*handle;
-	void	*var_address;
-
-	MMsg("FindAddress %s\n", address_name);
-
-	char *name = cplus_demangle(address_name, DMGL_PARAMS);
-	if (name != NULL)
-	{
-		MMsg("Demangled [%s]\n", name);
-		free(name);
-	}
-
-	var_address = NULL;
-
-
-	if ( gamebin )
-	{
-		handle = dlopen(gpManiGameType->GetLinuxBin(), RTLD_NOW);
-	}
-	else
-	{
-		handle = dlopen(gpManiGameType->GetLinuxEngine(), RTLD_NOW);
-	}
-
-	if (handle == NULL)
-	{
-		MMsg("Failed to open server image, error [%s]\n", dlerror());
-		return NULL;
-	}
-	else
-	{
-
-		// Borrowed from SourceMod.  Hidden symbols SUCK!!!!
-		int dlfile;
-		struct link_map *dlmap;
-		struct stat dlstat;
-		Elf32_Ehdr *file_hdr;
-		uintptr_t map_base;
-		Elf32_Shdr *sections, *shstrtab_hdr, *symtab_hdr, *strtab_hdr;
-		Elf32_Sym *symtab;
-		uint16_t section_count;
-		const char *shstrtab, *strtab;
-		uint32_t symbol_count;
-
-		symtab_hdr = NULL;
-		strtab_hdr = NULL;
-
-		dlmap = (struct link_map *)handle;
-
-		dlfile = open(dlmap->l_name, O_RDONLY);
-		if (dlfile == -1 || fstat(dlfile, &dlstat) == -1)
-		{
-			close(dlfile);
-			return NULL;
-		}
-
-		/* Map library file into memory */
-		file_hdr = (Elf32_Ehdr *)mmap(NULL, dlstat.st_size, PROT_READ, MAP_PRIVATE, dlfile, 0);
-		map_base = (uintptr_t)file_hdr;
-		if (file_hdr == MAP_FAILED)
-		{
-			close(dlfile);
-			return NULL;
-		}
-		close(dlfile);
-
-		if (file_hdr->e_shoff == 0 || file_hdr->e_shstrndx == SHN_UNDEF)
-		{
-			munmap(file_hdr, dlstat.st_size);
-			return NULL;
-		}
-
-		sections = (Elf32_Shdr *)(map_base + file_hdr->e_shoff);
-		section_count = file_hdr->e_shnum;
-		/* Get ELF section header string table */
-		shstrtab_hdr = &sections[file_hdr->e_shstrndx];
-		shstrtab = (const char *)(map_base + shstrtab_hdr->sh_offset);
-
-		/* Iterate sections while looking for ELF symbol table and string table */
-		for (uint16_t i = 0; i < section_count; i++)
-		{
-			Elf32_Shdr &hdr = sections[i];
-			const char *section_name = shstrtab + hdr.sh_name;
-
-			if (strcmp(section_name, ".symtab") == 0)
-			{
-				symtab_hdr = &hdr;
-			}
-			else if (strcmp(section_name, ".strtab") == 0)
-			{
-				strtab_hdr = &hdr;
-			}
-		}
-
-		/* Uh oh, we don't have a symbol table or a string table */
-		if (symtab_hdr == NULL || strtab_hdr == NULL)
-		{
-			munmap(file_hdr, dlstat.st_size);
-			return NULL;
-		}
-
-		symtab = (Elf32_Sym *)(map_base + symtab_hdr->sh_offset);
-		strtab = (const char *)(map_base + strtab_hdr->sh_offset);
-		symbol_count = symtab_hdr->sh_size / symtab_hdr->sh_entsize;
-
-		for (uint32_t i = 0; i < symbol_count; i++)
-		{
-			Elf32_Sym &sym = symtab[i];
-			unsigned char sym_type = ELF32_ST_TYPE(sym.st_info);
-			const char *sym_name = strtab + sym.st_name;
-
-			// Skip symbols that are undefined or do not refer to functions or objects 
-			if (sym.st_shndx == SHN_UNDEF || (sym_type != STT_FUNC && sym_type != STT_OBJECT))
-			{
-				continue;
-			}
-
-			if (strcmp(address_name, sym_name) == 0) {
-				var_address = (void *)(dlmap->l_addr + sym.st_value);
-				break;
-			}
-		}
-		munmap(file_hdr, dlstat.st_size);
-	}
-
-	return var_address;
-}
 #endif
 
 bool CCSRoundRespawn(CBaseEntity *pThisPtr)
@@ -433,8 +299,19 @@ void LoadSigScans(void)
 		netsendpacket_addr =  FindSignature (engine_base, engine_len, (unsigned char*) MKSIG(NET_SendPacket));
 	}
 #else
-	connect_client_addr = FindAddress(CBaseServer_ConnectClient_Linux, false);
-	netsendpacket_addr  = FindAddress(NET_SendPacket_Linux, false);
+	// Not using Gamegin for following using engine.so instead
+	SymbolMap *engine_sym_ptr;
+	engine_sym_ptr = new SymbolMap;
+	if (!engine_sym_ptr->GetLib(gpManiGameType->GetLinuxEngine()))
+	{
+		MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxEngine());
+	}
+
+	connect_client_addr = engine_sym_ptr->FindAddress(CBaseServer_ConnectClient_Linux);
+	netsendpacket_addr  = engine_sym_ptr->FindAddress(NET_SendPacket_Linux);
+
+	/* Call deconstructor to cleanup */
+	delete engine_sym_ptr;
 #endif
 	MMsg("Sigscan info\n");
 	ShowSigInfo(connect_client_addr, "CBaseServer::ConnectClient");
@@ -488,23 +365,33 @@ void LoadSigScans(void)
 
 	// Linux
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
-	respawn_addr = FindAddress(CCSPlayer_RoundRespawn_Linux);
-	util_remove_addr = FindAddress(UTIL_Remove_Linux);
-	g_pEList = *(CBaseEntityList **) FindAddress(CEntList_Linux);
-	ent_list_find_ent_by_classname = FindAddress(CGlobalEntityList_FindEntityByClassname_Linux);
-	switch_team_addr = FindAddress(CCSPlayer_SwitchTeam_Linux);
-	set_model_from_class = FindAddress(CCSPlayer_SetModelFromClass_Linux);
 
-	ptr = FindAddress(CBaseCombatCharacter_SwitchToNextBestWeapon_Linux);
+	SymbolMap *game_sym_ptr = new SymbolMap;
+	if (!game_sym_ptr->GetLib(gpManiGameType->GetLinuxBin()))
+	{
+		MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxBin());
+	}
+
+	respawn_addr = game_sym_ptr->FindAddress(CCSPlayer_RoundRespawn_Linux);
+	util_remove_addr = game_sym_ptr->FindAddress(UTIL_Remove_Linux);
+	g_pEList = *(CBaseEntityList **) game_sym_ptr->FindAddress(CEntList_Linux);
+	ent_list_find_ent_by_classname = game_sym_ptr->FindAddress(CGlobalEntityList_FindEntityByClassname_Linux);
+	switch_team_addr = game_sym_ptr->FindAddress(CCSPlayer_SwitchTeam_Linux);
+	set_model_from_class = game_sym_ptr->FindAddress(CCSPlayer_SetModelFromClass_Linux);
+
+	ptr = game_sym_ptr->FindAddress(CBaseCombatCharacter_SwitchToNextBestWeapon_Linux);
 	if (ptr)
 	{
 		g_pGRules = *(CGameRules **) ((unsigned long) ptr + (unsigned long) 6);
 	}
 
-	get_file_weapon_info_addr = FindAddress(GetFileWeaponInfoFromHandle_Linux);
-	get_weapon_price_addr = FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
-	get_weapon_addr = FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
-	get_black_market_price_addr = FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
+	get_file_weapon_info_addr = game_sym_ptr->FindAddress(GetFileWeaponInfoFromHandle_Linux);
+	get_weapon_price_addr = game_sym_ptr->FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
+	get_weapon_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
+	get_black_market_price_addr = game_sym_ptr->FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
+
+	/* Call deconstructor to cleanup */
+	delete game_sym_ptr;
 
 
 #endif

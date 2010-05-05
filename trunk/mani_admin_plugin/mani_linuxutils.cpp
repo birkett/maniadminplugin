@@ -225,7 +225,7 @@ bool SymbolMap::GetLib(const char *lib_name)
         	qsort(mangled_list, symbol_list_size, sizeof(symbol_t), sort_by_mangled);
         	qsort(demangled_list, symbol_list_size, sizeof(symbol_t), sort_by_demangled);
 	}
-	
+
         return true;
 
 }
@@ -254,7 +254,7 @@ symbol_t *SymbolMap::GetMangled(char *mangled_name)
 	symbol_t        *symbol_ptr = NULL;
 	symbol_t        search_term;
 
-        strcpy(search_term.mangled_name, mangled_name);
+        search_term.mangled_name = mangled_name;
         symbol_ptr  = (symbol_t *) bsearch (&search_term,
         				mangled_list, symbol_list_size,
                                         sizeof(symbol_t),
@@ -273,7 +273,7 @@ symbol_t *SymbolMap::GetDeMangled(char *demangled_name)
 	symbol_t        *symbol_ptr = NULL;
 	symbol_t        search_term;
 
-        strcpy(search_term.demangled_name, demangled_name);
+        search_term.demangled_name = demangled_name;
         symbol_ptr  = (symbol_t *) bsearch (&search_term,
         				demangled_list, symbol_list_size,
                                         sizeof(symbol_t),
@@ -285,6 +285,26 @@ symbol_t *SymbolMap::GetDeMangled(char *demangled_name)
 symbol_t *SymbolMap::GetDeMangled(int index)
 {
 	return &(demangled_list[index]);
+}
+
+// Replacement helper function for the old FindAddress function from mani_sigscan.cpp 
+// This supports both mangled and non-mangled names being passed in
+void *SymbolMap::FindAddress(char *name_ptr)
+{
+	MMsg("Finding [%s]\n", name_ptr);
+	symbol_t *ptr = this->GetMangled(name_ptr);
+	if (ptr == NULL)
+	{
+		ptr = this->GetDeMangled(name_ptr);
+		if (ptr == NULL)
+		{
+			MMsg("Failed to resolve [%s]\n", name_ptr);
+			return NULL;
+		}
+	}
+
+	MMsg("[%s] mapped to [%p]\n", name_ptr, ptr->ptr);
+	return ptr->ptr;
 }
 
 void SymbolMap::FreeSymbols()

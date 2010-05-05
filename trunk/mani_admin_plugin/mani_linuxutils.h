@@ -36,17 +36,18 @@ public:
 	SymbolMap();
 	~SymbolMap();
 
-	bool SymbolMap::GetLib(const char *lib_name);
-	symbol_t *SymbolMap::GetAddr(void *ptr);
-	symbol_t *SymbolMap::GetAddr(int index);
+	bool GetLib(const char *lib_name);
+	symbol_t *GetAddr(void *ptr);
+	symbol_t *GetAddr(int index);
 
-	symbol_t *SymbolMap::GetMangled(char *mangled_name);
-	symbol_t *SymbolMap::GetMangled(int index);
+	symbol_t *GetMangled(char *mangled_name);
+	symbol_t *GetMangled(int index);
 
-	symbol_t *SymbolMap::GetDeMangled(char *demangled_name);
-	symbol_t *SymbolMap::GetDeMangled(int index);
+	symbol_t *GetDeMangled(char *demangled_name);
+	symbol_t *GetDeMangled(int index);
 
-	int SymbolMap::GetMapSize() { return symbol_list_size; };
+	int GetMapSize() { return symbol_list_size; };
+	void *FindAddress(char *name_ptr);
 	
 private:
 	void FreeSymbols();
