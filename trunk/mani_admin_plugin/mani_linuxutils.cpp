@@ -83,11 +83,9 @@ SymbolMap::~SymbolMap()
 bool SymbolMap::GetLib(const char *lib_name)
 {
         void *handle;
-        void *var_address;
 
 	FreeSymbols();
 
-        var_address = NULL;
         handle = dlopen(lib_name, RTLD_NOW);
         if (handle == NULL)
         {
@@ -95,6 +93,9 @@ bool SymbolMap::GetLib(const char *lib_name)
         }
 
         // Borrowed from SourceMod.  Hidden symbols SUCK!!!!
+	// core/MemoryUtils.cpp
+	// void *MemoryUtils::ResolveSymbol(void *handle, const char *symbol)
+
         int dlfile;
         struct link_map *dlmap;
         struct stat dlstat;
@@ -291,19 +292,21 @@ symbol_t *SymbolMap::GetDeMangled(int index)
 // This supports both mangled and non-mangled names being passed in
 void *SymbolMap::FindAddress(char *name_ptr)
 {
-	MMsg("Finding [%s]\n", name_ptr);
+	// See if we can match against a mangled c++ symbol
 	symbol_t *ptr = this->GetMangled(name_ptr);
 	if (ptr == NULL)
 	{
+		// Nothing found so a demangled name may have been passed in
 		ptr = this->GetDeMangled(name_ptr);
 		if (ptr == NULL)
 		{
-			MMsg("Failed to resolve [%s]\n", name_ptr);
+			// Still can't find it so bail out
+			MMsg("SymbolMap::FindAddress - Failed to resolve [%s]\n", name_ptr);
 			return NULL;
 		}
 	}
 
-	MMsg("[%s] mapped to [%p]\n", name_ptr, ptr->ptr);
+	MMsg("[%p] found for [%s]\n", ptr->ptr, name_ptr);
 	return ptr->ptr;
 }
 
