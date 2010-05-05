@@ -2031,10 +2031,16 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 			filesystem->FPrintf ( vdf, "\"Metamod Plugin\"\n");
 			filesystem->FPrintf ( vdf, "{\n" );
 			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin/bin/mani_admin_plugin_mm_i486\"\n", gamedir );
-		} else {
+		} 
+		else 
+		{
 			filesystem->FPrintf ( vdf, "\"Plugin\"\n");
 			filesystem->FPrintf ( vdf, "{\n" );
+#ifdef ORANGE
 			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin_i486\"\n", gamedir );
+#else
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin\"\n", gamedir );
+#endif
 		}
 		filesystem->FPrintf ( vdf, "}" );
 		filesystem->Flush ( vdf );
