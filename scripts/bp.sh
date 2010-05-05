@@ -162,7 +162,6 @@ then
 	export EXTRA_LIBS="../sdks/map/ep1/linux_sdk/tier1_i486.a ../sdks/map/ep1/linux_sdk/mathlib_i486.a"
 	export TIER0_SO="tier0_i486.so"
 	export VSTDLIB_SO="vstdlib_i486.so"
-	export LIBSUFFIX="_i486"
 
 elif [ "$ORANGE_BUILD" = "FALSE" ] && [ "$VSP_BUILD" = "FALSE" ]
 then
@@ -191,7 +190,6 @@ then
 	export EXTRA_LIBS="../sdks/map/ep1/linux_sdk/tier1_i486.a ../sdks/map/ep1/linux_sdk/mathlib_i486.a"
 	export TIER0_SO="tier0_i486.so"
 	export VSTDLIB_SO="vstdlib_i486.so"
-	export LIBSUFFIX="_i486"
 
 elif [ "$ORANGE_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then
@@ -223,7 +221,6 @@ then
 	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
 	export TIER0_SO="libtier0.so"
 	export VSTDLIB_SO="libvstdlib.so"
-	export LIBSUFFIX=""
 
 else
 ###############################
@@ -253,7 +250,6 @@ else
 	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
 	export TIER0_SO="libtier0.so"
 	export VSTDLIB_SO="libvstdlib.so"
-	export LIBSUFFIX="_i486"
 
 fi
 
@@ -284,7 +280,7 @@ cd -
 
 if [ "$VSP_BUILD" = "TRUE" ]
 then
-	if [ -f $EXE_DIR/mani_admin_plugin$LIBSUFFIX.so ]
+	if [ -f $EXE_DIR/mani_admin_plugin_i486.so ]
 	then
 		cp -f $EXE_DIR/mani_admin_plugin_i486.so $OUTPUT_DIR/VSP
 		setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
@@ -293,7 +289,7 @@ else
 	COPY_SMM="-s"	
 	if [ -f $EXE_DIR/mani_admin_plugin_mm_i486.so ]
 	then
-		cp -f $EXE_DIR/mani_admin_plugin_mm$LIBSUFFIX.so $OUTPUT_DIR/SourceMM
+		cp -f $EXE_DIR/mani_admin_plugin_mm_i486.so $OUTPUT_DIR/SourceMM
 		setbinaries.pl $COPY_SMM $COPY_ORANGE $RELEASE_MODE
 	fi
 fi
