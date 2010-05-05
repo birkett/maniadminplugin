@@ -24,7 +24,6 @@ For the Orange Box engine this is no longer the case and you have to explicitly 
 {{{
 "Plugin"
 {
-        "file" "../cstrike/addons/mani_admin_plugin*_i486*"
+        "file" "../cstrike/addons/mani_admin_plugin_i486"
 }
 }}}
-
