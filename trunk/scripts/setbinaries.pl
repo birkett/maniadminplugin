@@ -55,7 +55,7 @@ else
 #Linux platform
 	print "Linux platform\n";
 	$DEV_BASE=$LINUX_BASE;
-	$FILE_EXT="_i486.so";
+	$FILE_EXT=".so";
 	$SMM_FILE_EXT=".so";
 }
 
@@ -137,7 +137,7 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg");
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
-	#Copy Meta Mod Source 1.8 binary
+	#Copy Meta Mod Source 1.8.1 binary
 	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/server" . $FILE_EXT,
 		"$mod_dir/addons/metamod/bin/server" . $FILE_EXT);
 	
@@ -192,60 +192,25 @@ my $search_curly = 0;
 
 	if ($SMM)
 	{	
-		if (not grep(/metamod/, @raw_data))
-		{
-			open(DAT, ">$mod_dir/gameinfo.txt");
-
-			$next_line = 0;
-			foreach $LINE_VAR (@raw_data)
-			{
-				if (grep(/SearchPaths/, $LINE_VAR))
-				{
-					$search_curly = 1;
-				}
-				else
-				{
-					if ($search_curly ne 0)
-					{
-						if (grep(/{/, $LINE_VAR))
-						{
-							$search_curly = 1;
-						}				
-						else
-						{
-							$search_curly = 2;
-						}
-					}
-				}
-				
-
-				if ($search_curly eq 2)
-				{
-					print DAT "                              GameBin                         |gameinfo_path|addons/metamod/bin\n";
-					$search_curly = 0;
-				}
-
-				print DAT $LINE_VAR;
-			}
-			close(DAT);
-		}
-
 		unlink("$mod_dir/addons/mani_admin_plugin.vdf");
+
+		open(DAT, ">$mod_dir/addons/metamod.vdf");
+		print DAT "\"Plugin\"\n";
+		print DAT "{\n";
+		print DAT "\t\"file\"\t\"../$_[0]/addons/metamod/bin/server\"\n";
+		print DAT "}\n";
+		close(DAT);
+
+		open(DAT, ">$mod_dir/addons/metamod/$CORE_BIN.vdf");
+		print DAT "\"Metamod Plugin\"\n";
+		print DAT "{\n";
+		print DAT "\t\"file\"\t\"addons/mani_admin_plugin/bin/$CORE_BIN$SMM_EXT\"\n";
+		print DAT "}\n";
+		close(DAT);
 	}
 	else
 	{		
-		if (grep(/metamod/, @raw_data))
-		{
-			open(DAT, ">$mod_dir/gameinfo.txt");
-			foreach $LINE_VAR (@raw_data)
-			{
-				if (not grep(/metamod/, $LINE_VAR))
-				{
-					print DAT $LINE_VAR;
-				}
-			}
-			close(DAT);
-		}
+		unlink("$mod_dir/addons/metamod.vdf");
 
 		open(DAT, ">$mod_dir/addons/$CORE_BIN.vdf");
 		print DAT "\"Plugin\"\n";

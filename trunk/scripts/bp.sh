@@ -1,5 +1,5 @@
 #!/bin/sh
-
+export PATH="./:$PATH"
 PROG_NAME=$(basename $0)
 BASE_FOLDER=$(dirname $(readlink -f $0))/..
 CLEAN=FALSE
