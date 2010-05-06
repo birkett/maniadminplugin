@@ -2,8 +2,8 @@
 //
 // Mani Admin Plugin 2006
 //
-// Last Update V.1.2 Beta T
-// 18.08.2009
+// Last Update V.1.2 Beta U
+// 06.05.2010
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
