@@ -19,6 +19,7 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#if !defined ( WIN32 )
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -336,3 +337,4 @@ void SymbolMap::FreeSymbols()
 		symbol_list_size = 0;
 	}
 }
+#endif
