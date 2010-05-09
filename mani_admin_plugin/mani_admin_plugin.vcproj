@@ -989,6 +989,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_linuxutils.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mani_log_css_stats.cpp"
 					>
 				</File>
@@ -1310,6 +1314,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_language.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_linuxutils.h"
 					>
 				</File>
 				<File

@@ -19,6 +19,7 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#if !defined ( WIN32 )
 #ifndef MANI_LINUXUTILS
 #define MANI_LINUXUTILS
 
@@ -60,3 +61,4 @@ private:
 };
 
 #endif
+#endif // !defined WIN32
