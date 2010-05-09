@@ -73,8 +73,8 @@ else
 }
 
 
-$BIN_FILE=$CORE_BIN . $SMM_EXT . $SMM_FILE_EXT;
-$PDB_FILE=$CORE_BIN . $SMM_EXT . ".pdb";
+$BIN_FILE=$CORE_BIN . $SMM_EXT . $ARCH . $SMM_FILE_EXT;
+$PDB_FILE=$CORE_BIN . $SMM_EXT . $ARCH . ".pdb";
 
 print "INFO:\nDEV_BASE:  $DEV_BASE\nENGINE_BASE:  $ENGINE_BASE\nBIN_FOLDER:  $BIN_FOLDER\n";
 print "File = " . $BIN_FILE . "\n";
