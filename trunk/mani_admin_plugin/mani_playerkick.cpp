@@ -70,12 +70,12 @@ void ManiPlayerKick::KickPlayer ( int player_index, const char *reason ) {
 		engine->ServerCommand(kick_cmd);
 		engine->ServerExecute();
 	} else {
-		INetChannel *pNetChan = static_cast<INetChannel *>(engine->GetPlayerNetInfo(player_index));
-		IClient *pClient = static_cast<IClient *>(pNetChan->GetMsgHandler());
-		if ( reason[0] == 0 )
-			pClient->Disconnect("Kicked by Console");
+		char kick_cmd[512];
+		if ( !reason || reason[0] == 0 )
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i\n", player.user_id);
 		else
-			pClient->Disconnect("%s", reason);
+			snprintf( kick_cmd, sizeof(kick_cmd), "kickid %i %s\n", player.user_id, reason);
+		engine->ServerCommand(kick_cmd);
 	}
 }
 

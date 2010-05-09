@@ -49,6 +49,7 @@ if ($^O eq "MSWin32")
 	$DEV_BASE=$WINDOWS_BASE;
 	$FILE_EXT=".dll";
 	$SMM_FILE_EXT=".dll";
+	$ARCH="";
 }
 else
 {
@@ -57,6 +58,7 @@ else
 	$DEV_BASE=$LINUX_BASE;
 	$FILE_EXT=".so";
 	$SMM_FILE_EXT=".so";
+	$ARCH="_i486";
 }
 
 $BIN_FOLDER=$DEV_BASE . "/plugin_output";
@@ -71,7 +73,7 @@ else
 }
 
 
-$BIN_FILE=$CORE_BIN . $SMM_EXT . $FILE_EXT;
+$BIN_FILE=$CORE_BIN . $SMM_EXT . $SMM_FILE_EXT;
 $PDB_FILE=$CORE_BIN . $SMM_EXT . ".pdb";
 
 print "INFO:\nDEV_BASE:  $DEV_BASE\nENGINE_BASE:  $ENGINE_BASE\nBIN_FOLDER:  $BIN_FOLDER\n";
@@ -138,8 +140,8 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
 	#Copy Meta Mod Source 1.8.1 binary
-	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/server" . $FILE_EXT,
-		"$mod_dir/addons/metamod/bin/server" . $FILE_EXT);
+	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/server" . $SMM_FILE_EXT,
+		"$mod_dir/addons/metamod/bin/server" . $SMM_FILE_EXT);
 	
 	if ($ORANGE)
 	{
@@ -217,7 +219,7 @@ my $search_curly = 0;
 		print DAT "{\n";
 		if ($ORANGE)
 		{
-			print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN."_i486\"\n";
+			print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN.$ARCH."\"\n";
 		}
 		else
 		{
