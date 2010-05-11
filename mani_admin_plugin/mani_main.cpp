@@ -208,6 +208,8 @@ ConVar mani_exec_default_file3 ("mani_exec_default_file3", "", 0, "Run a default
 ConVar mani_exec_default_file4 ("mani_exec_default_file4", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
 ConVar mani_exec_default_file5 ("mani_exec_default_file5", "", 0, "Run a default .cfg file on level change after server.cfg",CONVAR_CALLBACK_REF(DefaultExecChanged));
 
+ConVar mani_bans_max_shown_in_menu ("mani_bans_max_shown_in_menu", "250", 0, "Shows the last number of bans in the admin menu.\nSetting this value too high can lag the server.");
+
 bool war_mode = false;
 float	next_ping_check;
 int	max_players = 0;
@@ -4642,7 +4644,8 @@ bool UnBanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 	time (&now);
 
 	MenuItem *ptr;
-	for( int i = 0; i < ban_list_size; i++ )
+	int count = 0;
+	for( int i = ban_list_size; i > 0; --i )
 	{
 		if ( (ban_list[i].expire_time != 0) && (ban_list[i].expire_time <= now) ) continue;
 		if (((ubtype == 0) && (ban_list[i].byID)) || ((ubtype == 1) && (!ban_list[i].byID))) {
@@ -4650,6 +4653,8 @@ bool UnBanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 			ptr->SetDisplayText("%s", ban_list[i].player_name);
 			ptr->params.AddParam("banlistindex", i);
 			this->AddItem(ptr);
+			count ++;
+			if ( mani_bans_max_shown_in_menu.GetBool() && (count >= mani_bans_max_shown_in_menu.GetInt()) ) break;
 		}
 	}
 
