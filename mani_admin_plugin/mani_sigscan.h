@@ -110,8 +110,13 @@ class CBaseEntityList;
 
 // K
 // _ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi
+#ifdef ORANGE
+#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "\x56\x8B\xF1\x83\xBE\x2a\x2a\x2a\x2a\x2a\x75\x2a\xE8\x2a\x2a\x2a\x2a\x8B\xB6\x2a\x2a\x2a\x2a\x85\xF6\x74\x2a\x8B\x44\x24\x08"
+#define CCSGameRules_GetBlackMarketPriceForWeapon_SigBytes 31
+#else
 #define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "\x56\x8B\xF1\x83\xBE\x2a\x2a\x2a\x2a\x2a\x75\x2a\xE8\x2a\x2a\x2a\x2a\x8B\x86\x2a\x2a\x2a\x2a\x8B"
 #define CCSGameRules_GetBlackMarketPriceForWeapon_SigBytes 24
+#endif
 #define CCSGameRules_GetBlackMarketPriceForWeapon_Linux "_ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi"
 
 // Used in Reserve Slots - Thanks to *pRED
