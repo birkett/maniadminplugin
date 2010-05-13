@@ -31,14 +31,20 @@ class CBaseEntityList;
 */
 
 #define MKSIG(name) name##_Sig, name##_SigBytes
-
+// A
 //#define CCSPlayer_RoundRespawn_Sig "\x56\x8B\xF1\x8B\x06\xFF\x90\x60\x04\x00\x00\x8B\x86\x2A\x0D\x00"
 #define CCSPlayer_RoundRespawn_Sig "\x56\x8B\xF1\x8B\x06\xFF\x90\x2A\x04\x00\x00\x8B\x86\x2A\x0D\x00"
 #define CCSPlayer_RoundRespawn_SigBytes 16
 #define CCSPlayer_RoundRespawn_Linux "_ZN9CCSPlayer12RoundRespawnEv"
 
+// B
+#ifdef ORANGE
+#define UTIL_Remove_Sig "\x8B\x44\x24\x04\x85\xC0\x74\x2A\x83\xC0\x0C\x89\x44\x24\x04\xE9\x7C\xFF\xFF\xFF"
+#define UTIL_Remove_SigBytes 20
+#else
 #define UTIL_Remove_Sig "\x8B\x44\x24\x04\x85\xC0\x74\x2A\x05\x2A\x2A\x00\x00\x89\x44\x24\x04\xE9\x2A\xFF\xFF\xFF"
-#define UTIL_Remove_SigBytes 22
+#define UTIL_Remove_SigBytes 20
+#endif
 #define UTIL_Remove_Linux "_Z11UTIL_RemoveP11CBaseEntity"
 
 // Win32 function is IsThereABomb (look for weapon_c4 and planted_c4
@@ -60,8 +66,14 @@ class CBaseEntityList;
 //gEntList
 #define CEntList_gEntList			0x9
 
+// E
+#ifdef ORANGE
+#define CGlobalEntityList_FindEntityByClassname_Sig "\x53\x55\x56\x8B\xF1\x8B\x4C\x24\x2A\x85\xC9\x57\x74\x2A\x8B\x01\x8B\x50\x08\xFF\xD2"
+#define CGlobalEntityList_FindEntityByClassname_SigBytes 21
+#else
 #define CGlobalEntityList_FindEntityByClassname_Sig "\x53\x55\x56\x8B\xF1\x8B\x4C\x24\x2A\x85\xC9\x57\x74\x2A\x8B\x01\xFF\x2A\x2A\x8B\x08"
 #define CGlobalEntityList_FindEntityByClassname_SigBytes 21
+#endif
 #define CGlobalEntityList_FindEntityByClassname_Linux "_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
 
 // Look for CCSPlayer::SwitchTeam( %d )
@@ -96,6 +108,7 @@ class CBaseEntityList;
 #define CBaseCombatCharacter_GetWeapon_SigBytes 24
 #define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
 
+// K
 // _ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi
 #define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "\x56\x8B\xF1\x83\xBE\x2a\x2a\x2a\x2a\x2a\x75\x2a\xE8\x2a\x2a\x2a\x2a\x8B\x86\x2a\x2a\x2a\x2a\x8B"
 #define CCSGameRules_GetBlackMarketPriceForWeapon_SigBytes 24
