@@ -362,6 +362,12 @@ void ManiGameType::Init(void)
 		this->GetVFuncs(temp_ptr);
 	}
 
+	temp_ptr = base_key_ptr->FindKey("vfuncs_windows", false );
+	if ( temp_ptr )
+	{
+		this->OverrideVFuncs(temp_ptr);
+	}
+
 	if (this->IsGameType(MANI_GAME_CSS))
 	{
 		// Handle weapon costs
@@ -520,6 +526,37 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 	vfunc_index[MANI_VFUNC_SET_OBSERVER_TARGET] = kv_ptr->GetInt("set_observer_target", -1); // 0x0d
 	vfunc_index[MANI_VFUNC_WEAPON_CANUSE] = kv_ptr->GetInt("weapon_canuse", -1); // 0x0d
 	vfunc_index[MANI_VFUNC_GET_CLASS_NAME] = kv_ptr->GetInt("get_class_name", -1); // 0x03
+
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Get Property offsets for windows if different
+//---------------------------------------------------------------------------------
+void ManiGameType::OverrideVFuncs(KeyValues *kv_ptr) 
+{
+	vfunc_index[MANI_VFUNC_EYE_ANGLES] = kv_ptr->GetInt("eye_angles", vfunc_index[MANI_VFUNC_EYE_ANGLES]);
+	vfunc_index[MANI_VFUNC_TELEPORT] = kv_ptr->GetInt("teleport", vfunc_index[MANI_VFUNC_TELEPORT]);
+	vfunc_index[MANI_VFUNC_SET_MODEL_INDEX] = kv_ptr->GetInt("set_model_index", vfunc_index[MANI_VFUNC_SET_MODEL_INDEX]);
+	vfunc_index[MANI_VFUNC_EYE_POSITION] = kv_ptr->GetInt("eye_position", vfunc_index[MANI_VFUNC_EYE_POSITION]);
+	vfunc_index[MANI_VFUNC_MY_COMBAT_CHARACTER] = kv_ptr->GetInt("my_combat_character", vfunc_index[MANI_VFUNC_MY_COMBAT_CHARACTER]);
+	vfunc_index[MANI_VFUNC_IGNITE] = kv_ptr->GetInt("ignite", vfunc_index[MANI_VFUNC_IGNITE]);
+	vfunc_index[MANI_VFUNC_REMOVE_PLAYER_ITEM] = kv_ptr->GetInt("remove_player_item", vfunc_index[MANI_VFUNC_REMOVE_PLAYER_ITEM]);
+	vfunc_index[MANI_VFUNC_GET_WEAPON_SLOT] = kv_ptr->GetInt("get_weapon_slot", vfunc_index[MANI_VFUNC_GET_WEAPON_SLOT]);
+	vfunc_index[MANI_VFUNC_GIVE_AMMO] = kv_ptr->GetInt("give_ammo", vfunc_index[MANI_VFUNC_GIVE_AMMO]);
+	vfunc_index[MANI_VFUNC_WEAPON_DROP] = kv_ptr->GetInt("weapon_drop", vfunc_index[MANI_VFUNC_WEAPON_DROP]);
+	vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE] = kv_ptr->GetInt("get_primary_ammo_type", vfunc_index[MANI_VFUNC_GET_PRIMARY_AMMO_TYPE]);
+	vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE] = kv_ptr->GetInt("get_secondary_ammo_type", vfunc_index[MANI_VFUNC_GET_SECONDARY_AMMO_TYPE]);
+	vfunc_index[MANI_VFUNC_WEAPON_GET_NAME] = kv_ptr->GetInt("weapon_get_name", vfunc_index[MANI_VFUNC_WEAPON_GET_NAME]);
+	vfunc_index[MANI_VFUNC_GET_VELOCITY] = kv_ptr->GetInt("get_velocity", vfunc_index[MANI_VFUNC_GET_VELOCITY]);
+	vfunc_index[MANI_VFUNC_WEAPON_SWITCH] = kv_ptr->GetInt("weapon_switch", vfunc_index[MANI_VFUNC_WEAPON_SWITCH]);
+	vfunc_index[MANI_VFUNC_USER_CMDS] = kv_ptr->GetInt("user_cmds", vfunc_index[MANI_VFUNC_USER_CMDS]); // 0x322 for windows
+	vfunc_index[MANI_VFUNC_GIVE_ITEM] = kv_ptr->GetInt("give_item", vfunc_index[MANI_VFUNC_GIVE_ITEM]); // 0x133
+	vfunc_index[MANI_VFUNC_MAP] = kv_ptr->GetInt("map_desc", vfunc_index[MANI_VFUNC_MAP]); // 0x0d
+	vfunc_index[MANI_VFUNC_COMMIT_SUICIDE] = kv_ptr->GetInt("commit_suicide", vfunc_index[MANI_VFUNC_COMMIT_SUICIDE]); // 0x0d
+	vfunc_index[MANI_VFUNC_SET_OBSERVER_TARGET] = kv_ptr->GetInt("set_observer_target", vfunc_index[MANI_VFUNC_SET_OBSERVER_TARGET]); // 0x0d
+	vfunc_index[MANI_VFUNC_WEAPON_CANUSE] = kv_ptr->GetInt("weapon_canuse", vfunc_index[MANI_VFUNC_WEAPON_CANUSE]); // 0x0d
+	vfunc_index[MANI_VFUNC_GET_CLASS_NAME] = kv_ptr->GetInt("get_class_name", vfunc_index[MANI_VFUNC_GET_CLASS_NAME]); // 0x03
 
 	return;
 }

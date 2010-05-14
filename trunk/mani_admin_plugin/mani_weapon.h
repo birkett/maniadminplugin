@@ -89,6 +89,7 @@ public:
 	void	ClientActive(player_t *player_ptr);
 	void	ClientDisconnect(player_t *player_ptr);
 	void	LevelShutdown(void);
+	const char *GetWeaponName(int weapon_index);
 
 
 	PLUGIN_RESULT	ProcessMaShowRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type);

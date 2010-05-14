@@ -283,14 +283,14 @@ CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, i
 	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_number);
 }
 
-CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter *pCBCC, const char *weapon_name, char *sub_type)
+CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter *pCBCC, const char *weapon_name, int sub_type)
 {
 	if (!weapon_owns_this_type_addr) return NULL;
 
 	void **this_ptr = *(void ***)&pCBCC;
 	void *func = weapon_owns_this_type_addr;
 
-	union {CBaseCombatWeapon *(ManiEmptyClass::*mfpnew)(const char *weapon_name, char *sub_type);
+	union {CBaseCombatWeapon *(ManiEmptyClass::*mfpnew)(const char *weapon_name, int sub_type);
 #ifndef __linux__
         void *addr;	} u; 	u.addr = func;
 #else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */

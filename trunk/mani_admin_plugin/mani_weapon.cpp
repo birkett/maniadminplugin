@@ -151,9 +151,9 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, 
 		CBaseEntity *pPlayer = EdictToCBE(player.entity);
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		if (!pCombat) continue;
-		for (int j = 0; j < 20; j ++)
+		for (int j = 0; j < 29; j++)
 		{
-			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_OwnsThisType(pCombat, gpManiWeaponMgr->GetWeaponName(j), 0);
 			if (!pWeapon) continue;
 
 			if (strcmp(weapon_name, CBaseCombatWeapon_GetName(pWeapon)) == 0)
@@ -388,49 +388,46 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
-		if (!weapons[i]->CanBuy(player_ptr, 1, reason, limit, ratio) || 
-			knife_mode)
+		if (!weapons[i]->CanBuy(player_ptr, 1, reason, limit, ratio) || knife_mode)
 		{
-			for (int j = 0; j < 40; j++)
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_OwnsThisType(pCombat, weapons[i]->GetWeaponName(), 0);
+
+			//CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
+			if (!pWeapon) continue;
+
+			if (strcmp(CBaseCombatWeapon_GetName(pWeapon), weapons[i]->GetWeaponName()) != 0)
 			{
-				CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
-				if (!pWeapon) continue;
-				if (strcmp(CBaseCombatWeapon_GetName(pWeapon), weapons[i]->GetWeaponName()) != 0)
-				{
-					continue;
-				}
+				continue;
+			}
 
-				CBasePlayer_RemovePlayerItem(pBase, pWeapon);
-				if (!knife_mode)
-				{
-					ShowRestrictReason(player_ptr, weapons[i], reason, limit, ratio);
-					ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
-				}
+			CBasePlayer_RemovePlayerItem(pBase, pWeapon);
+			if (!knife_mode)
+			{
+				ShowRestrictReason(player_ptr, weapons[i], reason, limit, ratio);
+				ProcessPlayActionSound(player_ptr, MANI_ACTION_SOUND_RESTRICTWEAPON);
+			}
 
-				if (refund && !knife_mode)
+			if (refund && !knife_mode)
+			{
+				CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
+				if (weapon_info)
 				{
-					CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
-					if (weapon_info)
+					int cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT,0);
+					cash += weapon_info->dynamic_price;
+					if (cash > 16000) cash = 16000;
+					Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, cash);
+					if (show_refund)
 					{
-						int cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT,0);
-						cash += weapon_info->dynamic_price;
-						if (cash > 16000) cash = 16000;
-						Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, cash);
-						if (show_refund)
-						{
-							OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3042, "%i", weapon_info->dynamic_price));
-						}
+						OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3042, "%i", weapon_info->dynamic_price));
 					}
 				}
+			}
 
-				// Switch to knife
-				pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
-				if (pWeapon)
-				{
-					CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
-				}
-
-				break;
+			// Switch to knife
+			pWeapon = CBaseCombatCharacter_Weapon_GetSlot(pCombat, 2);
+			if (pWeapon)
+			{
+				CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
 			}
 		}
 	}
@@ -1210,6 +1207,15 @@ bool	ManiWeaponMgr::CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 	}
 
 	return true;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Find weapon index from search name
+//---------------------------------------------------------------------------------
+const char *ManiWeaponMgr::GetWeaponName( int weapon_index ) {
+	if ( weapon_index < 0 || weapon_index > 29 ) return NULL;
+
+	return weapons[weapon_index]->GetWeaponName();
 }
 
 //---------------------------------------------------------------------------------
