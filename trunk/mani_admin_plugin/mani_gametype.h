@@ -218,10 +218,11 @@ public:
 private:
 	void		GetProps(KeyValues *kv_ptr);
 	void		GetVFuncs(KeyValues *kv_ptr);
-	void		OverrideVFuncs(KeyValues *kv_ptr);
 	void		DefaultValues(void);
 	bool		FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr);
-
+#if defined ( WIN32 )
+	void		OverrideVFuncs(KeyValues *kv_ptr);
+#endif
 
 	struct team_class_t
 	{
