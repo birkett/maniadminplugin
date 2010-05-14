@@ -362,11 +362,13 @@ void ManiGameType::Init(void)
 		this->GetVFuncs(temp_ptr);
 	}
 
+#if defined ( WIN32 )
 	temp_ptr = base_key_ptr->FindKey("vfuncs_windows", false );
 	if ( temp_ptr )
 	{
 		this->OverrideVFuncs(temp_ptr);
 	}
+#endif
 
 	if (this->IsGameType(MANI_GAME_CSS))
 	{
@@ -530,6 +532,7 @@ void	ManiGameType::GetVFuncs(KeyValues *kv_ptr)
 	return;
 }
 
+#if defined ( WIN32 )
 //---------------------------------------------------------------------------------
 // Purpose: Get Property offsets for windows if different
 //---------------------------------------------------------------------------------
@@ -560,6 +563,7 @@ void ManiGameType::OverrideVFuncs(KeyValues *kv_ptr)
 
 	return;
 }
+#endif
 
 //---------------------------------------------------------------------------------
 // Purpose: Get weapon costs
