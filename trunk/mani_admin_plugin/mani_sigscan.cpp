@@ -60,6 +60,7 @@ void *set_model_from_class = NULL;
 void *get_file_weapon_info_addr = NULL;
 void *get_weapon_price_addr = NULL;
 void *get_weapon_addr = NULL;
+void *weapon_owns_this_type_addr = NULL;
 void *get_black_market_price_addr = NULL;
 void *update_client_addr = NULL;
 void *connect_client_addr = NULL;
@@ -282,6 +283,22 @@ CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, i
 	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_number);
 }
 
+CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter *pCBCC, const char *weapon_name, char *sub_type)
+{
+	if (!weapon_owns_this_type_addr) return NULL;
+
+	void **this_ptr = *(void ***)&pCBCC;
+	void *func = weapon_owns_this_type_addr;
+
+	union {CBaseCombatWeapon *(ManiEmptyClass::*mfpnew)(const char *weapon_name, char *sub_type);
+#ifndef __linux__
+        void *addr;	} u; 	u.addr = func;
+#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+#endif
+
+	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_name, sub_type);
+}
 
 
 void LoadSigScans(void)
@@ -354,6 +371,7 @@ void LoadSigScans(void)
 		}
 		get_weapon_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBaseCombatCharacter_GetWeapon));
 		get_black_market_price_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSGameRules_GetBlackMarketPriceForWeapon));
+		weapon_owns_this_type_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBaseCombatCharacter_Weapon_OwnsThisType));
 	}
 	else
 	{
@@ -389,6 +407,7 @@ void LoadSigScans(void)
 	get_weapon_price_addr = game_sym_ptr->FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
 	get_weapon_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
 	get_black_market_price_addr = game_sym_ptr->FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
+	weapon_owns_this_type_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_Weapon_OwnsThisType_Linux);
 
 	/* Call deconstructor to cleanup */
 	delete game_sym_ptr;
@@ -420,6 +439,7 @@ void LoadSigScans(void)
 	ShowSigInfo(get_weapon_price_addr, "I");
 	ShowSigInfo(get_weapon_addr, "J");
 	ShowSigInfo(get_black_market_price_addr, "K");
+	ShowSigInfo(weapon_owns_this_type_addr, "L");
 }
 
 static
