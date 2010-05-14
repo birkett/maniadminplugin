@@ -56,6 +56,7 @@
 #include "mani_warmuptimer.h"
 #include "mani_gametype.h"
 #include "mani_vars.h"
+#include "mani_weapon.h"
 #include "KeyValues.h"
 #include "cbaseentity.h"
 
@@ -181,9 +182,9 @@ void		ManiWarmupTimer::RoundStart(void)
 		CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 		if (!pCombat) continue;
 
-		for (int j = 0; j < 40; j++)
+		for (int j = 0; j < 29; j++)
 		{
-			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
+			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_OwnsThisType(pCombat, gpManiWeaponMgr->GetWeaponName(j), 0);
 			if (!pWeapon) continue;
 
 			if (strcmp(CBaseCombatWeapon_GetName(pWeapon), "weapon_c4") != 0)
@@ -199,8 +200,6 @@ void		ManiWarmupTimer::RoundStart(void)
 			{
 				CBaseCombatCharacter_Weapon_Switch(pCombat, pWeapon, 0);
 			}
-
-			break;
 		}
 	}
 
