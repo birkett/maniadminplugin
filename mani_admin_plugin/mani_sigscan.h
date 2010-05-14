@@ -102,10 +102,19 @@ class CBaseEntityList;
 #define CCSWeaponInfo_GetDefaultPrice_SigBytes 18
 #define CCSWeaponInfo_GetDefaultPrice_Linux "_ZN13CCSWeaponInfo15GetDefaultPriceEv"
 
+#define CBaseCombatCharacter_Weapon_OwnsThisType_Sig "53\x8B\x5C\x24\x08\x55\x56\x8B\xE9\x57\x33\xFF\x8D\xB5\x2a\x2a\x2a\x2a\x8B\x0E\x83\xF9\xFF\x74"
+#define CBaseCombatCharacter_Weapon_OwnsThisType_SigBytes 24
+#define CBaseCombatCharacter_Weapon_OwnsThisType_Linux "_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
+
 // CBaseCombatCharacter_GetWeapon
 // Find text 'Battery', skip next two calls one of the next 2 calls is to the function
+#ifdef ORANGE
+#define CBaseCombatCharacter_GetWeapon_Sig "\x8B\x44\x24\x04\x8B\x84\x81\x2a\x2a\x2a\x2a\x83\xF8\xFF\x74\x2a\x8B\x15\x2a\x2a\x2a\x2a\x8B\xC8\x81\x2a\x2a\x2a\x2a\x2a\xC1\xE1\x04\x8D\x4C\x11\x04\xC1\xE8\x0C\x39\x41\x04\x75\x2a\x8B\x01\xC2\x08\x00
+#define CBaseCombatCharacter_GetWeapon_SigBytes 50
+#else
 #define CBaseCombatCharacter_GetWeapon_Sig "\x8B\x44\x24\x04\x8B\x84\x81\x2a\x2a\x2a\x2a\x83\xF8\xFF\x74\x2a\x8B\x15\x2a\x2a\x2a\x2a\x8B\xC8"
 #define CBaseCombatCharacter_GetWeapon_SigBytes 24
+#endif
 #define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
 
 // K
