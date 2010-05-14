@@ -81,21 +81,96 @@ static bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_l
 class ManiEmptyClass {};
 
 #ifdef WIN32
+
+static 
+unsigned char HexToBin(char hex_char)
+{
+	char upper_char = toupper(hex_char);
+	return ((hex_char >= '0' && hex_char <= '9') ? hex_char - 48:hex_char - 55);
+}
+
+static bool ValidHexChar(char hex_char)
+{
+	return ((hex_char >= '0' && hex_char <= '9') || (hex_char >= 'A' && hex_char <= 'F'));
+}
+
 static
-void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength)
+void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature)
 {
 	unsigned char *pBasePtr = pBaseAddress;
-	unsigned char *pEndPtr = pBaseAddress + baseLength;
-	size_t i;
+	unsigned char *pEndPtr = pBaseAddress + baseLength;	
+
+	unsigned char	sigscan[128];
+	bool			sigscan_wildcard[128];
+	unsigned int	scan_length = 0;
+	int				str_index = 0;
+
+	while(1)
+	{
+		if (pSignature[str_index] == ' ')
+		{
+			str_index++;
+			continue;
+		}
+
+		if (pSignature[str_index] == '\0')
+		{
+			break;
+		}
+
+		if (pSignature[str_index] == '?')
+		{
+			sigscan_wildcard[scan_length++] = true;
+			str_index ++;
+			continue;
+		}
+
+		if (pSignature[str_index + 1] == '\0' || 
+			pSignature[str_index + 1] == '?' || 
+			pSignature[str_index + 1] == ' ')
+		{
+			MMsg("Failed to decode [%s], single digit hex code\n", pSignature);
+			return (void *) NULL;
+		}
+
+		// We are expecting a two digit hex code
+		char upper_case1 = toupper(pSignature[str_index]);
+		if (!ValidHexChar(upper_case1))
+		{
+			MMsg("Failed to decode [%s], bad hex code\n", pSignature);
+			return NULL;
+		}
+
+		char upper_case2 = toupper(pSignature[str_index + 1]);
+		if (!ValidHexChar(upper_case2))
+		{
+			MMsg("Failed to decode [%s], bad hex code\n", pSignature);
+			return NULL;
+		}
+
+		// Generate our byte code
+		unsigned char byte = (HexToBin(upper_case1) << 4) + HexToBin(upper_case2);
+		str_index += 2;
+		sigscan_wildcard[scan_length] = false;
+		sigscan[scan_length] = byte;
+		scan_length ++;
+		if (scan_length == sizeof(sigscan))
+		{
+			MMsg("Sigscan too long!\n");
+			return NULL;
+		}
+	}
+
+	unsigned int i;
 	while (pBasePtr < pEndPtr)
 	{
-		for (i=0; i<sigLength; i++)
+		for (i=0; i < scan_length; i++)
 		{
-			if (pSignature[i] != '\x2A' && pSignature[i] != pBasePtr[i])
+			if (sigscan_wildcard[i] != true && sigscan[i] != pBasePtr[i])
 				break;
 		}
 		//iff i reached the end, we know we have a match!
-		if (i == sigLength)
+		if (i == scan_length)
 			return (void *)pBasePtr;
 		pBasePtr += sizeof(unsigned char);  //search memory in an aligned manner
 	}
@@ -312,8 +387,8 @@ void LoadSigScans(void)
 
 	if (engine_success) {
 		MMsg("Found engine base %p and length %i [%p]\n", engine_base, engine_len, engine_base + engine_len);
-		connect_client_addr = FindSignature (engine_base, engine_len, (unsigned char*) MKSIG(CBaseServer_ConnectClient));
-		netsendpacket_addr =  FindSignature (engine_base, engine_len, (unsigned char*) MKSIG(NET_SendPacket));
+		connect_client_addr = FindSignature (engine_base, engine_len, (unsigned char*) CBaseServer_ConnectClient_Sig);
+		netsendpacket_addr =  FindSignature (engine_base, engine_len, (unsigned char*) NET_SendPacket_Sig);
 	}
 #else
 	// Not using Gamegin for following using engine.so instead
@@ -345,33 +420,33 @@ void LoadSigScans(void)
 	{
 		MMsg("Found base %p and length %i [%p]\n", base, len, base + len);
 
-		respawn_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_RoundRespawn));
-		util_remove_addr = FindSignature(base, len, (unsigned char *) MKSIG(UTIL_Remove));
-		void *is_there_a_bomb_addr = FindSignature(base, len, (unsigned char *) MKSIG(CEntList));
+		respawn_addr = FindSignature(base, len, (unsigned char *) CCSPlayer_RoundRespawn_Sig);
+		util_remove_addr = FindSignature(base, len, (unsigned char *) UTIL_Remove_Sig);
+		void *is_there_a_bomb_addr = FindSignature(base, len, (unsigned char *) CEntList_Sig);
 		if (is_there_a_bomb_addr)
 		{
 			g_pEList = *(CBaseEntityList **) ((unsigned long) is_there_a_bomb_addr + (unsigned long) CEntList_gEntList);
 		}
 
-		update_client_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBasePlayer_UpdateClientData));
+		update_client_addr = FindSignature(base, len, (unsigned char *) CBasePlayer_UpdateClientData_Sig);
 		if (update_client_addr)
 		{
 			g_pGRules = *(CGameRules **) ((unsigned long) update_client_addr + (unsigned long) CGameRules_gGameRules);
 		}
 
-		ent_list_find_ent_by_classname = FindSignature(base, len, (unsigned char *) MKSIG(CGlobalEntityList_FindEntityByClassname));
-		switch_team_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_SwitchTeam));
-		set_model_from_class = FindSignature(base, len, (unsigned char *) MKSIG(CCSPlayer_SetModelFromClass));
-		get_file_weapon_info_addr = FindSignature(base, len, (unsigned char *) MKSIG(GetFileWeaponInfoFromHandle));
-		get_weapon_price_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSWeaponInfo_GetWeaponPrice));
+		ent_list_find_ent_by_classname = FindSignature(base, len, (unsigned char *) CGlobalEntityList_FindEntityByClassname_Sig);
+		switch_team_addr = FindSignature(base, len, (unsigned char *) CCSPlayer_SwitchTeam_Sig);
+		set_model_from_class = FindSignature(base, len, (unsigned char *) CCSPlayer_SetModelFromClass_Sig);
+		get_file_weapon_info_addr = FindSignature(base, len, (unsigned char *) GetFileWeaponInfoFromHandle_Sig);
+		get_weapon_price_addr = FindSignature(base, len, (unsigned char *) CCSWeaponInfo_GetWeaponPrice_Sig);
 		if (get_weapon_price_addr)
 		{
 			unsigned long offset = *(unsigned long *) ((unsigned long) get_weapon_price_addr + (unsigned long) (CCSWeaponInfo_GetWeaponPrice_Offset));
 			get_weapon_price_addr = (void *) ((unsigned long) get_weapon_price_addr + (unsigned long) (offset));
 		}
-		get_weapon_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBaseCombatCharacter_GetWeapon));
-		get_black_market_price_addr = FindSignature(base, len, (unsigned char *) MKSIG(CCSGameRules_GetBlackMarketPriceForWeapon));
-		weapon_owns_this_type_addr = FindSignature(base, len, (unsigned char *) MKSIG(CBaseCombatCharacter_Weapon_OwnsThisType));
+		get_weapon_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_GetWeapon_Sig);
+		get_black_market_price_addr = FindSignature(base, len, (unsigned char *) CCSGameRules_GetBlackMarketPriceForWeapon_Sig);
+		weapon_owns_this_type_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_Weapon_OwnsThisType_Sig);
 	}
 	else
 	{

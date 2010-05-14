@@ -30,32 +30,25 @@ class CBaseEntityList;
   19:55.49    ( +c0ldfyr3 ) bool CBasePlayer_SetFOV( CBasePlayer *pPlayer, CBaseEntity *pRequester, int FOV, float zoomRate )
 */
 
-#define MKSIG(name) name##_Sig, name##_SigBytes
 // A
-//#define CCSPlayer_RoundRespawn_Sig "\x56\x8B\xF1\x8B\x06\xFF\x90\x60\x04\x00\x00\x8B\x86\x2A\x0D\x00"
-#define CCSPlayer_RoundRespawn_Sig "\x56\x8B\xF1\x8B\x06\xFF\x90\x2A\x04\x00\x00\x8B\x86\x2A\x0D\x00"
-#define CCSPlayer_RoundRespawn_SigBytes 16
+#define CCSPlayer_RoundRespawn_Sig "56 8B F1 8B 06 FF 90 ? 04 00 00 8B 86 ? 0D 00"
 #define CCSPlayer_RoundRespawn_Linux "_ZN9CCSPlayer12RoundRespawnEv"
 
 // B
 #ifdef ORANGE
-#define UTIL_Remove_Sig "\x8B\x44\x24\x04\x85\xC0\x74\x2A\x83\xC0\x0C\x89\x44\x24\x04\xE9\x7C\xFF\xFF\xFF"
-#define UTIL_Remove_SigBytes 20
+#define UTIL_Remove_Sig "8B 44 24 04 85 C0 74 ? 83 C0 0C 89 44 24 04 E9 7C FF FF FF"
 #else
-#define UTIL_Remove_Sig "\x8B\x44\x24\x04\x85\xC0\x74\x2A\x05\x2A\x2A\x00\x00\x89\x44\x24\x04\xE9\x2A\xFF\xFF\xFF"
-#define UTIL_Remove_SigBytes 20
+#define UTIL_Remove_Sig "8B 44 24 04 85 C0 74 ? 05 ? ? 00 00 89 44 24 04 E9 ? FF FF FF"
 #endif
 #define UTIL_Remove_Linux "_Z11UTIL_RemoveP11CBaseEntity"
 
 // Win32 function is IsThereABomb (look for weapon_c4 and planted_c4
-#define CEntList_Sig			"\x53\x68\x2A\x2A\x2A\x2A\x6A\x00\xB9\x2A\x2A\x2A\x2A\x32\xDB"
-#define CEntList_SigBytes		15
+#define CEntList_Sig			"53 68 ? ? ? ? 6A 00 B9 ? ? ? ? 32 DB"
 #define CEntList_Linux			"g_pEntityList"
 
 // Find CBasePlayer_UpdateClientData, then look for mov ecx, dword_xxxxxxxx (there are at least two of them)
 // Around ResetHUD string
-#define CBasePlayer_UpdateClientData_Sig "\x83\xEC\x38\x53\x56\x8B\xF1\x57\x8D\x4C"
-#define CBasePlayer_UpdateClientData_SigBytes 10
+#define CBasePlayer_UpdateClientData_Sig "83 EC 38 53 56 8B F1 57 8D 4C"
 // Direct linux lookup for gamerules
 
 #define CBaseCombatCharacter_SwitchToNextBestWeapon_Linux "_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
@@ -68,79 +61,62 @@ class CBaseEntityList;
 
 // E
 #ifdef ORANGE
-#define CGlobalEntityList_FindEntityByClassname_Sig "\x53\x55\x56\x8B\xF1\x8B\x4C\x24\x2A\x85\xC9\x57\x74\x2A\x8B\x01\x8B\x50\x08\xFF\xD2"
-#define CGlobalEntityList_FindEntityByClassname_SigBytes 21
+#define CGlobalEntityList_FindEntityByClassname_Sig "53 55 56 8B F1 8B 4C 24 ? 85 C9 57 74 ? 8B 01 8B 50 08 FF D2"
 #else
-#define CGlobalEntityList_FindEntityByClassname_Sig "\x53\x55\x56\x8B\xF1\x8B\x4C\x24\x2A\x85\xC9\x57\x74\x2A\x8B\x01\xFF\x2A\x2A\x8B\x08"
-#define CGlobalEntityList_FindEntityByClassname_SigBytes 21
+#define CGlobalEntityList_FindEntityByClassname_Sig "53 55 56 8B F1 8B 4C 24 ? 85 C9 57 74 ? 8B 01 FF ? ? 8B 08"
 #endif
 #define CGlobalEntityList_FindEntityByClassname_Linux "_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
 
 // Look for CCSPlayer::SwitchTeam( %d )
-#define CCSPlayer_SwitchTeam_Sig "\x83\xEC\x2A\x56\x57\x8B\x7C\x24\x2A\x57\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x83\xC4\x04"
-#define CCSPlayer_SwitchTeam_SigBytes 20
+#define CCSPlayer_SwitchTeam_Sig "83 EC ? 56 57 8B 7C 24 ? 57 8B F1 E8 ? ? ? ? 83 C4 04"
 #define CCSPlayer_SwitchTeam_Linux "_ZN9CCSPlayer10SwitchTeamEi"
 
 // Look for CCSPlayerSpawn, 3rd call down is SetModelClass
-//#define CCSPlayer_SetModelFromClass_Sig "\x51\x56\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x83\xF8\x02\x75\x2A\x8B\x86"
-#define CCSPlayer_SetModelFromClass_Sig "\x51\x53\x56\x57\x8B\xF9\xE8\x2A\x2A\x2A\x2A\x83\xF8\x02"
-#define CCSPlayer_SetModelFromClass_SigBytes 14
+#define CCSPlayer_SetModelFromClass_Sig "51 53 56 57 8B F9 E8 ? ? ? ? 83 F8 02"
 #define CCSPlayer_SetModelFromClass_Linux "_ZN9CCSPlayer17SetModelFromClassEv"
 
-#define GetFileWeaponInfoFromHandle_Sig "\x66\x8B\x44\x24\x04\x66\x3B\x05\x2A\x2A\x2A\x2A\x73\x2A\x66\x3D\xFF\xFF"
-#define GetFileWeaponInfoFromHandle_SigBytes 18
+#define GetFileWeaponInfoFromHandle_Sig "66 8B 44 24 04 66 3B 05 ? ? ? ? 73 ? 66 3D FF FF"
 #define GetFileWeaponInfoFromHandle_Linux "_Z27GetFileWeaponInfoFromHandlet"
 
-//#define CCSWeaponInfo_GetWeaponPrice_Sig "\x85\xC0\x0F\x8E\x2A\x2A\x2A\x2A\x83\xBF\x2A\x2A\x2A\x2A\x08\x55\x0F\x85"
-#define CCSWeaponInfo_GetWeaponPrice_Sig   "\xF7\xD8\x50\x8B\xCE\xE8\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x56\x51\xE8"
+#define CCSWeaponInfo_GetWeaponPrice_Sig   "F7 D8 50 8B CE E8 ? ? ? ? ? ? ? ? 56 51 E8"
 #define CCSWeaponInfo_GetWeaponPrice_Offset -4
-#define CCSWeaponInfo_GetWeaponPrice_SigBytes 17
 #define CCSWeaponInfo_GetWeaponPrice_Linux "_ZN13CCSWeaponInfo14GetWeaponPriceEv"
 
-#define CCSWeaponInfo_GetDefaultPrice_Sig "\x89\x87\x2a\x2a\x2a\x2a\x83\xC6\x01\x83\xFE\x22\x7C\x2a\x5F\x5E\x5D\x5B"
+#define CCSWeaponInfo_GetDefaultPrice_Sig "89 87 ? ? ? ? 83 C6 01 83 FE 22 7C ? 5F 5E 5D 5B"
 #define CCSWeaponInfo_GetDefaultPrice_Offset -1
-#define CCSWeaponInfo_GetDefaultPrice_SigBytes 18
 #define CCSWeaponInfo_GetDefaultPrice_Linux "_ZN13CCSWeaponInfo15GetDefaultPriceEv"
 
-#define CBaseCombatCharacter_Weapon_OwnsThisType_Sig "\x53\x8B\x5C\x24\x08\x55\x56\x8B\xE9\x57\x33\xFF\x8D\xB5\x2a\x2a\x2a\x2a\x8B\x0E\x83\xF9\xFF\x74"
-#define CBaseCombatCharacter_Weapon_OwnsThisType_SigBytes 24
+#define CBaseCombatCharacter_Weapon_OwnsThisType_Sig "53 8B 5C 24 08 55 56 8B E9 57 33 FF 8D B5 ? ? ? ? 8B 0E 83 F9 FF 74"
 #define CBaseCombatCharacter_Weapon_OwnsThisType_Linux "_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
 
 // CBaseCombatCharacter_GetWeapon
 // Find text 'Battery', skip next two calls one of the next 2 calls is to the function
-#define CBaseCombatCharacter_GetWeapon_Sig "\x8B\x44\x24\x04\x8B\x84\x81\x2a\x2a\x2a\x2a\x83\xF8\xFF\x74\x2a\x8B\x15\x2a\x2a\x2a\x2a\x8B\xC8"
-#define CBaseCombatCharacter_GetWeapon_SigBytes 24
+#define CBaseCombatCharacter_GetWeapon_Sig "8B 44 24 04 8B 84 81 ? ? ? ? 83 F8 FF 74 ? 8B 15 ? ? ? ? 8B C8"
 #define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
 
 // K
 // _ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi
 #ifdef ORANGE
-#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "\x56\x8B\xF1\x83\xBE\x2a\x2a\x2a\x2a\x2a\x75\x2a\xE8\x2a\x2a\x2a\x2a\x8B\xB6\x2a\x2a\x2a\x2a\x85\xF6\x74\x2a\x8B\x44\x24\x08"
-#define CCSGameRules_GetBlackMarketPriceForWeapon_SigBytes 31
+#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B B6 ? ? ? ? 85 F6 74 ? 8B 44 24 08"
 #else
-#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "\x56\x8B\xF1\x83\xBE\x2a\x2a\x2a\x2a\x2a\x75\x2a\xE8\x2a\x2a\x2a\x2a\x8B\x86\x2a\x2a\x2a\x2a\x8B"
-#define CCSGameRules_GetBlackMarketPriceForWeapon_SigBytes 24
+#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B 86 ? ? ? ? 8B"
 #endif
 #define CCSGameRules_GetBlackMarketPriceForWeapon_Linux "_ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi"
 
 // Used in Reserve Slots - Thanks to *pRED
 #if defined ( ORANGE )
-	#define CBaseServer_ConnectClient_Sig "\x83\x2A\x2A\x56\x68\x2A\x2A\x2A\x2A\x8B\xF1\xFF\x15\x2A\x2A\x2A\x2A\x8B\x06\x8B\x50"
-	#define CBaseServer_ConnectClient_SigBytes 21
+	#define CBaseServer_ConnectClient_Sig "83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 	#define CBaseServer_ConnectClient_Linux "_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
 #else
-	#define CBaseServer_ConnectClient_Sig "\x56\x68\x2A\x2A\x2A\x2A\x8B\xF1\xE8\x2A\x2A\x2A\x2A\x8B\x06\x83\xC4\x04\x8B\xCE"
-	#define CBaseServer_ConnectClient_SigBytes 20
+	#define CBaseServer_ConnectClient_Sig "56 68 ? ? ? ? 8B F1 E8 ? ? ? ? 8B 06 83 C4 04 8B CE"
 	#define CBaseServer_ConnectClient_Linux "_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iS3_i"
 #endif
 
 #if defined ( ORANGE )
-	#define NET_SendPacket_Sig "\xB8\x2A\x2A\x2A\x2A\xE8\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x83\x78\x2A\x2A\x53\x55\x8B"
-	#define NET_SendPacket_SigBytes 22
+	#define NET_SendPacket_Sig "B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
 	#define NET_SendPacket_Linux "_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
 #else
-	#define NET_SendPacket_Sig "\xA1\x2A\x2A\x2A\x2A\x83\xEC\x2a\x83\x78\x2A\x2A\x55\x8B\x6C\x2A\x2A\x56\x57\x8B\x7C"
-	#define NET_SendPacket_SigBytes 21
+	#define NET_SendPacket_Sig "A1 ? ? ? ? 83 EC ? 83 78 ? ? 55 8B 6C ? ? 56 57 8B 7C"
 	#define NET_SendPacket_Linux "_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhi"
 #endif
 
