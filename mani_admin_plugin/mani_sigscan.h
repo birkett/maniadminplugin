@@ -96,9 +96,9 @@ class CBaseEntityList;
 #define GetFileWeaponInfoFromHandle_Sig "66 8B 44 24 04 66 3B 05 ? ? ? ? 73 ? 66 3D FF FF"
 #define GetFileWeaponInfoFromHandle_Linux "_Z27GetFileWeaponInfoFromHandlet"
 
-#define CCSWeaponInfo_GetWeaponPrice_Sig   "F7 D8 50 8B CE E8 ? ? ? ? ? ? ? ? 56 51 E8"
-#define CCSWeaponInfo_GetWeaponPrice_Offset -4
-#define CCSWeaponInfo_GetWeaponPrice_Linux "_ZN13CCSWeaponInfo14GetWeaponPriceEv"
+//#define CCSWeaponInfo_GetWeaponPrice_Sig   "F7 D8 50 8B CE E8 ? ? ? ? ? ? ? ? 56 51 E8"
+//#define CCSWeaponInfo_GetWeaponPrice_Offset -4
+//#define CCSWeaponInfo_GetWeaponPrice_Linux "_ZN13CCSWeaponInfo14GetWeaponPriceEv"
 
 #define CCSWeaponInfo_GetDefaultPrice_Sig "89 87 ? ? ? ? 83 C6 01 83 FE 22 7C ? 5F 5E 5D 5B"
 #define CCSWeaponInfo_GetDefaultPrice_Offset -1
@@ -109,17 +109,17 @@ class CBaseEntityList;
 
 // CBaseCombatCharacter_GetWeapon
 // Find text 'Battery', skip next two calls one of the next 2 calls is to the function
-#define CBaseCombatCharacter_GetWeapon_Sig "8B 44 24 04 8B 84 81 ? ? ? ? 83 F8 FF 74 ? 8B 15 ? ? ? ? 8B C8"
-#define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
+//#define CBaseCombatCharacter_GetWeapon_Sig "8B 44 24 04 8B 84 81 ? ? ? ? 83 F8 FF 74 ? 8B 15 ? ? ? ? 8B C8"
+//#define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
 
 // K
 // _ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi
-#ifdef ORANGE
-#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B B6 ? ? ? ? 85 F6 74 ? 8B 44 24 08"
-#else
-#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B 86 ? ? ? ? 8B"
-#endif
-#define CCSGameRules_GetBlackMarketPriceForWeapon_Linux "_ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi"
+//#ifdef ORANGE
+//#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B B6 ? ? ? ? 85 F6 74 ? 8B 44 24 08"
+//#else
+//#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B 86 ? ? ? ? 8B"
+//#endif
+//#define CCSGameRules_GetBlackMarketPriceForWeapon_Linux "_ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi"
 
 // Used in Reserve Slots - Thanks to *pRED
 #if defined ( ORANGE )
@@ -152,9 +152,9 @@ extern CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCh
 extern CCSWeaponInfo	*CCSGetFileWeaponInfoFromHandle(unsigned short handle_id);
 extern CBaseEntityList *g_pEList;
 extern CGameRules *g_pGRules;
-extern int CCSWeaponInfo_GetWeaponPriceFunc(CCSWeaponInfo *weapon_info);
+//extern int CCSWeaponInfo_GetWeaponPriceFunc(CCSWeaponInfo *weapon_info);
 
-extern int CCSGameRules_GetBlackMarketPriceForWeaponFunc(int weapon_id);
+//extern int CCSGameRules_GetBlackMarketPriceForWeaponFunc(int weapon_id);
 
 extern void LoadSigScans(void);
 #ifdef WIN32

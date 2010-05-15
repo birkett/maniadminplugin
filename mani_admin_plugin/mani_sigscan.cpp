@@ -58,10 +58,10 @@ void *console_echo_addr = NULL;
 void *switch_team_addr = NULL;
 void *set_model_from_class = NULL;
 void *get_file_weapon_info_addr = NULL;
-void *get_weapon_price_addr = NULL;
-void *get_weapon_addr = NULL;
+//void *get_weapon_price_addr = NULL;
+//void *get_weapon_addr = NULL;
 void *weapon_owns_this_type_addr = NULL;
-void *get_black_market_price_addr = NULL;
+//void *get_black_market_price_addr = NULL;
 void *update_client_addr = NULL;
 void *connect_client_addr = NULL;
 void *netsendpacket_addr = NULL;
@@ -307,57 +307,57 @@ bool CCSPlayer_SetModelFromClass(CBaseEntity *pCBE)
 	return true;
 }
 
-int CCSWeaponInfo_GetWeaponPriceFunc(CCSWeaponInfo *weapon_info)
-{
-	if (!get_weapon_price_addr) return -1;
+//int CCSWeaponInfo_GetWeaponPriceFunc(CCSWeaponInfo *weapon_info)
+//{
+//	if (!get_weapon_price_addr) return -1;
+//
+//	void **this_ptr = *(void ***)&weapon_info;
+//	void *func = get_weapon_price_addr;
+//
+//	union {int (ManiEmptyClass::*mfpnew)(CCSWeaponInfo *weapon_info);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_info);
+//}
 
-	void **this_ptr = *(void ***)&weapon_info;
-	void *func = get_weapon_price_addr;
+//int CCSGameRules_GetBlackMarketPriceForWeaponFunc(int weapon_id)
+//{
+//	if (!get_black_market_price_addr) return -1;
+//	if (!g_pGRules) return -1;
+//
+//	void **this_ptr = *(void ***)g_pGRules;
+//	void *func = get_black_market_price_addr;
+//
+//	union {int (ManiEmptyClass::*mfpnew)(int weapon_id);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_id);
+//}
 
-	union {int (ManiEmptyClass::*mfpnew)(CCSWeaponInfo *weapon_info);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_info);
-}
-
-int CCSGameRules_GetBlackMarketPriceForWeaponFunc(int weapon_id)
-{
-	if (!get_black_market_price_addr) return -1;
-	if (!g_pGRules) return -1;
-
-	void **this_ptr = *(void ***)g_pGRules;
-	void *func = get_black_market_price_addr;
-
-	union {int (ManiEmptyClass::*mfpnew)(int weapon_id);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (int) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_id);
-}
-
-CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, int weapon_number)
-{
-	if (!get_weapon_addr) return NULL;
-
-	void **this_ptr = *(void ***)&pCBCC;
-	void *func = get_weapon_addr;
-
-	union {CBaseCombatWeapon *(ManiEmptyClass::*mfpnew)(int weapon_number);
-#ifndef __linux__
-        void *addr;	} u; 	u.addr = func;
-#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
-			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
-#endif
-
-	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_number);
-}
+//CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, int weapon_number)
+//{
+//	if (!get_weapon_addr) return NULL;
+//
+//	void **this_ptr = *(void ***)&pCBCC;
+//	void *func = get_weapon_addr;
+//
+//	union {CBaseCombatWeapon *(ManiEmptyClass::*mfpnew)(int weapon_number);
+//#ifndef __linux__
+//        void *addr;	} u; 	u.addr = func;
+//#else /* GCC's member function pointers all contain a this pointer adjustor. You'd probably set it to 0 */
+//			struct {void *addr; intptr_t adjustor;} s; } u; u.s.addr = func; u.s.adjustor = 0;
+//#endif
+//
+//	return (CBaseCombatWeapon *) (reinterpret_cast<ManiEmptyClass*>(this_ptr)->*u.mfpnew)(weapon_number);
+//}
 
 CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter *pCBCC, const char *weapon_name, int sub_type)
 {
@@ -439,14 +439,14 @@ void LoadSigScans(void)
 		switch_team_addr = FindSignature(base, len, (unsigned char *) CCSPlayer_SwitchTeam_Sig);
 		set_model_from_class = FindSignature(base, len, (unsigned char *) CCSPlayer_SetModelFromClass_Sig);
 		get_file_weapon_info_addr = FindSignature(base, len, (unsigned char *) GetFileWeaponInfoFromHandle_Sig);
-		get_weapon_price_addr = FindSignature(base, len, (unsigned char *) CCSWeaponInfo_GetWeaponPrice_Sig);
-		if (get_weapon_price_addr)
-		{
-			unsigned long offset = *(unsigned long *) ((unsigned long) get_weapon_price_addr + (unsigned long) (CCSWeaponInfo_GetWeaponPrice_Offset));
-			get_weapon_price_addr = (void *) ((unsigned long) get_weapon_price_addr + (unsigned long) (offset));
-		}
-		get_weapon_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_GetWeapon_Sig);
-		get_black_market_price_addr = FindSignature(base, len, (unsigned char *) CCSGameRules_GetBlackMarketPriceForWeapon_Sig);
+		//get_weapon_price_addr = FindSignature(base, len, (unsigned char *) CCSWeaponInfo_GetWeaponPrice_Sig);
+		//if (get_weapon_price_addr)
+		//{
+		//	unsigned long offset = *(unsigned long *) ((unsigned long) get_weapon_price_addr + (unsigned long) (CCSWeaponInfo_GetWeaponPrice_Offset));
+		//	get_weapon_price_addr = (void *) ((unsigned long) get_weapon_price_addr + (unsigned long) (offset));
+		//}
+		//get_weapon_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_GetWeapon_Sig);
+		//get_black_market_price_addr = FindSignature(base, len, (unsigned char *) CCSGameRules_GetBlackMarketPriceForWeapon_Sig);
 		weapon_owns_this_type_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_Weapon_OwnsThisType_Sig);
 	}
 	else
@@ -480,9 +480,9 @@ void LoadSigScans(void)
 	}
 
 	get_file_weapon_info_addr = game_sym_ptr->FindAddress(GetFileWeaponInfoFromHandle_Linux);
-	get_weapon_price_addr = game_sym_ptr->FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
-	get_weapon_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
-	get_black_market_price_addr = game_sym_ptr->FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
+	//get_weapon_price_addr = game_sym_ptr->FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
+	//get_weapon_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
+	//get_black_market_price_addr = game_sym_ptr->FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
 	weapon_owns_this_type_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_Weapon_OwnsThisType_Linux);
 
 	/* Call deconstructor to cleanup */
@@ -512,9 +512,9 @@ void LoadSigScans(void)
 		CCSGetFileWeaponInfoHandleFunc = (CCSGetFileWeaponInfoHandle_) get_file_weapon_info_addr;
 	}
 
-	ShowSigInfo(get_weapon_price_addr, "I");
-	ShowSigInfo(get_weapon_addr, "J");
-	ShowSigInfo(get_black_market_price_addr, "K");
+//	ShowSigInfo(get_weapon_price_addr, "I");
+//	ShowSigInfo(get_weapon_addr, "J");
+//	ShowSigInfo(get_black_market_price_addr, "K");
 	ShowSigInfo(weapon_owns_this_type_addr, "L");
 }
 
