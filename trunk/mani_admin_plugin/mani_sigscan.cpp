@@ -86,12 +86,13 @@ static
 unsigned char HexToBin(char hex_char)
 {
 	char upper_char = toupper(hex_char);
-	return ((hex_char >= '0' && hex_char <= '9') ? hex_char - 48:hex_char - 55);
+	return ((upper_char >= '0' && upper_char <= '9') ? upper_char - 48:upper_char - 55);
 }
 
 static bool ValidHexChar(char hex_char)
 {
-	return ((hex_char >= '0' && hex_char <= '9') || (hex_char >= 'A' && hex_char <= 'F'));
+	char upper_char = toupper(hex_char);
+	return ((upper_char >= '0' && upper_char <= '9') || (upper_char >= 'A' && upper_char <= 'F'));
 }
 
 static
