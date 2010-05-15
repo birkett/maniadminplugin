@@ -32,8 +32,21 @@ class CBaseEntityList;
 
 // A
 #ifdef ORANGE
+// We don't use the following commented out sigs but they could be useful for tracking down RoundRespawn again with IDA Pro
+// and its ability to rename unknown functions with labels.
+// CCSPlayer_PlayerClass is very short in length
+//           mov     eax, [ecx+15FCh]
+//           retn
+// CBaseEntity_GetTeamNumber is very short in length
+//           mov     eax, [ecx+1B8h]
+//           retn
+// #define CCSGameRules_GiveC4_Sig "81 EC ? ? ? ? 53 55 83 C8 FF 56 57 89 ? ? ? 89 ? ? ? A1 ? ? ? ? 33 ED 33 DB BF 01 00 00 00"
+// #define CCSPlayer_CheckTKPunishment "B0 01 38 81 ? ? ? ? 75 ? 8B 15 ? ? ? ? 83 7A ? ? 74 ? 88 81 ? ? ? ? 8B 01 8B 90"
+// #define UTIL_PlayerByIndex "8B 44 24 04 56 33 F6 85 C0 7E ? 8B 0D ? ? ? ? 3B 41 ? 7F ? 8B 0D ? ? ? ? 8B 11 50 8B 42"
+// #define CCSGameRules_CleanUpMap "83 EC 08 80 B9 ? ? ? ? ? 0F 85 ? ? ? ? 56 6A 00 B9 ? ? ? ? E8 ? ? ? ? 8B F0 85 F6"
+// #define CCSPlayer_ObserverRoundRespawn_Sig "56 57 8B F1 E8 ? ? ? ? 80 BE ? ? ? ? ? 8D BE ? ? ? ? 74 ? 57 8B CE E8"
+
 #define CCSPlayer_RoundRespawn_Sig "56 8B F1 8B 06 8B 90 ? ? ? ? FF D2 8B 86 ? ? ? ? 85 C0 74 ? 8B 50 ? 85 D2 74 ? 8B 48"
-#define CCSPlayer_ObserverRoundRespawn_Sig "56 57 8B F1 E8 ? ? ? ? 80 BE ? ? ? ? ? 8D BE ? ? ? ? 74 ? 57 8B CE E8"
 #else
 #define CCSPlayer_RoundRespawn_Sig "56 8B F1 8B 06 FF 90 ? 04 00 00 8B 86 ? 0D 00"
 #endif
