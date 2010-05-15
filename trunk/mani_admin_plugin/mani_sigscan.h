@@ -31,7 +31,12 @@ class CBaseEntityList;
 */
 
 // A
+#ifdef ORANGE
+#define CCSPlayer_RoundRespawn_Sig "56 57 8B F1 E8 ? ? ? ? 80 BE ? ? ? ? ? 8D BE ? ? ? ? 74 ? 57 8B CE E8"
+#define CCSPlayer_ObserverRoundRespawn_Sig "56 8B F1 8B 06 8B 90 ? ? ? ? FF D2 8B 86 ? ? ? ? 85 C0 74 ? 8B 50 ? 85 D2 74 ? 8B 48"
+#else
 #define CCSPlayer_RoundRespawn_Sig "56 8B F1 8B 06 FF 90 ? 04 00 00 8B 86 ? 0D 00"
+#endif
 #define CCSPlayer_RoundRespawn_Linux "_ZN9CCSPlayer12RoundRespawnEv"
 
 // B
