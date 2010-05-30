@@ -940,7 +940,6 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	g_menu_mgr.LevelInit();
 
 	// Reset game type info (mp_teamplay may have changed)
-	gpManiGameType->Init();
 	total_load_index = ManiGetTimer();
 
 //	filesystem->PrintSearchPaths();
@@ -1419,6 +1418,7 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 		gpManiWeaponMgr->LevelInit();
 	}
 
+	gpManiGameType->Init();
 	engine->ServerCommand("exec mani_server.cfg\n");
 }
 
