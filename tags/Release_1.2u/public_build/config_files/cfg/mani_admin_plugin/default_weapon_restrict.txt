@@ -1,0 +1,43 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : default_weapon_restrict.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Restrict weapons generally for all maps
+// ***************************************************************************** 
+//
+//
+// If you want a weapon to be restriction remove the '//' from the start
+// of the line of the weapons you want restricted so they are not commented
+// out.
+//
+
+//awp		// Magnum Sniper Rifle
+//g3sg1		// D3/AU1
+//sg550		// Krieg 550 Commando
+//galil		// IDF Defender
+//ak47		// CV-47
+//scout		// Schmidt Scout	
+//sg552		// Krieg 552
+//famas		// Clarion 5.56
+//m4a1		// Maverick M4A1 Carbine
+//aug		// Bullpup
+//glock		// 9x19mm Sidearm
+//usp		// KM .45 Tactical
+//p228		// 228 Compact
+//deagle	// Night Hawk .50C
+//elite		// .40 Dual Elites
+//fiveseven	// ES Five//Seven
+//m3		// Leone 12 Gauge Super
+//xm1014	// Leone YG1265 Auto Shotgun
+//mac10		// Ingram MAC-10
+//tmp		// Schmidt Machine Pistol
+//mp5navy	// KM Sub-Machine Gun
+//ump45		// KM UMP45
+//p90		// ES C90
+//m249		// M249
+//flashbang	// Flashbang	
+//hegrenade 	// HE Grenade
+//smokegrenade 	// Smoke Grenade

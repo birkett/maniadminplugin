@@ -1,0 +1,34 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : cexeclist_ct.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Commands that should be executed on all CT clients connected
+// *****************************************************************************
+//
+//
+// This file can use aliases.
+//
+// Aliases are what is shown in the menu system
+// a nice way of presenting the commands.
+// Aliases must be enclosed in quotes
+//
+// E.G. "Kill All Players"
+//
+// Do not put another quote inside like :-
+//
+// "Kill All "Players""
+//
+// The command after the alias is the real command
+// executed.
+//
+// You do not have to use aliases but it makes the 
+// menu's easier to use if you do.
+//
+// Your old config files pre V1.0.8 will still work
+// if you don't change them.
+//
+
+"Change playername to Flower" name Flower

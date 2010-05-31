@@ -1,0 +1,15 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : wordfilter.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Add words that will get autocensored from the chat
+// *****************************************************************************
+//
+//
+// Insert your words that you want to be filtered 
+// from chat here in this file
+//
+

@@ -1,0 +1,20 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : reserveslots.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Reserver a slot on your server for a specific player if
+//                mani_reserve_slots 1 is set in your mani_server.cfg
+// *****************************************************************************
+//
+//
+// Add your Steam ID's for players that need reserve slots.
+//
+// Any admins automatically get reserve slot status so they don't need to
+// be put in here
+//
+// e.g STEAM_0:0:21233123
+//
+
