@@ -31,7 +31,6 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 #Add new games here with their Valve game names
 %game_cmd = (
 "Counter-Strike Source"		=> "Counter-Strike Source",
-"Counter-Strike Source Beta"	=> "cssbeta",
 "Half-Life 2 Deathmatch" 	=> "hl2mp",
 "Team Fortress 2" 		=> "tf",
 "Day of Defeat Source" 		=> "dods",
