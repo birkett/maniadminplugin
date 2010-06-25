@@ -2018,6 +2018,13 @@ LOADUP_STATUS CAdminPlugin::MakeOrAddToINI( char *path ) {
 	return LOADUP_CREATED;
 }
 
+#if defined ( __linux__ ) && defined (ORANGE)
+	#define ARCH_LABEL "_i486"
+#else
+	#define ARCH_LABEL
+#endif
+	
+
 LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 	FileHandle_t vdf = filesystem->Open( path, "wt" );
 
@@ -2032,17 +2039,13 @@ LOADUP_STATUS CAdminPlugin::MakeVDF(char *path, bool SMM) {
 		if ( SMM ) {
 			filesystem->FPrintf ( vdf, "\"Metamod Plugin\"\n");
 			filesystem->FPrintf ( vdf, "{\n" );
-			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin/bin/mani_admin_plugin_mm_i486\"\n", gamedir );
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin/bin/mani_admin_plugin_mm" ARCH_LABEL "\"\n", gamedir );
 		} 
 		else 
 		{
 			filesystem->FPrintf ( vdf, "\"Plugin\"\n");
 			filesystem->FPrintf ( vdf, "{\n" );
-#ifdef ORANGE
-			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin_i486\"\n", gamedir );
-#else
-			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin\"\n", gamedir );
-#endif
+			filesystem->FPrintf ( vdf, "\t\"file\" \"../%s/addons/mani_admin_plugin" ARCH_LABEL "\"\n", gamedir );
 		}
 		filesystem->FPrintf ( vdf, "}" );
 		filesystem->Flush ( vdf );
