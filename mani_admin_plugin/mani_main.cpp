@@ -4648,7 +4648,7 @@ bool UnBanPlayerPage::PopulateMenuPage(player_t *player_ptr)
 
 	MenuItem *ptr;
 	int count = 0;
-	for( int i = ban_list_size; i > 0; --i )
+	for( int i = ban_list_size-1; i >= 0; i-- ) 
 	{
 		if ( (ban_list[i].expire_time != 0) && (ban_list[i].expire_time <= now) ) continue;
 		if (((ubtype == 0) && (ban_list[i].byID)) || ((ubtype == 1) && (!ban_list[i].byID))) {

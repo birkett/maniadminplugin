@@ -2477,7 +2477,7 @@ void		ManiClient::ProcessAddIP
 	{
 		SQLProcessBlock *ptr = new SQLAddIPAddress();
 		ptr->in_params.AddParam("name", client_ptr->GetName());
-		ptr->in_params.AddParam("ip_adddress", param2);
+		ptr->in_params.AddParam("ip_address", param2);
 		client_sql_manager->AddRequest(ptr);
 	}
 
