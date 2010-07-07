@@ -217,9 +217,12 @@ bool ParseLine(char *in, bool strip_comments, bool strip_start_comments)
 
 	StripBOM(in);
 
-	if ( strip_comments ) {
+	if ( strip_comments )
+	{
 		if (!StripComments(in)) return false;
-	} else if (strip_start_comments) {
+	}
+	else if (strip_start_comments)
+	{
 		if (!StripComments(in, true)) return false;
 	}
 	
@@ -249,11 +252,17 @@ bool ParseAliasLine(char *in, char *alias, bool strip_comments, bool strip_start
 
 	if (!in) return false;
 
+	StripBOM(in);
+
 	if ( strip_comments )
+	{
 		if (!StripComments(in)) return false;
+	}
 	else if (strip_start_comments) 
+	{
 		if (!StripComments(in, true)) return false;
-	
+	}
+
 	if (!StripEOL(in)) return false;
 
 	if (!Trim(in)) return false;
@@ -358,10 +367,16 @@ bool ParseAliasLine2(char *in, char *alias, char *question, bool strip_comments,
 
 	if (!in) return false;
 
+	StripBOM(in);
+
 	if ( strip_comments )
+	{
 		if (!StripComments(in)) return false;
+	}
 	else if (strip_start_comments) 
+	{
 		if (!StripComments(in, true)) return false;
+	}
 	
 	if (!StripEOL(in)) return false;
 
@@ -508,10 +523,16 @@ bool ParseAliasLine3(char *in, char *alias, char *question, bool strip_comments,
 
 	if (!in) return false;
 
+	StripBOM(in);
+
 	if ( strip_comments )
+	{
 		if (!StripComments(in)) return false;
+	}
 	else if (strip_start_comments) 
+	{
 		if (!StripComments(in, true)) return false;
+	}
 	
 	if (!StripEOL(in)) return false;
 
@@ -625,10 +646,16 @@ bool ParseBanLine( char *in, ban_settings_t *banned_user, bool strip_comments, b
 
 	if (!in) return false;
 
+	StripBOM(in);
+	
 	if ( strip_comments )
+	{
 		if (!StripComments(in)) return false;
+	}
 	else if (strip_start_comments) 
+	{
 		if (!StripComments(in, true)) return false;
+	}
 	
 	if (!StripEOL(in)) return false;
 
