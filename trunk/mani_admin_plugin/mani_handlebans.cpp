@@ -163,6 +163,8 @@ bool CManiHandleBans::AddBan ( player_t *player, const char *key, const char *in
 				player_t plr;
 				plr.index = i;
 				if (!FindPlayerByIndex(&plr)) continue;
+				if ( !plr.ip_address || (plr.ip_address[0] == 0)) continue;
+				if ( !target_player_list[i-1].ip_address || (target_player_list[i-1].ip_address == 0)) continue;
 
 				if ( FStrEq ( plr.ip_address, target_player_list[i-1].ip_address ) ) 
 					UTIL_KickPlayer ( &plr, (char *)reason, localprefix, localprefix );
