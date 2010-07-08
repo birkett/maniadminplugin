@@ -1,0 +1,23 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : downloads.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : All files that should be downloaded to the clients
+//                (Note: Sounds and Map Advert Textures don't need to be added
+//                 if the autodownload feature is turned on in mani_server.cfg)
+// *****************************************************************************
+
+
+"downloads.txt"
+{
+	// The key can be any name you wish.
+	// The value must be the location on your server of the file
+
+	"downloads"
+	{
+	//	"my_file"	"materials/decals/custom/mani_admin_plugin/mani_logo.vmt"
+	}
+}

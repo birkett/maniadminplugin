@@ -1,0 +1,55 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : spawnpoints.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Create extra spawnpoints for specific maps
+// *****************************************************************************
+//
+//
+// If you want to define your own extra spawnpoints, put them
+// in here. 
+//
+// The points provided here are EXISTING spawnpoints from the CSS map
+// de_dust and are the default ones provided as examples.
+//
+// If you want more then add more onto the end of each
+// team list. (If you look in the gametypes.txt file
+// you can work out which team index is which).
+//
+// For other maps you can use the new server console command
+// ma_dumpspawnpoints. This will dump the standard spawnpoints
+// into a file called 'clipboard.txt' in the server /mani_admin_plugin/
+// directory. You can then use this to workout where the extra
+// spawnpoints should be added.
+//
+// The format for each spawn point is based on 6 numbers
+// The first 3 are the positional information of x,y,z coordinates
+//
+// The last 3 relate to the angle at which you are looking. Usually
+// only the second number in the angle needs to be changed for the start
+// y direction axis.
+
+"spawnpoints.txt"
+{
+	// Spawn points for map de_dust
+	"de_dust"
+	{
+		// Spawn points for team index 2 (info_player_terrorist)
+		"2"
+		{
+			//"1"	"1376 3168 -112    0 180 0"
+			//"2"	"1200 3504 -96    0 180 0"
+		}
+
+		// Spawn points for team index 3 (info_player_counterterrorist)
+		"3"
+		{
+			//"1"	"160 -1712 90    0 112 0"
+			//"2"	"176 -1600 90    0 83 0"
+		}
+
+	}
+}

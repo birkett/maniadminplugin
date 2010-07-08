@@ -1,0 +1,1441 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : mapadverts.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Set the in game position of the map decals. You can find out
+//                coordinates using ma_decal <decal name>, the coordinates wil
+//                then be displayed in the in game console
+// *****************************************************************************
+
+
+"mapadverts.txt"
+{
+	// Decalpositions for Counter-Strike: Source
+
+	"de_dust"
+	{
+		// Name of the decals to use (see decallist.txt file)
+		// You can specify more than one decal to use per map.
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"266.19424"	// x position
+			"y"	"-1855.96875"	// y position
+			"z"	"218.25949"	// z position
+  		
+			"x"	"-1279.96875"	// x position
+			"y"	"1198.67468"	// y position
+			"z"	"194.21437"	// z position
+
+			"x"	"1020.94836"	// x position
+			"y"	"3615.96875"	// y position
+			"z"	"228.66261"	// z position
+		}
+	}
+
+	"de_aztec"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x"	"-1095.64136"	// x position
+			"y"	"-960.03125"	// y position
+			"z"	"-126.18461"	// z position
+  		
+			"x"	"1316.81494"	// x position
+			"y"	"697.58588"	// y position
+			"z"	"-180.10448"	// z position
+
+			"x"	"-412.81372"	// x position
+			"y"	"0.03125"	// y position
+			"z"	"-135.19481"	// z position
+		}
+	}
+
+	"cs_italy"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x"	"144.37666"	// x position
+			"y"	"2623.96875"	// y position
+			"z"	"353.53491"	// z position
+	
+			"x"	"-1001.89795"	// x position
+			"y"	"-1472.03125"	// y position
+			"z"	"27.24899"	// z position
+	
+		}
+	}
+
+	"de_cbble"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-3135.96875"
+			"y" "-638.08209"
+			"z" "525.89594"
+
+			"x" "-325.45050"
+			"y" "2495.96875"
+			"z" "-147.76404"
+
+			"x" "-2112.03125"
+			"y" "596.45135"
+			"z" "202.52596"
+		}
+
+	}
+
+	"de_chateau"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "1255.67151"
+			"y" "2472.03125"
+			"z" "264.63724"
+
+			"x" "732.09418"
+			"y" "-256.03125"
+			"z" "102.97175"
+
+			"x" "130.39034"
+			"y" "677.90845"
+			"z" "507.74704"
+		}
+
+	}
+
+	"de_dust2"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "1607.96875"
+			"y" "1206.32117"
+			"z" "246.53748"
+
+			"x" "-1683.10193"
+			"y" "-127.96877"
+			"z" "83.44805"
+
+			"x" "383.96875"
+			"y" "-520.66534"
+			"z" "147.81691"
+		}
+
+	}
+
+	"cs_assault"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "7047.96875"
+			"y" "6235.47754"
+			"z" "-579.63098"
+
+
+			"x" "4776.03125"
+			"y" "4584.94189"
+			"z" "-460.83054"
+		}
+
+	}
+
+	"de_piranesi"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "-863.93896"
+			"y" "-501.47214"
+			"z" "436.98581"
+
+			"x" "1572.15112"
+			"y" "508.10703"
+			"z" "332.94974"
+		}
+
+	}
+
+	"cs_havana"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-767.96875"
+			"y" "-997.16095"
+			"z" "121.53770"
+
+
+			"x" "-159.96873"
+			"y" "2083.69507"
+			"z" "106.94505"
+		}
+
+	}
+
+	"cs_office"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-1503.96875"
+			"y" "-1827.91382"
+			"z" "-251.35899"
+
+			"x" "-64.99084"
+			"y" "-696.03125"
+			"z" "-84.53757"
+
+			"x" "963.20728"
+			"y" "1535.96875"
+			"z" "-244.28468"
+		}
+
+	}
+
+	"de_train"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "-653.96875"
+			"y" "-1297.31714"
+			"z" "-21.16162"
+
+			"x" "-1472.03125"
+			"y" "1837.09546"
+			"z" "228.59209"
+
+			"x" "2019.96875"
+			"y" "1599.57434"
+			"z" "-116.08844"
+		}
+
+	}
+
+	"cs_compound"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "3189.97412"
+			"y" "90.07026"
+			"z" "67.50111"
+
+			"x" "646.35492"
+			"y" "2112.03125"
+			"z" "-59.89242"
+
+			"x" "1919.84717"
+			"y" "-256.03125"
+			"z" "201.17630"
+
+			"x" "2859.28613"
+			"y" "-1444.75793"
+			"z" "65.76572"
+		}
+
+	}
+
+	"de_prodigy"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "3921.10059"
+			"y" "-781.44708"
+			"z" "-271.98285"
+
+			"x" "487.96875"
+			"y" "-590.99139"
+			"z" "-136.20856"
+
+			"x" "2151.24780"
+			"y" "183.96873"
+			"z" "-205.35480"
+		}
+
+	}
+
+	"de_tides"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "-1247.96875"
+			"y" "1038.59631"
+			"z" "128.85332"
+
+			"x" "-1539.78210"
+			"y" "-640.03125"
+			"z" "60.39038"
+		}
+
+	}
+
+	"de_port"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+
+			"x" "1496.86584"
+			"y" "1888.03125"
+			"z" "364.52536"
+
+			"x" "-656.26123"
+			"y" "2619.60376"
+			"z" "606.27997"
+
+			"x" "2391.40625"
+			"y" "-1623.36206"
+			"z" "614.78711"
+
+			"x" "896.03125"
+			"y" "307.68723"
+			"z" "521.91315"
+		}
+
+	}
+
+	"de_inferno"
+	{
+		// Name of the decal to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			"x" "2753.78027"
+			"y" "-119.96874"
+			"z" "276.43948"
+
+			"x" "-1871.21680"
+			"y" "631.96875"
+			"z" "202.64844"
+
+			"x" "691.71124"
+			"y" "3336.03125"
+			"z" "332.08176"
+
+			"x" "1151.96875"
+			"y" "-477.56979"
+			"z" "330.44449"
+		}
+
+	}
+
+	// Decalpositions for Half Life 2: Deathmatch
+
+	"dm_lockdown"
+	{
+		// Name of the decals to use (see decallist.txt file)
+		// You can specify more than one decal to use per map.
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-3056.06348"	// x position
+			"y"	"4752.10791"	// y position
+			"z"	"64.47039"	// z position
+  		
+			"x"	"-3975.70728"	// x position
+			"y"	"5312.03125"	// y position
+			"z"	"133.44080"	// z position
+
+			"x"	"-3775.96875"	// x position
+			"y"	"1529.06482"	// y position
+			"z"	"80.24986"	// z position
+		}
+	}
+
+	"dm_overwatch"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"5823.96875"	// x position
+			"y"	"6332.87744"	// y position
+			"z"	"159.85158"	// z position
+  		
+			"x"	"7496.03125"	// x position
+			"y"	"6365.94531"	// y position
+			"z"	"158.15837"	// z position
+
+			"x"	"6711.96875"	// x position
+			"y"	"6324.82080"	// y position
+			"z"	"340.70428"	// z position
+		}
+	}
+
+	"dm_powerhouse"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"189.62939"	// x position
+			"y"	"-2677.96875"	// y position
+			"z"	"563.66248"	// z position
+  		
+			"x"	"-264.20065"	// x position
+			"y"	"179.96875"	// y position
+			"z"	"311.08002"	// z position
+
+			"x"	"1033.71094"	// x position
+			"y"	"-1697.96875"	// y position
+			"z"	"84.18883"	// z position
+		}
+	}
+
+	"dm_resistance"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"147.88029"	// x position
+			"y"	"485.03125"	// y position
+			"z"	"-1036.54407"	// z position
+  		
+			"x"	"442.10675"	// x position
+			"y"	"677.03125"	// y position
+			"z"	"-1158.31140"	// z position
+
+			"x"	"-183.16141"	// x position
+			"y"	"-443.03125"	// y position
+			"z"	"-1089.75757"	// z position
+		}
+	}
+
+	"dm_runoff"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"9007.96875"	// x position
+			"y"	"3594.75317"	// y position
+			"z"	"-157.02403"	// z position
+  		
+			"x"	"11917.16699"	// x position
+			"y"	"662.72766"	// y position
+			"z"	"-181.56889"	// z position
+
+			"x"	"7596.03125"	// x position
+			"y"	"1017.07275"	// y position
+			"z"	"-355.95120"	// z position
+		}
+	}
+
+	"dm_steamlab"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-2678.63477"	// x position
+			"y"	"2927.96875"	// y position
+			"z"	"1005.17450"	// z position
+  		
+			"x"	"-2155.33740"	// x position
+			"y"	"1256.03125"	// y position
+			"z"	"767.76923"	// z position
+
+			"x"	"-2261.12964"	// x position
+			"y"	"2211.96875"	// y position
+			"z"	"1239.99719"	// z position
+		}
+	}
+
+	"dm_underpass"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-56.03125"	// x position
+			"y"	"-1594.39050"	// y position
+			"z"	"-250.01625"	// z position
+  		
+			"x"	"586.59344"	// x position
+			"y"	"-1391.96875"	// y position
+			"z"	"337.68466"	// z position
+
+			"x"	"-1069.84705"	// x position
+			"y"	"-1127.96875"	// y position
+			"z"	"110.02236"	// z position
+		}
+	}
+
+	// Decalpositions for Day of Defeat: Source
+
+	"dod_anzio"
+	{
+		// Name of the decals to use (see decallist.txt file)
+		// You can specify more than one decal to use per map.
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1535.96875"	// x position
+			"y"	"-368.72028"	// y position
+			"z"	"-314.88739"	// z position
+  		
+			"x"	"1727.96875"	// x position
+			"y"	"1561.06958"	// y position
+			"z"	"-188.79718"	// z position
+
+			"x"	"1909.52563"	// x position
+			"y"	"544.03125"	// y position
+			"z"	"-198.45349"	// z position
+		}
+	}
+
+	"dod_argentan"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-92.70912"	// x position
+			"y"	"319.96875"	// y position
+			"z"	"348.76074"	// z position
+  		
+			"x"	"1858.00940"	// x position
+			"y"	"-0.03125"	// y position
+			"z"	"279.93942"	// z position
+
+			"x"	"32.03125"	// x position
+			"y"	"-678.51965"	// y position
+			"z"	"269.35925"	// z position
+		}
+	}
+
+	"dod_avalanche"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"928.03125"	// x position
+			"y"	"-363.93570"	// y position
+			"z"	"168.19220"	// z position
+  		
+			"x"	"1224.40088"	// x position
+			"y"	"792.44513"	// y position
+			"z"	"206.94881"	// z position
+
+			"x"	"-624.14325"	// x position
+			"y"	"1727.81250"	// y position
+			"z"	"302.44446"	// z position
+		}
+	}
+
+	"dod_colmar"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1056.03125"	// x position
+			"y"	"-858.75092"	// y position
+			"z"	"168.78799"	// z position
+  		
+			"x"	"1240.03259"	// x position
+			"y"	"840.07678"	// y position
+			"z"	"85.13169"	// z position
+
+			"x"	"-931.05359"	// x position
+			"y"	"1536.03125"	// y position
+			"z"	"167.33580"	// z position
+		}
+	}
+
+	"dod_donner"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-2141.61230"	// x position
+			"y"	"-2128.03125"	// y position
+			"z"	"-33.75543"	// z position
+  		
+			"x"	"-1152.03125"	// x position
+			"y"	"-449.93942"	// y position
+			"z"	"-9.06994"	// z position
+
+			"x"	"1600.03125"	// x position
+			"y"	"-744.16565"	// y position
+			"z"	"-40.60250"	// z position
+		}
+	}
+
+	"dod_flash"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"994.75708"	// x position
+			"y"	"-1393.44727"	// y position
+			"z"	"109.74723"	// z position
+  		
+			"x"	"1172.70679"	// x position
+			"y"	"612.66260"	// y position
+			"z"	"138.73975"	// z position
+
+			"x"	"-1579.47998"	// x position
+			"y"	"331.52414"	// y position
+			"z"	"107.59572"	// z position
+		}
+	}
+
+	"dod_jagd"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-495.96875"	// x position
+			"y"	"-272.68472"	// y position
+			"z"	"-154.73511"	// z position
+  		
+			"x"	"364.67975"	// x position
+			"y"	"-1280.03125"	// y position
+			"z"	"-215.53070"	// z position
+
+			"x"	"6.52853"	// x position
+			"y"	"640.03125"	// y position
+			"z"	"-229.90256"	// z position
+		}
+	}
+
+	"dod_kalt"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1844.85083"	// x position
+			"y"	"3711.96875"	// y position
+			"z"	"101.95928"	// z position
+  		
+			"x"	"4860.06738"	// x position
+			"y"	"2713.10034"	// y position
+			"z"	"58.30837"	// z position
+
+			"x"	"5058.66895"	// x position
+			"y"	"4159.96875"	// y position
+			"z"	"146.41219"	// z position
+		}
+	}
+
+	"dod_palermo"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"2031.96875"	// x position
+			"y"	"138.48589"	// y position
+			"z"	"-264.72153"	// z position
+  		
+			"x"	"1357.01367"	// x position
+			"y"	"3410.94214"	// y position
+			"z"	"-182.44321"	// z position
+
+			"x"	"1827.16846"	// x position
+			"y"	"2152.03125"	// y position
+			"z"	"-326.30859"	// z position
+		}
+	}
+
+	// Decalpositions for Team Fortress 2
+
+	"arena_badlands"
+	{
+		// Name of the decals to use (see decallist.txt file)
+		// You can specify more than one decal to use per map.
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"767.96875"	// x position
+			"y"	"1470.73193"	// y position
+			"z"	"442.86044"	// z position
+  		
+			"x"	"1283.24377"	// x position
+			"y"	"2239.96875"	// y position
+			"z"	"182.45879"	// z position
+
+			"x"	"-891.07898"	// x position
+			"y"	"-255.96875"	// y position
+			"z"	"455.81216"	// z position
+		}
+	}
+
+	"arena_granary"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-960.03125"	// x position
+			"y"	"-962.66156"	// y position
+			"z"	"-224.87038"	// z position
+  		
+			"x"	"-1962.56592"	// x position
+			"y"	"639.96875"	// y position
+			"z"	"-199.98956"	// z position
+
+			"x"	"-1616.03125"	// x position
+			"y"	"1216.85608"	// y position
+			"z"	"-137.00458"	// z position
+		}
+	}
+
+	"arena_lumberyard"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-792.22192"	// x position
+			"y"	"1902.67126"	// y position
+			"z"	"268.75351"	// z position
+  		
+			"x"	"-2410.48877"	// x position
+			"y"	"572.03125"	// y position
+			"z"	"133.76564"	// z position
+
+			"x"	"-2431.96875"	// x position
+			"y"	"1538.99768"	// y position
+			"z"	"226.62270"	// z position
+		}
+	}
+
+	"arena_nucleus"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1578.02832"	// x position
+			"y"	"224.03125"	// y position
+			"z"	"134.09653"	// z position
+  		
+			"x"	"-1141.26831"	// x position
+			"y"	"1098.68750"	// y position
+			"z"	"195.47495"	// z position
+
+			"x"	"1382.04517"	// x position
+			"y"	"-666.23315"	// y position
+			"z"	"197.55566"	// z position
+		}
+	}
+
+	"arena_offblast_final"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"465.95972"	// x position
+			"y"	"1759.96875"	// y position
+			"z"	"-1144.20691"	// z position
+  		
+			"x"	"433.85251"	// x position
+			"y"	"-1759.96875"	// y position
+			"z"	"-1183.48889"	// z position
+
+			"x"	"-319.96875"	// x position
+			"y"	"-1.41713"	// y position
+			"z"	"-980.85284"	// z position
+		}
+	}
+
+	"arena_ravine"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1879.96875"	// x position
+			"y"	"-1774.22913"	// y position
+			"z"	"130.44466"	// z position
+  		
+			"x"	"1879.96875"	// x position
+			"y"	"2808.78809"	// y position
+			"z"	"145.39130"	// z position
+
+			"x"	"603.41620"	// x position
+			"y"	"672.03125"	// y position
+			"z"	"325.00470"	// z position
+		}
+	}
+
+	"arena_sawmill"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-256.03125"	// x position
+			"y"	"2236.12500"	// y position
+			"z"	"-23.05479"	// z position
+  		
+			"x"	"18.72159"	// x position
+			"y"	"568.03125"	// y position
+			"z"	"151.37120"	// z position
+
+			"x"	"1855.96875"	// x position
+			"y"	"-2059.94531"	// y position
+			"z"	"-7.27164"	// z position
+		}
+	}
+
+	"arena_watchtower"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-41.09172"	// x position
+			"y"	"320.03125"	// y position
+			"z"	"785.24084"	// z position
+  		
+			"x"	"27.31979"	// x position
+			"y"	"-320.03125"	// y position
+			"z"	"790.96680"	// z position
+
+			"x"	"-849.63348"	// x position
+			"y"	"1202.49048"	// y position
+			"z"	"439.72867"	// z position
+		}
+	}
+
+	"arena_well"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-1258.67139"	// x position
+			"y"	"1184.03125"	// y position
+			"z"	"-378.01132"	// z position
+  		
+			"x"	"-1823.23376"	// x position
+			"y"	"-416.03125"	// y position
+			"z"	"-370.40216"	// z position
+
+			"x"	"-687.96875"	// x position
+			"y"	"402.17752"	// y position
+			"z"	"-139.20941"	// z position
+		}
+	}
+
+	"cp_badlands"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-350.46429"	// x position
+			"y"	"-3678.41992"	// y position
+			"z"	"131.68785"	// z position
+  		
+			"x"	"447.96875"	// x position
+			"y"	"628.64813"	// y position
+			"z"	"379.56360"	// z position
+
+			"x"	"1000.03125"	// x position
+			"y"	"1698.89893"	// y position
+			"z"	"435.04120"	// z position
+		}
+	}
+
+	"cp_dustbowl"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-1104.03125"	// x position
+			"y"	"-2116.70459"	// y position
+			"z"	"-41.52951"	// z position
+  		
+			"x"	"807.24829"	// x position
+			"y"	"-127.96875"	// y position
+			"z"	"124.15285"	// z position
+
+			"x"	"-1306.14636"	// x position
+			"y"	"415.96875"	// y position
+			"z"	"54.73803"	// z position
+		}
+	}
+
+	"cp_egypt_final"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-3455.96875"	// x position
+			"y"	"-1038.45447"	// y position
+			"z"	"-254.31520"	// z position
+  		
+			"x"	"-3988.28076"	// x position
+			"y"	"-3712.03125"	// y position
+			"z"	"36.62058"	// z position
+
+			"x"	"-2431.96875"	// x position
+			"y"	"-3388.24902"	// y position
+			"z"	"-136.25882"	// z position
+		}
+	}
+
+	"cp_fastlane"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-455.96875"	// x position
+			"y"	"1701.73523"	// y position
+			"z"	"189.49605"	// z position
+  		
+			"x"	"591.96875"	// x position
+			"y"	"3888.08374"	// y position
+			"z"	"254.82939"	// z position
+
+			"x"	"455.96875"	// x position
+			"y"	"-2713.90869"	// y position
+			"z"	"201.14864"	// z position
+		}
+	}
+
+	"cp_granary"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-1333.37952"	// x position
+			"y"	"-5375.96875"	// y position
+			"z"	"-251.93338"	// z position
+  		
+			"x"	"-1838.05969"	// x position
+			"y"	"-3959.96875"	// y position
+			"z"	"-347.06744"	// z position
+
+			"x"	"-960.03125"	// x position
+			"y"	"-981.36945"	// y position
+			"z"	"-276.72452"	// z position
+		}
+	}
+
+	"cp_gravelpit"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-2298.81226"	// x position
+			"y"	"2111.96875"	// y position
+			"z"	"-102.57138"	// z position
+  		
+			"x"	"-3935.96875"	// x position
+			"y"	"1346.09399"	// y position
+			"z"	"-356.81033"	// z position
+
+			"x"	"-4535.03906"	// x position
+			"y"	"1527.96875"	// y position
+			"z"	"-332.57248"	// z position
+		}
+	}
+
+	"cp_junction_final"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1208.83997"	// x position
+			"y"	"1863.11560"	// y position
+			"z"	"-47.72401"	// z position
+  		
+			"x"	"831.96875"	// x position
+			"y"	"2568.76050"	// y position
+			"z"	"110.35036"	// z position
+
+			"x"	"-352.03125"	// x position
+			"y"	"3448.17896"	// y position
+			"z"	"25.00904"	// z position
+		}
+	}
+
+	"cp_steel"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-1008.03125"	// x position
+			"y"	"-1200.29431"	// y position
+			"z"	"-183.52293"	// z position
+  		
+			"x"	"144.03125"	// x position
+			"y"	"-2810.24341"	// y position
+			"z"	"-467.97574"	// z position
+
+			"x"	"-103.96875"	// x position
+			"y"	"1580.04102"	// y position
+			"z"	"-64.22957"	// z position
+		}
+	}
+
+	"cp_well"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-417.43900"	// x position
+			"y"	"-2768.03125"	// y position
+			"z"	"-394.66119"	// z position
+  		
+			"x"	"-307.98465"	// x position
+			"y"	"-4624.03125"	// y position
+			"z"	"-348.56241"	// z position
+
+			"x"	"405.81509"	// x position
+			"y"	"2768.03125"	// y position
+			"z"	"-387.50800"	// z position
+		}
+	}
+
+	"cp_yukon_final"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-272.57196"	// x position
+			"y"	"511.96875"	// y position
+			"z"	"345.66656"	// z position
+  		
+			"x"	"-1116.12561"	// x position
+			"y"	"-2312.03125"	// y position
+			"z"	"377.88373"	// z position
+
+			"x"	"-1033.88391"	// x position
+			"y"	"511.96875"	// y position
+			"z"	"583.68579"	// z position
+		}
+	}
+
+	"ctf_2fort"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-1.83691"	// x position
+			"y"	"-814.96875"	// y position
+			"z"	"233.56917"	// z position
+  		
+			"x"	"-1.22361"	// x position
+			"y"	"831.96875"	// y position
+			"z"	"195.60452"	// z position
+
+			"x"	"-1279.96875"	// x position
+			"y"	"-1977.84277"	// y position
+			"z"	"169.66048"	// z position
+		}
+	}
+
+	"ctf_sawmill"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-160.03125"	// x position
+			"y"	"1703.09180"	// y position
+			"z"	"34.23069"	// z position
+  		
+			"x"	"1151.96875"	// x position
+			"y"	"-334.68671"	// y position
+			"z"	"370.45120"	// z position
+
+			"x"	"1184.03125"	// x position
+			"y"	"-1697.91174"	// y position
+			"z"	"49.63612"	// z position
+		}
+	}
+
+	"ctf_turbine"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"2908.35034"	// x position
+			"y"	"1671.96875"	// y position
+			"z"	"-95.78641"	// z position
+  		
+			"x"	"-2866.49048"	// x position
+			"y"	"-1671.96875"	// y position
+			"z"	"-94.51277"	// z position
+
+			"x"	"-269.51266"	// x position
+			"y"	"751.96875"	// y position
+			"z"	"-26.86544"	// z position
+		}
+	}
+
+	"ctf_well"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"430.73434"	// x position
+			"y"	"168.03125"	// y position
+			"z"	"-402.05579"	// z position
+  		
+			"x"	"327.35355"	// x position
+			"y"	"-168.03125"	// y position
+			"z"	"-400.88199"	// z position
+
+			"x"	"-315.93298"	// x position
+			"y"	"-3328.03125"	// y position
+			"z"	"-349.71649"	// z position
+		}
+	}
+
+	"koth_harvest_event"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-202.96568"	// x position
+			"y"	"192.03125"	// y position
+			"z"	"152.65616"	// z position
+  		
+			"x"	"-767.96875"	// x position
+			"y"	"-1190.15381"	// y position
+			"z"	"407.08447"	// z position
+
+			"x"	"-0.03125"	// x position
+			"y"	"-2014.09827"	// y position
+			"z"	"172.23695"	// z position
+		}
+	}
+
+	"koth_harvest_final"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-886.51184"	// x position
+			"y"	"1216.03125"	// y position
+			"z"	"189.09300"	// z position
+  		
+			"x"	"767.96875"	// x position
+			"y"	"1328.32617"	// y position
+			"z"	"309.78979"	// z position
+
+			"x"	"-767.96875"	// x position
+			"y"	"-1340.57507"	// y position
+			"z"	"310.67331"	// z position
+		}
+	}
+
+	"koth_nucleus"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"1578.02832"	// x position
+			"y"	"224.03125"	// y position
+			"z"	"134.09653"	// z position
+  		
+			"x"	"-1141.26831"	// x position
+			"y"	"1098.68750"	// y position
+			"z"	"195.47495"	// z position
+
+			"x"	"1382.04517"	// x position
+			"y"	"-666.23315"	// y position
+			"z"	"197.55566"	// z position
+		}
+	}
+
+	"koth_sawmill"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-160.03125"	// x position
+			"y"	"1703.09180"	// y position
+			"z"	"34.23069"	// z position
+  		
+			"x"	"1151.96875"	// x position
+			"y"	"-334.68671"	// y position
+			"z"	"370.45120"	// z position
+
+			"x"	"1184.03125"	// x position
+			"y"	"-1697.91174"	// y position
+			"z"	"49.63612"	// z position
+		}
+	}
+
+	"koth_viaduct"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-2047.96875"	// x position
+			"y"	"-2.81007"	// y position
+			"z"	"436.88348"	// z position
+  		
+			"x"	"-1733.90857"	// x position
+			"y"	"2048.03125"	// y position
+			"z"	"190.30273"	// z position
+
+			"x"	"-1792.03125"	// x position
+			"y"	"-1019.83704"	// y position
+			"z"	"253.00468"	// z position
+		}
+	}
+
+	"pl_badwater"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-351.90875"	// x position
+			"y"	"-127.96875"	// y position
+			"z"	"333.41449"	// z position
+  		
+			"x"	"-1663.96875"	// x position
+			"y"	"-377.73059"	// y position
+			"z"	"357.32791"	// z position
+
+			"x"	"-191.96875"	// x position
+			"y"	"-1981.97998"	// y position
+			"z"	"323.67987"	// z position
+		}
+	}
+
+	"pl_goldrush"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-6527.96875"	// x position
+			"y"	"2301.90063"	// y position
+			"z"	"151.40225"	// z position
+  		
+			"x"	"-6543.96875"	// x position
+			"y"	"441.49231"	// y position
+			"z"	"326.00940"	// z position
+
+			"x"	"-3980.47070"	// x position
+			"y"	"-639.96875"	// y position
+			"z"	"172.05028"	// z position
+		}
+	}
+
+	"pl_hoodoo_final"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"5295.96875"	// x position
+			"y"	"1084.05237"	// y position
+			"z"	"205.77809"	// z position
+  		
+			"x"	"3008.03125"	// x position
+			"y"	"89.26788"	// y position
+			"z"	"228.94148"	// z position
+
+			"x"	"2093.79175"	// x position
+			"y"	"-2687.96875"	// y position
+			"z"	"340.17926"	// z position
+		}
+	}
+
+	"plr_pipeline"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"320.03125"	// x position
+			"y"	"-1759.35193"	// y position
+			"z"	"370.06906"	// z position
+  		
+			"x"	"-320.02026"	// x position
+			"y"	"-1713.03149"	// y position
+			"z"	"363.61472"	// z position
+
+			"x"	"-1780.82483"	// x position
+			"y"	"-1216.03125"	// y position
+			"z"	"216.55400"	// z position
+		}
+	}
+
+	"tc_hydro"
+	{
+		// Name of the decals to use (see decallist.txt file)
+
+		"mani_logo"
+		{
+			// X Y Z coordinates of each decal position
+
+			"x"	"-1983.96875"	// x position
+			"y"	"2174.71533"	// y position
+			"z"	"392.64838"	// z position
+  		
+			"x"	"2687.96875"	// x position
+			"y"	"1776.07300"	// y position
+			"z"	"538.36591"	// z position
+
+			"x"	"1090.66089"	// x position
+			"y"	"-3135.96875"	// y position
+			"z"	"284.17722"	// z position
+		}
+	}
+}
+

@@ -1,0 +1,40 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : rconlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Rcon Commands that will also be displayed in the in game menu
+// *****************************************************************************
+//
+//
+// This file can use aliases.
+//
+// Aliases are what is shown in the menu system
+// a nice way of presenting the commands.
+// Aliases must be enclosed in quotes
+//
+// E.G. "Low Gravity"
+//
+// Do not put another quote inside like :-
+//
+// "Low "Gravity""
+//
+// The command after the alias is the real command
+// executed.
+//
+// You do not have to use aliases but it makes the
+// menu's easier to use if you do.
+//
+// Your old config files pre V1.0.8 will still work
+// if you don't change them.
+//
+// Add you rcon commands here
+// e.g exec server.cfg
+
+"Default Server" exec server.cfg // Server.cfg
+"Low Gravity" sv_gravity 150 // Low grav
+"Normal Gravity" sv_gravity 800 // Normal gravity
+"Add a bot" bot_add // Add a server bot
+exec ed.cfg

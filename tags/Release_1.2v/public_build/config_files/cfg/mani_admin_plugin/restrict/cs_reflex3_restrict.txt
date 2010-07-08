@@ -1,0 +1,6 @@
+flashbang
+smokegrenade
+awp
+g3sg1   // Auto sniper
+sg550   // Auto sniper
+

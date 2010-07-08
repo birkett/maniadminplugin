@@ -1,0 +1,32 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : webshortcutlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Link to sites on the web using ma_browse <url>
+// *****************************************************************************
+//
+//
+// The content of this file can be displayed in a menu if you type "favourites"
+// into the chat.
+//
+// The first field relates to the shortcut chat command a player
+// can use. The second field is the web site that will be displayed.
+// The steam id token {STEAMID} and the {IPADDRESS} token
+// can be used for a search term
+//
+
+"plugin" http://www.mani-admin-plugin.com
+"google" http://www.google.com
+
+//"steam" http://www.steampowered.com
+//"csnation" http://www.cs-nation.net
+
+// An example here is to search your own stats page. Make sure
+// the URL points correctly to your own page before uncommenting 
+// this
+
+//"stats" http://www.your-stats.com/index.php?search={STEAMID}
+

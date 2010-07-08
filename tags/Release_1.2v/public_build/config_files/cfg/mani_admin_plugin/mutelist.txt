@@ -1,0 +1,22 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//    Filename   : mutelist.txt
+//
+//    Last Updated : 2009/11/04
+//
+//    Description  : list of steam ids and IPs that are muted
+// *****************************************************************************
+//
+//
+// This file contains the list of mutes that
+// have been given via the ma_mute command.
+//
+//
+// The first entry is the STEAM_ID or the IP.
+// The second entry is the time the mute expires. 0 = permanent.
+// The third entry is who executed the mute. ( quotes required )
+// The fourth entry ( optional ) is why the mute was given. ( quotes required )
+//
+// STEAM_0:0:000000 0 "RoadRunner" "Wile E. Coyote" "mic spam"
+//
