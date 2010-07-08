@@ -109,7 +109,7 @@
 			"weapon_drop"		"220"
 			"user_cmds"		"346"
 			"set_observer_target"		"305"
-			"canuse_weapon"		"217"
+			"weapon_canuse"		"217"
 			"weapon_switch"		"221"
 			"remove_player_item"		"227"
 			"get_weapon_slot"		"225"
@@ -228,7 +228,7 @@
 			"weapon_drop"		"220"
 			"user_cmds"		"346"
 			"set_observer_target"		"305"
-			"canuse_weapon"		"217"
+			"weapon_canuse"		"217"
 			"weapon_switch"		"221"
 			"remove_player_item"		"227"
 			"get_weapon_slot"		"225"
@@ -342,7 +342,7 @@
 			"weapon_drop"		"220"
 			"user_cmds"		"346"
 			"set_observer_target"		"305"
-			"canuse_weapon"		"217"
+			"weapon_canuse"		"217"
 			"weapon_switch"		"221"
 			"remove_player_item"		"227"
 			"get_weapon_slot"		"225"
@@ -608,7 +608,7 @@
 			"weapon_drop"		"253"
 			"user_cmds"		"404"
 			"set_observer_target"		"361"
-			"canuse_weapon"		"250"
+			"weapon_canuse"		"250"
 			"weapon_switch"		"254"
 			"remove_player_item"		"260"
 			"get_weapon_slot"		"258"
@@ -787,7 +787,7 @@
 			"weapon_drop"		"253"
 			"user_cmds"		"403"
 			"set_observer_target"		"360"
-			"canuse_weapon"		"250"
+			"weapon_canuse"		"250"
 			"weapon_switch"		"254"
 			"remove_player_item"		"260"
 			"get_weapon_slot"		"258"
@@ -858,6 +858,8 @@
 			}				
 		}
 	}
+	
+
 
 	"Team Fortress"
 	{
@@ -948,7 +950,7 @@
 			"weapon_drop"		"253"
 			"user_cmds"		"403"
 			"set_observer_target"		"360"
-			"canuse_weapon"		"250"
+			"weapon_canuse"		"250"
 			"weapon_switch"		"254"
 			"remove_player_item"		"260"
 			"get_weapon_slot"		"258"
@@ -1019,6 +1021,7 @@
 			}				
 		}
 	}
+
 
 	//
 	// Half-Life 2 Single team source mod currently in beta at time of testing.
