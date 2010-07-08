@@ -18,8 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
-
-
 //
 
 #include <stdio.h>
@@ -755,7 +753,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	{
 		// Keep reserve slots free at all times
 		allowed_players = max_players - mani_reserve_slots_number_of_slots.GetInt();
-		if (total_players >= allowed_players)
+		if (total_players > allowed_players)
 		{
 			if (!is_reserve_player) {
 				DisconnectPlayer(player_ptr);
