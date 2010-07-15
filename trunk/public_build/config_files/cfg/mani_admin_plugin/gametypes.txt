@@ -2,8 +2,8 @@
 //
 // Mani Admin Plugin 2010
 //
-// Last Update V1.2U
-// 24.06.2010
+// Last Update V1.2V
+// 15.07.2010
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -396,6 +396,7 @@
 		}
 	}
 
+
 	//
 	// Half-Life 2 Capture the Flag Source mod options. Again this is a multi-team mod.
 	//
@@ -513,7 +514,7 @@
 
 	//
 	// Options for Counter Strike : Source mod
-	// Orange Box Engine as of 23/06/2010
+	// Orange Box Engine
 	//
 	// This should match the description given by the 
 	// server console command ma_game
@@ -858,8 +859,6 @@
 			}				
 		}
 	}
-	
-
 
 	"Team Fortress"
 	{
@@ -956,9 +955,9 @@
 			"get_weapon_slot"		"258"
 			"give_ammo"		"245"
 			"commit_suicide"		"426"
-			"get_primary_ammo_type"		"323"
-			"get_secondary_ammo_type"		"324"
-			"weapon_get_name"		"316"
+			"get_primary_ammo_type"		"324"
+			"get_secondary_ammo_type"		"325"
+			"weapon_get_name"		"317"
 		}
 
 		// Setup team structure for mod		
@@ -1021,7 +1020,6 @@
 			}				
 		}
 	}
-
 
 	//
 	// Half-Life 2 Single team source mod currently in beta at time of testing.
