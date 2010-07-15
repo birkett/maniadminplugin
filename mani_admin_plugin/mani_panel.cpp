@@ -306,13 +306,56 @@ void	DrawMOTD(MRecipientFilter *mrf)
 
 }
 
+inline int url_lower(int _Char)
+{
+	if ( _Char >= 'A' && _Char <= 'Z' ) 
+	{ 
+		return ( (_Char)-'A'+'a' );
+	} 
+	return _Char;
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: Show URL Panel to user
 //---------------------------------------------------------------------------------
 void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 {
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
-   
+
+	//first strip the ""
+	//then see if it starts with http:  or https:
+	//default to http:
+
+	int len = strlen(url)+8; // leave room for the http beginning
+	char stripped_url[512];
+	char final_url[512];
+	char lowercase_url[512];
+
+	memset (stripped_url, 0, len);
+	memset (lowercase_url, 0, len);
+	memset (final_url, 0, len);
+
+	int url_index = 0;
+	int stripped_url_index = 0;
+	do 
+	{
+		if ( url[url_index] != '\"' && url[url_index] != '\'' )
+		{
+			stripped_url[stripped_url_index] = url[url_index];
+			lowercase_url[stripped_url_index++] = url_lower(url[url_index]);
+		}
+		url_index++;
+	} while ( url[url_index] != 0 );
+
+	if ( !strstr(lowercase_url, "http://") && !strstr(lowercase_url, "https://") )
+	{
+		Q_snprintf(final_url, len, "http://%s", stripped_url);
+	}
+	else 
+	{
+		Q_snprintf(final_url, len, "%s", stripped_url);
+	}
+
 	msg_buffer->WriteString("info"); // menu name
 	msg_buffer->WriteByte(1);
 	msg_buffer->WriteByte(3);
@@ -324,10 +367,9 @@ void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 	msg_buffer->WriteString("2");  // URL
 
 	msg_buffer->WriteString("Msg");
-	msg_buffer->WriteString(url);
+	msg_buffer->WriteString(final_url);
 
 	engine->MessageEnd();
-
 }
 
 SCON_COMMAND(ma_favourites, 2175, MaFavourites, false);
