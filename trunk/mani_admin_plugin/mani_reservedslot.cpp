@@ -710,7 +710,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	
 	m_iUnaccountedPlayers--;
 	
-	if ((war_mode) || (mani_reserve_slots_number_of_slots.GetInt() == 0))   // with the other method ( zero slots )
+	if ((war_mode) || (!mani_reserve_slots.GetBool()) || (mani_reserve_slots_number_of_slots.GetInt() == 0))   // with the other method ( zero slots )
 	{																		// other player is kicked BEFORE
 		return true;														// NetworkIDValidated
 	}
@@ -718,7 +718,7 @@ bool ManiReservedSlot::NetworkIDValidated(player_t	*player_ptr)
 	total_players = m_iUnaccountedPlayers + GetNumberOfActivePlayers(true);
 	// DirectLogCommand("[DEBUG] Total players on server [%i]\n", total_players);
 
-	if (total_players < (max_players - mani_reserve_slots_number_of_slots.GetInt()))
+	if (total_players <= (max_players - mani_reserve_slots_number_of_slots.GetInt()))
 	{
 		// DirectLogCommand("[DEBUG] No reserve slot action required\n");
 		return true;

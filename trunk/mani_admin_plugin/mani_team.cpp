@@ -585,6 +585,9 @@ bool	ManiTeam::ProcessMaBalancePlayerType
  bool dont_care
 )
 {
+
+	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return true;
+
 	bool return_status = true;
 	player_t target_player;
 	int	t_count = 0;
