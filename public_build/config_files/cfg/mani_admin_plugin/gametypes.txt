@@ -860,6 +860,171 @@
 		}
 	}
 
+	"Day of Defeat"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Dod specific restrictions on certain effects, do not change these
+		// or you will get crashes
+
+		"advert_decal_allowed"	"0"
+		"death_beam_allowed"	"0"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"22"
+
+		// Team manager entities pattern string
+		"team_manager" 		"dod_team_"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"129"
+			"set_model_index"		"9"
+			"teleport"		"106"
+			"eye_position"		"128"
+			"give_item"		"386"
+			"my_combat_character"		"70"
+			"get_velocity"		"138"
+			"map_desc"		"12"
+			"ignite"		"203"
+			"weapon_drop"		"253"
+			"user_cmds"		"403"
+			"set_observer_target"		"360"
+			"weapon_canuse"		"250"
+			"weapon_switch"		"254"
+			"remove_player_item"		"260"
+			"get_weapon_slot"		"258"
+			"give_ammo"		"245"
+			"commit_suicide"		"423"
+			"get_primary_ammo_type"		"317"
+			"get_secondary_ammo_type"		"318"
+			"weapon_get_name"		"310"
+		}
+
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle Allies team
+			"allies"
+			{
+				// Terrorist team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname
+				"spawnpoint_class_name"		"info_player_allies"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Allies"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"918"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"919"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#A"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_a"
+				"reserved_skin"	"reserved_a"
+				"public_skin"	"public_a"
+			}
+
+			// Handle Axis team
+			"axis"
+			{
+				// X team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname
+				"spawnpoint_class_name"		"info_player_axis"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Axis"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"920"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"921"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#X"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_x"
+				"reserved_skin"	"reserved_x"
+				"public_skin"	"public_x"
+			}				
+		}
+	}
+
 	"Team Fortress"
 	{
 		// Set to 1 if spectator is allowed for this mod
