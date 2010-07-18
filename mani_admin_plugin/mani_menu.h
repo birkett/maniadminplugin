@@ -169,7 +169,6 @@ private:
 #if defined ( ORANGE )
 public:
 	void ResetMenuShowing ( int player_index, bool off = true );
-	void SetMenuExpirationTime ( int player_index, float time );
 	
 	bool GetMenuShowing ( int player_index );
 	float GetExpirationTime ( int player_index );

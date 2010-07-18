@@ -163,7 +163,7 @@ private:
 	};
 */
 	void			StartSystemVote	(void);
-	int				ProcessVotes (void);
+	void			ProcessVotes (void);
 	void			ProcessVoteWin (int	win_index);
 	void			ProcessMapWin (int win_index);
 	void			ProcessQuestionWin (int	win_index);
