@@ -115,7 +115,6 @@ bool final
 #if defined ( ORANGE )
 		if ( !g_menu_mgr.GetMenuShowing ( player_index - 1) ) {
 			g_menu_mgr.ResetMenuShowing ( player_index - 1 , false );
-			g_menu_mgr.SetMenuExpirationTime ( player_index - 1, time );
 		}
 #endif
 	}
@@ -1049,7 +1048,10 @@ void MenuManager::GameFrame()
 		
 			MenuPage *menu_page_ptr = mt_ptr->menu_pages[mt_ptr->menu_pages.size() - 1];
 				
-			if ( ( menu_expiration_time[i] != 0.0f ) && (gpGlobals->curtime > menu_expiration_time[i]) ) {
+			time_t current_timestamp;
+			time ( &current_timestamp );
+
+			if ( ( mt_ptr->timeout_timestamp != 0 ) && (current_timestamp >= mt_ptr->timeout_timestamp) ) {
 				menu_showing[i] = false;
 				mt_ptr->Kill();
 			} else {
@@ -1076,21 +1078,6 @@ bool MenuManager::GetMenuShowing(int player_index) {
 		return false;
 
 	return menu_showing[player_index];
-}
-
-void MenuManager::SetMenuExpirationTime(int player_index, float time) {
-	if ( player_index < 0 || player_index >= max_players)
-		return;
-
-	float tmp = 0;
-	if ( time == -1 )
-		tmp = 0;
-	else if ( time < 6 )
-		tmp = 1;
-	else if ( time > 5 )
-		tmp = ( time - 5 );
-
-	menu_expiration_time[player_index] = tmp;
 }
 
 void MenuManager::ResetMenuShowing (int player_index, bool off) {
