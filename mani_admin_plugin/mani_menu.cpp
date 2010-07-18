@@ -894,7 +894,13 @@ void MenuManager::AddMenu(player_t *player_ptr, MenuPage *ptr, int priority, int
 	{
 		time_t current_time;
 		time(&current_time);
+		
+#if defined ( ORANGE )
+		int adjusted_time = ((int)(timeout/5))*5+5; // lock in the menu to 5 second intervals.
+		mt_ptr->timeout_timestamp = current_time + adjusted_time;
+#else
 		mt_ptr->timeout_timestamp = current_time + timeout;
+#endif
 	}
 }
 

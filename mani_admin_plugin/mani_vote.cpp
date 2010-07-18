@@ -1584,7 +1584,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRCon(player_t *player_ptr, const char *comm
 //*******************************************************************************
 // Count Votes
 //*******************************************************************************
-int	ManiVote::ProcessVotes (void)
+void	ManiVote::ProcessVotes (void)
 {
 	int number_of_votes = 0;
 	int	highest_index = 0;
@@ -1677,7 +1677,7 @@ int	ManiVote::ProcessVotes (void)
 		}
 
 		SayToAll(GREEN_CHAT, true, "Vote failed, nobody voted");
-		return 0;
+		return;
 	}
 
 	float vote_percentage = 0.0;
@@ -1725,7 +1725,7 @@ int	ManiVote::ProcessVotes (void)
 			system_vote.map_decided = true;
 		}
 
-		return 0;
+		return;
 	}
 
 	system_vote.winner_index = highest_index;
@@ -1742,24 +1742,22 @@ int	ManiVote::ProcessVotes (void)
 			system_vote.waiting_decision = true;
 			system_vote.waiting_decision_time = gpGlobals->curtime + 30.0;
 
-			// clear out the current menus
+			// clear out all the menus for the admin
 			g_menu_mgr.Kill(&admin);
 
-			// set up the title of the accept vote menu
-			char title[512];
-			memset(title, 0, sizeof(title));
-			_snprintf ( title, sizeof(title), "%s", Translate(NULL, 661, "%s", vote_option_list[highest_index].vote_name));
-
-			//Show the menu!
-			MENUPAGE_CREATE_PARAM(SystemAcceptVotePage, &admin, AddParam("result_text", title), 0, 30);
-			return 0;
+			// Draw the Accept Vote menu
+			MenuPage *ptr = new SystemAcceptVotePage();
+			ptr->params.AddParamVar("result_text", "%s", Translate(NULL, 661, "%s", vote_option_list[highest_index].vote_name));
+			g_menu_mgr.AddMenu(&admin, ptr, 0, 30);
+			ptr->PopulateMenuPage(&admin);
+			ptr->RenderPage(&admin, g_menu_mgr.GetHistorySize(&admin));
+			return;
 		}
 	}
 
 	// Process the win
 	ProcessVoteWin (highest_index);
 	system_vote.vote_in_progress = false;
-	return 0;
 }
 
 int SystemAcceptVoteItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
