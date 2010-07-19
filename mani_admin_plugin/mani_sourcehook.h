@@ -52,6 +52,11 @@ public:
 	bool	Weapon_CanUse(CBaseCombatWeapon *pWeapon);
 	void	UnHookWeapon_CanUse(CBasePlayer *pPlayer);
 	void	HookConCommands();
+
+#if defined ( ORANGE )
+	bf_write *UserMessageBegin (IRecipientFilter *filter, int msg_type);
+#endif
+
 };
 
 extern ManiSMMHooks g_ManiSMMHooks;

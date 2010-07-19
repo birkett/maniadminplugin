@@ -41,6 +41,7 @@ ConVar mani_advert_col_green( "mani_advert_col_green", "0", 0, "This defines the
 ConVar mani_adverts_top_left ("mani_adverts_top_left", "1", 0, "This defines whether advert are shown in the top left corner of the screen (1 = on)",true, 0, true, 1 ); 
 ConVar mani_adverts_chat_area ("mani_adverts_chat_area", "1", 0, "This defines whether advert are shown in the chat area of the screen (1 = on)",true, 0, true, 1 ); 
 ConVar mani_adverts_bottom_area ("mani_adverts_bottom_area", "1", 0, "This defines whether advert are shown in the bottom area of the screen where hints are shown (1 = on)",true, 0, true, 1 ); 
+ConVar mani_hint_sounds ("mani_hint_sounds", "0", 0, "This turns on and off the sounds related to hint messages on Orange Box games", true, 0, true, 1);
 
 ConVar mani_tk_protection( "mani_tk_protection", "1", 0, "This defines whether the tk protection is enabled",true, 0, true, 1 );	
 ConVar mani_tk_forgive( "mani_tk_forgive", "1", 0, "This defines whether the tk forgive menu is on or off",true, 0, true, 1 );	

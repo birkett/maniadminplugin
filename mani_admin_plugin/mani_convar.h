@@ -39,6 +39,7 @@ extern ConVar mani_advert_col_green;
 extern ConVar mani_adverts_top_left;
 extern ConVar mani_adverts_chat_area;
 extern ConVar mani_adverts_bottom_area;
+extern ConVar mani_hint_sounds;
 
 extern ConVar mani_tk_protection;
 extern ConVar mani_tk_forgive;
