@@ -112,6 +112,10 @@ ConCommand *pAutoBuyCmd = NULL;
 ConCommand *pReBuyCmd = NULL;
 ConCommand *pRespawnEntities = NULL;
 
+// these two are needed to eliminate the "hint sound" on OB games
+extern	int hintMsg_message_index;
+extern ConVar mani_hint_sounds;
+
 // Hook declarations
 SH_DECL_HOOK7(IServerGameClients, ProcessUsercmds, SH_NOATTRIB, 0, float, edict_t *, bf_read *, int , int , int , bool , bool );
 SH_DECL_HOOK3(IVoiceServer, SetClientListening, SH_NOATTRIB, 0, bool, int, int, bool);
@@ -121,6 +125,7 @@ SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, 
 SH_DECL_MANUALHOOK1(Player_Weapon_CanUse, 0, 0, 0, bool, CBaseCombatWeapon *);
 #ifdef ORANGE
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, 0, const CCommand &);
+SH_DECL_HOOK2(IVEngineServer, UserMessageBegin, SH_NOATTRIB, 0, bf_write*, IRecipientFilter *, int);
 #else
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, 0);
 #endif
@@ -154,6 +159,13 @@ void	ManiSMMHooks::HookVFuncs(void)
 	{
 		SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, serverdll, &g_ManiSMMHooks, &ManiSMMHooks::LevelInit, false);
 	}
+
+#if defined ( ORANGE )
+	if (engine)
+	{
+		SH_ADD_HOOK_MEMFUNC(IVEngineServer, UserMessageBegin, engine, &g_ManiSMMHooks, &ManiSMMHooks::UserMessageBegin, true );
+	}
+#endif
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 	{
@@ -249,6 +261,30 @@ void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
 	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_Weapon_CanUse, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::Weapon_CanUse, false);
 }
 
+#if defined ( ORANGE )
+bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type)
+{
+
+	if ( mani_hint_sounds.GetBool() ) 
+	{
+		RETURN_META_VALUE(MRES_IGNORED,NULL);
+	}
+
+	player_t player;
+	if ( msg_type == hintMsg_message_index ) 
+	{
+		for ( int i = 0; i < filter->GetRecipientCount(); i++ ) 
+		{
+			player.index = filter->GetRecipientIndex(i);
+			if ( !FindPlayerByIndex(&player) ) continue;
+
+			//Stop Sound!!!
+			esounds->StopSound( player.index, 6, "UI/hint.wav" );
+		}
+	}
+	RETURN_META_VALUE(MRES_IGNORED,NULL);
+}
+#endif 
 
 #ifdef ORANGE
 void RespawnEntities_handler(const CCommand &command)
