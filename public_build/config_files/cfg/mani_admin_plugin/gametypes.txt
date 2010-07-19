@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2010
 //
 // Last Update V1.2V
-// 15.07.2010
+// 18.07.2010
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -396,7 +396,6 @@
 		}
 	}
 
-
 	//
 	// Half-Life 2 Capture the Flag Source mod options. Again this is a multi-team mod.
 	//
@@ -615,16 +614,16 @@
 			"get_weapon_slot"		"258"
 			"give_ammo"		"245"
 			"commit_suicide"		"426"
-			"get_primary_ammo_type"		"323"
-			"get_secondary_ammo_type"		"324"
-			"weapon_get_name"		"316"
+			"get_primary_ammo_type"		"324"
+			"get_secondary_ammo_type"		"325"
+			"weapon_get_name"		"317"
 		}
 
 		"vfuncs_windows"
 		{
-			"get_primary_ammo_type"		"319"
-			"get_secondary_ammo_type"		"320"
-			"weapon_get_name"		"312"
+			"get_primary_ammo_type"		"320"
+			"get_secondary_ammo_type"		"321"
+			"weapon_get_name"		"313"
 		}
 
 		// Setup team structure for mod		
