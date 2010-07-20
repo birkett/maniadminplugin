@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright (c) 2009 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2010 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -1291,6 +1291,8 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 
 	if (player_ptr)
 	{
+		// player called this vote.  Close out the menus for that player before drawing this one!!!!
+		g_menu_mgr.Kill(player_ptr);
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MAP_VOTE, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
@@ -1348,7 +1350,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 	vote_option_list[vote_option_list_size - 1] = vote_option;
 
 	system_vote.delay_action = delay_type;
-	system_vote.vote_type = VOTE_MAP;
+	system_vote.vote_type = VOTE_EXTEND_MAP;
 	if (!player_ptr)
 	{
         system_vote.vote_starter = -1;

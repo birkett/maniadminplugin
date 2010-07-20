@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright (c) 2009 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2010 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -19,7 +19,8 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//
+
+//
 
 
 

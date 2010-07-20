@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright (c) 2009 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2010 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -3997,7 +3997,7 @@ int VoteTypeItem::MenuItemFired(player_t *player_ptr, MenuPage *m_page_ptr)
 		gpCmd->NewCmd();
 		gpCmd->AddParam("ma_voteextend");
 		gpManiVote->ProcessMaVoteExtend(player_ptr, "ma_voteextend", 0, M_MENU);
-		return CLOSE_MENU;
+		return NEW_MENU;
 	}
 	else if (strcmp("randomvoteoptions", sub_option) == 0)
 	{
