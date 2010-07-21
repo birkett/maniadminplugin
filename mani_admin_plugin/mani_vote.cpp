@@ -1287,8 +1287,6 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
-
 	if (player_ptr)
 	{
 		// player called this vote.  Close out the menus for that player before drawing this one!!!!
@@ -1296,6 +1294,13 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteExtend(player_t *player_ptr, const char *co
 		// Check if player is admin
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_MAP_VOTE, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
+	else
+	{
+		// no player called this vote.  Close out all menus!!!!
+		g_menu_mgr.Kill();
+	}
+
+	if (!CanVote(player_ptr)) return PLUGIN_CONTINUE;
 
 	if (system_vote.vote_in_progress)
 	{
