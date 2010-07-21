@@ -119,7 +119,8 @@ void ManiTeamJoin::PlayerTeamEvent(player_t *player_ptr)
 {
 
 	if (war_mode) return; 
-	if (mani_team_join_force_auto.GetInt() == 0) return;
+	if (!mani_team_join_force_auto.GetBool() &&
+		!mani_team_join_keep_same_team.GetBool()) return;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return;
 	if (mani_team_join_keep_same_team.GetInt() == 0) return;
 	if (player_ptr->is_bot) return;
@@ -164,7 +165,8 @@ void ManiTeamJoin::PlayerTeamEvent(player_t *player_ptr)
 PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 {
 	if (war_mode) return PLUGIN_CONTINUE; 
-	if (mani_team_join_force_auto.GetInt() == 0) return PLUGIN_CONTINUE;
+	if (!mani_team_join_force_auto.GetBool() &&
+		!mani_team_join_keep_same_team.GetBool()) return PLUGIN_CONTINUE;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return PLUGIN_CONTINUE;
 
 	int team_number = atoi(team_id);
@@ -178,7 +180,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		return PLUGIN_CONTINUE;
 	}
 
-	if (mani_team_join_keep_same_team.GetInt() == 0 || 
+	if (mani_team_join_force_auto.GetBool() || 
 		FStrEq(player.steam_id,"STEAM_ID_PENDING"))
 	{
 		// We only care about player using auto or spectator
