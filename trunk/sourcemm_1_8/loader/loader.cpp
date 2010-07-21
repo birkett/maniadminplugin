@@ -81,6 +81,9 @@ static const char *backend_names[] =
 #if defined _WIN32
 #define LIBRARY_EXT		".dll"
 #define LIBRARY_MINEXT	".dll"
+#elif defined __APPLE__
+#define LIBRARY_EXT		".dylib"
+#define LIBRARY_MINEXT	".dylib"
 #elif defined __linux__
 #define LIBRARY_EXT		LIB_SUFFIX
 #define LIBRARY_MINEXT	".so"
@@ -179,6 +182,9 @@ mm_GetProcAddress(const char *name)
 #if defined _WIN32
 #define TIER0_NAME			"bin\\tier0.dll"
 #define VSTDLIB_NAME		"bin\\vstdlib.dll"
+#elif defined __APPLE__
+#define TIER0_NAME			"bin/libtier0.dylib"
+#define VSTDLIB_NAME		"bin/libvstdlib.dylib"
 #elif defined __linux__
 #define TIER0_NAME			"bin/" LIB_PREFIX "tier0" LIB_SUFFIX
 #define VSTDLIB_NAME		"bin/" LIB_PREFIX "vstdlib" LIB_SUFFIX
@@ -225,8 +231,6 @@ mm_GetGameName()
 		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
 	}
 
-	mm_UnloadLibrary(lib);
-
 	if (valve_cmdline == NULL)
 	{
 		mm_LogFatal("Could not locate any command line functionality");
@@ -234,6 +238,8 @@ mm_GetGameName()
 	}
 
 	game_name = valve_cmdline()->ParmValue("-game");
+
+	mm_UnloadLibrary(lib);
 
 	/* This probably means that the game directory is actually the current directory */
 	if (!game_name)
@@ -263,7 +269,15 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 		if (engineFactory("VEngineCvar004", NULL) != NULL &&
 			engineFactory("VModelInfoServer002", NULL) != NULL)
 		{
-			if (strcmp(game_name, "tf") == 0 || strcmp(game_name, "dod") == 0)
+			char lib_path[PLATFORM_MAX_PATH];
+
+			/* These would have failed already if they were going to? */
+			mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path));
+			void *lib = mm_LoadLibrary(lib_path, NULL, 0);
+			void *tier0_ctime = mm_GetLibAddress(lib, "Plat_ctime");
+			mm_UnloadLibrary(lib);
+
+			if (tier0_ctime != NULL)
 			{
 				return MMBackend_Episode2Valve;
 			}
