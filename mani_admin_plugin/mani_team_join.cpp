@@ -178,10 +178,10 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		return PLUGIN_CONTINUE;
 	}
 
-	if ((mani_team_join_force_auto.GetInt() == 1) || 
-		FStrEq(player.steam_id,"STEAM_ID_PENDING"))
+	// First check for auto join_force_mode
+	if ((mani_team_join_force_mode.GetInt() == 1) || FStrEq(player.steam_id,"STEAM_ID_PENDING"))
 	{
-		// We only care about player using auto or spectator
+		// if team is 0 (auto) or 1(spec) everything is fine ... continue on
 		if (!gpManiGameType->IsValidActiveTeam(team_number))
 		{
 			return PLUGIN_CONTINUE;
@@ -191,50 +191,30 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		SayToPlayer(LIGHT_GREEN_CHAT, &player, "You must choose Auto-Assign");
 		CSayToPlayer(&player, "You must choose Auto-Assign");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-		//engine->ClientCommand(player.entity, "chooseteam"); // can no longer execute this command
 		return PLUGIN_STOP;
 	}
 
 
 	// at this point mani_team_join_force_mode = 2
+	// if the team DNE, then allow the player through.
+	// otherwise choose their recorded team for them.
 	saved_team_t	*saved_team_record;
 
-	// Find stored team id record for this player
-	if (!this->IsPlayerInTeamJoinList(&player, &saved_team_record))
+	// Find stored team id record for this player or go on if in spec
+	if (!this->IsPlayerInTeamJoinList(&player, &saved_team_record) || (team_number == 1))
 	{
 		// Not found so just go with their choice
-
-		// We only care about player using auto or spectator
-		if (!gpManiGameType->IsValidActiveTeam(team_number))
-		{
-			return PLUGIN_CONTINUE;
-		}
-
-		// Player is trying to join an active team so force auto
-		SayToPlayer(LIGHT_GREEN_CHAT, &player, "You must choose Auto-Assign");
-		CSayToPlayer(&player, "You must choose Auto-Assign");
-		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-		engine->ClientCommand(player.entity, "chooseteam");
-		return PLUGIN_STOP;
-	}
-
-	// Found stored team id for this player, check if trying to join
-	// an active team or not
-	if (team_number != 0 && !gpManiGameType->IsValidActiveTeam(team_number))
-	{
 		return PLUGIN_CONTINUE;
 	}
 
-	if ((mani_team_join_force_mode.GetInt() == 2) && (saved_team_record->team_id != team_number))
+	if ( saved_team_record->team_id != team_number ) 
 	{
-		player.player_info->ChangeTeam(saved_team_record->team_id);
 		SayToPlayer(LIGHT_GREEN_CHAT, &player, "Auto-forced to same team as before!");
 		CSayToPlayer(&player, "Auto-forced to same team as before!");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-		return PLUGIN_STOP;
 	}
-
-	return PLUGIN_CONTINUE;
+	player.player_info->ChangeTeam(saved_team_record->team_id);
+	return PLUGIN_STOP;
 }
 
 //---------------------------------------------------------------------------------
