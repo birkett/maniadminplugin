@@ -191,16 +191,18 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		SayToPlayer(LIGHT_GREEN_CHAT, &player, "You must choose Auto-Assign");
 		CSayToPlayer(&player, "You must choose Auto-Assign");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-		//engine->ClientCommand(player.entity, "chooseteam"); -- can no longer execute this command
+		//engine->ClientCommand(player.entity, "chooseteam"); // can no longer execute this command
 		return PLUGIN_STOP;
 	}
 
+
+	// at this point mani_team_join_force_mode = 2
 	saved_team_t	*saved_team_record;
 
 	// Find stored team id record for this player
 	if (!this->IsPlayerInTeamJoinList(&player, &saved_team_record))
 	{
-		// Not found so just auto them
+		// Not found so just go with their choice
 
 		// We only care about player using auto or spectator
 		if (!gpManiGameType->IsValidActiveTeam(team_number))
