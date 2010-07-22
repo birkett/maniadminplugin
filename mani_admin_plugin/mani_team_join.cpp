@@ -66,8 +66,9 @@ extern	bool war_mode;
 
 static int sort_saved_team_by_steam_id ( const void *m1,  const void *m2);
 
-ConVar mani_team_join_force_auto ("mani_team_join_force_auto", "0", 0, "0 = disabled, 1 = players are forced to select auto when joining", true, 0, true, 1);
-ConVar mani_team_join_keep_same_team ("mani_team_join_keep_same_team", "1", 0, "Players re-joining on the same map will be assigned to the same team", true, 0, true, 1);
+ConVar mani_team_join_force_mode ( "mani_team_join_force_mode", "0", 0, "0 = disabled, 1 = players are forced to select auto when joining, 2 = player can choose inital team when joining", true, 0, true, 2);
+//ConVar mani_team_join_force_auto ("mani_team_join_force_auto", "0", 0, "0 = disabled, 1 = players are forced to select auto when joining", true, 0, true, 1);
+//ConVar mani_team_join_keep_same_team ("mani_team_join_keep_same_team", "1", 0, "Players re-joining on the same map will be assigned to the same team", true, 0, true, 1);
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {
@@ -119,10 +120,8 @@ void ManiTeamJoin::PlayerTeamEvent(player_t *player_ptr)
 {
 
 	if (war_mode) return; 
-	if (!mani_team_join_force_auto.GetBool() &&
-		!mani_team_join_keep_same_team.GetBool()) return;
+	if (!mani_team_join_force_mode.GetBool()) return;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return;
-	if (mani_team_join_keep_same_team.GetInt() == 0) return;
 	if (player_ptr->is_bot) return;
 	if (FStrEq(player_ptr->steam_id, "STEAM_ID_PENDING")) return;
 
@@ -165,8 +164,7 @@ void ManiTeamJoin::PlayerTeamEvent(player_t *player_ptr)
 PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 {
 	if (war_mode) return PLUGIN_CONTINUE; 
-	if (!mani_team_join_force_auto.GetBool() &&
-		!mani_team_join_keep_same_team.GetBool()) return PLUGIN_CONTINUE;
+	if (!mani_team_join_force_mode.GetBool()) return PLUGIN_CONTINUE;
 	if (!gpManiGameType->IsTeamPlayAllowed()) return PLUGIN_CONTINUE;
 
 	int team_number = atoi(team_id);
@@ -180,7 +178,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		return PLUGIN_CONTINUE;
 	}
 
-	if (mani_team_join_force_auto.GetBool() || 
+	if ((mani_team_join_force_auto.GetInt() == 1) || 
 		FStrEq(player.steam_id,"STEAM_ID_PENDING"))
 	{
 		// We only care about player using auto or spectator
@@ -193,7 +191,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		SayToPlayer(LIGHT_GREEN_CHAT, &player, "You must choose Auto-Assign");
 		CSayToPlayer(&player, "You must choose Auto-Assign");
 		ProcessPlayActionSound(&player, MANI_ACTION_SOUND_RESTRICTWEAPON);
-		engine->ClientCommand(player.entity, "chooseteam");
+		//engine->ClientCommand(player.entity, "chooseteam"); -- can no longer execute this command
 		return PLUGIN_STOP;
 	}
 
@@ -225,7 +223,7 @@ PLUGIN_RESULT ManiTeamJoin::PlayerJoin(edict_t *pEntity, char *team_id)
 		return PLUGIN_CONTINUE;
 	}
 
-	if (saved_team_record->team_id != team_number)
+	if ((mani_team_join_force_mode.GetInt() == 2) && (saved_team_record->team_id != team_number))
 	{
 		player.player_info->ChangeTeam(saved_team_record->team_id);
 		SayToPlayer(LIGHT_GREEN_CHAT, &player, "Auto-forced to same team as before!");
