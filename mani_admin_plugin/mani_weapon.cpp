@@ -354,7 +354,7 @@ void ManiWeaponMgr::SetupWeapons()
 
 void	ManiWeaponMgr::PlayerSpawn(player_t *player_ptr) 
 {
-	this->RemoveWeapons(player_ptr, ((mani_weapon_restrict_refund_on_spawn.GetInt() == 0) ? false:true), true);
+	this->RemoveWeapons(player_ptr, mani_weapon_restrict_refund_on_spawn.GetBool(), true);
 }
 
 void	ManiWeaponMgr::AutoBuyReBuy()
