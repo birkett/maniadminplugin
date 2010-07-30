@@ -259,6 +259,7 @@ void LoadSigScans(void)
 	}
 #else 
 	SymbolMap *linux_sym_ptr;
+	linux_sym_ptr = new SymbolMap;
 	if (!linux_sym_ptr->GetLib(gpManiGameType->GetLinuxEngine()))
 	{
 		MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxEngine());
@@ -290,6 +291,7 @@ void LoadSigScans(void)
 		libload_failed = true;
 	}
 #else 
+	linux_sym_ptr = new SymbolMap;
 	if (!linux_sym_ptr->GetLib(gpManiGameType->GetLinuxBin()))
 	{
 		MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxBin());
