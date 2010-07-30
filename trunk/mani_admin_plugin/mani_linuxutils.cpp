@@ -302,12 +302,10 @@ void *SymbolMap::FindAddress(char *name_ptr)
 		if (ptr == NULL)
 		{
 			// Still can't find it so bail out
-			MMsg("SymbolMap::FindAddress - Failed to resolve [%s]\n", name_ptr);
 			return NULL;
 		}
 	}
 
-	MMsg("[%p] found for [%s]\n", ptr->ptr, name_ptr);
 	return ptr->ptr;
 }
 
