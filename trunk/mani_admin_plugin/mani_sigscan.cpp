@@ -9,6 +9,7 @@
 //   #define WIN32_LEAN_AND_MEAN
    #include <windows.h>
    #include <winnt.h>
+   #include "mani_winutils.h"
 #else
    #include <elf.h>
    #include <fcntl.h>
@@ -58,11 +59,7 @@ void *console_echo_addr = NULL;
 void *switch_team_addr = NULL;
 void *set_model_from_class = NULL;
 void *get_file_weapon_info_addr = NULL;
-//void *get_weapon_price_addr = NULL;
-//void *get_weapon_addr = NULL;
 void *weapon_owns_this_type_addr = NULL;
-//void *get_black_market_price_addr = NULL;
-void *update_client_addr = NULL;
 void *connect_client_addr = NULL;
 void *netsendpacket_addr = NULL;
 
@@ -72,141 +69,13 @@ UTIL_Remove_ UTILRemoveFunc;
 CCSGetFileWeaponInfoHandle_ CCSGetFileWeaponInfoHandleFunc;
 
 static void ShowSigInfo(void *ptr, char *sig_name);
-
 #ifdef WIN32
-static void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
-static bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
+static void *FindAddress(CWinSigUtil *sig_util_ptr, char *sig_name);
+#else
+static void *FindAddress(SymbolMap *sym_map_ptr, char *sig_name);
 #endif
 
 class ManiEmptyClass {};
-
-#ifdef WIN32
-
-static 
-unsigned char HexToBin(char hex_char)
-{
-	char upper_char = toupper(hex_char);
-	return ((upper_char >= '0' && upper_char <= '9') ? upper_char - 48:upper_char - 55);
-}
-
-static bool ValidHexChar(char hex_char)
-{
-	char upper_char = toupper(hex_char);
-	return ((upper_char >= '0' && upper_char <= '9') || (upper_char >= 'A' && upper_char <= 'F'));
-}
-
-static
-void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature)
-{
-	unsigned char *pBasePtr = pBaseAddress;
-	unsigned char *pEndPtr = pBaseAddress + baseLength;	
-
-	unsigned char	sigscan[128];
-	bool			sigscan_wildcard[128];
-	unsigned int	scan_length = 0;
-	int				str_index = 0;
-
-	while(1)
-	{
-		if (pSignature[str_index] == ' ')
-		{
-			str_index++;
-			continue;
-		}
-
-		if (pSignature[str_index] == '\0')
-		{
-			break;
-		}
-
-		if (pSignature[str_index] == '?')
-		{
-			sigscan_wildcard[scan_length++] = true;
-			str_index ++;
-			continue;
-		}
-
-		if (pSignature[str_index + 1] == '\0' || 
-			pSignature[str_index + 1] == '?' || 
-			pSignature[str_index + 1] == ' ')
-		{
-			MMsg("Failed to decode [%s], single digit hex code\n", pSignature);
-			return (void *) NULL;
-		}
-
-		// We are expecting a two digit hex code
-		char upper_case1 = toupper(pSignature[str_index]);
-		if (!ValidHexChar(upper_case1))
-		{
-			MMsg("Failed to decode [%s], bad hex code\n", pSignature);
-			return NULL;
-		}
-
-		char upper_case2 = toupper(pSignature[str_index + 1]);
-		if (!ValidHexChar(upper_case2))
-		{
-			MMsg("Failed to decode [%s], bad hex code\n", pSignature);
-			return NULL;
-		}
-
-		// Generate our byte code
-		unsigned char byte = (HexToBin(upper_case1) << 4) + HexToBin(upper_case2);
-		str_index += 2;
-		sigscan_wildcard[scan_length] = false;
-		sigscan[scan_length] = byte;
-		scan_length ++;
-		if (scan_length == sizeof(sigscan))
-		{
-			MMsg("Sigscan too long!\n");
-			return NULL;
-		}
-	}
-
-	unsigned int i;
-	while (pBasePtr < pEndPtr)
-	{
-		for (i=0; i < scan_length; i++)
-		{
-			if (sigscan_wildcard[i] != true && sigscan[i] != pBasePtr[i])
-				break;
-		}
-		//iff i reached the end, we know we have a match!
-		if (i == scan_length)
-			return (void *)pBasePtr;
-		pBasePtr += sizeof(unsigned char);  //search memory in an aligned manner
-	}
-
-	return NULL;
-}
-//Example usage:
-//void *sigaddr = FindSignature(pBaseAddress, baseLength, MKSIG(TerminateRound));
-
-static
-bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len)
-{
-	MEMORY_BASIC_INFORMATION mem;
-
-	if(!pAddr)
-		return false; // GetDllMemInfo failed: !pAddr
-
-	if(!VirtualQuery(pAddr, &mem, sizeof(mem)))
-		return false;
-
-	*base_addr = (unsigned char *)mem.AllocationBase;
-
-	IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER*)mem.AllocationBase;
-	IMAGE_NT_HEADERS *pe = (IMAGE_NT_HEADERS*)((unsigned long)dos+(unsigned long)dos->e_lfanew);
-
-	if(pe->Signature != IMAGE_NT_SIGNATURE) {
-		*base_addr = 0;
-		return false; // GetDllMemInfo failed: pe points to a bad location
-	}
-
-	*base_len = (size_t)pe->OptionalHeader.SizeOfImage;
-	return true;
-}
-
-#endif
 
 bool CCSRoundRespawn(CBaseEntity *pThisPtr)
 {
@@ -379,143 +248,84 @@ CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter
 
 void LoadSigScans(void)
 {
-	// Need to get engine hook here for clients connecting
+	bool libload_failed = false;
 #ifdef WIN32
-	unsigned char *engine_base = 0;
-	size_t engine_len = 0;
-
-	bool engine_success = GetDllMemInfo(engine, &engine_base, &engine_len);
-
-	if (engine_success) {
-		MMsg("Found engine base %p and length %i [%p]\n", engine_base, engine_len, engine_base + engine_len);
-		connect_client_addr = FindSignature (engine_base, engine_len, (unsigned char*) CBaseServer_ConnectClient_Sig);
-		netsendpacket_addr =  FindSignature (engine_base, engine_len, (unsigned char*) NET_SendPacket_Sig);
+	CWinSigUtil *sig_util_ptr;
+	sig_util_ptr = new CWinSigUtil;
+	if (!sig_util_ptr->GetLib(engine))
+	{
+		MMsg("Failed to get base info for engine\n");
+		libload_failed = true;
 	}
-#else
-	// Not using Gamegin for following using engine.so instead
-	SymbolMap *engine_sym_ptr;
-	engine_sym_ptr = new SymbolMap;
-	if (!engine_sym_ptr->GetLib(gpManiGameType->GetLinuxEngine()))
+#else 
+	SymbolMap *linux_sym_ptr;
+	if (!linux_sym_ptr->GetLib(gpManiGameType->GetLinuxEngine()))
 	{
 		MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxEngine());
+		libload_failed = true;
 	}
-
-	connect_client_addr = engine_sym_ptr->FindAddress(CBaseServer_ConnectClient_Linux);
-	netsendpacket_addr  = engine_sym_ptr->FindAddress(NET_SendPacket_Linux);
-
-	/* Call deconstructor to cleanup */
-	delete engine_sym_ptr;
 #endif
-	MMsg("Sigscan info\n");
-	ShowSigInfo(connect_client_addr, "CBaseServer::ConnectClient");
-	ShowSigInfo(netsendpacket_addr, "NET_SendPacket");
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+
+	if (!libload_failed)
+	{
+		connect_client_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CBaseServer_ConnectClient");
+		netsendpacket_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "NET_SendPacket"); 
+	}
+
 #ifdef WIN32
-	// Windows
-	unsigned char *base = 0;
-	size_t len = 0;
-
-	bool success = GetDllMemInfo(gamedll, &base, &len);
-
-	if (success)
-	{
-		MMsg("Found base %p and length %i [%p]\n", base, len, base + len);
-
-		respawn_addr = FindSignature(base, len, (unsigned char *) CCSPlayer_RoundRespawn_Sig);
-		util_remove_addr = FindSignature(base, len, (unsigned char *) UTIL_Remove_Sig);
-		void *is_there_a_bomb_addr = FindSignature(base, len, (unsigned char *) CEntList_Sig);
-		if (is_there_a_bomb_addr)
-		{
-			g_pEList = *(CBaseEntityList **) ((unsigned long) is_there_a_bomb_addr + (unsigned long) CEntList_gEntList);
-		}
-
-		update_client_addr = FindSignature(base, len, (unsigned char *) CBasePlayer_UpdateClientData_Sig);
-		if (update_client_addr)
-		{
-			g_pGRules = *(CGameRules **) ((unsigned long) update_client_addr + (unsigned long) CGameRules_gGameRules);
-		}
-
-		ent_list_find_ent_by_classname = FindSignature(base, len, (unsigned char *) CGlobalEntityList_FindEntityByClassname_Sig);
-		switch_team_addr = FindSignature(base, len, (unsigned char *) CCSPlayer_SwitchTeam_Sig);
-		set_model_from_class = FindSignature(base, len, (unsigned char *) CCSPlayer_SetModelFromClass_Sig);
-		get_file_weapon_info_addr = FindSignature(base, len, (unsigned char *) GetFileWeaponInfoFromHandle_Sig);
-		//get_weapon_price_addr = FindSignature(base, len, (unsigned char *) CCSWeaponInfo_GetWeaponPrice_Sig);
-		//if (get_weapon_price_addr)
-		//{
-		//	unsigned long offset = *(unsigned long *) ((unsigned long) get_weapon_price_addr + (unsigned long) (CCSWeaponInfo_GetWeaponPrice_Offset));
-		//	get_weapon_price_addr = (void *) ((unsigned long) get_weapon_price_addr + (unsigned long) (offset));
-		//}
-		//get_weapon_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_GetWeapon_Sig);
-		//get_black_market_price_addr = FindSignature(base, len, (unsigned char *) CCSGameRules_GetBlackMarketPriceForWeapon_Sig);
-		weapon_owns_this_type_addr = FindSignature(base, len, (unsigned char *) CBaseCombatCharacter_Weapon_OwnsThisType_Sig);
-	}
-	else
-	{
-		MMsg("Did not find base and length for gamedll\n");
-	}
-
+	delete sig_util_ptr;
 #else
-	void *ptr;
+	/* Call deconstructor to cleanup */
+	delete linux_sym_ptr;
+#endif
 
-	// Linux
 	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	libload_failed = false;
 
-	SymbolMap *game_sym_ptr = new SymbolMap;
-	if (!game_sym_ptr->GetLib(gpManiGameType->GetLinuxBin()))
+#ifdef WIN32
+	sig_util_ptr = new CWinSigUtil;
+	if (!sig_util_ptr->GetLib(gamedll))
+	{
+		MMsg("Failed to get base info for gamedll\n");
+		libload_failed = true;
+	}
+#else 
+	if (!linux_sym_ptr->GetLib(gpManiGameType->GetLinuxBin()))
 	{
 		MMsg("Failed to open [%s]\n", gpManiGameType->GetLinuxBin());
+		libload_failed = true;
 	}
-
-	respawn_addr = game_sym_ptr->FindAddress(CCSPlayer_RoundRespawn_Linux);
-	util_remove_addr = game_sym_ptr->FindAddress(UTIL_Remove_Linux);
-	g_pEList = *(CBaseEntityList **) game_sym_ptr->FindAddress(CEntList_Linux);
-	ent_list_find_ent_by_classname = game_sym_ptr->FindAddress(CGlobalEntityList_FindEntityByClassname_Linux);
-	switch_team_addr = game_sym_ptr->FindAddress(CCSPlayer_SwitchTeam_Linux);
-	set_model_from_class = game_sym_ptr->FindAddress(CCSPlayer_SetModelFromClass_Linux);
-
-	ptr = game_sym_ptr->FindAddress(CBaseCombatCharacter_SwitchToNextBestWeapon_Linux);
-	if (ptr)
-	{
-		g_pGRules = *(CGameRules **) ((unsigned long) ptr + (unsigned long) 6);
-	}
-
-	get_file_weapon_info_addr = game_sym_ptr->FindAddress(GetFileWeaponInfoFromHandle_Linux);
-	//get_weapon_price_addr = game_sym_ptr->FindAddress(CCSWeaponInfo_GetWeaponPrice_Linux);
-	//get_weapon_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_GetWeapon_Linux);
-	//get_black_market_price_addr = game_sym_ptr->FindAddress(CCSGameRules_GetBlackMarketPriceForWeapon_Linux);
-	weapon_owns_this_type_addr = game_sym_ptr->FindAddress(CBaseCombatCharacter_Weapon_OwnsThisType_Linux);
-
-	/* Call deconstructor to cleanup */
-	delete game_sym_ptr;
-
-
 #endif
-	MMsg("Sigscan info\n");
-	ShowSigInfo(respawn_addr, "A");
-	ShowSigInfo(util_remove_addr, "B");
+
+	if (!libload_failed)
+	{
+		respawn_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CCSPlayer_RoundRespawn");
+		util_remove_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "UTIL_Remove");
+		g_pEList = (CBaseEntityList *) FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CEntList_gEntList");
+		g_pGRules = (CGameRules *) FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CGameRules_gGameRules");
+		ent_list_find_ent_by_classname = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CGlobalEntityList_FindEntityByClassname"); 
+		switch_team_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CCSPlayer_SwitchTeam"); 
+		set_model_from_class = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CCSPlayer_SetModelFromClass");
+		get_file_weapon_info_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "GetFileWeaponInfoFromHandle");
+		weapon_owns_this_type_addr = FIND_ADDRESS(sig_util_ptr, linux_sym_ptr, "CBaseCombatCharacter_Weapon_OwnsThisType");
+	}
+
+#ifdef WIN32
+	delete sig_util_ptr;
+#else
+	/* Call deconstructor to cleanup */
+	delete linux_sym_ptr;
+#endif
+
 	if (util_remove_addr != NULL)
 	{
 		UTILRemoveFunc = (UTIL_Remove_) util_remove_addr;
 	}
 
-	ShowSigInfo(g_pEList, "C");
-#ifdef WIN32
-	ShowSigInfo(update_client_addr, "D");
-#endif
-	ShowSigInfo(g_pGRules, "D1");
-	ShowSigInfo(ent_list_find_ent_by_classname, "E");
-	ShowSigInfo(switch_team_addr, "F");
-	ShowSigInfo(set_model_from_class, "G");
-	ShowSigInfo(get_file_weapon_info_addr, "H");
 	if (get_file_weapon_info_addr != NULL)
 	{
 		CCSGetFileWeaponInfoHandleFunc = (CCSGetFileWeaponInfoHandle_) get_file_weapon_info_addr;
 	}
-
-//	ShowSigInfo(get_weapon_price_addr, "I");
-//	ShowSigInfo(get_weapon_addr, "J");
-//	ShowSigInfo(get_black_market_price_addr, "K");
-	ShowSigInfo(weapon_owns_this_type_addr, "L");
 }
 
 static
@@ -530,4 +340,63 @@ void ShowSigInfo(void *ptr, char *sig_name)
 		MMsg("%s [%p]\n", sig_name, ptr);
 	}
 }
+
+#ifdef WIN32
+static void *FindAddress(CWinSigUtil *sig_util_ptr, char *sig_name)
+#else
+static void *FindAddress(SymbolMap *sym_map_ptr, char *sig_name)
+#endif
+{
+	sigscan_t *sigscan_details = gpManiGameType->GetSigDetails(sig_name);
+	if (sigscan_details == NULL)
+	{
+		MMsg("Failed to find sig [%s] in gametypes.txt\n", sig_name);
+		return NULL;
+	}
+
+#ifdef WIN32
+	int	sig_type = sigscan_details->win_sig_type;
+	int	index = sigscan_details->win_index;
+
+	void *ptr = sig_util_ptr->FindSignature((unsigned char *) sigscan_details->sigscan);
+#else
+	int	sig_type = sigscan_details->linux_sig_type;
+	int	index = sigscan_details->linux_index;
+
+	void *ptr = sym_map_ptr->FindAddress(sigscan_details->linux_symbol);
+#endif
+
+	if (ptr != NULL)
+	{
+		switch(sig_type)
+		{
+			case SIG_DIRECT:
+				if (index != 0)
+				{
+					MMsg("  Initial [%p] Sig [%s]\n", ptr, sigscan_details->sig_name);
+				}
+				ptr = (void *) ((unsigned long) ptr + (unsigned long) index);
+				break;
+			case SIG_INDIRECT:
+				MMsg("  Initial [%p] Sig [%s]\n", ptr, sigscan_details->sig_name);
+				ptr = *(void **) ((unsigned long) ptr + (unsigned long) index);
+				break;
+			default : 
+				ptr = NULL;
+				break;
+		}
+	}
+
+	if (ptr == NULL)
+	{
+		MMsg("Sig [%s] Failed!!\n", sigscan_details->sig_name);
+	}
+	else
+	{
+		MMsg("Final [%p] [%s]\n", ptr, sigscan_details->sig_name);
+	}
+
+	return ptr;
+}
+
 

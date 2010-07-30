@@ -19,12 +19,6 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
-//
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -88,11 +82,14 @@ ManiGameType::ManiGameType()
 	gpManiGameType = this;
 	Q_memset ( linux_game_bin, 0, 256 );
 	Q_memset ( linux_engine_bin, 0, 256 );
+	this->sigscan_list = NULL;
+	this->sigscan_list_size = 0;
 }
 
 ManiGameType::~ManiGameType()
 {
 	// Cleanup
+	FreeList((void **) &sigscan_list, &sigscan_list_size);
 }
 
 //---------------------------------------------------------------------------------
@@ -362,6 +359,13 @@ void ManiGameType::Init(void)
 		this->GetVFuncs(temp_ptr);
 	}
 
+	// Get the vfunc offsets
+	temp_ptr = base_key_ptr->FindKey("sigs", false);
+	if (temp_ptr)
+	{
+		this->GetSigs(temp_ptr);
+	}
+
 #if defined ( WIN32 )
 	temp_ptr = base_key_ptr->FindKey("vfuncs_windows", false );
 	if ( temp_ptr )
@@ -564,6 +568,103 @@ void ManiGameType::OverrideVFuncs(KeyValues *kv_ptr)
 	return;
 }
 #endif
+
+//---------------------------------------------------------------------------------
+// Purpose: Get Sigscans and store them
+//---------------------------------------------------------------------------------
+void	ManiGameType::GetSigs(KeyValues *kv_ptr)
+{
+	KeyValues *sig_ptr;
+	sigscan_t temp_sig;
+	bool	valid_sig;
+
+	FreeList((void **) &sigscan_list, &sigscan_list_size);
+	
+	sig_ptr = kv_ptr->GetFirstTrueSubKey();
+	if (sig_ptr)
+	{
+		for (;;)
+		{
+			valid_sig = true;
+			Q_memset(&temp_sig, 0, sizeof(sigscan_t));
+
+			Q_strcpy(temp_sig.sig_name, sig_ptr->GetName());
+			temp_sig.win_index = sig_ptr->GetInt("win_index", 0);
+			temp_sig.linux_index = sig_ptr->GetInt("linux_index", 0);
+			Q_strcpy(temp_sig.linux_symbol, sig_ptr->GetString("linux_symbol", "NULL"));
+			Q_strcpy(temp_sig.sigscan, sig_ptr->GetString("sigscan", "NULL"));
+
+			temp_sig.win_sig_type = this->GetSigType((char *) sig_ptr->GetString("win_type", "NULL"));
+			if (temp_sig.win_sig_type == -1)
+			{
+				valid_sig = false;
+			}
+			else
+			{
+				// 99% of the time the linux and win sigscan methods are the same so default the linux type to 
+				// be the same as the windows type if it doesn't exist in the file
+				temp_sig.linux_sig_type = this->GetSigType((char *) sig_ptr->GetString("linux_type", sig_ptr->GetString("win_type", "NULL")));
+				if (temp_sig.linux_sig_type == -1)
+				{
+					valid_sig = false;
+				}
+			}
+
+			if (valid_sig)
+			{
+				AddToList((void **) &sigscan_list, sizeof(sigscan_t), &sigscan_list_size);
+				sigscan_list[sigscan_list_size - 1] = temp_sig;
+			}
+			else
+			{
+				MMsg("Sig [%s] failed on sig type\n", temp_sig.sig_name);
+			}
+
+			sig_ptr = sig_ptr->GetNextKey();
+			if (!sig_ptr)
+			{
+				// End of sigs defined
+				break;
+			}
+		}
+	}
+
+	return;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Get sig details
+//---------------------------------------------------------------------------------
+int	ManiGameType::GetSigType(char *sig_type)
+{
+	if (FStruEq("Direct", sig_type))
+	{
+		return SIG_DIRECT;
+	}
+	else if (FStruEq("Indirect", sig_type))
+	{
+		return SIG_INDIRECT;
+	}
+
+	return -1;
+}
+
+//---------------------------------------------------------------------------------
+// Purpose: Get sig details
+//---------------------------------------------------------------------------------
+sigscan_t	*ManiGameType::GetSigDetails(char *sig_name)
+{
+	// Is it even worth doing a bsearch ?
+	for (int i = 0; i < sigscan_list_size; i++)
+	{
+		if (FStruEq(sig_name, sigscan_list[i].sig_name))
+		{
+			return &(sigscan_list[i]);
+		}
+	}
+
+	return NULL;
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Get weapon costs

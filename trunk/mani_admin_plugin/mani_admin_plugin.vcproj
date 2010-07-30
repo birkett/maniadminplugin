@@ -1167,6 +1167,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\mani_winutils.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\mrecipientfilter.cpp"
 					>
 				</File>
@@ -1496,6 +1500,10 @@
 				</File>
 				<File
 					RelativePath=".\mani_weapon.h"
+					>
+				</File>
+				<File
+					RelativePath=".\mani_winutils.h"
 					>
 				</File>
 				<File

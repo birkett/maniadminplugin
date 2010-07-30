@@ -19,11 +19,6 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
-//
-
-
-
 #ifndef MANI_GAMETYPE_H
 #define MANI_GAMETYPE_H
 
@@ -125,6 +120,23 @@ enum
 	PROP_COLOUR
 };
 
+enum
+{
+	SIG_DIRECT = 0,	// Sigscan points to block of code where index indicates start of the function
+	SIG_INDIRECT, // Sigscan points to a block of code where an index indicates a reference to a call or variable 
+};
+
+struct sigscan_t
+{
+	char	sig_name[64]; // Our header name for the sig
+	int		win_sig_type;     // One of 3 enums DIRECT, CALL or VAR
+	int		linux_sig_type;     // One of 3 enums DIRECT, CALL or VAR
+	char	linux_symbol[128];
+	char	sigscan[256];
+	unsigned int win_index;
+	unsigned int linux_index;
+};
+
 class ManiGameType
 {
 
@@ -195,6 +207,7 @@ public:
 	int         GetPropIndex(int  index);
 	bool		CanUseProp(int index);
 	int			GetPtrIndex(CBaseEntity *pCBE, int index);
+	sigscan_t	*GetSigDetails(char *sig_name);
 
 	struct prop_t
 	{
@@ -215,11 +228,15 @@ public:
 	var_t		var_index[200];
 	int			vfunc_index[200];
 
+
+
 private:
 	void		GetProps(KeyValues *kv_ptr);
 	void		GetVFuncs(KeyValues *kv_ptr);
+	void		GetSigs(KeyValues *kv_ptr);
 	void		DefaultValues(void);
 	bool		FindBaseKey(KeyValues *kv, KeyValues *base_key_ptr);
+	int			GetSigType(char *sig_type);
 #if defined ( WIN32 )
 	void		OverrideVFuncs(KeyValues *kv_ptr);
 #endif
@@ -287,6 +304,8 @@ private:
 
 	FILE *fh;
 
+	sigscan_t	*sigscan_list;
+	int			sigscan_list_size;
 };
 
 extern	ManiGameType *gpManiGameType;
