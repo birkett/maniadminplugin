@@ -113,6 +113,9 @@ class CBaseEntityList;
 #define CBaseCombatCharacter_Weapon_OwnsThisType_Sig "53 8B 5C 24 08 55 56 8B E9 57 33 FF 8D B5 ? ? ? ? 8B 0E 83 F9 FF 74"
 #define CBaseCombatCharacter_Weapon_OwnsThisType_Linux "_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
 
+#define CBaseCombatCharacter_GetActiveWeapon_Sig "8B 81 A8 07 00 00 83 F8 FF 74 ? 8B 15 ? ? ? ? 8B C8 81 E1 FF 0F 00 00"
+#define CBaseCombatCharacter_GetActiveWeapon_Linux "_ZNK20CBaseCombatCharacter15GetActiveWeaponEv"
+
 // CBaseCombatCharacter_GetWeapon
 // Find text 'Battery', skip next two calls one of the next 2 calls is to the function
 //#define CBaseCombatCharacter_GetWeapon_Sig "8B 44 24 04 8B 84 81 ? ? ? ? 83 F8 FF 74 ? 8B 15 ? ? ? ? 8B C8"
