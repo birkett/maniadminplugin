@@ -42,7 +42,7 @@ const int MANI_MAX_PLAYERS = 64;
 #define TEAM_A (2)
 
 // Version information
-const int	gametypes_min_version = 2;
+const int	gametypes_min_version = 3;
 
 #ifdef WIN32
 #define snprintf _snprintf

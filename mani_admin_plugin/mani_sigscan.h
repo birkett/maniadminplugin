@@ -21,6 +21,12 @@ class CBaseCombatCharacter;
 class CBaseCombatWeapon;
 class CBaseEntityList;
 
+#ifdef WIN32
+#define FIND_ADDRESS(_win32_ptr, _linux_ptr, _sig_name) FindAddress(_win32_ptr, _sig_name);
+#else
+#define FIND_ADDRESS(_win32_ptr, _linux_ptr, _sig_name) FindAddress(_linux_ptr, _sig_name);
+#endif
+
 /*19:52.12    ( +c0ldfyr3 ) haha
   19:53.31    ( +c0ldfyr3 ) CBasePlayer_SetFOV
   19:55.10    ( +c0ldfyr3 ) sig was hard enough to find
