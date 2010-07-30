@@ -27,6 +27,25 @@ class CBaseEntityList;
 #define FIND_ADDRESS(_win32_ptr, _linux_ptr, _sig_name) FindAddress(_linux_ptr, _sig_name);
 #endif
 
+extern bool	CCSRoundRespawn(CBaseEntity *pCBE);
+extern bool	CCSUTILRemove(CBaseEntity *pCBE);
+extern CBaseEntity *CGlobalEntityList_FindEntityByClassname(CBaseEntity *pCBE, const char *ent_class);
+extern bool CCSPlayer_SwitchTeam(CBaseEntity *pCBE, int team_index);
+extern bool CCSPlayer_SetModelFromClass(CBaseEntity *pCBE);
+extern CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, int weapon_number);
+extern CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter *pCBCC, const char *weapon_name, int sub_type);
+extern CCSWeaponInfo	*CCSGetFileWeaponInfoFromHandle(unsigned short handle_id);
+extern CBaseEntityList *g_pEList;
+extern CGameRules *g_pGRules;
+extern void LoadSigScans(void);
+
+// *******************************************************************************
+// *******************************************************************************
+// Everything below here is just for reference and not used in the code
+// Sigscans are now held in the gametypes.txt file
+// *******************************************************************************
+// *******************************************************************************
+
 /*19:52.12    ( +c0ldfyr3 ) haha
   19:53.31    ( +c0ldfyr3 ) CBasePlayer_SetFOV
   19:55.10    ( +c0ldfyr3 ) sig was hard enough to find
@@ -121,7 +140,6 @@ class CBaseEntityList;
 //#define CBaseCombatCharacter_GetWeapon_Sig "8B 44 24 04 8B 84 81 ? ? ? ? 83 F8 FF 74 ? 8B 15 ? ? ? ? 8B C8"
 //#define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
 
-// K
 // _ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi
 //#ifdef ORANGE
 //#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B B6 ? ? ? ? 85 F6 74 ? 8B 44 24 08"
@@ -145,30 +163,6 @@ class CBaseEntityList;
 #else
 	#define NET_SendPacket_Sig "A1 ? ? ? ? 83 EC ? 83 78 ? ? 55 8B 6C ? ? 56 57 8B 7C"
 	#define NET_SendPacket_Linux "_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhi"
-#endif
-
-extern bool	CCSRoundRespawn(CBaseEntity *pCBE);
-extern bool	CCSUTILRemove(CBaseEntity *pCBE);
-
-//extern void	CONSOLEEcho(char *,...);
-extern CBaseEntity *CGlobalEntityList_FindEntityByClassname(CBaseEntity *pCBE, const char *ent_class);
-extern bool CCSPlayer_SwitchTeam(CBaseEntity *pCBE, int team_index);
-extern bool CCSPlayer_SetModelFromClass(CBaseEntity *pCBE);
-
-extern CBaseCombatWeapon *CBaseCombatCharacter_GetWeapon(CBaseCombatCharacter *pCBCC, int weapon_number);
-extern CBaseCombatWeapon *CBaseCombatCharacter_Weapon_OwnsThisType(CBaseCombatCharacter *pCBCC, const char *weapon_name, int sub_type);
-
-extern CCSWeaponInfo	*CCSGetFileWeaponInfoFromHandle(unsigned short handle_id);
-extern CBaseEntityList *g_pEList;
-extern CGameRules *g_pGRules;
-//extern int CCSWeaponInfo_GetWeaponPriceFunc(CCSWeaponInfo *weapon_info);
-
-//extern int CCSGameRules_GetBlackMarketPriceForWeaponFunc(int weapon_id);
-
-extern void LoadSigScans(void);
-#ifdef WIN32
-extern void *FindSignature( unsigned char *pBaseAddress, size_t baseLength, unsigned char *pSignature, size_t sigLength);
-extern bool GetDllMemInfo(void *pAddr, unsigned char **base_addr, size_t *base_len);
 #endif
 
 #endif
