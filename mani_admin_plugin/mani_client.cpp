@@ -73,6 +73,8 @@ extern unsigned int g_CallBackCount;
 extern SourceHook::CVector<AdminInterfaceListnerStruct *>g_CallBackList;
 #endif
 
+ConVar mani_disable_old_clients("mani_disable_old_clients","1",0, "Disallows the engine to read the old client files (adminlist.txt, admingroups.txt, immunitylist.txt)");
+
 static int sort_mask_list ( const void *m1,  const void *m2);
 
 static int sort_mask_list ( const void *m1,  const void *m2) 
@@ -570,7 +572,7 @@ bool	ManiClient::Init(void)
 	this->AddBuiltInFlags();
 
 	FreeClients();
-	if (LoadOldStyle())
+	if (!mani_disable_old_clients.GetBool() && LoadOldStyle())
 	{
 		// Loaded from old style adminlist.txt etc so write in new file format
 		WriteClients();
@@ -643,6 +645,15 @@ bool	ManiClient::LoadOldStyle(void)
 	char	old_base_filename[512];
 	char	data_in[2048];
 	bool	loaded_old_style = false;
+
+	//check to see if clients.txt exists first - if so, DO NOT RUN THIS
+	snprintf(base_filename, sizeof (base_filename), "./cfg/%s/clients.txt", mani_path.GetString());
+	file_handle = filesystem->Open (base_filename,"rt",NULL);
+	if ( file_handle != NULL )
+	{
+		filesystem->Close(file_handle);
+		return false;
+	}
 
 
 	//Get admin groups list
