@@ -39,13 +39,15 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "The Hidden" 			=> "-game hidden -secure +map hdn_executive +maxplayers 16",
 "HL2 Assault" 			=> "-game hl2as -secure +map as_citytension +maxplayers 16",
 "HL2 CTF" 			=> "-game hl2ctf -secure +map ctf_defrost +maxplayers 16",
-"Sourceforts" 			=> "-game sourceforts -secure +map sf_magma +maxplayers 32"
+"Sourceforts" 			=> "-game sourceforts -secure +map sf_magma +maxplayers 32",
+"Counter-Strike Source Beta"		=> "-game cstrike_beta -tickrate 66 -secure +map de_dust +maxplayers 32"
 );
 
 %extra_game_path = (
 "Team Fortress 2" 		=> "/orangebox",
 "Day of Defeat Source"		=> "/orangebox",
-"Counter-Strike Source"	=> "/orangebox"
+"Counter-Strike Source"	=> "/orangebox",
+"Counter-Strike Source Beta"	=> "/cssbeta"
 );
 
 print "\n";
