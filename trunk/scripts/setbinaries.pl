@@ -15,8 +15,14 @@ $CORE_BIN="mani_admin_plugin";
 $LINUX_BASE=$BASE_FOLDER;
 $WINDOWS_BASE=$BASE_FOLDER;
 $ROOT_GAME="/srcds_1";
-$ROOT_ORANGE_GAME="/srcds_1/orangebox";
 $PLUGIN_BASE="VSP";
+
+#Setup possible folders where games exist
+%folder_type = (
+"/"				=> "ep1",
+"/orangebox" 	=> "ob",
+"/cssbeta" 		=> "ob"
+);
 
 %option = ();
 getopts("rso", \%option);
@@ -63,33 +69,47 @@ else
 
 $BIN_FOLDER=$DEV_BASE . "/plugin_output";
 
-if ($ORANGE)
+foreach $folder_ext ( keys %folder_type ) 
 {
-    $ENGINE_BASE=$DEV_BASE . $ROOT_ORANGE_GAME;
-} 
-else 
-{
-    $ENGINE_BASE=$DEV_BASE . $ROOT_GAME;
-}
-
-
-$BIN_FILE=$CORE_BIN . $SMM_EXT . $ARCH . $SMM_FILE_EXT;
-$PDB_FILE=$CORE_BIN . $SMM_EXT . $ARCH . ".pdb";
-
-print "INFO:\nDEV_BASE:  $DEV_BASE\nENGINE_BASE:  $ENGINE_BASE\nBIN_FOLDER:  $BIN_FOLDER\n";
-print "File = " . $BIN_FILE . "\n";
-
-opendir MYDIR, "$ENGINE_BASE/";
-@contents = grep !/^\.\.?$/, readdir MYDIR;
-closedir MYDIR;
-
-foreach $listitem ( @contents )
-{
-	if ( -d $ENGINE_BASE . "/" . $listitem && $listitem ne "hl2")
+	$DO_COPY = "FALSE";
+	if ($ORANGE)
 	{
-		if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
+		if (%folder_type->{ $folder_ext } eq "ob")
 		{
-			copy_binaries($listitem);	
+			$DO_COPY = "TRUE";
+		}
+	}
+	else
+	{
+		if (%folder_type->{ $folder_ext } eq "ep1")
+		{
+			$DO_COPY = "TRUE";
+		}
+	}
+	
+	if ($DO_COPY eq "TRUE")
+	{
+		$ENGINE_BASE=$DEV_BASE . $ROOT_GAME . $folder_ext;
+
+		$BIN_FILE=$CORE_BIN . $SMM_EXT . $ARCH . $SMM_FILE_EXT;
+		$PDB_FILE=$CORE_BIN . $SMM_EXT . $ARCH . ".pdb";
+
+		print "\nINFO:\nDEV_BASE:  $DEV_BASE\nENGINE_BASE:  $ENGINE_BASE\nBIN_FOLDER:  $BIN_FOLDER\n";
+		print "File = " . $BIN_FILE . "\n";
+
+		opendir MYDIR, "$ENGINE_BASE/";
+		@contents = grep !/^\.\.?$/, readdir MYDIR;
+		closedir MYDIR;
+
+		foreach $listitem ( @contents )
+		{
+			if ( -d $ENGINE_BASE . "/" . $listitem && $listitem ne "hl2")
+			{
+				if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
+				{
+					copy_binaries($listitem);	
+				}
+			}
 		}
 	}
 }

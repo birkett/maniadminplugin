@@ -34,7 +34,8 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "Half-Life 2 Deathmatch" 	=> "hl2mp",
 "Team Fortress 2" 		=> "tf",
 "Day of Defeat Source" 		=> "dods",
-"Left 4 Dead" 			=> "l4d_full"
+"Left 4 Dead" 			=> "l4d_full",
+"Counter-Strike Source Beta"		=> "cssbeta"
 );
 
 

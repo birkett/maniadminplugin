@@ -14,8 +14,14 @@ sub create_folder;
 $BASE_FOLDER=dirname(rel2abs($0)) . "/../";
 $LINUX_BASE=$BASE_FOLDER;
 $WINDOWS_BASE=$BASE_FOLDER;
-$ROOT_GAME="/srcds_1";
-$ROOT_ORANGE_GAME="/srcds_1/orangebox";
+
+#Setup possible folders where games exist
+$SRCDS="/srcds_1";
+%folder_type = (
+"/"				=> "ep1",
+"/orangebox" 	=> "ob",
+"/cssbeta" 		=> "ob"
+);
 
 if ($^O eq "MSWin32")
 {
@@ -30,12 +36,11 @@ else
 	$DEV_BASE=$LINUX_BASE;
 }
 
-
-$ENGINE_BASE=$DEV_BASE . $ROOT_ORANGE_GAME;
-do_copy();
-
-$ENGINE_BASE=$DEV_BASE . $ROOT_GAME;
-do_copy();
+foreach $folder_ext ( keys %folder_type ) 
+{
+	$ENGINE_BASE=$DEV_BASE . $SRCDS . $folder_ext;
+	do_copy();
+}
 
 	
 sleep(3);

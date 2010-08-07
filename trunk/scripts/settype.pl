@@ -15,7 +15,13 @@ $CORE_BIN="mani_admin_plugin";
 $LINUX_BASE=$BASE_FOLDER;
 $WINDOWS_BASE=$BASE_FOLDER;
 $ROOT_GAME="/srcds_1";
-$ROOT_ORANGE_GAME="/srcds_1/orangebox";
+#Setup possible folders where games exist
+%folder_type = (
+"/"				=> "ep1",
+"/orangebox" 	=> "ob",
+"/cssbeta" 		=> "ob"
+);
+
 
 %option = ();
 getopts("s", \%option);
@@ -46,49 +52,29 @@ else
 }
 
 
-$ENGINE_BASE=$DEV_BASE . $ROOT_ORANGE_GAME;
-$BIN_FILE=$CORE_BIN . $SMM_EXT . $FILE_EXT;
-
-print "$DEV_BASE\n$ENGINE_BASE\n$BIN_FOLDER\n";
-print "File = " . $BIN_FILE . "\n";
-
-opendir MYDIR, "$ENGINE_BASE/";
-@contents = grep !/^\.\.?$/, readdir MYDIR;
-closedir MYDIR;
-
-foreach $listitem ( @contents )
+foreach $folder_ext ( keys %folder_type ) 
 {
-	if ( -d $ENGINE_BASE . "/" . $listitem && $listitem ne "hl2")
+	$ENGINE_BASE=$DEV_BASE . $ROOT_GAME . $folder_ext;
+	$BIN_FILE=$CORE_BIN . $SMM_EXT . $FILE_EXT;
+
+	print "$DEV_BASE\n$ENGINE_BASE\n$BIN_FOLDER\n";
+	print "File = " . $BIN_FILE . "\n";
+
+	opendir MYDIR, "$ENGINE_BASE/";
+	@contents = grep !/^\.\.?$/, readdir MYDIR;
+	closedir MYDIR;
+
+	foreach $listitem ( @contents )
 	{
-		if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
+		if ( -d $ENGINE_BASE . "/" . $listitem && $listitem ne "hl2")
 		{
-			copy_binaries($listitem, "TRUE");	
+			if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
+			{
+				copy_binaries($listitem, %folder_type->{ $folder_ext });	
+			}
 		}
 	}
 }
-
-
-$ENGINE_BASE=$DEV_BASE . $ROOT_GAME;
-$BIN_FILE=$CORE_BIN . $SMM_EXT . $FILE_EXT;
-
-print "$DEV_BASE\n$ENGINE_BASE\n$BIN_FOLDER\n";
-print "File = " . $BIN_FILE . "\n";
-
-opendir MYDIR, "$ENGINE_BASE/";
-@contents = grep !/^\.\.?$/, readdir MYDIR;
-closedir MYDIR;
-
-foreach $listitem ( @contents )
-{
-	if ( -d $ENGINE_BASE . "/" . $listitem && $listitem ne "hl2")
-	{
-		if ( -e $ENGINE_BASE . "/" . $listitem . "/gameinfo.txt")
-		{
-			copy_binaries($listitem, "FALSE");	
-		}
-	}
-}
-	
 	
 sleep(1);
 
@@ -97,7 +83,7 @@ sub copy_binaries
 {
 my $mod_dir = $ENGINE_BASE . "/" . $_[0];
 my $search_curly = 0;
-my $orange_copy = $_[1];
+my $game_engine_type = $_[1];
 
 
 	print "Setting up mod " . $_[0] . "\n";
@@ -167,7 +153,7 @@ my $orange_copy = $_[1];
 		open(DAT, ">$mod_dir/addons/$CORE_BIN.vdf");
 		print DAT "\"Plugin\"\n";
 		print DAT "{\n";
-		if ($orange_copy eq "TRUE")
+		if ($game_engine_type eq "ob")
 		{
 			print DAT "\t\"file\" \"../$_[0]/addons/" . $CORE_BIN . "_i486\"\n";
 		}
