@@ -19,11 +19,6 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
-//
-
-
-
 #ifndef MANI_STATS_H
 #define MANI_STATS_H
 
@@ -109,19 +104,6 @@ struct session_t
 
 	// Extra fields
 	int		user_def[MANI_MAX_USER_DEF];
-};
-
-struct rank_old_t
-{
-        char    steam_id[50];
-        char    name[64];
-        int     kills;
-        int     deaths;
-        int     suicides;
-        int     headshots;
-        float   kd_ratio;
-        time_t  last_connected;
-        int     rank;
 };
 
 struct weaponme_t

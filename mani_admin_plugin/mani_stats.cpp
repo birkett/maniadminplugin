@@ -19,12 +19,6 @@
 // along with Mani Admin Plugin.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
-//
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -3997,10 +3991,8 @@ bool ManiStats::MoreThanOnePlayer(void)
 //---------------------------------------------------------------------------------
 void ManiStats::ReadStats(bool use_steam_id)
 {
-	FileHandle_t file_handle;
-	char	base_filename[512];
-	char	old_base_filename[512];
-	char	stats_version[128];
+	char	core_filename[256];
+	ManiKeyValues *kv_ptr;
 
 	if (use_steam_id && rank_player_list_size != 0)
 	{
@@ -4012,87 +4004,6 @@ void ManiStats::ReadStats(bool use_steam_id)
 	}
 
 	//WriteDebug("ManiStats::ReadStats() In function steam mode [%s]\n" , (use_steam_id ? "TRUE":"FALSE"));
-
-	//Get stats into memory (note this is the old method
-	if (use_steam_id)
-	{
-		snprintf(base_filename, sizeof (base_filename), "./cfg/%s/mani_stats.dat", mani_path.GetString());
-	}
-	else
-	{	
-		snprintf(base_filename, sizeof (base_filename), "./cfg/%s/mani_name_stats.dat", mani_path.GetString());
-	}
-
-	file_handle = filesystem->Open (base_filename,"rb",NULL);
-	if (file_handle != NULL)
-	{
-		if (filesystem->ReadLine (stats_version, sizeof(stats_version) , file_handle) == NULL)
-		{
-			MMsg("Failed to get version string for %s!!\n", base_filename);
-			filesystem->Close(file_handle);
-			return;
-		}
-
-		if (!ParseLine(stats_version, true, false))
-		{
-			MMsg("Failed to get version string for %s, top line empty !!\n", base_filename);
-			filesystem->Close(file_handle);
-			return;
-		}
-
-		rank_t pr;
-        rank_old_t player_rank;
-
-        // Get ranks into memory
-        while (filesystem->Read(&player_rank, sizeof(rank_old_t), file_handle) > 0)
-        {
-				Q_memset(&pr, 0, sizeof(rank_t));
-				Q_strcpy(pr.steam_id, player_rank.steam_id);
-				Q_strcpy(pr.name, player_rank.name);
-				pr.deaths = player_rank.deaths;
-				pr.headshots = player_rank.headshots;
-				pr.kills = player_rank.kills;
-				pr.kd_ratio = player_rank.kd_ratio;
-				pr.last_connected = player_rank.last_connected;
-				pr.rank = player_rank.rank;
-				pr.points = 1000.0;
-				pr.rank_points = 1000.0;
-
-			if (use_steam_id)
-			{
-				AddToList((void **) &rank_player_list, sizeof(rank_t *), &rank_player_list_size);
-				rank_player_list[rank_player_list_size - 1] = (rank_t *) malloc (sizeof(rank_t));
-				*(rank_player_list[rank_player_list_size - 1]) = pr;
-			}
-			else
-			{
-				AddToList((void **) &rank_player_name_list, sizeof(rank_t *), &rank_player_name_list_size);
-				rank_player_name_list[rank_player_name_list_size - 1] = (rank_t *) malloc(sizeof(rank_t));
-				*(rank_player_name_list[rank_player_name_list_size - 1]) = pr;
-			}        
-		}
-
-		filesystem->Close(file_handle);
-
-		if (use_steam_id)
-		{
-			snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_stats.dat.old", mani_path.GetString());
-		}
-		else
-		{	
-			snprintf(old_base_filename, sizeof (old_base_filename), "./cfg/%s/mani_name_stats.dat.old", mani_path.GetString());
-		}
-
-		filesystem->RenameFile(base_filename, old_base_filename);
-		return;
-	}
-
-	// New version in /data/ that is stored in a more friendly format for later
-	// upgrades
-	char	core_filename[256];
-
-	ManiKeyValues *kv_ptr;
-
 	if (use_steam_id)
 	{
 		kv_ptr = new ManiKeyValues("mani_stats.txt");
