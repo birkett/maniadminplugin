@@ -95,10 +95,10 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 
 # compiler options (gcc 3.4.1 to 3.4.6 is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
-COMP_VER=3.4
+COMP_VER=4.1
 #
-CPLUS=/usr/local/gcc-$(COMP_VER)/bin/g++-$(COMP_VER)
-CLINK=/usr/local/gcc-$(COMP_VER)/bin/gcc-$(COMP_VER)
+CPLUS=g++-$(COMP_VER)
+CLINK=gcc-$(COMP_VER)
 CPP_LIB=../stlport/lib/libstlport.a  \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
@@ -107,7 +107,7 @@ CPP_LIB=../stlport/lib/libstlport.a  \
 #	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 
 # put any compiler flags you want passed here
-USER_CFLAGS=
+USER_CFLAGS=-fno-stack-protector
 
 # link flags for your mod, make sure to include any special libraries here
 LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)

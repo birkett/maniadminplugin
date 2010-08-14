@@ -11,7 +11,7 @@ The STLPort library can be downloaded from here http://www.stlport.org/
 
 Once extracted you can run the configure
 
-configure --prefix=/plugins/stlport/ --with-cxx=g++-3.4 --with-cc=gcc-3.4 --without-debug --without-stldebug --enable-static 
+configure --prefix=/plugins/stlport/ --with-cxx=g++-4.1 --with-cc=gcc-4.1 --without-debug --without-stldebug --enable-static --with-extra-cxxflags=-fno-stack-protector --with-extra-cflags=-fno-stack-protector
 cd build/lib
 make install
 
