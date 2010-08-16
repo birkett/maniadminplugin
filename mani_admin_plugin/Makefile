@@ -107,7 +107,7 @@ CPP_LIB=../stlport/lib/libstlport.a  \
 #	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 
 # put any compiler flags you want passed here
-USER_CFLAGS=-fno-stack-protector
+USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
 LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
@@ -122,8 +122,7 @@ ARCH_CFLAGS=-mfpmath=sse -msse -O3 -m32
 
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
 BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
-	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf \
-	-Wall \
+	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -Wall -fno-stack-protector \
 	-D_LINUX -DLINUX -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
         -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp \
 	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp $(SOURCEMM) $(ORANGE)
