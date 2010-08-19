@@ -80,6 +80,7 @@ inline bool FStruEq(const char *sz1, const char *sz2)
 	return(Q_strcmp(sz1, sz2) == 0);
 }
 
+ConVar mani_hlx_prefix ("mani_hlx_prefix", "gameME", 0, "Prefix to be used in HLstatX/gameME messages");
 // Just a load of con commands for HLX stuff
 
 
@@ -295,7 +296,7 @@ CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 	}
 
 	if (!fire_message) return;
-	DrawURL(&mrf, "HLstatsX", url_string);
+	DrawURL(&mrf, mani_hlx_prefix.GetString(), url_string);
 
 	return ;
 }
@@ -380,7 +381,7 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 
 	char	temp_string[1024];
 
-	snprintf (temp_string, sizeof (temp_string), "HLstatsX: %s", say_string);
+	snprintf (temp_string, sizeof (temp_string), "%s: %s", mani_hlx_prefix.GetString(), say_string);
 
 	// Found some players to talk to
 	for (int i = 0; i < target_player_list_size; i++)
