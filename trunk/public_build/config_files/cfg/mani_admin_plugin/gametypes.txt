@@ -2,8 +2,8 @@
 //
 // Mani Admin Plugin 2010
 //
-// Last Update V1.2W
-// 31.07.2010
+// Last Update V1.2V
+// 27.08.2010
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -11,6 +11,11 @@
 // they will not need to be changed unless
 // the source mod author releases an update
 // that requires changes to some of the offsets.
+//
+// We have also taken the hard coded sigs out of
+// the binaries and placed them in this file.  This
+// will allow simple updates of this file to fix
+// issues with updates breaking the binaries.
 //
 // www.mani-admin-plugin.com
 //
@@ -119,7 +124,7 @@
 			"get_secondary_ammo_type"		"291"
 			"weapon_get_name"		"283"
 		}
-		
+
 		"sigs"
 		{
 			"CBaseServer_ConnectClient"
@@ -136,7 +141,7 @@
 				"win_type"		"Direct"		
 			}
 		}
-		
+				
 		"teams"
 		{
 			// As this is only a single team mod (until mp_teamplay 1) we only need one team
@@ -453,7 +458,6 @@
 
 	"Half-Life 2 CTF"
 	{
-		"linux_bin"		"./hl2ctf/bin/server_i486.so"
 		"spectator_allowed"	"1"
 		"spectator_index"	"1"
 		"spectator_group"	"#SPEC"
@@ -713,7 +717,7 @@
 			"CCSPlayer_RoundRespawn"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer12RoundRespawnEv"
-				"sigscan"		"56 8B F1 8B 06 8B 90 ? ? ? ? FF D2 8B 86 ? ? ? ? 85 C0 74 ? 8B 50 ? 85 D2 74 ? 8B 48"
+				"sigscan"		"55 8B ? 51 89 4D ? 8B 45 ? 8B 10 8B 4D ? 8B 82 ? ? ? ? FF D0 6A 00 8B 4D ? E8"
 				"win_type"		"Direct"		
 			}
 			
@@ -753,14 +757,14 @@
 			"CCSPlayer_SwitchTeam"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer10SwitchTeamEi"
-				"sigscan"		"83 EC ? 56 57 8B 7C 24 ? 57 8B F1 E8 ? ? ? ? 83 C4 04"
+				"sigscan"		"55 8B EC 83 EC ? 89 4D ? 8B 45 ? 50 E8 ? ? ? ? 83 C4 04 85 ? 74 ? 83"
 				"win_type"		"Direct"		
 			}
 			
 			"CCSPlayer_SetModelFromClass"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
-				"sigscan"		"51 53 56 57 8B F9 E8 ? ? ? ? 83 F8 02"
+				"sigscan"		"55 8B EC 83 EC 24 ? 4D ? 8B 4D ? E8 ? ? ? ? 83 F8"
 				"win_type"		"Direct"		
 			}
 			
@@ -946,9 +950,9 @@
 			"get_weapon_slot"		"258"
 			"give_ammo"		"245"
 			"commit_suicide"		"423"
-			"get_primary_ammo_type"		"317"
-			"get_secondary_ammo_type"		"318"
-			"weapon_get_name"		"310"
+			"get_primary_ammo_type"		"318"
+			"get_secondary_ammo_type"		"319"
+			"weapon_get_name"		"311"
 		}
 
 		"sigs"
@@ -1128,9 +1132,9 @@
 			"get_weapon_slot"		"258"
 			"give_ammo"		"245"
 			"commit_suicide"		"423"
-			"get_primary_ammo_type"		"317"
-			"get_secondary_ammo_type"		"318"
-			"weapon_get_name"		"310"
+			"get_primary_ammo_type"		"318"
+			"get_secondary_ammo_type"		"319"
+			"weapon_get_name"		"311"
 		}
 
 		"sigs"
@@ -1327,6 +1331,7 @@
 				"win_type"		"Direct"		
 			}
 		}		
+		
 		// Setup team structure for mod		
 		"teams"
 		{
