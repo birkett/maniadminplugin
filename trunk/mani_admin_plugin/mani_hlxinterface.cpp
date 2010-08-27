@@ -296,7 +296,7 @@ CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 	}
 
 	if (!fire_message) return;
-	DrawURL(&mrf, mani_hlx_prefix.GetString(), url_string);
+	DrawURL(&mrf, (char *)mani_hlx_prefix.GetString(), url_string);
 
 	return ;
 }
