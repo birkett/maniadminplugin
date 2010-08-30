@@ -102,6 +102,7 @@ CLINK=gcc-$(COMP_VER)
 CPP_LIB=../stlport/lib/libstlport.a  \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
+	/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libgcc_eh.a \
 	$(EXTRA_LIBS)
 
 #	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
