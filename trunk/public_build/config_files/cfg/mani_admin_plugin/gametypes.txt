@@ -54,7 +54,7 @@
 
 		"hl1_menu_compatible"	"0"
 		"team_play"		"0"
-		"max_messages"		"22"
+		"max_messages"		"34"
 		"cteam_match"		"fo_player_deathmatch"
 
 		// Team manager entities pattern string
@@ -85,7 +85,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"107"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"props"
@@ -129,15 +129,15 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iS3_i"
-				"sigscan"		"56 68 ? ? ? ? 8B F1 E8 ? ? ? ? 8B 06 83 C4 04 8B CE"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
+				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
-				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhi"
-				"sigscan"		"A1 ? ? ? ? 83 EC ? 83 78 ? ? 55 8B 6C ? ? 56 57 8B 7C"
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
 				"win_type"		"Direct"		
 			}
 		}
@@ -190,7 +190,7 @@
 
 		"hl1_menu_compatible"	"0"
 		"team_play"		"0"
-		"max_messages"		"22"
+		"max_messages"		"34"
 		"cteam_match"		"fo_player_deathmatch"
 
 		// Team manager entities pattern string
@@ -221,7 +221,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"107"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"props"
@@ -265,15 +265,15 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iS3_i"
-				"sigscan"		"56 68 ? ? ? ? 8B F1 E8 ? ? ? ? 8B 06 83 C4 04 8B CE"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
+				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
-				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhi"
-				"sigscan"		"A1 ? ? ? ? 83 EC ? 83 78 ? ? 55 8B 6C ? ? 56 57 8B 7C"
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
 				"win_type"		"Direct"		
 			}
 		}
@@ -321,7 +321,7 @@
 
 		"hl1_menu_compatible"	"0"
 		"team_play"		"1"
-		"max_messages"		"22"
+		"max_messages"		"34"
 		"cteam_match"		"fo_player_deathmatch"
 
 		// Team manager entities pattern string
@@ -352,7 +352,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"107"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"props"
@@ -396,15 +396,15 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iS3_i"
-				"sigscan"		"56 68 ? ? ? ? 8B F1 E8 ? ? ? ? 8B 06 83 C4 04 8B CE"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
+				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
-				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhi"
-				"sigscan"		"A1 ? ? ? ? 83 EC ? 83 78 ? ? 55 8B 6C ? ? 56 57 8B 7C"
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
 				"win_type"		"Direct"		
 			}
 		}
@@ -585,7 +585,6 @@
 
 	//
 	// Options for Counter Strike : Source mod
-	// Orange Box Engine
 	//
 	// This should match the description given by the 
 	// server console command ma_game
@@ -672,30 +671,30 @@
 			"set_model_index"		"9"
 			"teleport"		"106"
 			"eye_position"		"128"
-			"give_item"		"387"
+			"give_item"		"388"
 			"my_combat_character"		"70"
 			"get_velocity"		"138"
 			"map_desc"		"12"
 			"ignite"		"203"
 			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
+			"user_cmds"		"405"
+			"set_observer_target"		"362"
 			"weapon_canuse"		"250"
 			"weapon_switch"		"254"
 			"remove_player_item"		"260"
 			"get_weapon_slot"		"258"
 			"give_ammo"		"245"
-			"commit_suicide"		"426"
-			"get_primary_ammo_type"		"324"
-			"get_secondary_ammo_type"		"325"
-			"weapon_get_name"		"317"
+			"commit_suicide"		"427"
+			"get_primary_ammo_type"		"325"
+			"get_secondary_ammo_type"		"326"
+			"weapon_get_name"		"318"
 		}
 
 		"vfuncs_windows"
 		{
-			"get_primary_ammo_type"		"320"
-			"get_secondary_ammo_type"		"321"
-			"weapon_get_name"		"313"
+			"get_primary_ammo_type"		"321"
+			"get_secondary_ammo_type"		"322"
+			"weapon_get_name"		"314"
 		}
 
 		"sigs"
