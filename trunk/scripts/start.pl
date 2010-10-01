@@ -47,7 +47,8 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "Team Fortress 2" 		=> "/orangebox",
 "Day of Defeat Source"		=> "/orangebox",
 "Counter-Strike Source"	=> "/orangebox",
-"Counter-Strike Source Beta"	=> "/cssbeta"
+"Counter-Strike Source Beta"	=> "/cssbeta",
+"Half-Life 2 Deathmatch" 	=> "/orangebox",
 );
 
 print "\n";
