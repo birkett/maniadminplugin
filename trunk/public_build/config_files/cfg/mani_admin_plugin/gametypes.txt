@@ -265,8 +265,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
@@ -396,8 +396,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
@@ -709,8 +709,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
@@ -973,8 +973,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
@@ -1155,8 +1155,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
@@ -1333,8 +1333,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
@@ -1456,8 +1456,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
-				"sigscan"		"83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
