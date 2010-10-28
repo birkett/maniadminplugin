@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2010
 //
 // Last Update V1.2V
-// 26.10.2010
+// 28.10.2010
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
