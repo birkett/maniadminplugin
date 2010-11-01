@@ -48,7 +48,7 @@ const int	gametypes_min_version = 3;
 #define snprintf _snprintf
 #endif
 
-#define COMMON_CORE "1.2va"
+#define COMMON_CORE "1.2vb"
 #define COMMON_VERSION "Mani Admin Plugin 2010 V" COMMON_CORE
 
 #ifdef ORANGE

@@ -180,7 +180,7 @@ bool FillINFOQuery ( const mem_t* data, int data_len, A2S_INFO_t &info, mem_t **
 }
 
 #if defined ( ORANGE )
-#define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8,p9)
+#define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,pw,p8,p9)
 DECL_MEMBER_DETOUR9_void(ConnectClientDetour, void *, int, int, int, int, const char *, const char *, const char*, int ) {
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
