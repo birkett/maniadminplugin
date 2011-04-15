@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2010
 //
 // Last Update V1.2V
-// 28.10.2010
+// 15.04.2011
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -25,6 +25,20 @@
 "gametypes.txt"
 {
 	"version"	"3"
+
+	//
+	// Options for HL2 Deathmatch 
+	//
+	// This one is a bit weird. When the server starts it reports that
+	// the game is called "Half-Life 2 Deathmatch". When the mp_teamplay cvar
+	// is setup in server.cfg the game name changes to either "Deathmatch" or
+	// "Team Deathmatch" which is why there are 3 mod definitions setup for it :/
+	//
+	// When running either it is recommended that you add the command
+	// ma_forcegametype to the end of your server.cfg file or anywhere after the 
+	// mp_teamplay cvar has been set. ma_forcegametype will prompt the plugin to 
+	// reload this file and re-configure itself then reload the skins.
+	//
 
 	//
 	// Options for HL2 Deathmatch 
@@ -102,27 +116,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"387"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"390"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"425"
-			"get_primary_ammo_type"		"318"
-			"get_secondary_ammo_type"		"319"
-			"weapon_get_name"		"311"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"407"
+			"set_observer_target"		"364"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"428"
+			"get_primary_ammo_type"		"320"
+			"get_secondary_ammo_type"		"321"
+			"weapon_get_name"		"313"
 		}
 
 		"sigs"
@@ -238,27 +252,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"387"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"390"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"425"
-			"get_primary_ammo_type"		"318"
-			"get_secondary_ammo_type"		"319"
-			"weapon_get_name"		"311"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"407"
+			"set_observer_target"		"364"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"428"
+			"get_primary_ammo_type"		"320"
+			"get_secondary_ammo_type"		"321"
+			"weapon_get_name"		"313"
 		}
 
 		"sigs"
@@ -369,27 +383,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"387"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"390"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"425"
-			"get_primary_ammo_type"		"318"
-			"get_secondary_ammo_type"		"319"
-			"weapon_get_name"		"311"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"407"
+			"set_observer_target"		"364"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"428"
+			"get_primary_ammo_type"		"320"
+			"get_secondary_ammo_type"		"321"
+			"weapon_get_name"		"313"
 		}
 
 		"sigs"
@@ -451,6 +465,7 @@
 			}				
 		}
 	}
+
 
 	//
 	// Half-Life 2 Capture the Flag Source mod options. Again this is a multi-team mod.
@@ -585,14 +600,6 @@
 
 	//
 	// Options for Counter Strike : Source mod
-	// Orange Box Engine
-	//
-	// This should match the description given by the 
-	// server console command ma_game
-	//
-
-	//
-	// Options for Counter Strike : Source mod
 	//
 	// This should match the description given by the 
 	// server console command ma_game
@@ -675,34 +682,34 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"388"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"391"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"405"
-			"set_observer_target"		"362"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"428"
-			"get_primary_ammo_type"		"325"
-			"get_secondary_ammo_type"		"326"
-			"weapon_get_name"		"318"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"327"
+			"get_secondary_ammo_type"		"328"
+			"weapon_get_name"		"320"
 		}
 
 		"vfuncs_windows"
 		{
-			"get_primary_ammo_type"		"321"
-			"get_secondary_ammo_type"		"322"
-			"weapon_get_name"		"314"
+			"get_primary_ammo_type"		"323"
+			"get_secondary_ammo_type"		"324"
+			"weapon_get_name"		"316"
 		}
 
 		"sigs"
@@ -858,13 +865,6 @@
 	// server console command ma_game
 	//
 
-	//
-	// Options for Day of Defeat : Source
-	//
-	// This should match the description given by the 
-	// server console command ma_game
-	//
-
 	"Day of Defeat: Source"
 	{
 		// Set to 1 if spectator is allowed for this mod
@@ -946,27 +946,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"387"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"390"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"425"
-			"get_primary_ammo_type"		"318"
-			"get_secondary_ammo_type"		"319"
-			"weapon_get_name"		"311"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"407"
+			"set_observer_target"		"364"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"428"
+			"get_primary_ammo_type"		"320"
+			"get_secondary_ammo_type"		"321"
+			"weapon_get_name"		"313"
 		}
 
 		"sigs"
@@ -1128,27 +1128,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"387"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"390"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"425"
-			"get_primary_ammo_type"		"318"
-			"get_secondary_ammo_type"		"319"
-			"weapon_get_name"		"311"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"407"
+			"set_observer_target"		"364"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"428"
+			"get_primary_ammo_type"		"320"
+			"get_secondary_ammo_type"		"321"
+			"weapon_get_name"		"313"
 		}
 
 		"sigs"
@@ -1306,27 +1306,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"106"
-			"eye_position"		"128"
-			"give_item"		"387"
-			"my_combat_character"		"70"
-			"get_velocity"		"138"
+			"teleport"		"107"
+			"eye_position"		"129"
+			"give_item"		"390"
+			"my_combat_character"		"71"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"203"
-			"weapon_drop"		"253"
-			"user_cmds"		"404"
-			"set_observer_target"		"361"
-			"weapon_canuse"		"250"
-			"weapon_switch"		"254"
-			"remove_player_item"		"260"
-			"get_weapon_slot"		"258"
-			"give_ammo"		"245"
-			"commit_suicide"		"428"
-			"get_primary_ammo_type"		"325"
-			"get_secondary_ammo_type"		"326"
-			"weapon_get_name"		"318"
+			"ignite"		"205"
+			"weapon_drop"		"256"
+			"user_cmds"		"407"
+			"set_observer_target"		"364"
+			"weapon_canuse"		"253"
+			"weapon_switch"		"257"
+			"remove_player_item"		"263"
+			"get_weapon_slot"		"261"
+			"give_ammo"		"247"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"327"
+			"get_secondary_ammo_type"		"328"
+			"weapon_get_name"		"320"
 		}
 
 		"sigs"
