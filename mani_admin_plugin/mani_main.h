@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2010 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2011 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -48,8 +48,8 @@ const int	gametypes_min_version = 3;
 #define snprintf _snprintf
 #endif
 
-#define COMMON_CORE "1.2vb"
-#define COMMON_VERSION "Mani Admin Plugin 2010 V" COMMON_CORE
+#define COMMON_CORE "1.2vc"
+#define COMMON_VERSION "Mani Admin Plugin 2011 V" COMMON_CORE
 
 #ifdef ORANGE
 #ifdef SOURCEMM
