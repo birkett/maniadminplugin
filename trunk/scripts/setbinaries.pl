@@ -74,14 +74,14 @@ foreach $folder_ext ( keys %folder_type )
 	$DO_COPY = "FALSE";
 	if ($ORANGE)
 	{
-		if (%folder_type->{ $folder_ext } eq "ob")
+		if ($folder_type{ $folder_ext } eq "ob")
 		{
 			$DO_COPY = "TRUE";
 		}
 	}
 	else
 	{
-		if (%folder_type->{ $folder_ext } eq "ep1")
+		if ($folder_type{ $folder_ext } eq "ep1")
 		{
 			$DO_COPY = "TRUE";
 		}
