@@ -138,8 +138,8 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Orange VSP Release|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Orange VSP Release|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Orange VSP Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">..\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">..\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VSP Debug|Win32'">
@@ -255,7 +255,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SourceMM Release|Win32'">
     <CustomBuildStep>
-      <Command>perl.exe ../scripts/setbinaries.pl -s -r</Command>
+      <Command>perl.exe ../../scripts/setbinaries.pl -s -r</Command>
       <Outputs>..\..\plugin_output\mani_admin_plugin_mm.dll;%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
@@ -313,7 +313,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SourceMM Debug|Win32'">
     <CustomBuildStep>
-      <Command>perl.exe ../scripts/setbinaries.pl -s</Command>
+      <Command>perl.exe ../../scripts/setbinaries.pl -s</Command>
       <Outputs>..\..\plugin_output\mani_admin_plugin_mm.dll;%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
@@ -367,7 +367,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Release|Win32'">
     <CustomBuildStep>
-      <Command>perl.exe ../scripts/setbinaries.pl -s -o -r</Command>
+      <Command>perl.exe ../../scripts/setbinaries.pl -s -o -r</Command>
       <Outputs>..\..\plugin_output\mani_admin_plugin_mm.dll;%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
@@ -424,7 +424,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">
     <CustomBuildStep>
-      <Command>perl.exe ../scripts/setbinaries.pl -o -s</Command>
+      <Command>perl.exe ../../scripts/setbinaries.pl -o -s</Command>
       <Outputs>..\..\plugin_output\mani_admin_plugin_mm.dll;%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
@@ -477,7 +477,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Orange VSP Release|Win32'">
     <CustomBuildStep>
-      <Command>perl.exe ../scripts/setbinaries.pl -o -r</Command>
+      <Command>perl.exe ../../scripts/setbinaries.pl -o -r</Command>
       <Outputs>..\..\plugin_output\mani_admin_plugin.dll;%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
@@ -534,7 +534,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">
     <CustomBuildStep>
-      <Command>perl.exe ../scripts/setbinaries.pl -o</Command>
+      <Command>perl.exe ../../scripts/setbinaries.pl -o</Command>
       <Outputs>..\..\plugin_output\mani_admin_plugin.dll;%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
