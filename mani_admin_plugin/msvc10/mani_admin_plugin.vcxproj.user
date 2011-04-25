@@ -4,7 +4,7 @@
     <LocalDebuggerCommand>..\..\srcds_1\orangebox\srcds.exe</LocalDebuggerCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">
-    <LocalDebuggerCommandArguments>-game cstrike -map de_dust +maxplayers 32 -allowdebug -console</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-game cstrike +map de_dust +maxplayers 32 -allowdebug -console</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Orange VSP Debug|Win32'">
     <LocalDebuggerWorkingDirectory>..\..\srcds_1\orangebox</LocalDebuggerWorkingDirectory>
