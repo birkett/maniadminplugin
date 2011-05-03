@@ -2453,6 +2453,11 @@ bool ShowTopFreePage::Render(player_t *player_ptr)
 	}
 }
 
+void ShowTopFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr);
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_statsme command
 //---------------------------------------------------------------------------------
@@ -2505,6 +2510,7 @@ bool StatsMeFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 
 	if (!gpManiStats->active_player_list[player_ptr->index - 1].active) return false;
 	player_found = gpManiStats->active_player_list[player_ptr->index - 1].rank_ptr;
+	this->target = output_player_ptr;
 
 	// Found player so update their details
 	if (mani_stats_by_steam_id.GetInt() == 1)
@@ -2771,6 +2777,10 @@ bool StatsMeFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 	}
 }
 
+void StatsMeFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr,this->target);
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Process the ma_session command
@@ -2822,6 +2832,8 @@ bool SessionFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 	session_t	*session_ptr = &(gpManiStats->session[index]);
 
 	if (mani_stats.GetInt() == 0) return false;
+
+	this->target = output_player_ptr;
 
 	float	kd_ratio = 0.0;
 
@@ -3092,6 +3104,11 @@ bool SessionFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 	}
 }
 
+void SessionFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr, this->target);
+}
+
 //---------------------------------------------------------------------------------
 // Purpose: Show hit box information
 //---------------------------------------------------------------------------------
@@ -3233,6 +3250,11 @@ bool HitBoxMeFreePage::Render(player_t *player_ptr)
 		kv->deleteThis();
 		return false;
 	}
+}
+
+void HitBoxMeFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr);
 }
 
 //---------------------------------------------------------------------------------
@@ -3389,6 +3411,11 @@ bool WeaponMeFreePage::Render(player_t *player_ptr)
 	page ++;
 	if (page == 4) page = 1;
 	return true;
+}
+
+void WeaponMeFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr);
 }
 
 //---------------------------------------------------------------------------------

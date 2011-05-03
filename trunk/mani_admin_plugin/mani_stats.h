@@ -118,6 +118,7 @@ class ShowTopFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *player_ptr);
+	void	Redraw(player_t *player_ptr);
 	bool	SetStartRank(int start_rank);
 	void	SetBackMore(int list_size);
 private:
@@ -131,6 +132,9 @@ class StatsMeFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *player_ptr, player_t *output_player_ptr);
+	void	Redraw(player_t *player_ptr);
+private:
+	player_t *target;
 };
 
 class SessionFreePage : public FreePage
@@ -138,6 +142,9 @@ class SessionFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *player_ptr, player_t *output_player_ptr);
+	void	Redraw(player_t *player_ptr);
+private:
+	player_t *target;
 };
 
 class HitBoxMeFreePage : public FreePage
@@ -145,6 +152,7 @@ class HitBoxMeFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *player_ptr);
+	void	Redraw(player_t *player_ptr);
 };
 
 class WeaponMeFreePage : public FreePage
@@ -152,6 +160,7 @@ class WeaponMeFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *player_ptr);
+	void	Redraw(player_t *player_ptr);
 	int		page;
 };
 

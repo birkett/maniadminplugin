@@ -117,6 +117,7 @@ public:
 	FreePage() {}
 	~FreePage() {}
 	virtual bool	OptionSelected(player_t *player_ptr, const int option) = 0;
+	virtual void	Redraw(player_t *player_ptr) = 0;
 	void	SetTimeout(int time) {timeout = time;}
 	int		timeout;
 };

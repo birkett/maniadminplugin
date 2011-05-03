@@ -34,6 +34,7 @@ class BetRulesFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *player_ptr);
+	void	Redraw(player_t *player_ptr);
 };
 
 class ManiCSSBetting

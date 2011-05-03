@@ -334,6 +334,10 @@ bool BountyFreePage::Render(player_t *player_ptr)
 	return true;
 }
 
+void BountyFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr);
+}
 
 //---------------------------------------------------------------------------------
 // Purpose: Set a players colour to bounty defaults
