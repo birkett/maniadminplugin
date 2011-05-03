@@ -885,6 +885,14 @@ void MenuManager::AddMenu(player_t *player_ptr, MenuPage *ptr, int priority, int
 	}
 
 	mt_ptr->menu_pages.push_back(ptr);
+
+#if defined ( ORANGE )
+	if ( timeout > 0 && timeout < 6 )
+		timeout = 1;
+	else 
+		timeout -= 5;
+#endif
+
 	ptr->SetTimeout(timeout);
 	if (timeout <= 0)
 	{
@@ -896,7 +904,7 @@ void MenuManager::AddMenu(player_t *player_ptr, MenuPage *ptr, int priority, int
 		time(&current_time);
 		
 #if defined ( ORANGE )
-		int adjusted_time = ((int)(timeout/5))*5+5; // lock in the menu to 5 second intervals.
+		int adjusted_time = ((int)(timeout/5))*5; // lock in the menu to 5 second intervals.
 		mt_ptr->timeout_timestamp = current_time + adjusted_time;
 #else
 		mt_ptr->timeout_timestamp = current_time + timeout;
@@ -927,7 +935,16 @@ void MenuManager::AddFreePage(player_t *player_ptr, FreePage *ptr, int priority,
 	MenuTemporal *mt_ptr = &(player_list[player_ptr->index - 1]);
 	mt_ptr->Kill();
 	mt_ptr->free_page = ptr;
+
 	ptr->SetTimeout(timeout);
+
+#if defined ( ORANGE )
+	if ( timeout > 0 && timeout < 6 )
+		timeout = 1;
+	else 
+		timeout -= 5;
+#endif
+
 	if (timeout <= 0)
 	{
 		mt_ptr->timeout_timestamp = 0;
@@ -936,7 +953,13 @@ void MenuManager::AddFreePage(player_t *player_ptr, FreePage *ptr, int priority,
 	{
 		time_t current_time;
 		time(&current_time);
+
+#if defined ( ORANGE )
+		int adjusted_time = ((int)(timeout/5))*5; // lock in the menu to 5 second intervals.
+		mt_ptr->timeout_timestamp = current_time + adjusted_time;
+#else
 		mt_ptr->timeout_timestamp = current_time + timeout;
+#endif
 	}
 }
 
@@ -1042,20 +1065,33 @@ void MenuManager::GameFrame()
 			}
 		}
 #if defined ( ORANGE )
+		time_t current_timestamp;
+		time ( &current_timestamp );
+
 		if ( gpGlobals->curtime > next_time_check ) {
 			if ( !menu_showing[i] ) continue;
 
 			MenuTemporal *mt_ptr = &player_list[i];
-			
 			if ( mt_ptr->menu_pages.size() == 0 ) {
 				ResetMenuShowing( player.index - 1, false );
+
+				if ( !mt_ptr->free_page ) 
+				{
+					menu_showing[i] = false; // shut her down!
+					continue;
+				}
+	
+				if ( ( mt_ptr->timeout_timestamp != 0 ) && (current_timestamp >= mt_ptr->timeout_timestamp) ) {
+					menu_showing[i] = false;
+					mt_ptr->Kill();
+				} else {
+					mt_ptr->free_page->Redraw(&player);
+				}
 				continue;
 			}
 		
+			Msg("SHOWING %i\n", i);
 			MenuPage *menu_page_ptr = mt_ptr->menu_pages[mt_ptr->menu_pages.size() - 1];
-				
-			time_t current_timestamp;
-			time ( &current_timestamp );
 
 			if ( ( mt_ptr->timeout_timestamp != 0 ) && (current_timestamp >= mt_ptr->timeout_timestamp) ) {
 				menu_showing[i] = false;

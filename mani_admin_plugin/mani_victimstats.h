@@ -36,6 +36,10 @@ class ShowMenuStatsFreePage : public FreePage
 public:
 	bool	OptionSelected(player_t *player_ptr, const int option);
 	bool	Render(player_t *victim_ptr, player_t *attacker_ptr, int timeout);
+	void	Redraw(player_t *player_ptr);
+private:
+	player_t   *target;
+	int			timeout;
 };
 
 class ManiVictimStats

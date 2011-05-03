@@ -471,6 +471,11 @@ bool BetRulesFreePage::Render(player_t *player_ptr)
 	return true;
 }
 
+void BetRulesFreePage::Redraw(player_t *player_ptr)
+{
+	this->Render(player_ptr);
+}
+
 
 //---------------------------------------------------------------------------------
 // Purpose: Reset the bounty lists

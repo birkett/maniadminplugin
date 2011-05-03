@@ -561,6 +561,9 @@ bool ShowMenuStatsFreePage::Render(player_t *victim_ptr, player_t *attacker_ptr,
 
 	int victim_index = victim_ptr->index - 1;
 
+	this->target = attacker_ptr; // victim is "caller"
+	this->timeout = timeout;
+
 	if (mani_show_victim_stats_inflicted_only.GetInt() == 0)
 	{
 		bool found_attacker = false;
@@ -713,6 +716,10 @@ nasty:
 	return false;
 }
 
+void ShowMenuStatsFreePage::Redraw(player_t* player_ptr)
+{
+	this->Render(player_ptr, this->target, this->timeout);
+}
 //---------------------------------------------------------------------------------
 // Purpose: Add hit group text to string
 //---------------------------------------------------------------------------------
