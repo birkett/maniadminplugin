@@ -985,7 +985,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"notes varchar(255) default '', "
 		"PRIMARY KEY (user_id), "
 		"UNIQUE KEY (name) "
-		") TYPE=MyISAM AUTO_INCREMENT=1", 
+		") ENGINE=MyISAM AUTO_INCREMENT=1", 
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBClient()))
 	{
@@ -999,7 +999,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"user_id mediumint(8) NOT NULL default '0', "
 		"steam_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, steam_id) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBSteam()))
 	{
@@ -1013,7 +1013,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"user_id mediumint(8) NOT NULL default '0', "
 		"nick varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, nick) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBNick()))
 	{
@@ -1027,7 +1027,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"user_id mediumint(8) NOT NULL default '0', "
 		"ip_address varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, ip_address) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBIP()))
 	{
@@ -1042,7 +1042,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"type varchar(32) NOT NULL default '', "
 		"description varchar(128) NOT NULL default '', "
 		"PRIMARY KEY (flag_id, type) "
-		") TYPE=MyISAM",
+		") ENGINE=MyISAM",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBFlag()))
 	{
@@ -1062,7 +1062,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (server_id), "
 		"UNIQUE KEY (name) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBServer()))
 	{
@@ -1078,7 +1078,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (group_id, type, server_group_id) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBGroup()))
 	{
@@ -1094,7 +1094,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, group_id, type, server_group_id) "
-		") TYPE=MyISAM",
+		") ENGINE=MyISAM",
 		gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBClientGroup()))
 	{
@@ -1110,7 +1110,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, type, server_group_id) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBClientFlag()))
 	{
@@ -1126,7 +1126,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"type varchar(32) NOT NULL default '', "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (user_id, level_id, type, server_group_id) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBClientLevel()))
 	{
@@ -1142,7 +1142,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"flag_string text, "
 		"server_group_id varchar(32) NOT NULL default '', "
 		"PRIMARY KEY (level_id, type, server_group_id) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBLevel()))
 	{
@@ -1156,7 +1156,7 @@ bool ManiClient::CreateDBTables(player_t *player_ptr)
 		"user_id mediumint(8) NOT NULL default '0', "
 		"server_group_id varchar(32) NOT NULL default '0', "
 		"PRIMARY KEY (user_id, server_group_id) "
-		") TYPE=MyISAM"
+		") ENGINE=MyISAM"
 		, gpManiDatabase->GetDBTablePrefix(),
 		gpManiDatabase->GetDBTBClientServer()))
 	{
