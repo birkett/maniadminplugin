@@ -1071,6 +1071,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaPistols(player_t *player_ptr, const char *
 	this->SetWeaponRestriction("p228", false);
 	this->SetWeaponRestriction("deagle", false);
 	this->SetWeaponRestriction("elite", false);
+	this->SetWeaponRestriction("fiveseven", false);
 
 	LogCommand (player_ptr, "Only pistols can be used next round !!!\n");
 	SayToAll(GREEN_CHAT, true, "%s", Translate(NULL, 3051));
