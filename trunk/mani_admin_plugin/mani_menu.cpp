@@ -1090,7 +1090,6 @@ void MenuManager::GameFrame()
 				continue;
 			}
 		
-			Msg("SHOWING %i\n", i);
 			MenuPage *menu_page_ptr = mt_ptr->menu_pages[mt_ptr->menu_pages.size() - 1];
 
 			if ( ( mt_ptr->timeout_timestamp != 0 ) && (current_timestamp >= mt_ptr->timeout_timestamp) ) {

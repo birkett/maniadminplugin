@@ -1066,7 +1066,7 @@ void WriteToManiLog
 			filehandle = filesystem->Open(mani_log_filename, "at+");
 			if (filehandle == NULL)
 			{
-					MMsg("Failed to open log file [%s] for writing\n", mani_log_filename);
+					MMsg("Failed to open log file [%s] for writing.", mani_log_filename);
 					engine->LogPrint( log_string );
 					return;
 			}
@@ -1097,7 +1097,7 @@ void WriteToManiLog
 			filehandle = filesystem->Open(steam_filename, "at+");
 			if (filehandle == NULL)
 			{
-					MMsg("Failed to open log file [%s] for writing\n", steam_filename);
+					MMsg("Failed to open log file [%s] for writing.\nCheck to make sure %s directory exists\n", steam_filename, mani_log_directory.GetString());
 					engine->LogPrint( log_string );
 					return;
 			}
