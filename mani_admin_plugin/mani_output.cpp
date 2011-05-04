@@ -1087,6 +1087,15 @@ void WriteToManiLog
 				}
 			}
 
+
+			char full_path[512];
+			snprintf(full_path, sizeof(full_path), "./cfg/%s/%s", 
+									mani_path.GetString(),
+									mani_log_directory.GetString()
+									);
+
+			filesystem->CreateDirHierarchy(full_path);
+
 			snprintf(steam_filename, sizeof(steam_filename), "./cfg/%s/%s/%s.log", 
 									mani_path.GetString(),
 									mani_log_directory.GetString(),
