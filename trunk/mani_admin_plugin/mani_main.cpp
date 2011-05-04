@@ -6600,13 +6600,16 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 	ban_by_ip = !((target_string[0]=='S') || (target_string[0]=='s'));
 
 	char unban_cmd[128];
+	char write_file[128];
 	if (!ban_by_ip)
 	{
 		snprintf( unban_cmd, sizeof(unban_cmd), "removeid %s\n", target_string);
+		snprintf( write_file, sizeof(write_file), "writeid\n" );
 	}
 	else
 	{
 		snprintf( unban_cmd, sizeof(unban_cmd), "removeip %s\n", target_string);
+		snprintf( write_file, sizeof(write_file), "writeip\n" );
 	}
 
 	LogCommand (player_ptr, "%s", unban_cmd);
@@ -6614,6 +6617,8 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaUnBan(player_t *player_ptr, const char *com
 	engine->ServerCommand(unban_cmd);
 	gpManiHandleBans->RemoveBan ( target_string );
 	gpManiHandleBans->WriteBans();
+
+	engine->ServerCommand(write_file);
 
 	OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: Unbanned [%s], no confirmation possible", target_string);
 
