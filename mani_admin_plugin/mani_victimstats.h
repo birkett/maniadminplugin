@@ -38,7 +38,7 @@ public:
 	bool	Render(player_t *victim_ptr, player_t *attacker_ptr, int timeout);
 	void	Redraw(player_t *player_ptr);
 private:
-	player_t   *target;
+	int			user_id;
 	int			timeout;
 };
 

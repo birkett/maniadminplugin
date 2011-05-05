@@ -561,7 +561,7 @@ bool ShowMenuStatsFreePage::Render(player_t *victim_ptr, player_t *attacker_ptr,
 
 	int victim_index = victim_ptr->index - 1;
 
-	this->target = attacker_ptr; // victim is "caller"
+	this->user_id = attacker_ptr->user_id; // victim is "caller"
 	this->timeout = timeout;
 
 	if (mani_show_victim_stats_inflicted_only.GetInt() == 0)
@@ -718,7 +718,10 @@ nasty:
 
 void ShowMenuStatsFreePage::Redraw(player_t* player_ptr)
 {
-	this->Render(player_ptr, this->target, this->timeout);
+	player_t target;
+	target.user_id = this->user_id;
+	if ( !FindPlayerByUserID(&target)) return;
+	this->Render(player_ptr, &target, this->timeout);
 }
 //---------------------------------------------------------------------------------
 // Purpose: Add hit group text to string
