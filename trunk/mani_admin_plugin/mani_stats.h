@@ -134,7 +134,7 @@ public:
 	bool	Render(player_t *player_ptr, player_t *output_player_ptr);
 	void	Redraw(player_t *player_ptr);
 private:
-	player_t *target;
+	int		user_id;
 };
 
 class SessionFreePage : public FreePage
@@ -144,7 +144,7 @@ public:
 	bool	Render(player_t *player_ptr, player_t *output_player_ptr);
 	void	Redraw(player_t *player_ptr);
 private:
-	player_t *target;
+	int		user_id;
 };
 
 class HitBoxMeFreePage : public FreePage

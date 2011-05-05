@@ -2510,7 +2510,7 @@ bool StatsMeFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 
 	if (!gpManiStats->active_player_list[player_ptr->index - 1].active) return false;
 	player_found = gpManiStats->active_player_list[player_ptr->index - 1].rank_ptr;
-	this->target = output_player_ptr;
+	this->user_id = output_player_ptr->user_id;
 
 	// Found player so update their details
 	if (mani_stats_by_steam_id.GetInt() == 1)
@@ -2779,7 +2779,10 @@ bool StatsMeFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 
 void StatsMeFreePage::Redraw(player_t *player_ptr)
 {
-	this->Render(player_ptr,this->target);
+	player_t target;
+	target.user_id = this->user_id;
+	if ( !FindPlayerByUserID(&target)) return;
+	this->Render(player_ptr,&target);
 }
 
 //---------------------------------------------------------------------------------
@@ -2833,7 +2836,7 @@ bool SessionFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 
 	if (mani_stats.GetInt() == 0) return false;
 
-	this->target = output_player_ptr;
+	this->user_id = output_player_ptr->user_id;
 
 	float	kd_ratio = 0.0;
 
@@ -3106,7 +3109,10 @@ bool SessionFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 
 void SessionFreePage::Redraw(player_t *player_ptr)
 {
-	this->Render(player_ptr, this->target);
+	player_t target;
+	target.user_id = this->user_id;
+	if ( !FindPlayerByUserID(&target)) return;
+	this->Render(player_ptr, &target);
 }
 
 //---------------------------------------------------------------------------------
