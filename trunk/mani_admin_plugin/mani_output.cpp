@@ -1146,6 +1146,14 @@ CONVAR_CALLBACK_FN(ManiLogMode)
 	// Setup log mode
 	if (log_mode == 0) return;
 
+	char full_path[512];
+	snprintf(full_path, sizeof(full_path), "./cfg/%s/%s", 
+		mani_path.GetString(),
+		mani_log_directory.GetString()
+		);
+
+	filesystem->CreateDirHierarchy(full_path);
+
 	if (log_mode == 1)
 	{
 		struct	tm	*time_now;
