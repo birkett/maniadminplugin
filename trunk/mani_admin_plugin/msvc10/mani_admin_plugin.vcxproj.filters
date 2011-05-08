@@ -333,6 +333,21 @@
     <ClCompile Include="..\asm\asm.c">
       <Filter>asm</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookmaninfo.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cproto.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cvfnptr.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_hookmangen.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookidman.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\detour_macros.h">
