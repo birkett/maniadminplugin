@@ -585,11 +585,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_hookmangen.cpp" />
-    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookidman.cpp" />
-    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookmaninfo.cpp" />
-    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cproto.cpp" />
-    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cvfnptr.cpp" />
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_hookmangen.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookidman.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookmaninfo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cproto.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cvfnptr.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\mani_adverts.cpp" />
     <ClCompile Include="..\mani_afk.cpp" />
     <ClCompile Include="..\mani_anti_rejoin.cpp" />
