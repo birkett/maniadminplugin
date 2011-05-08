@@ -160,19 +160,19 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
 	#Copy Meta Mod Source 1.8.1 binary
-	copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/server" . $SMM_FILE_EXT,
+	copy ("$DEV_BASE/sourcemm_bin/server" . $SMM_FILE_EXT,
 		"$mod_dir/addons/metamod/bin/server" . $SMM_FILE_EXT);
 	
 	if ($ORANGE)
 	{
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/metamod.2.ep2" . $SMM_FILE_EXT,
+		copy ("$DEV_BASE/sourcemm_bin/metamod.2.ep2" . $SMM_FILE_EXT,
 			"$mod_dir/addons/metamod/bin/metamod.2.ep2" . $SMM_FILE_EXT);
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/metamod.2.ep2v" . $SMM_FILE_EXT,
+		copy ("$DEV_BASE/sourcemm_bin/metamod.2.ep2v" . $SMM_FILE_EXT,
 			"$mod_dir/addons/metamod/bin/metamod.2.ep2v" . $SMM_FILE_EXT);
 	}
 	else
 	{
-		copy ("$DEV_BASE/sourcemm_bin/sourcemm_1_8/metamod.1.ep1" . $SMM_FILE_EXT,
+		copy ("$DEV_BASE/sourcemm_bin/metamod.1.ep1" . $SMM_FILE_EXT,
 			"$mod_dir/addons/metamod/bin/metamod.1.ep1" . $SMM_FILE_EXT);
 	}
 
