@@ -561,7 +561,11 @@ bool ShowMenuStatsFreePage::Render(player_t *victim_ptr, player_t *attacker_ptr,
 
 	int victim_index = victim_ptr->index - 1;
 
-	this->user_id = attacker_ptr->user_id; // victim is "caller"
+	if ( attacker_ptr )
+		this->user_id = attacker_ptr->user_id; // victim is "caller"
+	else
+		this->user_id = 0;
+
 	this->timeout = timeout;
 
 	if (mani_show_victim_stats_inflicted_only.GetInt() == 0)
