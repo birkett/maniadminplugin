@@ -223,7 +223,7 @@ then
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
 #	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
-	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o"
+	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o $SOURCEHOOK_OBJ_DIR/sourcehook_hookmangen.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookidman.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookmaninfo.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cproto.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cvfnptr.o"
 	export ORANGE="-DORANGE"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
@@ -266,7 +266,7 @@ then
 	make clean
 fi
 
-make -j 2
+make -j 5
 
 COPY_SMM=""
 COPY_ORANGE=""
