@@ -40,20 +40,6 @@
 	// reload this file and re-configure itself then reload the skins.
 	//
 
-	//
-	// Options for HL2 Deathmatch 
-	//
-	// This one is a bit weird. When the server starts it reports that
-	// the game is called "Half-Life 2 Deathmatch". When the mp_teamplay cvar
-	// is setup in server.cfg the game name changes to either "Deathmatch" or
-	// "Team Deathmatch" which is why there are 3 mod definitions setup for it :/
-	//
-	// When running either it is recommended that you add the command
-	// ma_forcegametype to the end of your server.cfg file or anywhere after the 
-	// mp_teamplay cvar has been set. ma_forcegametype will prompt the plugin to 
-	// reload this file and re-configure itself then reload the skins.
-	//
-
 	"Half-Life 2 Deathmatch"
 	{
 		// Set to 1 if spectator is allowed for this mod
@@ -465,7 +451,6 @@
 			}				
 		}
 	}
-
 
 	//
 	// Half-Life 2 Capture the Flag Source mod options. Again this is a multi-team mod.
