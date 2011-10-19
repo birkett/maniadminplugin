@@ -10,7 +10,7 @@ class CCSWeaponInfo
 public:
 	unsigned char dummy1[6];
 	char weapon_name[80];
-	unsigned char dummy2[2138];
+	unsigned char dummy2[2222];
 	int	dynamic_price;
 	int	standard_price;
 };
