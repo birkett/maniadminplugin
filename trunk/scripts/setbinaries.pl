@@ -21,7 +21,8 @@ $PLUGIN_BASE="VSP";
 %folder_type = (
 "/"				=> "ep1",
 "/orangebox" 	=> "ob",
-"/cssbeta" 		=> "ob"
+"/cssbeta" 		=> "ob",
+"/css"			=> "ob"
 );
 
 %option = ();
