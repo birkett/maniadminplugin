@@ -106,20 +106,20 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"390"
+			"give_item"		"391"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"407"
-			"set_observer_target"		"364"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"428"
+			"commit_suicide"		"429"
 			"get_primary_ammo_type"		"320"
 			"get_secondary_ammo_type"		"321"
 			"weapon_get_name"		"313"
@@ -137,7 +137,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -242,20 +242,20 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"390"
+			"give_item"		"391"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"407"
-			"set_observer_target"		"364"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"428"
+			"commit_suicide"		"429"
 			"get_primary_ammo_type"		"320"
 			"get_secondary_ammo_type"		"321"
 			"weapon_get_name"		"313"
@@ -273,7 +273,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -373,20 +373,20 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"390"
+			"give_item"		"391"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"407"
-			"set_observer_target"		"364"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"428"
+			"commit_suicide"		"429"
 			"get_primary_ammo_type"		"320"
 			"get_secondary_ammo_type"		"321"
 			"weapon_get_name"		"313"
@@ -404,7 +404,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -451,7 +451,7 @@
 			}				
 		}
 	}
-
+	
 	//
 	// Half-Life 2 Capture the Flag Source mod options. Again this is a multi-team mod.
 	//
@@ -671,23 +671,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"391"
+			"give_item"		"392"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"408"
-			"set_observer_target"		"365"
+			"user_cmds"		"409"
+			"set_observer_target"		"366"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"431"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"commit_suicide"		"432"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
 		}
 
 		"vfuncs_windows"
@@ -709,7 +709,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 			
@@ -763,7 +763,7 @@
 			"CCSPlayer_SetModelFromClass"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
-				"sigscan"		"55 8B EC 83 EC 24 ? 4D ? 8B 4D ? E8 ? ? ? ? 83 F8"
+				"sigscan"		"55 8B EC 83 EC ? ? 4D ? 8B 4D ? E8 ? ? ? ? 83 F8"
 				"win_type"		"Direct"		
 			}
 			
@@ -842,6 +842,13 @@
 			}				
 		}
 	}
+	
+	//
+	// Options for Day of Defeat : Source
+	//
+	// This should match the description given by the 
+	// server console command ma_game
+	//
 
 	//
 	// Options for Day of Defeat : Source
@@ -935,20 +942,20 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"390"
+			"give_item"		"391"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"407"
-			"set_observer_target"		"364"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"428"
+			"commit_suicide"		"429"
 			"get_primary_ammo_type"		"320"
 			"get_secondary_ammo_type"		"321"
 			"weapon_get_name"		"313"
@@ -966,7 +973,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1117,20 +1124,20 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"390"
+			"give_item"		"391"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"407"
-			"set_observer_target"		"364"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"428"
+			"commit_suicide"		"429"
 			"get_primary_ammo_type"		"320"
 			"get_secondary_ammo_type"		"321"
 			"weapon_get_name"		"313"
@@ -1148,7 +1155,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1295,23 +1302,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"390"
+			"give_item"		"391"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"205"
 			"weapon_drop"		"256"
-			"user_cmds"		"407"
-			"set_observer_target"		"364"
+			"user_cmds"		"408"
+			"set_observer_target"		"365"
 			"weapon_canuse"		"253"
 			"weapon_switch"		"257"
 			"remove_player_item"		"263"
 			"get_weapon_slot"		"261"
 			"give_ammo"		"247"
-			"commit_suicide"		"431"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"commit_suicide"		"432"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
 		}
 
 		"sigs"
@@ -1326,7 +1333,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}		
@@ -1449,7 +1456,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
+				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
