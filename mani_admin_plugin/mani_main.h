@@ -49,7 +49,7 @@ const int	gametypes_min_version = 3;
 #endif
 
 //majorrelease.minorrealse.patchlevel.buildnumber
-#define COMMON_CORE "1.2.22.7"
+#define COMMON_CORE "1.2.22.8"
 #define COMMON_VERSION "Mani Admin Plugin 2011 V" COMMON_CORE
 
 #ifdef ORANGE

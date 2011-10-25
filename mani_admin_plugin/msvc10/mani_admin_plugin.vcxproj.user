@@ -11,9 +11,9 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SourceMM Orange Debug|Win32'">
-    <LocalDebuggerCommand>..\..\srcds_1\orangebox\srcds.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>..\..\srcds_1\css\srcds.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerWorkingDirectory>..\..\srcds_1\orangebox</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>..\..\srcds_1\css</LocalDebuggerWorkingDirectory>
     <LocalDebuggerCommandArguments>-game cstrike +map de_dust +maxplayers 32 -allowdebug -console</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>
