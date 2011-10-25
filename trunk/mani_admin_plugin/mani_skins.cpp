@@ -708,21 +708,16 @@ void ForceSkinType
 			// Use admin skin for this player
 			if (player_ptr->team == TEAM_A || !gpManiGameType->IsTeamPlayAllowed())
 			{
-				if ( !mani_skins_force_public.GetBool() )
-				{
-					// No model in use
-					if (!player_settings->t_model) break;
-					if (FStrEq(player_settings->t_model,"")) break;
-				}
+				// No model in use
+				if (!player_settings->t_model) break;  // this would be bad
 
 				for (int i = 0; i < skin_list_size; i++)
 				{
 					if (skin_list[i].skin_type == MANI_T_SKIN)
 					{
-						if (mani_skins_force_public.GetInt() == 1)
+						if ((mani_skins_force_public.GetInt() == 1) && (FStrEq(player_settings->t_model,"")))
 						{
 							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
-							Q_strcpy(player_settings->t_model, skin_list[i].skin_name);
 							return;
 						}
 
@@ -740,21 +735,16 @@ void ForceSkinType
 			else if (player_ptr->team == TEAM_B)
 			{
 
-				if ( !mani_skins_force_public.GetBool() )
-				{
-					// No model in use
-					if (!player_settings->ct_model) break;
-					if (FStrEq(player_settings->ct_model,"")) break;
-				}
+				// No model in use
+				if (!player_settings->ct_model) break;  // this would be bad
 
 				for (int i = 0; i < skin_list_size; i++)
 				{
 					if (skin_list[i].skin_type == MANI_CT_SKIN)
 					{
-						if (mani_skins_force_public.GetInt() == 1)
+						if ((mani_skins_force_public.GetInt() == 1) && (FStrEq(player_settings->ct_model,"")))
 						{
 							Prop_SetVal(player_ptr->entity, MANI_PROP_MODEL_INDEX, skin_list[i].model_index);
-							Q_strcpy(player_settings->ct_model, skin_list[i].skin_name);
 							return;
 						}
 
