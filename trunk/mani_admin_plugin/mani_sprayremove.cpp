@@ -309,7 +309,10 @@ int ManiSprayRemove::IsSprayValid(player_t *player_ptr)
 			mrf.MakeReliable();
 			mrf.AddPlayer(player_ptr->index);
 
-			temp_ents->GlowSprite((IRecipientFilter &) mrf, 0, &(spray_list[spray_index].position), spray_glow_index, 15, 0.8, 255);
+			if (gpManiGameType->GetAdvancedEffectsAllowed())
+			{
+				temp_ents->GlowSprite((IRecipientFilter &) mrf, 0, &(spray_list[spray_index].position), spray_glow_index, 15, 0.8, 255);
+			}
 		}
 	}
 

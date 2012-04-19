@@ -324,8 +324,9 @@ void ManiReservedSlot::CleanUp(void)
 //---------------------------------------------------------------------------------
 void ManiReservedSlot::Load(void)
 {
-
 	m_iUnaccountedPlayers = 0;
+
+	if (!connect_client_addr || !netsendpacket_addr) return; // something is wrong with the sigscan
 
 	ManiClientConnectDetour = CDetourManager::CreateDetour( "ConnectClient", connect_client_addr, GET_MEMBER_CALLBACK(ConnectClientDetour), GET_MEMBER_TRAMPOLINE(ConnectClientDetour));
 	if ( ManiClientConnectDetour )
