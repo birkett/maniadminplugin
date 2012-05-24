@@ -1136,7 +1136,7 @@ int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 
 	for ( start = 0; start < 29; start++ ) {
 		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(start);
-		if (weapon_info->weapon_name[0] != 0)
+		if (weapon_info && (weapon_info->weapon_name[0] != 0))
 			break;
 	}
 
