@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2011 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2012 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -2985,5 +2985,5 @@ void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id)
 
 	mrf.AddPlayer(player_ptr->index);
 	Vector pos = player_ptr->entity->GetCollideable()->GetCollisionOrigin();
-	esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, sound_id, 0.7,  ATTN_NORM, 0, 100, &pos);
+	esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, sound_id, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 }

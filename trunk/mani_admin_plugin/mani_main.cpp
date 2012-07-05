@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2011 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2012 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -3359,11 +3359,11 @@ void CAdminPlugin::ProcessExplodeAtCurrentPosition( player_t *player)
 
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, slay_sound_name, 0.5,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, slay_sound_name, 0.5,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 		else
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 	}
 
@@ -6181,11 +6181,11 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		mrf.AddAllPlayers(max_players);
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 		else
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 
 	}
