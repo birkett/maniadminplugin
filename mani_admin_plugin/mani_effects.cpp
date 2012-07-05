@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2011 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2012 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -455,7 +455,7 @@ void ProcessTimeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
-					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, &pos);
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, 0, &pos);
 				}
 
 				//CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -531,7 +531,7 @@ void ProcessTimeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
-					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, &pos);
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, 0, &pos);
 				}
 
 				//CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity();
@@ -736,7 +736,7 @@ void ProcessFireBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
-					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, &pos);
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, 0, &pos);
 				}
 
 				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -812,7 +812,7 @@ void ProcessFireBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
-					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, &pos);
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, 0, &pos);
 				}
 
 				//  *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -1017,7 +1017,7 @@ void ProcessFreezeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
-					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, &pos);
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, 0, &pos);
 				}
 
 				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -1092,7 +1092,7 @@ void ProcessFreezeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
-					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, &pos);
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, 0, &pos);
 				}
 
 				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -1288,7 +1288,7 @@ void ProcessBeaconFrame(void)
 				MRecipientFilter mrf; // this is my class, I'll post it later.
 				mrf.MakeReliable();
 				mrf.AddAllPlayers(max_players);
-				esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, beacon_sound, 0.7,  0.5, 0, 100, &pos);
+				esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, beacon_sound, 0.7,  0.5, 0, 100, 0, &pos);
 			}
 
 			if (gpManiGameType->GetAdvancedEffectsAllowed())
@@ -1470,11 +1470,11 @@ void	SlayPlayer
 		mrf.AddAllPlayers(max_players);
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, slay_sound_name, 0.5,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, slay_sound_name, 0.5,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 		else
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 
 	}
@@ -1646,11 +1646,11 @@ void	ProcessSlapPlayer
 		mrf.AddAllPlayers(max_players);
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 		else
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 
 	}
@@ -1771,11 +1771,11 @@ void	ProcessFreezePlayer(player_t *player_ptr, bool admin_called)
 		mrf.AddAllPlayers(max_players);
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 		else
 		{
-			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, &pos);
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
 		}
 	}
 }

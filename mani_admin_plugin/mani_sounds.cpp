@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2011 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2012 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -601,6 +601,6 @@ void ProcessPlayMenuSound( player_t *target_player_ptr, char *sound_name)
 	MRecipientFilter mrf; 
 	mrf.MakeReliable();
 	mrf.AddPlayer(target_player_ptr->index);
-	esounds->EmitSound((IRecipientFilter &)mrf, target_player_ptr->index, CHAN_AUTO, sound_name, 0.7,  0.0, 0, 100, &pos);
+	esounds->EmitSound((IRecipientFilter &)mrf, target_player_ptr->index, CHAN_AUTO, sound_name, 0.7,  0.0, 0, 100, 0, &pos);
 
 }
