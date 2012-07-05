@@ -1,9 +1,9 @@
 // ************************************************
 //
-// Mani Admin Plugin 2011
+// Mani Admin Plugin 2012
 //
-// Last Update V1.2.22.9
-// 26.04.2012
+// Last Update V1.2.22.11
+// 04.07.2012
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -106,23 +106,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"392"
+			"give_item"		"393"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"409"
-			"set_observer_target"		"366"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"430"
-			"get_primary_ammo_type"		"321"
-			"get_secondary_ammo_type"		"322"
-			"weapon_get_name"		"314"
+			"ignite"		"206"
+			"weapon_drop"		"258"
+			"user_cmds"		"410"
+			"set_observer_target"		"367"
+			"weapon_canuse"		"255"
+			"weapon_switch"		"259"
+			"remove_player_item"		"265"
+			"get_weapon_slot"		"263"
+			"give_ammo"		"249"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"325"
+			"get_secondary_ammo_type"		"326"
+			"weapon_get_name"		"318"
 		}
 
 		"sigs"
@@ -242,23 +242,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"392"
+			"give_item"		"393"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"409"
-			"set_observer_target"		"366"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"430"
-			"get_primary_ammo_type"		"321"
-			"get_secondary_ammo_type"		"322"
-			"weapon_get_name"		"314"
+			"ignite"		"206"
+			"weapon_drop"		"258"
+			"user_cmds"		"410"
+			"set_observer_target"		"367"
+			"weapon_canuse"		"255"
+			"weapon_switch"		"259"
+			"remove_player_item"		"265"
+			"get_weapon_slot"		"263"
+			"give_ammo"		"249"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"325"
+			"get_secondary_ammo_type"		"326"
+			"weapon_get_name"		"318"
 		}
 
 		"sigs"
@@ -373,23 +373,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"392"
+			"give_item"		"393"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"409"
-			"set_observer_target"		"366"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"430"
-			"get_primary_ammo_type"		"321"
-			"get_secondary_ammo_type"		"322"
-			"weapon_get_name"		"314"
+			"ignite"		"206"
+			"weapon_drop"		"258"
+			"user_cmds"		"410"
+			"set_observer_target"		"367"
+			"weapon_canuse"		"255"
+			"weapon_switch"		"259"
+			"remove_player_item"		"265"
+			"get_weapon_slot"		"263"
+			"give_ammo"		"249"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"325"
+			"get_secondary_ammo_type"		"326"
+			"weapon_get_name"		"318"
 		}
 
 		"sigs"
@@ -647,7 +647,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"111"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"59"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -671,30 +671,30 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"393"
+			"give_item"		"394"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"410"
-			"set_observer_target"		"367"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"433"
-			"get_primary_ammo_type"		"328"
-			"get_secondary_ammo_type"		"329"
-			"weapon_get_name"		"321"
+			"ignite"		"206"
+			"weapon_drop"		"258"
+			"user_cmds"		"411"
+			"set_observer_target"		"368"
+			"weapon_canuse"		"255"
+			"weapon_switch"		"259"
+			"remove_player_item"		"265"
+			"get_weapon_slot"		"263"
+			"give_ammo"		"249"
+			"commit_suicide"		"434"
+			"get_primary_ammo_type"		"333"
+			"get_secondary_ammo_type"		"334"
+			"weapon_get_name"		"326"
 		}
 
 		"vfuncs_windows"
 		{
-			"get_primary_ammo_type"		"323"
-			"get_secondary_ammo_type"		"324"
-			"weapon_get_name"		"316"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
 		}
 
 		"sigs"
@@ -702,14 +702,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"B8 ? ? ? ? E8 ? ? ? ? 53 55 56 8B ? ? ? ? ? ? 57 8B ? ? ? ? ? ? 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
 				"win_type"		"Direct"		
 			}
 			
@@ -723,7 +723,7 @@
 			"UTIL_Remove"
 			{
 				"linux_symbol"	"_Z11UTIL_RemoveP11CBaseEntity"
-				"sigscan"		"8B 44 24 04 85 C0 74 ? 83 C0 0C 89 44 24 04 E9 7C FF FF FF"
+				"sigscan"		"55 8B EC 8B 45 08 85 C0 74 ? 83 C0 0C ? ? 7D FF FF FF"
 				"win_type"		"Direct"
 			}
 			
@@ -739,7 +739,7 @@
 			"CGameRules_gGameRules"
 			{
 				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
-				"sigscan"		"83 EC 38 53 56 8B F1 57 8D 4C"
+				"sigscan"		"55 8B EC 83 EC 38 53 56 8B F1 57 8D 4D C8"
 				"win_type"		"Indirect"
 				"linux_type"	"Indirect"
 				"win_index"		"109"
@@ -749,7 +749,7 @@
 			"CGlobalEntityList_FindEntityByClassname"
 			{
 				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
-				"sigscan"		"53 55 56 8B F1 8B 4C 24 ? 85 C9 57 74 ? 8B 01 8B 50 08 FF D2"
+				"sigscan"		"55 8B EC 53 56 8B F1 8B 4D 08 85 C9 57 74 ? 8B 01 8B 50 08 FF D2"
 				"win_type"		"Direct"		
 			}
 			
@@ -770,16 +770,17 @@
 			"GetFileWeaponInfoFromHandle"
 			{
 				"linux_symbol"	"_Z27GetFileWeaponInfoFromHandlet"
-				"sigscan"		"66 8B 44 24 04 66 3B 05 ? ? ? ? 73 ? 66 3D FF FF"
+				"sigscan"		"55 8B EC 66 8B 45 08 66 3B 05 ? ? ? ? 73 ? 66 3D FF FF"
 				"win_type"		"Direct"		
 			}
 			
 			"CBaseCombatCharacter_Weapon_OwnsThisType"
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"53 8B 5C 24 08 55 56 8B E9 57 33 FF 8D B5 ? ? ? ? 8B 0E 83 F9 FF 74"
+				"sigscan"		"55 8B EC 51 53 8B 5D 08 56 57 89 4D FC 33 FF"
 				"win_type"		"Direct"		
 			}
+
 		}
 		
 		// Setup team structure for mod		
@@ -843,13 +844,6 @@
 		}
 	}
 	
-	//
-	// Options for Day of Defeat : Source
-	//
-	// This should match the description given by the 
-	// server console command ma_game
-	//
-
 	//
 	// Options for Day of Defeat : Source
 	//
@@ -942,23 +936,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"392"
+			"give_item"		"393"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"409"
-			"set_observer_target"		"366"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"430"
-			"get_primary_ammo_type"		"321"
-			"get_secondary_ammo_type"		"322"
-			"weapon_get_name"		"314"
+			"ignite"		"206"
+			"weapon_drop"		"258"
+			"user_cmds"		"410"
+			"set_observer_target"		"367"
+			"weapon_canuse"		"255"
+			"weapon_switch"		"259"
+			"remove_player_item"		"265"
+			"get_weapon_slot"		"263"
+			"give_ammo"		"249"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"325"
+			"get_secondary_ammo_type"		"326"
+			"weapon_get_name"		"318"
 		}
 
 		"sigs"
@@ -1124,23 +1118,23 @@
 			"set_model_index"		"9"
 			"teleport"		"107"
 			"eye_position"		"129"
-			"give_item"		"392"
+			"give_item"		"393"
 			"my_combat_character"		"71"
 			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"409"
-			"set_observer_target"		"366"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"430"
-			"get_primary_ammo_type"		"321"
-			"get_secondary_ammo_type"		"322"
-			"weapon_get_name"		"314"
+			"ignite"		"206"
+			"weapon_drop"		"258"
+			"user_cmds"		"410"
+			"set_observer_target"		"367"
+			"weapon_canuse"		"255"
+			"weapon_switch"		"259"
+			"remove_player_item"		"265"
+			"get_weapon_slot"		"263"
+			"give_ammo"		"249"
+			"commit_suicide"		"431"
+			"get_primary_ammo_type"		"325"
+			"get_secondary_ammo_type"		"326"
+			"weapon_get_name"		"318"
 		}
 
 		"sigs"
@@ -1298,27 +1292,27 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"130"
+			"eye_angles"		"131"
 			"set_model_index"		"9"
-			"teleport"		"107"
-			"eye_position"		"129"
-			"give_item"		"392"
-			"my_combat_character"		"71"
-			"get_velocity"		"139"
+			"teleport"		"108"
+			"eye_position"		"130"
+			"give_item"		"394"
+			"my_combat_character"		"72"
+			"get_velocity"		"140"
 			"map_desc"		"12"
-			"ignite"		"205"
-			"weapon_drop"		"257"
-			"user_cmds"		"409"
-			"set_observer_target"		"366"
-			"weapon_canuse"		"254"
-			"weapon_switch"		"258"
-			"remove_player_item"		"264"
-			"get_weapon_slot"		"262"
-			"give_ammo"		"248"
-			"commit_suicide"		"433"
-			"get_primary_ammo_type"		"329"
-			"get_secondary_ammo_type"		"330"
-			"weapon_get_name"		"322"
+			"ignite"		"207"
+			"weapon_drop"		"259"
+			"user_cmds"		"411"
+			"set_observer_target"		"368"
+			"weapon_canuse"		"256"
+			"weapon_switch"		"260"
+			"remove_player_item"		"266"
+			"get_weapon_slot"		"264"
+			"give_ammo"		"250"
+			"commit_suicide"		"435"
+			"get_primary_ammo_type"		"334"
+			"get_secondary_ammo_type"		"335"
+			"weapon_get_name"		"327"
 		}
 
 		"sigs"
@@ -1336,7 +1330,7 @@
 				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
 				"win_type"		"Direct"		
 			}
-		}
+		}		
 		
 		// Setup team structure for mod		
 		"teams"
@@ -1438,10 +1432,10 @@
 
 		"advanced_effects"
 		{
-			"enable_linux"	"1"
-			"enable_win"	"0"
-			"vfunc_Offset"	"12"
-			"code_Offset"	"59"
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"59"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"sigs"
