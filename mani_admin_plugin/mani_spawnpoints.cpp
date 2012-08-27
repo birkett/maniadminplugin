@@ -613,8 +613,11 @@ CON_COMMAND(ma_dumpspawnpoints, "ma_dumpspawnpoints (Dumps built in default spaw
 		first_time = true;
 		for (int i = 0; i < edict_count; i++)
 		{
+#if defined ( GAME_CSGO )
+			edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 			edict_t *pEntity = engine->PEntityOfEntIndex(i);
-			if(pEntity)
+#endif			if(pEntity)
 			{
 				if (Q_stristr(pEntity->GetClassName(), classname) != NULL)
 				{

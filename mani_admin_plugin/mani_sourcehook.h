@@ -53,7 +53,9 @@ public:
 	void	UnHookWeapon_CanUse(CBasePlayer *pPlayer);
 	void	HookConCommands();
 
-#if defined ( ORANGE )
+#if defined ( GAME_CSGO )
+	bf_write *UserMessageBegin (IRecipientFilter *filter, int msg_type, const char * msg);
+#elif defined ( GAME_ORANGE )
 	bf_write *UserMessageBegin (IRecipientFilter *filter, int msg_type);
 #endif
 

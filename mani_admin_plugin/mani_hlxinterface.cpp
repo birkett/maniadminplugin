@@ -96,7 +96,7 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
 	if (mani_use_amx_style_menu.GetInt() == 0 || !gpManiGameType->IsAMXMenuAllowed()) return ;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);
@@ -201,7 +201,7 @@ CON_COMMAND(ma_hlx_msay, "ma_hlx_msay (<time 0 = permanent> <target> <message>)"
 CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);
@@ -245,7 +245,11 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 
 //	snprintf(temp_string, sizeof(temp_string), "%s", say_string);
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(say_string);
 	engine->MessageEnd();
@@ -257,7 +261,7 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);
@@ -305,7 +309,7 @@ CON_COMMAND(ma_hlx_browse, "ma_hlx_browse <target> <URL>")
 CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);
@@ -328,7 +332,7 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 	// Found some players to talk to
 	for (int i = 0; i < target_player_list_size; i++)
 	{
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			if (!CCSPlayer_SwitchTeam(EdictToCBE(target_player_list[i].entity),gpManiGameType->GetOpposingTeam(target_player_list[i].team)))
 			{
@@ -358,7 +362,7 @@ CON_COMMAND(ma_hlx_swap, "ma_hlx_swap <target>)")
 CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);
@@ -396,10 +400,14 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 		mrf.AddPlayer(target_player->index);
 
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			// Do special version for CSS
+#if defined ( GAME_CSGO )
+			msg_buffer = engine->UserMessageBegin( &mrf, saytext_message_index, "SayText" ); 
+#else
 			msg_buffer = engine->UserMessageBegin( &mrf, saytext_message_index ); 
+#endif
 			msg_buffer->WriteByte(target_player->index); // Entity index
 			msg_buffer->WriteString(temp_string);
 			msg_buffer->WriteByte(1); // Chat flag
@@ -407,7 +415,11 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 		}
 		else
 		{ 
+#if defined ( GAME_CSGO )
+			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 			msg_buffer->WriteByte(3); // Say area
 			msg_buffer->WriteString(temp_string);
 			engine->MessageEnd();
@@ -420,7 +432,7 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 CON_COMMAND(ma_hlx_cexec, "ma_hlx_cexec <target> <command>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);
@@ -459,7 +471,7 @@ CON_COMMAND(ma_hlx_cexec, "ma_hlx_cexec <target> <command>")
 CON_COMMAND(ma_hlx_hint, "ma_hlx_hint <target> <message>")
 {
 	if (!IsCommandIssuedByServerAdmin() || ProcessPluginPaused() || war_mode) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	gpCmd->ExtractClientAndServerCommand(args);

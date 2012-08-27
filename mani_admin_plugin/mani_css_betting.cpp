@@ -108,7 +108,7 @@ void	ManiCSSBetting::LevelInit(void)
 //---------------------------------------------------------------------------------
 void ManiCSSBetting::ClientDisconnect(player_t	*player_ptr)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (gpManiWarmupTimer->InWarmupRound()) return;
 	if (war_mode) return;
 	if (mani_css_betting.GetInt() == 0) return;
@@ -122,7 +122,7 @@ void ManiCSSBetting::ClientDisconnect(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 void ManiCSSBetting::PlayerDeath(void)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (gpManiWarmupTimer->InWarmupRound()) return;
 	if (war_mode) return;
 	if (mani_css_betting.GetInt() == 0) return;
@@ -204,7 +204,7 @@ void ManiCSSBetting::PlayerNotAlive(void)
 //---------------------------------------------------------------------------------
 void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (gpManiWarmupTimer->InWarmupRound()) return;
 	if (war_mode) return;
 	if (mani_css_betting.GetInt() == 0) return;
@@ -354,7 +354,7 @@ void ManiCSSBetting::PlayerBet(player_t	*player_ptr)
 //---------------------------------------------------------------------------------
 void ManiCSSBetting::CSSRoundEnd(int winning_team)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (gpManiWarmupTimer->InWarmupRound()) return;
 	if (war_mode) return;
 	if (mani_css_betting.GetInt() == 0) return;

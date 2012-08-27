@@ -308,7 +308,7 @@ void ManiCommands::Load(void)
 
 // Do some tests
 
-	//float curtime = engine->Time();
+	//float curtime = gpGlobals->curtime;
 	//int	max_tests = 1000000;
 	//char found_print[256];
 	//cmd_t	cmd_key;
@@ -339,7 +339,7 @@ void ManiCommands::Load(void)
 	//	}
 	//}
 
-	//Msg("Time taken %f, %s\n", engine->Time() - curtime, found_print);
+	//Msg("Time taken %f, %s\n", gpGlobals->curtime - curtime, found_print);
 
 	//srand(0);
 
@@ -360,7 +360,7 @@ void ManiCommands::Load(void)
 	//	}
 	//}
 
-	//Msg("Time taken %f, %s\n", engine->Time() - curtime, found_print);
+	//Msg("Time taken %f, %s\n", gpGlobals->curtime - curtime, found_print);
 	//while(1)
 	//{
 	//	Sleep(1);
@@ -1603,7 +1603,20 @@ void	ManiCommands::WriteHelpHTML(void)
 	fprintf(filehandle, "\t\t</TH>\n");
 	fprintf(filehandle, "\t</TR>\n");
 
-	ConCommandBase *pPtr = g_pCVar->GetCommands();
+	ConCommandBase *pPtr = NULL;
+#if defined (GAME_CSGO)
+	ICvar::Iterator *iter = new ICvar::Iterator(g_pCVar);
+
+	if (iter)
+	{
+		iter->SetFirst();
+		pPtr = iter->Get();
+	}
+	
+#else
+	pPtr = g_pCVar->GetCommands();
+#endif
+	
 	while (pPtr)
 	{
 		if (!pPtr->IsCommand())
@@ -1623,7 +1636,7 @@ void	ManiCommands::WriteHelpHTML(void)
 				fprintf(filehandle, "\t\t<TD WIDTH=24%% BGCOLOR=\"%s\">\n", rest_bg_colour);
 				fprintf(filehandle, "\t\t\t<P ALIGN=LEFT STYLE=\"font-style: normal; font-weight: medium; text-decoration: none\">\n");
 				fprintf(filehandle, "\t\t\t<FONT COLOR=\"%s\"><FONT FACE=\"Times New Roman, serif\"><FONT SIZE=2>%s</FONT></FONT></FONT></P>\n", 
-					rest_font_colour, AsciiToHTML((char *) mani_var->m_pszHelpString));
+					rest_font_colour, AsciiToHTML((char *) mani_var->GetHelpText()));
 				fprintf(filehandle, "\t\t</TD>\n");
 
 				fprintf(filehandle, "\t\t<TD WIDTH=23%% BGCOLOR=\"%s\">\n", rest_bg_colour);
@@ -1635,7 +1648,13 @@ void	ManiCommands::WriteHelpHTML(void)
 			}
 		}
 
+#if defined ( GAME_CSGO )
+		iter->Next();
+		if (!iter->IsValid()) break;
+		pPtr = iter->Get();
+#else
 		pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
+#endif
 	}
 
 

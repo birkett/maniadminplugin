@@ -195,7 +195,11 @@ bool IsPlayerValid(player_t *player_ptr)
 		return false;
 	}
 
+#if defined ( GAME_CSGO )
+	edict_t *pEntity = PEntityOfEntIndex(player_ptr->index);
+#else
 	edict_t *pEntity = engine->PEntityOfEntIndex(player_ptr->index);
+#endif
 	if(pEntity && !pEntity->IsFree() )
 	{
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );

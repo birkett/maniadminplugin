@@ -44,6 +44,8 @@ class CBaseEntity;
 #define MANI_GAME_DOD (7)
 #define MANI_GAME_TF_STR "Team Fortress"
 #define MANI_GAME_TF (8)
+#define MANI_GAME_CSGO_STR "Counter-Strike: Global Offensive"
+#define MANI_GAME_CSGO (9)
 
 // VFunc defs
 enum

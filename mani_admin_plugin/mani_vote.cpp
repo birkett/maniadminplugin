@@ -1099,7 +1099,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVoteRandom(player_t *player_ptr, const char *co
 		{
 			delay_type = VOTE_NO_DELAY;
 		}
-		else if (FStrEq(gpCmd->Cmd_Argv(1),"round") && gpManiGameType->IsGameType(MANI_GAME_CSS))
+		else if (FStrEq(gpCmd->Cmd_Argv(1),"round") && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			delay_type = VOTE_END_OF_ROUND_DELAY;
 		}
@@ -1173,7 +1173,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 	bool use_delay_string_as_first_map = false;
 
 	if (FStrEq(gpCmd->Cmd_Argv(1),"end") ||
-		(FStrEq(gpCmd->Cmd_Argv(1),"round") && gpManiGameType->IsGameType(MANI_GAME_CSS)) ||
+		(FStrEq(gpCmd->Cmd_Argv(1),"round") && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO))) ||
 		FStrEq(gpCmd->Cmd_Argv(1),"now"))
 	{
 		// Delay type parameter passed in
@@ -1185,7 +1185,7 @@ PLUGIN_RESULT	ManiVote::ProcessMaVote(player_t *player_ptr, const char *command_
 		{
 			delay_type = VOTE_NO_DELAY;
 		}
-		else if (FStrEq(gpCmd->Cmd_Argv(1),"round") && gpManiGameType->IsGameType(MANI_GAME_CSS))
+		else if (FStrEq(gpCmd->Cmd_Argv(1),"round") && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			delay_type = VOTE_END_OF_ROUND_DELAY;
 		}
@@ -2270,7 +2270,7 @@ void	ManiVote::BuildRandomMapVote (int max_maps)
 		char	swap_team_str[256]="";
 
 		if (mani_vote_end_of_map_swap_team.GetInt() == 1 && 
-			gpManiGameType->IsGameType(MANI_GAME_CSS) && 
+			(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) && 
 			system_vote.vote_type == VOTE_RANDOM_END_OF_MAP)
 		{
 			Q_strcpy(swap_team_str, Translate(NULL, 2534));

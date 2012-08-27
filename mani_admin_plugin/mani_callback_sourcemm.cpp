@@ -68,7 +68,7 @@ typedef unsigned long DWORD;
 #include "itempents.h"
 #include "networkstringtabledefs.h"
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 #include <metamod_oslink.h>
 #else
 #include <oslink.h>
@@ -152,14 +152,14 @@ ConCommand *pRespawnEntities = NULL;
 
 static int offset1 = -1;
 
-//#if !defined ORANGE
+//#if !defined GAME_ORANGE
 //ICvar *g_pCVar = NULL;
 //#endif
 
 ICvar *GetICVar()
 {
 #if defined METAMOD_PLAPI_VERSION
-#if defined ORANGE
+#if defined GAME_ORANGE
 	return (ICvar *)((g_SMAPI->GetEngineFactory())(CVAR_INTERFACE_VERSION, NULL));
 #else
 	return (ICvar *)((g_SMAPI->GetEngineFactory())(VENGINE_CVAR_INTERFACE_VERSION, NULL));
@@ -194,7 +194,7 @@ void CSourceMMMAPCallback::SetCommandClient( int index )
 //---------------------------------------------------------------------------------
 // Purpose: called when a client types in a command (only a subset of commands however, not CON_COMMAND's)
 //---------------------------------------------------------------------------------
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 PLUGIN_RESULT CSourceMMMAPCallback::ClientCommand( edict_t *pEntity, const CCommand &args)
 {
 	return (gpManiAdminPlugin->ClientCommand(pEntity, args));
@@ -257,21 +257,21 @@ void CSourceMMMAP::LevelShutdown( void )
 
 void CSourceMMMAP::ClientActive(edict_t *pEntity, bool bLoadGame)
 {
-//	META_LOG(g_PLAPI, "ClientActive called: pEntity=%d", pEntity ? engine->IndexOfEdict(pEntity) : 0);
+//	META_LOG(g_PLAPI, "ClientActive called: pEntity=%d", pEntity ? IndexOfEdict(pEntity) : 0);
 	gpManiAdminPlugin->ClientActive(pEntity);
 	RETURN_META(MRES_IGNORED);
 }
 
 void CSourceMMMAP::ClientDisconnect(edict_t *pEntity)
 {
-//	META_LOG(g_PLAPI, "ClientDisconnect called: pEntity=%d", pEntity ? engine->IndexOfEdict(pEntity) : 0);
+//	META_LOG(g_PLAPI, "ClientDisconnect called: pEntity=%d", pEntity ? IndexOfEdict(pEntity) : 0);
 	gpManiAdminPlugin->ClientDisconnect(pEntity);
 	RETURN_META(MRES_IGNORED);
 }
 
 void CSourceMMMAP::ClientPutInServer(edict_t *pEntity, char const *playername)
 {
-//	META_LOG(g_PLAPI, "ClientPutInServer called: pEntity=%d, playername=%s", pEntity ? engine->IndexOfEdict(pEntity) : 0, playername);
+//	META_LOG(g_PLAPI, "ClientPutInServer called: pEntity=%d, playername=%s", pEntity ? IndexOfEdict(pEntity) : 0, playername);
 	gpManiAdminPlugin->ClientPutInServer(pEntity, playername);
 	RETURN_META(MRES_IGNORED);
 }
@@ -285,14 +285,14 @@ void CSourceMMMAP::SetCommandClient(int index)
 
 void CSourceMMMAP::ClientSettingsChanged(edict_t *pEdict)
 {
-//	META_LOG(g_PLAPI, "ClientSettingsChanged called: pEdict=%d", pEdict ? engine->IndexOfEdict(pEdict) : 0);
+//	META_LOG(g_PLAPI, "ClientSettingsChanged called: pEdict=%d", pEdict ? IndexOfEdict(pEdict) : 0);
 	gpManiAdminPlugin->ClientSettingsChanged(pEdict);
 	RETURN_META(MRES_IGNORED);
 }
 
 bool CSourceMMMAP::ClientConnect(edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen)
 {
-//	META_LOG(g_PLAPI, "ClientConnect called: pEntity=%d, pszName=%s, pszAddress=%s", pEntity ? engine->IndexOfEdict(pEntity) : 0, pszName, pszAddress);
+//	META_LOG(g_PLAPI, "ClientConnect called: pEntity=%d, pszName=%s, pszAddress=%s", pEntity ? IndexOfEdict(pEntity) : 0, pszName, pszAddress);
 
 	bool allow_connect = true;
 	gpManiAdminPlugin->ClientConnect(&allow_connect, pEntity, pszName, pszAddress, reject, maxrejectlen);
@@ -300,7 +300,7 @@ bool CSourceMMMAP::ClientConnect(edict_t *pEntity, const char *pszName, const ch
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void CSourceMMMAP::ClientCommand(edict_t *pEntity, const CCommand &args)
 {
 	int result = gpManiAdminPlugin->ClientCommand(pEntity, args);
@@ -328,7 +328,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	//char iface_buffer[255];
 	//int num = 0;
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 	GET_V_IFACE(GetServerFactory, playerinfomanager, IPlayerInfoManager, INTERFACEVERSION_PLAYERINFOMANAGER);
 	GET_V_IFACE(GetEngineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE(GetEngineFactory, gameeventmanager, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
@@ -372,7 +372,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	ismm->AddListener(this, &g_Listener);
 
 	//Init our cvars/concmds
-#if defined ORANGE
+#if defined GAME_ORANGE
 	ConVar_Register(0, this);
 #else
 	ConCommandBaseMgr::OneTimeInit(this);
@@ -409,7 +409,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	//This hook is a static hook, no member function
 	//SH_ADD_HOOK_STATICFUNC(IGameEventManager2, FireEvent, gameeventmanager, FireEvent_Handler, false); 
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 	//Get the call class for IVServerEngine so we can safely call functions without
 	// invoking their hooks (when needed).
 	engine_cc = SH_GET_CALLCLASS(engine);
@@ -418,7 +418,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 #endif
 
 
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	gamedll = g_SMAPI->GetServerFactory(false);
 #else
 	gamedll = g_SMAPI->serverFactory(false);
@@ -426,7 +426,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 	g_SMAPI->AddListener(g_PLAPI, this);
 
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	gpGlobals = g_SMAPI->GetCGlobals();
 #else
 	gpGlobals = g_SMAPI->pGlobals();
@@ -451,7 +451,7 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 	if (!UTIL_InterfaceMsg(effects,"IEffects", IEFFECTS_INTERFACE_VERSION)) return false;
 	if (!UTIL_InterfaceMsg(esounds,"IEngineSound", IENGINESOUND_SERVER_INTERFACE_VERSION)) return false;
 
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	if (!UTIL_InterfaceMsg(g_pCVar,"ICvar", CVAR_INTERFACE_VERSION)) return false;
 #else
 	if (!UTIL_InterfaceMsg(g_pCVar,"ICvar", VENGINE_CVAR_INTERFACE_VERSION)) return false;
@@ -527,7 +527,7 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	if (pAutoBuyCmd) 
 	{
 		SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, pAutoBuyCmd, AutoBuy_handler, false);
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 		SH_RELEASE_CALLCLASS(autobuy_cc);
 #endif
 	}
@@ -535,12 +535,12 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	if (pReBuyCmd) 
 	{
 		SH_REMOVE_HOOK_STATICFUNC(ConCommand, Dispatch, pReBuyCmd, ReBuy_handler, false);
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 		SH_RELEASE_CALLCLASS(rebuy_cc);
 #endif
 	}
 
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 	if (gpManiGameType->GetAdvancedEffectsAllowed())
 	{
 		SH_RELEASE_CALLCLASS(temp_ents_cc);
@@ -551,7 +551,7 @@ bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 	SH_RELEASE_CALLCLASS(serverdll_cc);
 #endif
 	//this, sourcehook does not keep track of.  we must do this.
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	ConVar_Unregister(); // probably not needed, but do it just in case.
 #endif
 	return true; 
@@ -598,7 +598,7 @@ void CSourceMMMAP::HookConCommands()
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
 	}
 
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 	if (pSayCmd) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pSayCmd, Say_handler, false);
 	if (pRespawnEntities) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pRespawnEntities, RespawnEntities_handler, false);
 	if (pTeamSayCmd) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pTeamSayCmd, TeamSay_handler, false);
@@ -670,7 +670,7 @@ void	ManiSMMHooks::HookVFuncs(void)
 		SH_MANUALHOOK_RECONFIGURE(Player_ProcessUsercmds, offset, 0, 0);
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_CANUSE);
 		if (offset != -1)
@@ -745,7 +745,7 @@ void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
 }
 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void RespawnEntities_handler(const CCommand &command)
 #else
 void RespawnEntities_handler()
@@ -755,7 +755,7 @@ void RespawnEntities_handler()
 	RETURN_META(MRES_SUPERCEDE);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void Say_handler(const CCommand &command)
 {
 #else
@@ -773,7 +773,7 @@ CCommand command;
 	RETURN_META(MRES_IGNORED);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void TeamSay_handler(const CCommand &command)
 {
 #else
@@ -791,7 +791,7 @@ CCommand command;
 	RETURN_META(MRES_IGNORED);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void ChangeLevel_handler(const CCommand &command)
 #else
 void ChangeLevel_handler()
@@ -807,7 +807,7 @@ void ChangeLevel_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void AutoBuy_handler(const CCommand &command)
 #else
 void AutoBuy_handler()
@@ -815,7 +815,7 @@ void AutoBuy_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)(command);
 #else
 #ifndef SOURCEMM
@@ -828,7 +828,7 @@ void AutoBuy_handler()
 	RETURN_META(MRES_SUPERCEDE);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void ReBuy_handler(const CCommand &command)
 #else
 void ReBuy_handler()
@@ -836,7 +836,7 @@ void ReBuy_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)(command);
 #else
 #ifndef SOURCEMM

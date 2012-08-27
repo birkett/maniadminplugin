@@ -102,7 +102,7 @@ void ManiMostDestructive::PlayerDeath
  )
 {
 	if (war_mode) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (mani_stats_most_destructive.GetInt() == 0) return;
 
 	if (attacker_ptr->user_id <= 0)
@@ -132,7 +132,7 @@ void ManiMostDestructive::PlayerHurt
 	int health_amount;
 
 	if (war_mode) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (mani_stats_most_destructive.GetInt() == 0) return;
 
 	if (attacker_ptr == NULL) return;
@@ -170,7 +170,7 @@ void ManiMostDestructive::RoundEnd(void)
 	char	output_message[192];
 
 	if (war_mode) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (mani_stats_most_destructive.GetInt() == 0) return;
 
 	// Find player with most destruction

@@ -44,6 +44,7 @@
 #include "mani_main.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
+extern	CGlobalVars *gpGlobals;
 
 static	float mani_timers[20];
 static	int	timer_index = 0;
@@ -55,7 +56,7 @@ int		ManiGetTimer(void)
 {
 	int temp_index;
 
-	mani_timers[timer_index] = engine->Time();
+	mani_timers[timer_index] = gpGlobals->curtime;
 	temp_index = timer_index;
 	timer_index ++;
 	if (timer_index == 20)
@@ -71,5 +72,5 @@ int		ManiGetTimer(void)
 //---------------------------------------------------------------------------------
 float	ManiGetTimerDuration(int index)
 {
-	return (engine->Time() - mani_timers[index]);
+	return (gpGlobals->curtime - mani_timers[index]);
 }

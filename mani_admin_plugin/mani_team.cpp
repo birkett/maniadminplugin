@@ -110,7 +110,11 @@ void	ManiTeam::Init(int edict_count)
 
 	for (int i = 0; i < edict_count; i++)
 	{
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+#endif
 		if(pEntity)
 		{
 			if (!pEntity->m_pNetworkable)
@@ -235,7 +239,7 @@ void	ManiTeam::GameFrame(void)
 
 	if ((change_team || swap_team || delayed_swap) && 
 		change_team_time < gpGlobals->curtime && 
-		gpManiGameType->IsGameType(MANI_GAME_CSS))
+		(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		if (change_team)
 		{
@@ -273,7 +277,7 @@ void	ManiTeam::RoundEnd(void)
 
 	change_team_time = gpGlobals->curtime + 2.4;
 
-	if (mani_autobalance_teams.GetInt() == 1 && !war_mode && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (mani_autobalance_teams.GetInt() == 1 && !war_mode && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		change_team = true;	
 	}
@@ -330,7 +334,7 @@ PLUGIN_RESULT	ManiTeam::ProcessMaSwapTeam(player_t *player_ptr, const char *comm
 		}
 
 		// Swap player over
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS) && gpCmd->Cmd_Argc() == 2)
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) && gpCmd->Cmd_Argc() == 2)
 		{
 			if (!CCSPlayer_SwitchTeam(EdictToCBE(target_player_list[i].entity),gpManiGameType->GetOpposingTeam(target_player_list[i].team)))
 			{
@@ -376,7 +380,7 @@ PLUGIN_RESULT	ManiTeam::ProcessMaSwapTeamD(player_t *player_ptr, const char *com
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: %s This only works on CSS", command_name);
 		return PLUGIN_STOP;
@@ -586,7 +590,7 @@ bool	ManiTeam::ProcessMaBalancePlayerType
 )
 {
 
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return true;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return true;
 
 	bool return_status = true;
 	player_t target_player;
@@ -675,7 +679,7 @@ bool	ManiTeam::ProcessMaBalancePlayerType
 		}
 
 		// Swap player over
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			if (!CCSPlayer_SwitchTeam(EdictToCBE(temp_player_list[player_to_swap].entity),gpManiGameType->GetOpposingTeam(temp_player_list[player_to_swap].team)))
 			{

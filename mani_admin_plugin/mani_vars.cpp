@@ -73,7 +73,7 @@ CON_COMMAND(ma_getprop, "Debug Tool")
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
 
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	CCommand args;
 #endif
 
@@ -127,7 +127,7 @@ CON_COMMAND(ma_getpropfilt, "Debug Tool")
 {
 	if (!IsCommandIssuedByServerAdmin()) return;
 	if (ProcessPluginPaused()) return;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	CCommand args;
 #endif
 
@@ -348,7 +348,11 @@ int	UTIL_GetVarValue(CBaseEntity *pCBE, const char *var_id, int &type)
 						case FIELD_CHARACTER: type = PROP_CHAR; break;
 						default: type = -1;
 					}
+#if defined ( GAME_CSGO )
+					return dmap->dataDesc[i].fieldOffset;
+#else
 					return dmap->dataDesc[i].fieldOffset[0];
+#endif
 				}
 			}
 
@@ -373,7 +377,7 @@ CON_COMMAND(ma_getmap, "Debug Tool")
 
 	player.entity = NULL;
 
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	CCommand args;
 #endif
 
@@ -481,7 +485,11 @@ void ShowDMap(datamap_t *dmap)
 			snprintf(address1,sizeof(address1), " [%p]", dmap->dataDesc[i].inputFunc);
 			snprintf(address2,sizeof(address2), " [%p]", dmap->dataDesc[i].td);
 
+#if defined ( GAME_CSGO )
+			int bytes = snprintf(outstring, sizeof(outstring), "%s - %s %s (%s)%s (offset: %d)%s\n", indents, dmap->dataDesc[i].fieldName, field_type, dmap->dataDesc[i].externalName, (!dmap->dataDesc[i].inputFunc) ? "":address1, dmap->dataDesc[i].fieldOffset, (!dmap->dataDesc[i].td) ? "":address2 );
+#else
 			int bytes = snprintf(outstring, sizeof(outstring), "%s - %s %s (%s)%s (off1: %d  off2: %d)%s\n", indents, dmap->dataDesc[i].fieldName, field_type, dmap->dataDesc[i].externalName, (!dmap->dataDesc[i].inputFunc) ? "":address1, dmap->dataDesc[i].fieldOffset[0], dmap->dataDesc[i].fieldOffset[1], (!dmap->dataDesc[i].td) ? "":address2 );
+#endif
 			gpManiFile->Write(outstring, bytes, fh);
 			MMsg("%s", outstring);
 			if (dmap->dataDesc[i].td)

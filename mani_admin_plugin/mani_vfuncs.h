@@ -34,7 +34,11 @@
 extern CBaseEntity *EdictToCBE(edict_t *pEdict);
 
 extern const QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr);
+#if defined ( GAME_CSGO )
+extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool UnkownBoolean = true);
+#else
 extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity);
+#endif
 extern Vector CBaseEntity_EyePosition (CBaseEntity *pThisPtr);
 extern void CBaseEntity_GetVelocity(CBaseEntity *pThisPtr, Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
 extern CBaseCombatCharacter *CBaseEntity_MyCombatCharacterPointer(CBaseEntity *pThisPtr);

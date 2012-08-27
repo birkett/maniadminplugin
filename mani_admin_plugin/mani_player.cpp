@@ -556,7 +556,11 @@ bool FindPlayerBySteamID(player_t *player_ptr)
 {
 	for (int i = 1; i <= max_players; i++)
 	{
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+#endif
 		if(pEntity && !pEntity->IsFree() )
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
@@ -607,7 +611,11 @@ bool FindPlayerByIPAddress(player_t *player_ptr)
 
 	for (int i = 1; i <= max_players; i++)
 	{
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+#endif
 		if(pEntity && !pEntity->IsFree() )
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
@@ -678,7 +686,7 @@ bool FindPlayerByUserID(player_t *player_ptr)
 	
 	for (int i = 1; i <= max_players; i++)
 	{
-		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+		edict_t *pEntity = PEntityOfEntIndex(i);
 		if(pEntity && !pEntity->IsFree() )
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
@@ -727,7 +735,11 @@ bool FindPlayerByEntity(player_t *player_ptr)
 		{
 			if (playerinfo->IsHLTV()) return false;
 			player_ptr->player_info = playerinfo;
+#if defined ( GAME_CSGO )
+			player_ptr->index = IndexOfEdict(player_ptr->entity);
+#else
 			player_ptr->index = engine->IndexOfEdict(player_ptr->entity);
+#endif
 			player_ptr->user_id = playerinfo->GetUserID();
 			player_ptr->team = playerinfo->GetTeamIndex();
 			player_ptr->health = playerinfo->GetHealth();
@@ -769,7 +781,11 @@ bool FindPlayerByIndex(player_t *player_ptr)
 		return false;
 	}
 
-	edict_t *pEntity = engine->PEntityOfEntIndex(player_ptr->index);
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(player_ptr->index);
+#else
+		edict_t *pEntity = engine->PEntityOfEntIndex(player_ptr->index);
+#endif
 	if(pEntity && !pEntity->IsFree() )
 	{
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
@@ -2439,7 +2455,7 @@ bool PlayerSettingsPage::PopulateMenuPage(player_t *player_ptr)
 		}
 	}
 
-	if (mani_stats_most_destructive.GetInt() != 0 && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (mani_stats_most_destructive.GetInt() != 0 && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		ptr = new PlayerSettingsItem;
 		ptr->params.AddParam("option", "destruction");
@@ -2840,7 +2856,7 @@ PLUGIN_RESULT	ProcessMaDestruction
 	player_settings_t *player_settings;
 	player.entity = NULL;
 
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_STOP;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_STOP;
 	if (mani_stats_most_destructive.GetInt() == 0) return PLUGIN_STOP;
 	if (war_mode) return PLUGIN_STOP;
 
@@ -2953,7 +2969,7 @@ void UTIL_KickPlayer
 //---------------------------------------------------------------------------------
 bool UTIL_DropC4(edict_t *pEntity)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 
 	CBaseEntity *pPlayer = pEntity->GetUnknown()->GetBaseEntity();
 
@@ -2985,5 +3001,9 @@ void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id)
 
 	mrf.AddPlayer(player_ptr->index);
 	Vector pos = player_ptr->entity->GetCollideable()->GetCollisionOrigin();
+#if defined ( GAME_CSGO )
+	esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, NULL, 0, sound_id, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 	esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, sound_id, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 }

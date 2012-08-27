@@ -37,7 +37,7 @@ enum
 };
 
 // Define a new con command that will directly call the gpCmd-> function
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 #define SCON_COMMAND(_name, _help_id, _func, _war_mode_allowed) \
 	static void _name( const CCommand &args ); \
 	static ConCommand _name##_command( #_name, _name, "Use ma_help _name for help" ); \

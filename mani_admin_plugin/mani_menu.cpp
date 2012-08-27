@@ -108,11 +108,15 @@ bool final
 	mrf.RemoveAllRecipients();
 	mrf.AddPlayer(player_index);
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, menu_message_index, "ShowMenu" ); // Show Menu message
+#else
 	msg_buffer = engine->UserMessageBegin( &mrf, menu_message_index ); // Show Menu message
+#endif
 	if (final)
 	{
 		msg_buffer->WriteShort( keys ); // Key bits
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		if ( !g_menu_mgr.GetMenuShowing ( player_index - 1) ) {
 			g_menu_mgr.ResetMenuShowing ( player_index - 1 , false );
 		}
@@ -580,7 +584,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 		{
 		case CLOSE_MENU:
 			this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 			g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 			ProcessPlayMenuSound(player_ptr, menu_select_sound);
@@ -594,7 +598,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 			{
 				// Get out of menu as it has closed
 				this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 				g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 				ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
@@ -641,7 +645,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 			{
 				// Get out of menu as it has closed
 				this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 				g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 				ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
@@ -661,7 +665,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 					if (menu_pages.empty())
 					{
 						this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 						g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 						ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
@@ -694,7 +698,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	{
 		// Exit pressed
 		this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 		ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
@@ -705,7 +709,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	if (menu_item_index >= (int) menu_page_ptr->menu_items.size() || menu_item_index < 0)
 	{
 		this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 		return;
@@ -743,7 +747,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 
 		case CLOSE_MENU:
 			this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 			g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 			ProcessPlayMenuSound(player_ptr, menu_select_sound);
@@ -759,7 +763,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 				{
 					// Get out of menu as it has closed
 					this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 				g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 					ProcessPlayMenuSound(player_ptr, menu_select_exit_sound);
@@ -796,7 +800,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	}
 	else
 	{
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		g_menu_mgr.ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 		this->Kill();
@@ -819,7 +823,7 @@ void MenuManager::Kill(player_t *player_ptr)
 	player_list[player_ptr->index - 1].Kill();
 	game_frame_repop[player_ptr->index - 1] = 0;
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	ResetMenuShowing ( player_ptr->index - 1 );
 #endif
 }
@@ -886,7 +890,7 @@ void MenuManager::AddMenu(player_t *player_ptr, MenuPage *ptr, int priority, int
 
 	mt_ptr->menu_pages.push_back(ptr);
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	if ( timeout > 0 && timeout < 6 )
 		timeout = 1;
 	else 
@@ -903,7 +907,7 @@ void MenuManager::AddMenu(player_t *player_ptr, MenuPage *ptr, int priority, int
 		time_t current_time;
 		time(&current_time);
 		
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		int adjusted_time = ((int)(timeout/5))*5; // lock in the menu to 5 second intervals.
 		mt_ptr->timeout_timestamp = current_time + adjusted_time;
 #else
@@ -938,7 +942,7 @@ void MenuManager::AddFreePage(player_t *player_ptr, FreePage *ptr, int priority,
 
 	ptr->SetTimeout(timeout);
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	if ( timeout > 0 && timeout < 6 )
 		timeout = 1;
 	else 
@@ -954,7 +958,7 @@ void MenuManager::AddFreePage(player_t *player_ptr, FreePage *ptr, int priority,
 		time_t current_time;
 		time(&current_time);
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		int adjusted_time = ((int)(timeout/5))*5; // lock in the menu to 5 second intervals.
 		mt_ptr->timeout_timestamp = current_time + adjusted_time;
 #else
@@ -1017,7 +1021,7 @@ void MenuManager::Unload()
 void MenuManager::LevelInit() 
 {
 	this->Kill();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	next_time_check = 0.0f;
 #endif
 }
@@ -1064,7 +1068,7 @@ void MenuManager::GameFrame()
 				this->RepopulatePage(&player);
 			}
 		}
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 		time_t current_timestamp;
 		time ( &current_timestamp );
 
@@ -1101,12 +1105,12 @@ void MenuManager::GameFrame()
 		}
 #endif
 	}
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	if ( gpGlobals->curtime > next_time_check ) 
 		next_time_check = gpGlobals->curtime + 1.0f;
 #endif
 }
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 float MenuManager::GetExpirationTime(int player_index) {
 	if ( player_index < 0 || player_index > max_players )
 		return 0;

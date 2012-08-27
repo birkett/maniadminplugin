@@ -181,7 +181,7 @@ void ManiDownloads::AddToDownloads(const char *filename)
 	if (pDownloadablesTable)
 	{
 		snprintf(res_string, sizeof(res_string), "%s", filename);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 		pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
 #else
 		pDownloadablesTable->AddString(res_string, sizeof(res_string));

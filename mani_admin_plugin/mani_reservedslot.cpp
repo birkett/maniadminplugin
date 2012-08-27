@@ -55,7 +55,9 @@
 #include "detour_macros.h"
 #include "mani_mainclass.h"
 #include "mani_playerkick.h" 
-
+#if defined ( GAME_CSGO )
+#include "iclient.h"
+#endif
 
 int m_iUnaccountedPlayers = 0;
 
@@ -179,13 +181,20 @@ bool FillINFOQuery ( const mem_t* data, int data_len, A2S_INFO_t &info, mem_t **
 	return true;
 }
 
-#if defined ( ORANGE )
+#if defined ( GAME_CSGO )
+#define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8,p9,pA,pB)
+DECL_MEMBER_DETOUR11_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, void *, bool, CrossPlayPlatform_t ) {
+	CSteamID SteamID;
+	Q_memset ( &SteamID, 0, sizeof(SteamID) );
+	if ( p8 >= 20 )
+		memcpy ( &SteamID, &p7[20], sizeof(SteamID) );
+#elif defined ( GAME_ORANGE )
 #define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,p6,pw,p8,p9)
 DECL_MEMBER_DETOUR9_void(ConnectClientDetour, void *, int, int, int, int, const char *, const char *, const char*, int ) {
 	CSteamID SteamID;
 	Q_memset ( &SteamID, 0, sizeof(SteamID) );
 	if ( p9 >= 20 )
-		memcpy ( &SteamID, &p8[12], sizeof(SteamID) );
+		memcpy ( &SteamID, &p8[20], sizeof(SteamID) );
 #else
 #define CCD_MEMBER_CALL(pw) MEMBER_CALL(ConnectClientDetour)(p1,p2,p3,p4,p5,pw,p7,p8,p9,pA)
 DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char *, const char *, const char*, int, char const*, int ) {
@@ -204,7 +213,9 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 
 		if ( total_players == max_players ) {
 			if(SteamID.GetEAccountType() != 1 || SteamID.GetEUniverse() != 1)
-#if defined ( ORANGE )
+#if defined ( GAME_CSGO )
+				return CCD_MEMBER_CALL(p6);
+#elif defined ( GAME_ORANGE )
 				return CCD_MEMBER_CALL(p7);
 #else
 				return CCD_MEMBER_CALL(p6);
@@ -217,7 +228,9 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 				if ( kick_index < 1 ) {
 					engine->LogPrint("MAP:  Error, couldn't find anybody to kick for reserved slots!!!\n");
 
-#if defined ( ORANGE )
+#if defined ( GAME_CSGO )
+					return CCD_MEMBER_CALL(p6);
+#elif defined ( GAME_ORANGE )
 					return CCD_MEMBER_CALL(p7);
 #else
 					return CCD_MEMBER_CALL(p6);
@@ -240,20 +253,29 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 		}
 	}
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	return CCD_MEMBER_CALL(p7);
 #else
 	return CCD_MEMBER_CALL(p6);
 #endif
 }
 
+#if defined ( GAME_CSGO )
+const char * CSteamID::Render() const {
+   static char szSteamID[64];
+	_snprintf(szSteamID, sizeof(szSteamID), "STEAM_1:%u:%u", (m_steamid.m_comp.m_unAccountID % 2) ? 1 : 0, (int32)m_steamid.m_comp.m_unAccountID/2);
+#else
 char * CSteamID::Render() const {
    static char szSteamID[64];
-	_snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (m_unAccountID % 2) ? 1 : 0, (int32)m_unAccountID/2);
+   _snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (m_unAccountID % 2) ? 1 : 0, (int32)m_unAccountID/2);
+#endif
 	return szSteamID;
 }
 
-#if defined ( ORANGE )
+#if defined ( GAME_CSGO )
+#define NSPD_NON_MEMBER_CALL NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5,p6,p7,p8)
+DECL_DETOUR8_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int, void *, bool, unsigned int) {
+#elif defined ( GAME_ORANGE )
 #define NSPD_NON_MEMBER_CALL NON_MEMBER_CALL(NET_SendPacketDetour)(p1,p2,p3,p4,p5,p6,p7)
 DECL_DETOUR7_void( NET_SendPacketDetour, void *, int, void *, const mem_t *, int, void *, bool) {
 #else
@@ -455,7 +477,11 @@ static int sort_reserve_slots_by_steam_id ( const void *m1,  const void *m2)
 int	ManiReservedSlot::FindPlayerToKick ( ) {
 	// FIRST LOOK FOR BOTS!
 	for ( int i = 1; i <= max_players; i++ ) {
+#if defined ( GAME_CSGO )
+		edict_t *pEdict = PEntityOfEntIndex(i);
+#else
 		edict_t *pEdict = engine->PEntityOfEntIndex(i);
+#endif
 
 		IServerUnknown *unknown = pEdict->GetUnknown();
 		if (!unknown)
@@ -511,7 +537,11 @@ void ManiReservedSlot::BuildPlayerKickList( player_t *player_ptr, int *players_o
 
 	for (int i = 1; i <= max_players; i ++)
 	{
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+#endif
 		if( pEntity && !pEntity->IsFree())
 		{
 			if ( player_ptr && ( pEntity == player_ptr->entity ) )

@@ -708,7 +708,7 @@ bool CAdminPlugin::Load(void)
 	gpManiCSSBetting->Load();
 	gpManiObserverTrack->Load();
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiWeaponMgr->Load();
 		gpManiLogCSSStats->Load();
@@ -799,7 +799,7 @@ void CAdminPlugin::InitEvents( void )
 	gameeventmanager->AddListener( gpManiIGELCallback, "player_say", true );
 	gameeventmanager->AddListener( gpManiIGELCallback, "player_spawn", true );
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gameeventmanager->AddListener( gpManiIGELCallback, "weapon_fire", true );
 		gameeventmanager->AddListener( gpManiIGELCallback, "hostage_stops_following", true);
@@ -1027,7 +1027,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 
 	InitTKPunishments();
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->LevelInit();
 	}
@@ -1048,7 +1048,7 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 		Q_strcpy(user_name[i].name,"");
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		esounds->PrecacheSound(slay_sound_name, true);
 		esounds->PrecacheSound(slap_sound_name[0].sound_name, true);
@@ -1413,7 +1413,7 @@ void CAdminPlugin::ServerActivate( edict_t *pEdictList, int edictCount, int clie
 
 	// Get team manager pointers
 	gpManiTeam->Init(edictCount);
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiWeaponMgr->LevelInit();
 	}
@@ -1538,7 +1538,7 @@ void CAdminPlugin::ClientActive( edict_t *pEntity )
 	if (player.player_info->IsHLTV()) return;
 	gpManiNetIDValid->ClientActive(&player);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->ClientActive(&player);
 	}
@@ -1609,7 +1609,7 @@ void CAdminPlugin::ClientDisconnect( edict_t *pEntity )
 	punish_mode_list[player.index - 1].muted = 0;
 
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->ClientDisconnect(&player);
 	}
@@ -1697,7 +1697,7 @@ void CAdminPlugin::ClientPutInServer( edict_t *pEntity, char const *playername )
 
 		if (ProcessPluginPaused())	return;
 
-		if (mani_tk_protection.GetInt() == 1 && gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if (mani_tk_protection.GetInt() == 1 && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			// Force tk punish off (required for plugin tk punishment)
 			engine->ServerCommand("mp_tkpunish 0\n");
@@ -1751,7 +1751,11 @@ void CAdminPlugin::ClientSettingsChanged( edict_t *pEdict )
 {
 	if ( playerinfomanager )
 	{
+#if defined ( GAME_CSGO )
+		int	player_index = IndexOfEdict(pEdict);
+#else
 		int	player_index = engine->IndexOfEdict(pEdict);
+#endif
 
 		if (user_name[player_index - 1].in_use)
 		{
@@ -1793,13 +1797,13 @@ PLUGIN_RESULT CAdminPlugin::ClientConnect( bool *bAllowConnect, edict_t *pEntity
 //---------------------------------------------------------------------------------
 // Purpose: called when a client types in a command (only a subset of commands however, not CON_COMMAND's)
 //---------------------------------------------------------------------------------
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity,  const CCommand &args)
 #else
 PLUGIN_RESULT	CAdminPlugin::ClientCommand( edict_t *pEntity )
 #endif
 {
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	CCommand args;
 #endif
 
@@ -2018,7 +2022,7 @@ LOADUP_STATUS CAdminPlugin::MakeOrAddToINI( char *path ) {
 	return LOADUP_CREATED;
 }
 
-#if defined ( __linux__ ) && defined (ORANGE)
+#if defined ( __linux__ ) && defined (GAME_ORANGE)
 	#define ARCH_LABEL "_i486"
 #else
 	#define ARCH_LABEL
@@ -2352,7 +2356,7 @@ bool PrimaryMenuPage::PopulateMenuPage(player_t *player_ptr)
 			allowed = true;
 		}
 
-		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON) && gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_RESTRICT_WEAPON) && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			MENUOPTION_CREATE(PrimaryMenuItem, 106, restrict_weapon);
 			allowed = true;
@@ -3357,13 +3361,21 @@ void CAdminPlugin::ProcessExplodeAtCurrentPosition( player_t *player)
 
 		mrf.AddAllPlayers(max_players);
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, NULL, 0, slay_sound_name, 0.5,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, slay_sound_name, 0.5,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 		else
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, NULL, 0, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 	}
 
@@ -3560,7 +3572,7 @@ bool PlayerManagementPage::PopulateMenuPage(player_t *player_ptr)
 		MENUOPTION_CREATE(PlayerManagementItem, 615, swapteam);
 	}
 
-	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed() && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && gpManiGameType->IsTeamPlayAllowed() && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		MENUOPTION_CREATE(PlayerManagementItem, 184, swapteamd);
 	}
@@ -3570,7 +3582,7 @@ bool PlayerManagementPage::PopulateMenuPage(player_t *player_ptr)
 		MENUOPTION_CREATE(PlayerManagementItem, 619, specplay);
 	}
 
-	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_SWAP) && !war_mode && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		MENUOPTION_CREATE(PlayerManagementItem, 616, balanceteam);
 	}
@@ -4146,7 +4158,7 @@ bool VoteDelayTypePage::PopulateMenuPage(player_t *player_ptr)
 	ptr->params.AddParam("delay_type", "now");
 	this->AddItem(ptr);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		ptr = new VoteDelayTypeItem;
 		ptr->SetDisplayText("%s", Translate(player_ptr, 333));
@@ -4943,7 +4955,7 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 	gpManiMostDestructive->PlayerHurt(&victim, &attacker, event);
 
 	// Log stats
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->PlayerHurt(&victim, &attacker, event);
 	}
@@ -4959,7 +4971,7 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 	// Did attack happen to fellow team mate ?
 	if (!gpManiTeam->IsOnSameTeam (&victim, &attacker))	return;
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		Q_strcpy(weapon_name, event->GetString("weapon","NULL"));
 		if (FStrEq("smokegrenade", weapon_name)) return;
@@ -5145,7 +5157,11 @@ void CAdminPlugin::EvPlayerDeath(IGameEvent *event)
 	if (!FindPlayerByUserID(&dead_player)) return;
 
 	if ( punish_mode_list[dead_player.index - 1].flame_index != 0 ) {
+#if defined ( GAME_CSGO )
+		edict_t * pEdict = PEntityOfEntIndex ( punish_mode_list[dead_player.index - 1].flame_index );
+#else
 		edict_t * pEdict = engine->PEntityOfEntIndex ( punish_mode_list[dead_player.index - 1].flame_index );
+#endif
 		if ( pEdict ) {
 			char cmd[256];
 			snprintf ( cmd, sizeof ( cmd ), "sv_cheats 1;ent_remove %i;sv_cheats 0\n", punish_mode_list[dead_player.index - 1].flame_index );
@@ -5473,7 +5489,7 @@ void CAdminPlugin::EvPlayerSpawn(IGameEvent *event)
 	gpManiSaveScores->PlayerSpawn(&spawn_player);
 	gpManiObserverTrack->PlayerSpawn(&spawn_player);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->PlayerSpawn(&spawn_player);
 		gpManiCSSBounty->PlayerSpawn(&spawn_player);
@@ -5501,7 +5517,7 @@ void CAdminPlugin::EvPlayerSpawn(IGameEvent *event)
 		SkinTeamJoin(&spawn_player);
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiWeaponMgr->PlayerSpawn(&spawn_player);
 	}
@@ -5510,7 +5526,7 @@ void CAdminPlugin::EvPlayerSpawn(IGameEvent *event)
 	if (!war_mode &&
 		mani_unlimited_grenades.GetInt() != 0 &&
 		sv_cheats &&
-		gpManiGameType->IsGameType(MANI_GAME_CSS))
+		(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(spawn_player.entity), "weapon_hegrenade");
 	}
@@ -5537,7 +5553,11 @@ void CAdminPlugin::EvWeaponFire(IGameEvent *event)
 	int	i = gpManiTrackUser->GetIndex(user_id);
 	if (i != -1)
 	{
+#if defined ( GAME_CSGO )
+		edict_t *pPlayerEdict = PEntityOfEntIndex(i);
+#else
 		edict_t *pPlayerEdict = engine->PEntityOfEntIndex(i);
+#endif
 		if(pPlayerEdict && !pPlayerEdict->IsFree() )
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pPlayerEdict );
@@ -5553,7 +5573,7 @@ void CAdminPlugin::EvWeaponFire(IGameEvent *event)
 					}
 
 					// Update stats
-					if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+					if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 					{
 						gpManiLogCSSStats->PlayerFired(i - 1, weapon_name, is_bot);
 					}
@@ -5570,7 +5590,7 @@ void CAdminPlugin::EvWeaponFire(IGameEvent *event)
 							hegrenade &&
 							(mani_unlimited_grenades.GetInt() != 0 || gpManiWarmupTimer->UnlimitedHE()) &&
 							sv_cheats &&
-							gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+							(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 							(playerinfo->GetTeamIndex() == 2 || playerinfo->GetTeamIndex() == 3))
 						{
 							CBasePlayer_GiveNamedItem((CBasePlayer *) EdictToCBE(pPlayerEdict), "weapon_hegrenade");
@@ -5770,7 +5790,7 @@ void CAdminPlugin::EvRoundStart(IGameEvent *event)
 	gpManiGhost->RoundStart();
 	gpManiMostDestructive->RoundStart();
 	gpManiWarmupTimer->RoundStart();
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiWeaponMgr->RoundStart();
 	}
@@ -5784,14 +5804,14 @@ void CAdminPlugin::EvRoundEnd(IGameEvent *event)
 	const char *message = event->GetString("message", "NULL");
 	int winning_team = event->GetInt("winner", -1);
 //Msg("Round end [%s] Win Team [%i]\n", message, winning_team);
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->RoundEnd();
 	}
 
 	gpManiMostDestructive->RoundEnd();
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		if (winning_team > 1 && winning_team < MANI_MAX_TEAMS)
 		{
@@ -6179,13 +6199,21 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		MRecipientFilter mrf; // this is my class, I'll post it later.
 		mrf.MakeReliable();
 		mrf.AddAllPlayers(max_players);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, NULL, 0, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 		else
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, NULL, 0, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, attacker->index - 1, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 
 	}
@@ -6249,14 +6277,14 @@ void CAdminPlugin::ProcessPlayerDeath(IGameEvent * event)
 	gpManiVictimStats->PlayerDeath(&victim, &attacker, attacker_exists, headshot, weapon_name);
 
 	// Log stats
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->PlayerDeath(&victim, &attacker, attacker_exists, headshot, weapon_name);
 	}
 
 	gpManiMostDestructive->PlayerDeath(&victim, &attacker, attacker_exists);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiWarmupTimer->PlayerDeath(&victim);
 	}
@@ -7156,7 +7184,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTakeCashP(player_t *player_ptr, const char 
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	CAdminPlugin::ProcessMaCash(player_t *player_ptr, const char *command_name, const int	help_id, const int	command_type, const int mode)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -8677,7 +8705,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaDropC4(player_t *player_ptr, const char *co
 		if (!gpManiClient->HasAccess(player_ptr->index, ADMIN, ADMIN_DROPC4, war_mode)) return PLUGIN_BAD_ADMIN;
 	}
 
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		OutputHelpText(ORANGE_CHAT, player_ptr, "Mani Admin Plugin: This only works on CS Source");
 		return PLUGIN_STOP;
@@ -9129,8 +9157,20 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaConfig(player_t *player_ptr, const char *co
 
 	OutputToConsole(player_ptr, "Current Plugin server var settings\n\n");
 
-    ConCommandBase *pPtr = g_pCVar->GetCommands();
-    while (pPtr)
+	ConCommandBase *pPtr = NULL;
+#if defined (GAME_CSGO)
+	ICvar::Iterator *iter = new ICvar::Iterator(g_pCVar);
+
+	if (iter)
+	{
+		iter->SetFirst();
+		pPtr = iter->Get();
+	}
+#else
+	pPtr = g_pCVar->GetCommands();
+#endif
+
+	while (pPtr)
 	{
 		if (!pPtr->IsCommand())
 		{
@@ -9156,7 +9196,13 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaConfig(player_t *player_ptr, const char *co
 			}
 		}
 
+#if defined ( GAME_CSGO )
+		iter->Next();
+		if (!iter->IsValid()) break;
+		pPtr = iter->Get();
+#else
 		pPtr = const_cast<ConCommandBase*>(pPtr->GetNext());
+#endif
 	}
 
 	return PLUGIN_STOP;
@@ -9272,7 +9318,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaTimeLeft(player_t *player_ptr, const char *
 				seconds_portion = time_left - (minutes_portion * 60);
 			}
 
-			if (gpManiGameType->IsGameType(MANI_GAME_CSS) && time_left == 0)
+			if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) && time_left == 0)
 			{
 				last_round = true;
 			}
@@ -9417,7 +9463,11 @@ void	CAdminPlugin::TurnOffOverviewMap(void)
 
 	for (int i = 1; i <= max_players; i++)
 	{
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+#endif
 		if(pEntity && !pEntity->IsFree() )
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
@@ -9440,13 +9490,21 @@ void	CAdminPlugin::TurnOffOverviewMap(void)
 
 	if (player_found)
 	{
+#if defined ( GAME_CSGO )
+		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index, "VGUIMenu" );
+#else
 		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index );
+#endif
 		msg_buffer->WriteString("overview");
 		msg_buffer->WriteByte(0); // Turn off 'overview' map
 		msg_buffer->WriteByte(0); // Count of 0
 		engine->MessageEnd();
 
+#if defined ( GAME_CSGO )
+		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index, "VGUIMenu" );
+#else
 		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index );
+#endif
 		msg_buffer->WriteString("specmenu");
 		msg_buffer->WriteByte(0); // Turn off 'overview' map
 		msg_buffer->WriteByte(0); // Count of 0
@@ -9605,7 +9663,7 @@ CONVAR_CALLBACK_FN(ManiCSStackingNumLevels)
 CONVAR_CALLBACK_FN(ManiUnlimitedGrenades)
 {
 	if (!FStrEq(pOldString, mani_unlimited_grenades.GetString()) &&
-		gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+		(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 		sv_cheats &&
 		!war_mode)
 	{

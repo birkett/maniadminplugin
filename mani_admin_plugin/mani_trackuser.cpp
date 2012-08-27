@@ -141,7 +141,11 @@ void	ManiTrackUser::ClientActive(edict_t *pEntity)
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
 		if (playerinfo && playerinfo->IsConnected())
 		{
+#if defined ( GAME_CSGO )
+			hash_table[playerinfo->GetUserID()] = IndexOfEdict(pEntity);
+#else
 			hash_table[playerinfo->GetUserID()] = engine->IndexOfEdict(pEntity);
+#endif
 		}
 	}
 }

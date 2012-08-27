@@ -93,7 +93,7 @@ void	InitPanels(void)
 	}
 	else
 	{
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 		g_pStringTableManiScreen->AddString(true, MANI_WEB_STATS_PANEL, 5, "INIT");
 #else
 		g_pStringTableManiScreen->AddString(MANI_WEB_STATS_PANEL, 5, "INIT");
@@ -260,7 +260,11 @@ void	DrawPanel(MRecipientFilter *mrf, char *panel_title, char *network_string, c
 	
 	g_pStringTableManiScreen->SetStringUserData(index, message_length + 1, message);
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index, "VGUIMenu");
+#else
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
+#endif
    
 	msg_buffer->WriteString("info"); // menu name
 	msg_buffer->WriteByte(1);
@@ -287,7 +291,11 @@ void	DrawMOTD(MRecipientFilter *mrf)
 	const ConVar *hostname = g_pCVar->FindVar( "hostname" );
 	const char *title = (hostname) ? hostname->GetString() : "MESSAGE OF THE DAY";
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index, "VGUIMenu" );
+#else
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
+#endif
    
 	msg_buffer->WriteString("info"); // menu name
 	msg_buffer->WriteByte(1);
@@ -320,7 +328,11 @@ inline int url_lower(int _Char)
 //---------------------------------------------------------------------------------
 void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 {
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index, "VGUIMenu" );
+#else
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
+#endif
 
 	//first strip the ""
 	//then see if it starts with http:  or https:

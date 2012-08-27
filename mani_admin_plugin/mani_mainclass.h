@@ -53,6 +53,10 @@ public:
 
 	virtual void FireGameEvent( IGameEvent * event );
 
+#if defined ( GAME_CSGO )
+	virtual int	 GetEventDebugID( void ) { return EVENT_DEBUG_ID_INIT; }
+#endif 
+
 	// Mimic the callback functions
 	bool			Load(void);
 	void			Unload( void );
@@ -69,7 +73,7 @@ public:
 	void			SetCommandClient( int index );
 	void			ClientSettingsChanged( edict_t *pEdict );
 	PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen );
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 	PLUGIN_RESULT	ClientCommand( edict_t *pEntity,  const CCommand &args);
 #else
 	PLUGIN_RESULT	ClientCommand( edict_t *pEntity );

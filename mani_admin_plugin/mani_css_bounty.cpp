@@ -146,7 +146,7 @@ void ManiCSSBounty::PlayerDeath
 	int victim_index;
 	int attacker_index;
 
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (war_mode) return;
 	if (mani_css_bounty.GetInt() == 0) return;
 
@@ -208,7 +208,7 @@ void ManiCSSBounty::PlayerDeath
 //---------------------------------------------------------------------------------
 void ManiCSSBounty::CSSRoundEnd(const char *message)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (gpManiWarmupTimer->InWarmupRound()) return;
 	if (war_mode) return;
 	if (mani_css_bounty.GetInt() == 0) return;
@@ -247,7 +247,7 @@ void ManiCSSBounty::CSSRoundEnd(const char *message)
 //---------------------------------------------------------------------------------
 void ManiCSSBounty::PlayerSpawn(player_t *player_ptr)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (war_mode) return;
 	if (mani_css_bounty.GetInt() == 0) return;
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
@@ -268,7 +268,7 @@ bool BountyFreePage::OptionSelected(player_t *player_ptr, const int option)
 
 bool BountyFreePage::Render(player_t *player_ptr)
 {
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 	if (war_mode) return false;
 	if (mani_css_bounty.GetInt() == 0) return false;
 

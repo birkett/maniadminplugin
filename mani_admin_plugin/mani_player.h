@@ -127,7 +127,7 @@ extern	void UTIL_EmitSoundSingle(player_t *player_ptr, const char *sound_id);
 MENUALL_DEC(PlayerSettings);
 MENUALL_DEC(SkinChoice);
 
-#if !defined ORANGE
+#if !defined GAME_ORANGE
 class IVEngineServer;
 extern	IVEngineServer	*engine;
 class CCommand

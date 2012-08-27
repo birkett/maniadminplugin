@@ -19,6 +19,18 @@ extern IServerPluginHelpers *helpers;
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#if defined ( GAME_CSGO )
+extern CGlobalVars *gpGlobals;
+inline edict_t *PEntityOfEntIndex(int iEntIndex)
+{
+	if (iEntIndex >= 0 && iEntIndex < gpGlobals->maxEntities)
+	{
+		return (edict_t *)(gpGlobals->pEdicts + iEntIndex);
+	}
+	return NULL;
+}
+#endif
+
 MRecipientFilter::MRecipientFilter(void)
 {
 }
@@ -29,7 +41,11 @@ MRecipientFilter::~MRecipientFilter(void)
 
 int MRecipientFilter::GetRecipientCount() const
 {
+#if defined ( GAME_CSGO )
+   return m_Recipients.Count();
+#else
    return m_Recipients.Size();
+#endif
 }
 
 int MRecipientFilter::GetRecipientIndex(int slot) const
@@ -66,7 +82,11 @@ void MRecipientFilter::AddAllPlayers(int maxClients)
    int i;
    for ( i = 1; i <= maxClients; i++ )
    {
-      edict_t *pPlayer = engine->PEntityOfEntIndex(i);
+#if defined ( GAME_CSGO )
+      edict_t *pPlayer = PEntityOfEntIndex(i);
+#else
+	   edict_t *pPlayer = engine->PEntityOfEntIndex(i);
+#endif
       if ( !pPlayer || pPlayer->IsFree()) {
          continue;
       }

@@ -169,7 +169,7 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	GET_INTERFACE(effects, IEffects, IEFFECTS_INTERFACE_VERSION, 20, gameServerFactory)
 	GET_INTERFACE(esounds, IEngineSound, IENGINESOUND_SERVER_INTERFACE_VERSION, 20, interfaceFactory)
 	GET_INTERFACE(serverclients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS, 20, gameServerFactory)
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	GET_INTERFACE(g_pCVar, ICvar, CVAR_INTERFACE_VERSION, 20, interfaceFactory)
 #else
 	GET_INTERFACE(g_pCVar, ICvar, VENGINE_CVAR_INTERFACE_VERSION, 20, interfaceFactory)
@@ -185,7 +185,7 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 	}
 
 	gamedll = serverdll;
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	InitCVars( interfaceFactory ); // register any cvars we have defined
 #else
 	ConVar_Register(0);
@@ -262,7 +262,7 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 //---------------------------------------------------------------------------------
 void CValveMAP::Unload( void )
 {
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	// We must unregister ConVars
 	ConVar_Unregister();
 #endif
@@ -379,7 +379,7 @@ PLUGIN_RESULT CValveMAP::ClientConnect( bool *bAllowConnect, edict_t *pEntity, c
 //---------------------------------------------------------------------------------
 // Purpose: called when a client types in a command (only a subset of commands however, not CON_COMMAND's)
 //---------------------------------------------------------------------------------
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 PLUGIN_RESULT CValveMAP::ClientCommand( edict_t *pEntity, const CCommand &args )
 {
 	return (gpManiAdminPlugin->ClientCommand(pEntity, args));
