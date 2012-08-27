@@ -63,7 +63,7 @@ public:
 	virtual void			SetCommandClient( int index );
 	virtual void			ClientSettingsChanged( edict_t *pEdict );
 	virtual PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen );
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity, const CCommand &args );
 	virtual void			OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue ) {return;}
 #else
@@ -71,6 +71,12 @@ public:
 #endif
 	virtual PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID );
 	virtual int GetCommandIndex() { return m_iClientCommandIndex; }
+
+#if defined ( GAME_CSGO ) // can we use these?
+	virtual void			ClientFullyConnect( edict_t *pEntity ) {};
+	virtual void			OnEdictAllocated( edict_t *edict ) {};
+	virtual void			OnEdictFreed( const edict_t *edict  ) {};
+#endif
 //	virtual void FireGameEvent( IGameEvent * event );
 
 private:

@@ -168,7 +168,7 @@ void		ManiWarmupTimer::RoundStart(void)
 	if (war_mode) return;
 	if (mani_warmup_timer.GetInt() == 0) return;
 	if (!check_timer) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 
 	for (int i = 1; i <= max_players; i++)
 	{
@@ -275,7 +275,7 @@ void		ManiWarmupTimer::PlayerSpawn(player_t *player_ptr)
 	}
 
 	// Unlimited grenades
-	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1 && gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1 && (gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		GiveItem(player_ptr->entity, "weapon_hegrenade");
 	}
@@ -286,7 +286,7 @@ void		ManiWarmupTimer::PlayerSpawn(player_t *player_ptr)
 		{
 			// Ignore assault suit if not CSS
 			if (i == 0 && 
-				!gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+				(!gpManiGameType->IsGameType(MANI_GAME_CSS) && !gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 				strcmp(item_name[i], "item_assaultsuit") == 0)
 			{
 				continue;
@@ -347,7 +347,7 @@ void		ManiWarmupTimer::GameFrame(void)
 			fire_restart = false;
 		}
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 			mani_warmup_timer_knives_only.GetInt() != 0 && 
 			mani_warmup_timer_knives_respawn.GetInt() == 1 &&
 			mani_warmup_timer_unlimited_grenades.GetInt() == 0)
@@ -396,7 +396,7 @@ void		ManiWarmupTimer::GameFrame(void)
 			}
 		}
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 			mani_warmup_infinite_ammo.GetInt() == 1)
 		{
 			this->GiveAllAmmo(); 
@@ -411,7 +411,7 @@ void		ManiWarmupTimer::PlayerDeath(player_t *player_ptr)
 {
 	if (war_mode) return;
 	if (!check_timer) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (mani_warmup_timer_knives_only.GetInt() == 0) return;
 	if (mani_warmup_timer_knives_respawn.GetInt() == 0) return;
 	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1) return;
@@ -432,7 +432,7 @@ PLUGIN_RESULT		ManiWarmupTimer::JoinClass(edict_t *pEdict)
 {
 	if (war_mode) return PLUGIN_CONTINUE;
 	if (!check_timer) return PLUGIN_CONTINUE;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return PLUGIN_CONTINUE;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 	if (mani_warmup_timer_knives_only.GetInt() == 0) return PLUGIN_CONTINUE;
 	if (mani_warmup_timer_unlimited_grenades.GetInt() == 1) return PLUGIN_CONTINUE;
 	if (mani_warmup_timer_knives_respawn.GetInt() == 0) return PLUGIN_CONTINUE;
@@ -455,7 +455,7 @@ PLUGIN_RESULT		ManiWarmupTimer::JoinClass(edict_t *pEdict)
 bool		ManiWarmupTimer::UnlimitedHE(void)
 {
 	if (!check_timer) return false;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 	if (mani_warmup_timer_unlimited_grenades.GetInt() == 0) return false;
 
 	// Unlimited HE mode
@@ -468,7 +468,7 @@ bool		ManiWarmupTimer::UnlimitedHE(void)
 bool		ManiWarmupTimer::KnivesOnly(void)
 {
 	if (!check_timer) return false;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 	if (mani_warmup_timer_knives_only.GetInt() == 0) return false;
 
 	// Knife mode enabled, check if we need to see what type of map this
@@ -520,7 +520,7 @@ bool		ManiWarmupTimer::KnivesOnly(void)
 bool		ManiWarmupTimer::IgnoreTK(void)
 {
 	if (!check_timer) return false;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return false;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 
 	return ((mani_warmup_timer_ignore_tk.GetInt() == 0) ? false:true);
 }

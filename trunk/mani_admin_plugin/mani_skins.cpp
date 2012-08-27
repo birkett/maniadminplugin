@@ -1066,7 +1066,7 @@ void	SetupSkinsAutoDownloads(void)
 			if (pDownloadablesTable)
 			{
 				snprintf(res_string, sizeof(res_string), "%s", skin_list[i].resource_list[j].resource);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 				pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
 #else
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
@@ -1100,7 +1100,7 @@ void	SetupActionModelsAutoDownloads(void)
 				snprintf(res_string, sizeof(res_string), "sound/%s", action_model_list[i].sound_list[j].sound_file);
 				if (filesystem->FileExists(res_string))
 				{
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 					pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
 #else
 					pDownloadablesTable->AddString(res_string, sizeof(res_string));

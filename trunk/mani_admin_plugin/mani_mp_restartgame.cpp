@@ -78,7 +78,7 @@ extern  float timeleft_offset;
 
 ConVar *pMPRestartGame = NULL;
 
-#ifdef ORANGE
+#if defined ( GAME_ORANGE )
 FnChangeCallback_t pMPRestartGameCallback = NULL;
 #else
 FnChangeCallback pMPRestartGameCallback = NULL;
@@ -110,7 +110,12 @@ ManiMPRestartGame::~ManiMPRestartGame()
 void	ManiMPRestartGame::Load(void)
 {
 	//find the commands in the server's CVAR list
-	ConCommandBase *pCmd = g_pCVar->GetCommands();
+	ConCommandBase *pCmd = NULL;
+#if defined (GAME_CSGO)
+	pMPRestartGame = static_cast<ConVar *>(g_pCVar->FindCommandBase("mp_restartgame"));
+#else
+	pCmd = g_pCVar->GetCommands();
+
 	while (pCmd)
 	{
 		if (!pCmd->IsCommand())
@@ -124,18 +129,34 @@ void	ManiMPRestartGame::Load(void)
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
 	}
 
+#endif
+
 	if (pMPRestartGame)
 	{
+#if defined ( GAME_CSGO )
+		if (pMPRestartGame->GetChangeCallbackCount())
+		{
+			pMPRestartGameCallback = pMPRestartGame->GetChangeCallback(0);
+		}
+#else
 		if (pMPRestartGame->m_fnChangeCallback)
 		{
 			pMPRestartGameCallback = pMPRestartGame->m_fnChangeCallback;
 		}
+#endif
 
-#ifdef ORANGE
+#if defined ( GAME_CSGO )
+		if (pMPRestartGameCallback)
+		{
+//			pMPRestartGame->RemoveChangeCallback(pMPRestartGameCallback);
+			pMPRestartGame->InstallChangeCallback((FnChangeCallback_t) mp_restart_game_callback);
+		}
+#elif defined ( GAME_ORANGE )
 		pMPRestartGame->m_fnChangeCallback = (FnChangeCallback_t) mp_restart_game_callback;
 #else
 		pMPRestartGame->m_fnChangeCallback = mp_restart_game_callback;
 #endif
+
 	}
 
 
@@ -148,7 +169,12 @@ void	ManiMPRestartGame::Unload(void)
 {
 	if (pMPRestartGame && pMPRestartGameCallback)
 	{
+#if defined (GAME_CSGO)
+//		pMPRestartGame->RemoveChangeCallback((FnChangeCallback_t) mp_restart_game_callback);
+		pMPRestartGame->InstallChangeCallback(pMPRestartGameCallback);
+#else
 		pMPRestartGame->m_fnChangeCallback = pMPRestartGameCallback;
+#endif
 	}
 }
 
@@ -256,7 +282,7 @@ CONVAR_CALLBACK_FN(mp_restart_game_callback)
 	if (pMPRestartGameCallback)
 	{
 		g_ManiMPRestartGame.CVarChanged((ConVar*)pVar);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 		pMPRestartGameCallback(pVar, pOldString, pOldFloat);
 #else
 		pMPRestartGameCallback(pVar, pOldString);

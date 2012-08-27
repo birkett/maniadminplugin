@@ -280,7 +280,7 @@ void LoadSigScans(void)
 	delete linux_sym_ptr;
 #endif
 
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	libload_failed = false;
 
 #ifdef WIN32

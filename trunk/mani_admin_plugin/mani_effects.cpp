@@ -455,7 +455,11 @@ void ProcessTimeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )				
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, countdown_beep, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 				}
 
 				//CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -531,7 +535,11 @@ void ProcessTimeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, final_beep, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 				}
 
 				//CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity();
@@ -736,7 +744,11 @@ void ProcessFireBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, countdown_beep, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 				}
 
 				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -812,7 +824,11 @@ void ProcessFireBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, final_beep, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 				}
 
 				//  *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -1017,7 +1033,11 @@ void ProcessFreezeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, countdown_beep, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, countdown_beep, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 				}
 
 				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -1092,7 +1112,11 @@ void ProcessFreezeBombFrame(void)
 					MRecipientFilter mrf; // this is my class, I'll post it later.
 					mrf.MakeReliable();
 					mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )
+					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, final_beep, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 					esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, final_beep, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 				}
 
 				// CBaseEntity *m_pCBaseEntity = player.entity->GetUnknown()->GetBaseEntity(); 
@@ -1288,7 +1312,11 @@ void ProcessBeaconFrame(void)
 				MRecipientFilter mrf; // this is my class, I'll post it later.
 				mrf.MakeReliable();
 				mrf.AddAllPlayers(max_players);
+#if defined ( GAME_CSGO )
+				esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, NULL, 0, beacon_sound, 0.7,  0.5, 0, 0, 100, &pos);
+#else
 				esounds->EmitSound((IRecipientFilter &)mrf, player.index, CHAN_AUTO, beacon_sound, 0.7,  0.5, 0, 100, 0, &pos);
+#endif
 			}
 
 			if (gpManiGameType->GetAdvancedEffectsAllowed())
@@ -1408,7 +1436,11 @@ const char	*fmt,
 		}
 	}
 
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg"); // Show TextMsg type user message
+#else
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index); // Show TextMsg type user message
+#endif
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(tempString);
 	engine->MessageEnd();
@@ -1426,7 +1458,11 @@ void BlindPlayer( player_t *player, int blind_amount)
 
 	mrf.AddPlayer(player->index);
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, fade_message_index, "Fade" );
+#else
 	msg_buffer = engine->UserMessageBegin( &mrf, fade_message_index );
+#endif
 
 	msg_buffer->WriteShort(1536);
 	msg_buffer->WriteShort(1536);
@@ -1468,13 +1504,21 @@ void	SlayPlayer
 		MRecipientFilter mrf; // this is my class, I'll post it later.
 		mrf.MakeReliable();
 		mrf.AddAllPlayers(max_players);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, NULL, 0, slay_sound_name, 0.5,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, slay_sound_name, 0.5,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 		else
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, NULL, 0, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, hl2mp_slay_sound_name, 0.6,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 
 	}
@@ -1502,11 +1546,11 @@ void	SlayPlayer
 			effects->Beam(pos, end, lgtning_index, 0, 0, 5, 1.0, 10, 10, 1, 0, 255, 255, 255, 255, 64);
 		}
 		
-		if (use_explosion && gpManiGameType->GetAdvancedEffectsAllowed())
+		if (use_explosion && gpManiGameType->GetAdvancedEffectsAllowed() && !gpManiGameType->IsGameType(MANI_GAME_CSGO))
 		{
 			MRecipientFilter f;
 			f.AddAllPlayers(max_players);
-   
+
 			for (int j = 0; j < 4; j++)
 			{
 				temp_ents->Explosion( f, randomStr->RandomFloat( 0.0, 1.0 ), &pos, 
@@ -1644,13 +1688,21 @@ void	ProcessSlapPlayer
 		MRecipientFilter mrf; // this is my class, I'll post it later.
 		mrf.MakeReliable();
 		mrf.AddAllPlayers(max_players);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, NULL, 0, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 		else
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, NULL, 0, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player->index, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 
 	}
@@ -1671,7 +1723,11 @@ void	ProcessBurnPlayer
 	// different games
 	int max = engine->GetEntityCount();
 	for ( int index = 0; index < max; index++ ) {
+#if defined ( GAME_CSGO )
+		edict_t *pEdict = PEntityOfEntIndex( index );
+#else
 		edict_t *pEdict = engine->PEntityOfEntIndex( index );
+#endif
 		if ( !pEdict ) continue;
 		if ( FStrEq ( "entityflame", pEdict->GetClassName() ) ) {
 			flamelist.push_back(index);
@@ -1685,7 +1741,11 @@ void	ProcessBurnPlayer
 
 	max = engine->GetEntityCount(); // should be one more :)
 	for ( int index = 0; index < max; index++ ) {
+#if defined ( GAME_CSGO )
+		edict_t *pEdict = PEntityOfEntIndex( index );
+#else
 		edict_t *pEdict = engine->PEntityOfEntIndex( index );
+#endif
 		if ( !pEdict ) continue;
 		if ( FStrEq ( "entityflame", pEdict->GetClassName() ) ) {
 			if ( flamelist.size() == 0 ) {
@@ -1769,13 +1829,21 @@ void	ProcessFreezePlayer(player_t *player_ptr, bool admin_called)
 		MRecipientFilter mrf; // this is my class, I'll post it later.
 		mrf.MakeReliable();
 		mrf.AddAllPlayers(max_players);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, NULL, 0, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 		else
 		{
+#if defined ( GAME_CSGO )
+			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, NULL, 0, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 0, 100, &pos);
+#else
 			esounds->EmitSound((IRecipientFilter &)mrf, player_ptr->index, CHAN_AUTO, hl2mp_slap_sound_name[sound_index].sound_name, 0.7,  ATTN_NORM, 0, 100, 0, &pos);
+#endif
 		}
 	}
 }

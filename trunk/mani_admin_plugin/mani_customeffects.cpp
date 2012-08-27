@@ -1447,7 +1447,11 @@ bool ManiCustomEffects::PlayerByUserID(player_t *player_ptr)
 	player_ptr->index = gpManiTrackUser->GetIndex(player_ptr->user_id);
 	if (player_ptr->index == -1) return false;
 
+#if defined ( GAME_CSGO )
+	edict_t *pEntity = PEntityOfEntIndex(player_ptr->index);
+#else
 	edict_t *pEntity = engine->PEntityOfEntIndex(player_ptr->index);
+#endif
 	if(pEntity && !pEntity->IsFree() )
 	{
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );
@@ -1480,7 +1484,11 @@ bool ManiCustomEffects::PlayerByUserID(player_t *player_ptr)
 bool ManiCustomEffects::PlayerByIndex(player_t *player_ptr)
 {
 
+#if defined ( GAME_CSGO )
+	edict_t *pEntity = PEntityOfEntIndex(player_ptr->index);
+#else
 	edict_t *pEntity = engine->PEntityOfEntIndex(player_ptr->index);
+#endif
 	if(pEntity && !pEntity->IsFree() )
 	{
 		IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );

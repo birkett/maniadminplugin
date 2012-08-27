@@ -316,7 +316,7 @@ void	ManiStats::Load(void)
 {
 	level_ended = false;
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		for (int i = 0; i < MANI_MAX_STATS_CSS_WEAPONS; i++)
 		{
@@ -418,24 +418,24 @@ void	ManiStats::Load(void)
 	Winner = Hashlookup by a factor of 2
 
 	int j = 0;
-	float timer = engine->Time();
+	float timer = gpGlobals->curtime;
 	for (int i = 0; i < 20000000; i ++)
 	{
 		int x = this->GetCSSWeaponIndex(css_weapons[rand() % 28]);
 		j += x;
 	}
 
-	MMsg("strcmp = %f\n", engine->Time() - timer);
+	MMsg("strcmp = %f\n", gpGlobals->curtime - timer);
 	MMsg("j = %i\n", j);
 
 	int k = 0; 
-	float timer2 = engine->Time();
+	float timer2 = gpGlobals->curtime;
 	for (int i = 0; i < 20000000; i++)
 	{
 		int x = this->GetCSSWeaponHashIndex(css_weapons[rand() % 28]);
 		k += x;
 	}
-	MMsg("hash = %f\n", engine->Time() - timer2);
+	MMsg("hash = %f\n", gpGlobals->curtime - timer2);
 	MMsg("k = %i\n", k);
 	while(1);
 */
@@ -868,7 +868,7 @@ void ManiStats::CalculateStats(bool use_steam_id, bool round_end)
 	//WriteDebug("ManiStats::CalculateStats() In function steam mode [%s] round end [%s]\n" , (use_steam_id ? "TRUE":"FALSE"), (round_end ? "TRUE":"FALSE"));
 	float	timer;
 
-	timer = engine->Time();
+	timer = gpGlobals->curtime;
 
 	if (use_steam_id)
 	{
@@ -1097,7 +1097,7 @@ void ManiStats::CalculateStats(bool use_steam_id, bool round_end)
 		}
 	}
 
-	MMsg("Calculate Stats total time [%f]\n", engine->Time() - timer);
+	MMsg("Calculate Stats total time [%f]\n", gpGlobals->curtime - timer);
 	return;
 }
 
@@ -1665,7 +1665,7 @@ void ManiStats::PlayerHurt
 
 	int health_amount;
 	
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		health_amount = event->GetInt("dmg_health", 0);
 	}
@@ -1680,7 +1680,7 @@ void ManiStats::PlayerHurt
 		|| active_player_list[attacker_ptr->index - 1].last_user_id != victim_ptr->user_id)
 	{
 		// Update shots fired
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			player_found->user_def[CSS_SHOT_HIT]++;
 			session[attacker_ptr->index - 1].user_def[CSS_SHOT_HIT]++;
@@ -1842,7 +1842,7 @@ void ManiStats::PlayerDeath
 
 	float	weapon_weight = 1.0;
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		int attacker_weapon = weapon_hash_table[this->GetCSSWeaponHashIndex(weapon_name)];
 		if (attacker_weapon != -1)
@@ -2528,7 +2528,7 @@ bool StatsMeFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 	}
 
 	char	headshot_string[128]="";
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		snprintf(headshot_string, sizeof(headshot_string), "%s", Translate(player_ptr, M_STATS_HEADSHOTS, "%i", player_found->headshots));
 	}
@@ -2616,7 +2616,7 @@ bool StatsMeFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 
 	strcat(menu_string, time_online);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		float accuracy = 0.0;
 
@@ -2883,7 +2883,7 @@ bool SessionFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 	}
 
 	char	headshot_string[128]="";
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		snprintf(headshot_string, sizeof(headshot_string), "%s", Translate(player_ptr, M_STATS_HEADSHOTS, "%i", session_ptr->headshots));
 	}
@@ -2949,7 +2949,7 @@ bool SessionFreePage::Render(player_t *player_ptr, player_t *output_player_ptr)
 		strcat(menu_string, time_online);
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		float accuracy = 0.0;
 
@@ -3144,7 +3144,8 @@ bool HitBoxMeFreePage::Render(player_t *player_ptr)
 
 	if (mani_stats.GetInt() == 0) return false;
 	if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-		gpManiGameType->IsGameType(MANI_GAME_DOD))) return false;
+		gpManiGameType->IsGameType(MANI_GAME_DOD) ||
+		gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 
 	if (!gpManiStats->active_player_list[player_ptr->index - 1].active) return false;
 	player_found = gpManiStats->active_player_list[player_ptr->index - 1].rank_ptr;
@@ -3165,7 +3166,8 @@ bool HitBoxMeFreePage::Render(player_t *player_ptr)
 	}
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-		gpManiGameType->IsGameType(MANI_GAME_DOD))
+		gpManiGameType->IsGameType(MANI_GAME_DOD) ||
+		gpManiGameType->IsGameType(MANI_GAME_CSGO))
 	{
 		float accuracy = 0.0;
 
@@ -3293,7 +3295,7 @@ bool WeaponMeFreePage::Render(player_t *player_ptr)
 	rank_t	*player_found;
 
 	if (mani_stats.GetInt() == 0) return false;
-	if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_DOD))) return false;
+	if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_DOD) || gpManiGameType->IsGameType(MANI_GAME_CSGO))) return false;
 	if (!gpManiGameType->IsAMXMenuAllowed()) return false;
 
 	if (!gpManiStats->active_player_list[player_ptr->index - 1].active) return false;
@@ -3301,7 +3303,7 @@ bool WeaponMeFreePage::Render(player_t *player_ptr)
 
 	int max_weapons;
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		max_weapons = MANI_MAX_STATS_CSS_WEAPONS;
 	}
@@ -3313,7 +3315,7 @@ bool WeaponMeFreePage::Render(player_t *player_ptr)
 	// Make a big list for our weapons
 	CreateList ((void **) &weapon_list, sizeof(weaponme_t), max_weapons, &weapon_list_size);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		for (int i = 0; i < max_weapons; i ++)
 		{
@@ -3584,7 +3586,8 @@ void ManiStats::WriteStats(bool use_steam_id)
 		kv->WriteKey("da", rp_list[i]->damage);
 
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-		   gpManiGameType->IsGameType(MANI_GAME_DOD))
+		   gpManiGameType->IsGameType(MANI_GAME_DOD) ||
+			gpManiGameType->IsGameType(MANI_GAME_CSGO))
 		{
 			for (int j = 0; j < MANI_MAX_STATS_HITGROUPS; j++)
 			{
@@ -3592,7 +3595,7 @@ void ManiStats::WriteStats(bool use_steam_id)
 			}
 		}
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			for (int j = 0; j < MANI_MAX_STATS_CSS_WEAPONS; j++)
 			{
@@ -3607,7 +3610,7 @@ void ManiStats::WriteStats(bool use_steam_id)
 			}
 		}
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			// CSS specific stuff
 			/*
@@ -3737,7 +3740,8 @@ void ManiStats::WriteStats(bool use_steam_id)
 	} 
 
 	if (gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-		gpManiGameType->IsGameType(MANI_GAME_DOD))
+		gpManiGameType->IsGameType(MANI_GAME_DOD) ||
+		gpManiGameType->IsGameType(MANI_GAME_CSGO))
 	{
 		for (int i = 0; i < MANI_MAX_STATS_HITGROUPS; i++)
 		{
@@ -3752,7 +3756,7 @@ void ManiStats::WriteStats(bool use_steam_id)
 	}
 
 	bool	extra_fields = false;
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		extra_fields = true;
 		temp_length = 0;
@@ -3914,7 +3918,8 @@ void ManiStats::WriteStats(bool use_steam_id)
 			rp_list[i]->damage);
 
 		if (gpManiGameType->IsGameType(MANI_GAME_CSS) || 
-			gpManiGameType->IsGameType(MANI_GAME_DOD))
+			gpManiGameType->IsGameType(MANI_GAME_DOD) ||
+		gpManiGameType->IsGameType(MANI_GAME_CSGO))
 		{
 			// Do hit groups
 			for (int j = 0; j < MANI_MAX_STATS_HITGROUPS; j++)
@@ -3924,7 +3929,7 @@ void ManiStats::WriteStats(bool use_steam_id)
 			}
 		}
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			// Handle weapon stats
 			for (int j = 0; j < MANI_MAX_STATS_CSS_WEAPONS; j++)
@@ -4055,7 +4060,7 @@ void ManiStats::ReadStats(bool use_steam_id)
 		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/mani_name_stats.txt", mani_path.GetString());
 	}
 
-	float timer1 = engine->Time();
+	float timer1 = gpGlobals->curtime;
 
 	kv_ptr->SetKeyPairSize(3,30);
 	kv_ptr->SetKeySize(4, 100);
@@ -4066,9 +4071,9 @@ void ManiStats::ReadStats(bool use_steam_id)
 		return;
 	}
 
-	MMsg("Time for read = [%f]\n", engine->Time() - timer1);
+	MMsg("Time for read = [%f]\n", gpGlobals->curtime - timer1);
 
-	timer1 = engine->Time();
+	timer1 = gpGlobals->curtime;
 
 	//////////////////////////////////////////////
 	read_t *rd_ptr = kv_ptr->GetPrimaryKey();
@@ -4135,7 +4140,7 @@ void ManiStats::ReadStats(bool use_steam_id)
 			rank_ptr->hit_groups[i] = kv_ptr->GetInt(hitboxes[i],0);
 		}
 
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			// CSS specific stuff
 			for (int i = 0; i < MANI_MAX_USER_DEF; i++)
@@ -4170,7 +4175,7 @@ void ManiStats::ReadStats(bool use_steam_id)
 	}
 
     kv_ptr->DeleteThis();
-	MMsg("Time for load into structure = [%f]\n", engine->Time() - timer1);
+	MMsg("Time for load into structure = [%f]\n", gpGlobals->curtime - timer1);
 
 	if (use_steam_id)
 	{

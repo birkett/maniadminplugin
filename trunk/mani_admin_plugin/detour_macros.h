@@ -29,6 +29,18 @@
 // ********************************************************************************
 #define MEMBER_CALL(name) ( this->* name##_Original )
 
+#define DECL_MEMBER_DETOUR11(name, returntype, param1, param2, param3, param4, param5, param6, param7, param8, param9, paramA, paramB ) \
+	class name##Class { \
+	public: \
+		returntype name ( param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, paramA pA, paramB pB ); \
+		static returntype ( name##Class::* name##_Original )( param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, paramA pA, paramB pB ); \
+	}; \
+	returntype ( name##Class::* name##Class::name##_Original )( param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, paramA pA, paramB pB ) = 0;  \
+	returntype name##Class::name( param1 p1, param2 p2, param3 p3, param4 p4, param5 p5, param6 p6, param7 p7, param8 p8, param9 p9, paramA pA, paramB pB )
+
+#define DECL_MEMBER_DETOUR11_void(name, param1, param2, param3, param4, param5, param6, param7, param8, param9, paramA, paramB ) \
+	DECL_MEMBER_DETOUR11( name, void *, param1, param2, param3, param4, param5, param6, param7, param8, param9, paramA, paramB )
+
 #define DECL_MEMBER_DETOUR10(name, returntype, param1, param2, param3, param4, param5, param6, param7, param8, param9, paramA ) \
 	class name##Class { \
 	public: \

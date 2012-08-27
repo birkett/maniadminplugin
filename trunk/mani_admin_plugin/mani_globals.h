@@ -61,7 +61,7 @@ extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IGameEventListener2 *gpManiIGELCallback;
 extern	int	con_command_index;
 
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 #include <ISmmPlugin.h>
 #include <sourcehook/sourcehook.h>
 

@@ -164,7 +164,11 @@ void ManiAutoMap::GameFrame(void)
 	for (int i = 1; i <= max_players; i++)
 	{
 		// Faster than FindPlayerByIndex()
+#if defined ( GAME_CSGO )
+		edict_t *pEntity = PEntityOfEntIndex(i);
+#else
 		edict_t *pEntity = engine->PEntityOfEntIndex(i);
+#endif
 		if(pEntity && !pEntity->IsFree() )
 		{
 			IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo( pEntity );

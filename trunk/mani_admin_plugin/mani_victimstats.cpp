@@ -123,7 +123,7 @@ ManiVictimStats::~ManiVictimStats()
 void ManiVictimStats::ClientActive(player_t	*player_ptr)
 {
 	if (war_mode) return;
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 
 	PlayerSpawn(player_ptr);
 }
@@ -134,7 +134,7 @@ void ManiVictimStats::ClientActive(player_t	*player_ptr)
 void ManiVictimStats::ClientDisconnect(player_t	*player_ptr)
 {
 	if (war_mode) return;
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 
 	PlayerSpawn(player_ptr);
 }
@@ -148,7 +148,7 @@ void ManiVictimStats::PlayerSpawn
  )
 {
 	int	index = player_ptr->index - 1;
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 
 	for (int i = 0; i < MANI_MAX_PLAYERS; i++)
 	{
@@ -293,7 +293,7 @@ void ManiVictimStats::PlayerHurt
 		return;
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		health_amount = event->GetInt("dmg_health", 0);
 	}

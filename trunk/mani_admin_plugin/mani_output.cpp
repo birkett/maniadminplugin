@@ -419,7 +419,7 @@ const char	*fmt,
 				found_admin = true;
 				mrfadmin.AddPlayer(i);
 				if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-					  gpManiGameType->IsGameType(MANI_GAME_CSS)))
+					  gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 				{
 					OutputToConsole(&server_player, "%s\n", admin_final_string);
 				}
@@ -429,7 +429,7 @@ const char	*fmt,
 				found_player = true;
 				mrf.AddPlayer(i);
 				if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-					gpManiGameType->IsGameType(MANI_GAME_CSS)))
+					gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 				{
 					OutputToConsole(&server_player, "%s\n", non_admin_final_string);
 				}
@@ -438,7 +438,11 @@ const char	*fmt,
 
 		if (found_player)
 		{
+#if defined ( GAME_CSGO )
+			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 			msg_buffer->WriteByte(4); // Center area
 			msg_buffer->WriteString(non_admin_final_string);
 			engine->MessageEnd();
@@ -446,7 +450,11 @@ const char	*fmt,
 
 		if (found_admin)
 		{
+#if defined ( GAME_CSGO )
+			msg_buffer = engine->UserMessageBegin( &mrfadmin, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 			msg_buffer = engine->UserMessageBegin( &mrfadmin, text_message_index ); // Show TextMsg type user message
+#endif
 			msg_buffer->WriteByte(4); // Center area
 			msg_buffer->WriteString(admin_final_string);
 			engine->MessageEnd();
@@ -469,7 +477,7 @@ const char	*fmt,
 
 			found_player = true;
 			if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-				gpManiGameType->IsGameType(MANI_GAME_CSS)))
+				gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 			{
 				OutputToConsole(&server_player, "%s\n", admin_final_string);
 			}
@@ -481,7 +489,11 @@ const char	*fmt,
 			mrf.MakeReliable();
 			mrf.AddAllPlayers(max_players);
 
+#if defined ( GAME_CSGO )
+			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 			msg_buffer->WriteByte(4); // Center area
 			msg_buffer->WriteString(admin_final_string);
 			engine->MessageEnd();
@@ -509,7 +521,11 @@ const char	*fmt,
 	mrf.MakeReliable();
 	mrf.AddAllPlayers(max_players);
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(tempString);
 	engine->MessageEnd();
@@ -536,7 +552,11 @@ const char	*fmt,
 	mrf.MakeReliable();
 	mrf.AddPlayer(player_ptr->index);
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(tempString);
 	engine->MessageEnd();
@@ -583,7 +603,7 @@ void SayToAll(const int colour, bool echo, const char	*fmt, ...)
 		mrf.AddPlayer(i);
 
 		if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-			gpManiGameType->IsGameType(MANI_GAME_CSS)))
+			gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 		{
 			if (echo) OutputToConsole(&server_player, "%s\n", tempString);
 		}
@@ -640,7 +660,7 @@ void SayToDead(const int colour, const char	*fmt, ...)
 			mrf.AddPlayer(i);
 			found_player = true;
 			if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-				gpManiGameType->IsGameType(MANI_GAME_CSS)))
+				gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 			{
 				OutputToConsole(&recipient_player, "%s\n", tempString);
 			}
@@ -652,7 +672,7 @@ void SayToDead(const int colour, const char	*fmt, ...)
 			mrf.AddPlayer(i);
 			found_player = true;
 			if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-				gpManiGameType->IsGameType(MANI_GAME_CSS)))
+				gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 			{
 				OutputToConsole(&recipient_player, "%s\n", tempString);
 			}
@@ -701,7 +721,7 @@ void SayToPlayer(const int colour, player_t *player, const char	*fmt, ...)
 
 	mrf.AddPlayer(player->index);
 	if (!(gpManiGameType->IsGameType(MANI_GAME_CSS) ||
-		 gpManiGameType->IsGameType(MANI_GAME_TF)))
+		 gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		OutputToConsole(player, "%s\n", tempString);
 	}
@@ -837,7 +857,11 @@ void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr)
 
 	// Copy to restricted size
 	snprintf(text_out, sizeof(text_out), "%s", text_ptr);
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index, "HintText" );
+#else
 	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index);
+#endif
 	msg_buffer->WriteByte(1);
 	msg_buffer->WriteString(text_out);
 	engine->MessageEnd();	
@@ -1453,9 +1477,13 @@ void OutputHelpText
 //---------------------------------------------------------------------------------
 void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 {
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin(mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 	msg_buffer = engine->UserMessageBegin(mrf, text_message_index ); // Show TextMsg type user message
+#endif
 	msg_buffer->WriteByte(3); // Say area
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		switch (colour)
 		{
@@ -1516,9 +1544,10 @@ bool vcmp(void *_addr1, void *_addr2, size_t len)
 
 void FindConPrintf(void)
 {
-	ConCommandBase *pBase = g_pCVar->GetCommands();
+	ConCommandBase *pBase = NULL;
 	unsigned char *ptr = NULL;
-#ifdef ORANGE
+
+#ifdef GAME_ORANGE
 	FnCommandCallback_t callback = NULL;
 #else
 	FnCommandCallback callback = NULL;
@@ -1526,6 +1555,8 @@ void FindConPrintf(void)
 
 	int offs = 0;
 
+#if !defined ( GAME_CSGO )
+	pBase = g_pCVar->GetCommands();
 	while (pBase)
 	{
 		if ( strcmp(pBase->GetName(), "echo") == 0 )
@@ -1556,6 +1587,32 @@ void FindConPrintf(void)
 		}
 		pBase = const_cast<ConCommandBase *>(pBase->GetNext());
 	}
+#else
+	pBase = g_pCVar->FindCommand("echo");
+	callback = ((ConCommand *)pBase)->m_fnCommandCallback;
+	ptr = (unsigned char *)callback;
+	if (vcmp(ptr, ENGINE486_SIG, SIGLEN))
+	{
+		offs = ENGINE486_OFFS;
+	} else if (vcmp(ptr, ENGINE686_SIG, SIGLEN)) {
+		offs = ENGINE686_OFFS;
+	} else if (vcmp(ptr, ENGINEAMD_SIG, SIGLEN)) {
+		offs = ENGINEAMD_OFFS;
+	} else if (vcmp(ptr, ENGINEW32_SIG, SIGLEN)) {
+		offs = ENGINEW32_OFFS;
+	}
+	if (!offs || ptr[offs-1] != IA32_CALL)
+	{
+		return;
+	}
+	//get the relative offset
+	MMsg = *((CONPRINTF_FUNC *)(ptr + offs));
+	//add the base offset, to the ip (which is the address+offset + 4 bytes for next instruction)
+	MMsg = (CONPRINTF_FUNC)((unsigned long)MMsg + (unsigned long)(ptr + offs) + 4);
+	Msg("Using conprintf\n");
+	return;
+
+#endif
 
 	Msg("Using Msg()\n");
 	MMsg = (CONPRINTF_FUNC)Msg;

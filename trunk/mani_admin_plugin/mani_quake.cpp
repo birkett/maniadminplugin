@@ -273,7 +273,7 @@ void	SetupAutoDownloads(void)
 			if (pDownloadablesTable)
 			{
 				snprintf(res_string, sizeof(res_string), "sound/%s", quake_sound_list[i].sound_file);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 				pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
 #else
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
@@ -310,7 +310,7 @@ void	ProcessQuakeRoundStart(void)
 		quake_first_blood = true;
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS) && mani_quake_prepare_to_fight_mode.GetInt() == 1)
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) && mani_quake_prepare_to_fight_mode.GetInt() == 1)
 	{
 		player_t attacker, victim;
 		PlayQuakeSound(&attacker, &victim, MANI_QUAKE_SOUND_PREPARE, 1);
@@ -724,7 +724,11 @@ void ShowQuakeSound (player_t *attacker, player_t *victim, int mode, char *fmt, 
 		}
 	}
 
+#if defined ( GAME_CSGO )
+	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+#else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
+#endif
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(temp_string);
 	engine->MessageEnd();

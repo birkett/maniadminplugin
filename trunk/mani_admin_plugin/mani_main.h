@@ -52,7 +52,7 @@ const int	gametypes_min_version = 3;
 #define COMMON_CORE "1.2.22.12"
 #define COMMON_VERSION "Mani Admin Plugin 2012 V" COMMON_CORE
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 #ifdef SOURCEMM
 #define PLUGIN_VERSION COMMON_VERSION " SMM Orange, www.mani-admin-plugin.com"
 #define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
@@ -211,7 +211,7 @@ MANI_GIVE_HEALTH_PERCENT,
 MANI_TAKE_HEALTH,
 MANI_TAKE_HEALTH_PERCENT};
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 #define CONVAR_CALLBACK_PROTO(_name) \
 	void _name ( IConVar *pVar, char const *pOldString, float pOldFloat)
 
@@ -229,6 +229,22 @@ MANI_TAKE_HEALTH_PERCENT};
 
 #define CONVAR_CALLBACK_FN(_name) \
 	static void _name ( ConVar *pVar, char const *pOldString)
+#endif
+
+#if defined ( GAME_CSGO )
+extern CGlobalVars *gpGlobals;
+inline int IndexOfEdict(const edict_t *pEdict)
+{
+	return (int)(pEdict - gpGlobals->pEdicts);
+}
+inline edict_t *PEntityOfEntIndex(int iEntIndex)
+{
+	if (iEntIndex >= 0 && iEntIndex < gpGlobals->maxEntities)
+	{
+		return (edict_t *)(gpGlobals->pEdicts + iEntIndex);
+	}
+	return NULL;
+}
 #endif
 
 #endif

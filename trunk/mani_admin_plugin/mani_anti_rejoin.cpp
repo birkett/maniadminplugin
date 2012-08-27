@@ -95,7 +95,7 @@ void ManiAntiRejoin::ClientDisconnect(player_t	*player_ptr)
 {
 	if (war_mode) return;
 	if (IsLAN()) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (mani_anti_rejoin.GetInt() == 0) return;
 	if (player_ptr->is_bot) return;
 
@@ -136,7 +136,7 @@ void	ManiAntiRejoin::PlayerSpawn(player_t *player_ptr)
 {
 	if (war_mode) return;
 	if (IsLAN()) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (gpManiWarmupTimer->InWarmupRound()) return;
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
 	if (mani_anti_rejoin.GetInt() == 0) return;

@@ -234,7 +234,11 @@ class ManiEmptyClass {};
 VFUNC_CALL0(MANI_VFUNC_EYE_ANGLES, const QAngle &, CBaseEntity, CBaseEntity_EyeAngles)
 
 // virtual void	Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
+#if defined ( GAME_CSGO )
+VFUNC_CALL4_void(MANI_VFUNC_TELEPORT, CBaseEntity, CBaseEntity_Teleport, const Vector *, const QAngle *,  const Vector *, bool)
+#else
 VFUNC_CALL3_void(MANI_VFUNC_TELEPORT, CBaseEntity, CBaseEntity_Teleport, const Vector *, const QAngle *, const Vector *)
+#endif
 
 // virtual Vector	EyePosition( void );
 VFUNC_CALL0(MANI_VFUNC_EYE_POSITION, Vector, CBaseEntity, CBaseEntity_EyePosition)
@@ -312,7 +316,7 @@ datamap_t *CBaseEntity_GetDataDescMap(CBaseEntity *pThisPtr)
 #ifdef __linux__
 CON_COMMAND(ma_vfuncs, "Debug Tool")
 {
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
         player_t player;
@@ -477,7 +481,7 @@ CON_COMMAND(ma_vfuncs, "Debug Tool")
 
 CON_COMMAND(ma_getvfunc, "Debug Tool")
 {
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 
@@ -617,7 +621,7 @@ CON_COMMAND(ma_getvfunc, "Debug Tool")
 
 CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 {
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
 	player_t player;
@@ -694,7 +698,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "EyePosition", "eye_position", MANI_VFUNC_EYE_POSITION);
 		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
 		// Dods and CS inherit from CBasePlayer
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
 		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(sym_map_ptr, type_ptr, "CDODPlayer", "GiveNamedItem", "give_item", MANI_VFUNC_GIVE_ITEM);
 
 		CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatCharacter", "MyCombatCharacterPointer", "my_combat_character", MANI_VFUNC_MY_COMBAT_CHARACTER);
@@ -702,7 +706,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 		CheckVFunc(sym_map_ptr, type_ptr, "CBaseEntity", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 		if (gpManiGameType->IsGameType(MANI_GAME_DOD)) CheckVFunc(sym_map_ptr, type_ptr, "CDODPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 		if (gpManiGameType->IsGameType(MANI_GAME_TF)) CheckVFunc(sym_map_ptr, type_ptr, "CTFPlayer", "GetDataDescMap", "map_desc", MANI_VFUNC_MAP);
 
@@ -732,7 +736,7 @@ CON_COMMAND(ma_autovfunc, "Debug Tool <player> <level>")
 
 		CheckVFunc(sym_map_ptr, type_ptr, "CBasePlayer", "RemovePlayerItem", "remove_player_item", MANI_VFUNC_REMOVE_PLAYER_ITEM);
 		CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatCharacter", "Weapon_GetSlot", "get_weapon_slot", MANI_VFUNC_GET_WEAPON_SLOT);
-		if (gpManiGameType->IsGameType(MANI_GAME_CSS)) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "Weapon_Switch", "weapon_switch", MANI_VFUNC_WEAPON_SWITCH);
+		if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) CheckVFunc(sym_map_ptr, type_ptr, "CCSPlayer", "Weapon_Switch", "weapon_switch", MANI_VFUNC_WEAPON_SWITCH);
 		CheckVFunc(sym_map_ptr, type_ptr, "CBaseCombatCharacter", "GiveAmmo", "give_ammo", MANI_VFUNC_GIVE_AMMO);
 	}
 
@@ -821,7 +825,7 @@ static	int FindVFunc(SymbolMap *sym_map_ptr, DWORD *class_ptr, char *class_name,
 
 CON_COMMAND(ma_vfunc_dumpall, "Dump all vfuncs to file vfuncs_dumpall.out")
 {
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 	const CCommand args;
 #endif
         FileHandle_t file_handle;

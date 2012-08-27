@@ -55,7 +55,7 @@ extern void LoadSigScans(void);
 */
 
 // A
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 // We don't use the following commented out sigs but they could be useful for tracking down RoundRespawn again with IDA Pro
 // and its ability to rename unknown functions with labels.
 // CCSPlayer_PlayerClass is very short in length
@@ -77,7 +77,7 @@ extern void LoadSigScans(void);
 #define CCSPlayer_RoundRespawn_Linux "_ZN9CCSPlayer12RoundRespawnEv"
 
 // B
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 #define UTIL_Remove_Sig "8B 44 24 04 85 C0 74 ? 83 C0 0C 89 44 24 04 E9 7C FF FF FF"
 #else
 #define UTIL_Remove_Sig "8B 44 24 04 85 C0 74 ? 05 ? ? 00 00 89 44 24 04 E9 ? FF FF FF"
@@ -102,7 +102,7 @@ extern void LoadSigScans(void);
 #define CEntList_gEntList			0x9
 
 // E
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 #define CGlobalEntityList_FindEntityByClassname_Sig "53 55 56 8B F1 8B 4C 24 ? 85 C9 57 74 ? 8B 01 8B 50 08 FF D2"
 #else
 #define CGlobalEntityList_FindEntityByClassname_Sig "53 55 56 8B F1 8B 4C 24 ? 85 C9 57 74 ? 8B 01 FF ? ? 8B 08"
@@ -140,7 +140,7 @@ extern void LoadSigScans(void);
 //#define CBaseCombatCharacter_GetWeapon_Linux "_ZNK20CBaseCombatCharacter9GetWeaponEi"
 
 // _ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi
-//#ifdef ORANGE
+//#ifdef GAME_ORANGE
 //#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B B6 ? ? ? ? 85 F6 74 ? 8B 44 24 08"
 //#else
 //#define CCSGameRules_GetBlackMarketPriceForWeapon_Sig "56 8B F1 83 BE ? ? ? ? ? 75 ? E8 ? ? ? ? 8B 86 ? ? ? ? 8B"
@@ -148,7 +148,7 @@ extern void LoadSigScans(void);
 //#define CCSGameRules_GetBlackMarketPriceForWeapon_Linux "_ZN12CCSGameRules28GetBlackMarketPriceForWeaponEi"
 
 // Used in Reserve Slots - Thanks to *pRED
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	#define CBaseServer_ConnectClient_Sig "83 ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
 	#define CBaseServer_ConnectClient_Linux "_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_i"
 #else
@@ -156,7 +156,7 @@ extern void LoadSigScans(void);
 	#define CBaseServer_ConnectClient_Linux "_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iS3_i"
 #endif
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	#define NET_SendPacket_Sig "B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 83 78 ? ? 53 55 8B"
 	#define NET_SendPacket_Linux "_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
 #else

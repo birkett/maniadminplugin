@@ -306,7 +306,7 @@ void ManiNetIDValid::NetworkIDValidated( player_t *player_ptr )
 	gpManiStats->NetworkIDValidated(player_ptr);
 	gpManiPing->NetworkIDValidated(player_ptr);
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		gpManiLogCSSStats->NetworkIDValidated(player_ptr);
 	}

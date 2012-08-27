@@ -100,7 +100,7 @@ IGameEventListener2 *gpManiIGELCallback = NULL;
 
 int		con_command_index = 0;
 
-#if !defined ORANGE && defined SOURCEMM
+#if !defined GAME_ORANGE && defined SOURCEMM
 #include <ISmmPlugin.h>
 #include <sourcehook/sourcehook.h>
 

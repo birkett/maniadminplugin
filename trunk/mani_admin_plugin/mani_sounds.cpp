@@ -529,7 +529,7 @@ void	SetupSoundAutoDownloads(void)
 		{
 			char	res_string[512];
 			snprintf(res_string, sizeof(res_string), "sound/%s", sound_list[i].sound_name);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 			pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
 #else
 			pDownloadablesTable->AddString(res_string, sizeof(res_string));
@@ -560,7 +560,7 @@ void	SetupActionAutoDownloads(void)
 			if (pDownloadablesTable)
 			{
 				snprintf(res_string, sizeof(res_string), "sound/%s", action_sound_list[i].sound_file);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 				pDownloadablesTable->AddString(true, res_string, sizeof(res_string));
 #else
 				pDownloadablesTable->AddString(res_string, sizeof(res_string));
@@ -601,6 +601,10 @@ void ProcessPlayMenuSound( player_t *target_player_ptr, char *sound_name)
 	MRecipientFilter mrf; 
 	mrf.MakeReliable();
 	mrf.AddPlayer(target_player_ptr->index);
+#if defined ( GAME_CSGO )
+	esounds->EmitSound((IRecipientFilter &)mrf, target_player_ptr->index, CHAN_AUTO, NULL, 0, sound_name, 0.7,  0.0, 0, 0, 100, &pos);
+#else
 	esounds->EmitSound((IRecipientFilter &)mrf, target_player_ptr->index, CHAN_AUTO, sound_name, 0.7,  0.0, 0, 100, 0, &pos);
+#endif
 
 }

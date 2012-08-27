@@ -237,7 +237,11 @@ void ManiAFK::ProcessUsercmds
 	edict_t *pEdict = serverents->BaseEntityToEdict((CBaseEntity *) pPlayer);
 	if (!pEdict) return;
 
+#if defined ( GAME_CSGO )
+	int index = IndexOfEdict(pEdict);
+#else
 	int index = engine->IndexOfEdict(pEdict);
+#endif
 	if (index < 1 || index > max_players) return;
 
 	if (cmds && numcmds && 

@@ -10,38 +10,23 @@
     <Filter Include="Plugin Code\Headers">
       <UniqueIdentifier>{bde5cfa0-5357-4999-b7fd-6028699ed914}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Valve Source SDK">
-      <UniqueIdentifier>{5b7e4aeb-2dd3-4146-8c5b-49d8705b8a0f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Valve Source SDK\Headers">
-      <UniqueIdentifier>{e89826ea-aac4-46c9-8dce-94c32de547c7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Valve Source SDK\Source">
-      <UniqueIdentifier>{9feae91d-3d67-48f5-8593-3934009d2289}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Valve Source SDK\Libraries">
-      <UniqueIdentifier>{2ea9c71a-83fb-4642-8df6-513e2b4be718}</UniqueIdentifier>
-    </Filter>
     <Filter Include="MMSource OB">
       <UniqueIdentifier>{f434d33a-3f94-410f-9846-a15bdf4ce9cc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Valve Orange SDK">
-      <UniqueIdentifier>{b7f42acf-9c7b-4fe5-865b-89c0249c793d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Valve Orange SDK\Source">
-      <UniqueIdentifier>{f98a5b32-6560-494e-a775-0fc16983f8a9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Valve Orange SDK\Libraries">
-      <UniqueIdentifier>{2cc34f5e-dfb1-4b2c-99e1-e34dd0618c79}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="MMSource Legacy">
-      <UniqueIdentifier>{f0dc803d-58d2-46be-9574-c941a0a496df}</UniqueIdentifier>
     </Filter>
     <Filter Include="Knight">
       <UniqueIdentifier>{4fe382fa-f26a-4fa8-a98f-2e815250d4f7}</UniqueIdentifier>
     </Filter>
     <Filter Include="asm">
       <UniqueIdentifier>{13f6a45c-5619-464a-829f-f91f7d17dd25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OB SDK">
+      <UniqueIdentifier>{b7f42acf-9c7b-4fe5-865b-89c0249c793d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CSS SDK">
+      <UniqueIdentifier>{0d24595b-d658-4405-a391-51754c5e551c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CSGO SDK">
+      <UniqueIdentifier>{39de6f98-14e4-4810-91f5-1dc1080ff307}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -285,47 +270,8 @@
     <ClCompile Include="..\mrecipientfilter.cpp">
       <Filter>Plugin Code\Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\tier1\bitbuf.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\tier1\convar.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\tier1\interface.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\public\tier0\memoverride.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\public\networkvar.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\utils\serverplugin_sample\serverplugin_convar.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ep1\tier1\utlbuffer.cpp">
-      <Filter>Valve Source SDK\Source</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook.cpp">
       <Filter>MMSource OB</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ob\tier1\bitbuf.cpp">
-      <Filter>Valve Orange SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ob\tier1\convar.cpp">
-      <Filter>Valve Orange SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ob\mathlib\mathlib_base.cpp">
-      <Filter>Valve Orange SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ob\public\tier0\memoverride.cpp">
-      <Filter>Valve Orange SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\map\ob\public\networkvar.cpp">
-      <Filter>Valve Orange SDK\Source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sourcemm_sdk\core-legacy\sourcehook\sourcehook.cpp">
-      <Filter>MMSource Legacy</Filter>
     </ClCompile>
     <ClCompile Include="..\Knight\KeCodeAllocator.cpp">
       <Filter>Knight</Filter>
@@ -347,6 +293,33 @@
     </ClCompile>
     <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookidman.cpp">
       <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\ob\tier1\bitbuf.cpp">
+      <Filter>OB SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\ob\public\networkvar.cpp">
+      <Filter>OB SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\ob\public\tier0\memoverride.cpp">
+      <Filter>OB SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\tier1\bitbuf.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\tier0\memoverride.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\networkvar.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\css\public\networkvar.cpp">
+      <Filter>CSS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\css\public\tier0\memoverride.cpp">
+      <Filter>CSS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\css\tier1\bitbuf.cpp">
+      <Filter>CSS SDK</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -602,9 +575,6 @@
     <ClInclude Include="..\mrecipientfilter.h">
       <Filter>Plugin Code\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\mysql5.1\win_32\include\mysql.h">
-      <Filter>Plugin Code\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\Knight\KeCodeAllocator.h">
       <Filter>Knight</Filter>
     </ClInclude>
@@ -624,133 +594,5 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\mani_admin_plugin.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\game_shared\base_playeranimstate.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\dlls\baseanimating.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\dlls\basecombatcharacter.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\game_shared\basecombatweapon_shared.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\dlls\baseentity.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\game_shared\baseentity_shared.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\game_shared\baseplayer_shared.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\basetypes.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\bitbuf.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\Color.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\convar.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\cvars.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier0\dbg.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\eiface.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\filesystem.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\vstdlib\ICommandLine.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\igameevents.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\inetchannel.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\inetchannelinfo.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\interface.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\dlls\iplayerinfo.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\engine\iserverplugin.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\KeyValues.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\mysql\win_32\include\mysql.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\networkvar.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\dlls\player.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\vstdlib\random.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\vstdlib\strtools.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\utlbuffer.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\utlmemory.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\tier1\utlvector.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\public\vstdlib\vstdlib.h">
-      <Filter>Valve Source SDK\Headers</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\lib\public\mathlib.lib">
-      <Filter>Valve Source SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\lib\public\tier0.lib">
-      <Filter>Valve Source SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\lib\public\tier1.lib">
-      <Filter>Valve Source SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ep1\lib\public\vstdlib.lib">
-      <Filter>Valve Source SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ob\lib\public\mathlib.lib">
-      <Filter>Valve Orange SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ob\lib\public\tier0.lib">
-      <Filter>Valve Orange SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ob\lib\public\tier1.lib">
-      <Filter>Valve Orange SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ob\lib\public\tier2.lib">
-      <Filter>Valve Orange SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ob\lib\public\tier3.lib">
-      <Filter>Valve Orange SDK\Libraries</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="..\..\sdks\map\ob\lib\public\vstdlib.lib">
-      <Filter>Valve Orange SDK\Libraries</Filter>
-    </CustomBuildStep>
   </ItemGroup>
 </Project>

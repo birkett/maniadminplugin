@@ -58,7 +58,7 @@ public:
 		return true;
 	}
 public:
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 	int GetApiVersion() { return METAMOD_PLAPI_VERSION; }
 #else
 	int GetApiVersion() { return PLAPI_VERSION; }
@@ -137,7 +137,7 @@ public:
 	//Called when a client uses a command.  Unlike server plugins, it's void.
 	// You can still supercede the gamedll through RETURN_META(MRES_SUPERCEDE).
 	// void ClientCommand(edict_t *pEntity);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 	void ClientCommand(edict_t *pEntity, const CCommand &args);
 #else
 	void ClientCommand(edict_t *pEntity);
@@ -179,7 +179,7 @@ public:
 	virtual void			SetCommandClient( int index );
 	virtual void			ClientSettingsChanged( edict_t *pEdict ) {return;}
 	virtual PLUGIN_RESULT	ClientConnect( bool *bAllowConnect, edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen )  {return PLUGIN_CONTINUE;}
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	virtual PLUGIN_RESULT	ClientCommand( edict_t *pEntity, const CCommand &args );
 	virtual void			OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue ) {return;}
 #else
@@ -205,7 +205,7 @@ public:
 	void	UnHookWeapon_CanUse(CBasePlayer *pPlayer);
 };
 
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 extern	void Say_handler(const CCommand &command);
 extern	void TeamSay_handler(const CCommand &command);
 extern	void ChangeLevel_handler(const CCommand &command);

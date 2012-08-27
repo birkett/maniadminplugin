@@ -125,7 +125,7 @@ void GetLinuxBins ( char *game, char *engine ) {
 	char gamedir[256];
 	UTIL_GetGamePath ( gamedir );
 
-#if !defined ( ORANGE )
+#if !defined ( GAME_ORANGE )
 	if ( UTIL_ScanFile ( file, "engine_i686.so" ) )
 		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
 	else if ( UTIL_ScanFile ( file, "engine_i486.so" ) )
@@ -179,6 +179,7 @@ void ManiGameType::Init(void)
 	else if (FStrEq(MANI_GAME_DOD_STR1, game_type)) game_type_index = MANI_GAME_DOD;
 	else if (FStrEq(MANI_GAME_DOD_STR2, game_type)) game_type_index = MANI_GAME_DOD;
 	else if (FStrEq(MANI_GAME_TF_STR, game_type)) game_type_index = MANI_GAME_TF;
+	else if (FStrEq(MANI_GAME_CSGO_STR, game_type)) game_type_index = MANI_GAME_CSGO;
 	else game_type_index = MANI_GAME_UNKNOWN;
 
 	DefaultValues();
@@ -374,7 +375,7 @@ void ManiGameType::Init(void)
 	}
 #endif
 
-	if (this->IsGameType(MANI_GAME_CSS))
+	if ((this->IsGameType(MANI_GAME_CSS)) || (this->IsGameType(MANI_GAME_CSGO)))
 	{
 		// Handle weapon costs
 		temp_ptr = base_key_ptr->FindKey("weapons", false);

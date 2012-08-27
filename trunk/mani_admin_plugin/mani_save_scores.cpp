@@ -150,7 +150,7 @@ void	ManiSaveScores::NetworkIDValidated(player_t *player_ptr)
 					Map_SetVal(pCBE, MANI_VAR_DEATHS, deaths);
 				}
 
-				if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+				if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 					mani_save_scores_css_cash.GetInt() == 1)
 				{
 					save_cash_list[player_ptr->index - 1].cash = i->cash;
@@ -196,7 +196,7 @@ void ManiSaveScores::ClientDisconnect(player_t	*player_ptr)
 		death_count = Map_GetVal(pCBE, MANI_VAR_DEATHS, 0);
 	}
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS) &&
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS) || gpManiGameType->IsGameType(MANI_GAME_CSGO)) &&
 		mani_save_scores_css_cash.GetInt() == 1)
 	{
 		cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT, 0);
@@ -225,7 +225,7 @@ void ManiSaveScores::PlayerSpawn(player_t *player_ptr)
 	if (war_mode) return; 
 	if (mani_save_scores.GetInt() == 0 || mani_save_scores_css_cash.GetInt() == 0) return;
 	if (IsLAN()) return;
-	if (!gpManiGameType->IsGameType(MANI_GAME_CSS)) return;
+	if ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return;
 	if (!gpManiGameType->IsValidActiveTeam(player_ptr->team)) return;
 	if (player_ptr->is_bot) return;
 

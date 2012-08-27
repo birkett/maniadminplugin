@@ -18,7 +18,7 @@
 
 #ifndef SOURCEMM
 
-#ifndef ORANGE
+#ifndef GAME_ORANGE
 // SH_STATIC was introduced in SH 5.0
 #define SH_STATIC(func) fastdelegate::MakeDelegate(func)
 #endif
@@ -90,7 +90,7 @@ typedef unsigned long DWORD;
 //
 // Don't forget to make an instance
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 SourceHook::Impl::CSourceHookImpl g_SourceHook;
 #else
 SourceHook::CSourceHookImpl g_SourceHook;
@@ -123,9 +123,13 @@ SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, cha
 SH_DECL_HOOK5_void(ITempEntsSystem, PlayerDecal, SH_NOATTRIB, 0, IRecipientFilter &, float , const Vector* , int , int );
 SH_DECL_MANUALHOOK5_void(Player_ProcessUsercmds, 0, 0, 0, CUserCmd *, int, int, int, bool);
 SH_DECL_MANUALHOOK1(Player_Weapon_CanUse, 0, 0, 0, bool, CBaseCombatWeapon *);
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, 0, const CCommand &);
+#if defined ( GAME_CSGO )
+SH_DECL_HOOK3(IVEngineServer, UserMessageBegin, SH_NOATTRIB, 0, bf_write*, IRecipientFilter *, int, char const *);
+#else
 SH_DECL_HOOK2(IVEngineServer, UserMessageBegin, SH_NOATTRIB, 0, bf_write*, IRecipientFilter *, int);
+#endif
 #else
 SH_DECL_HOOK0_void(ConCommand, Dispatch, SH_NOATTRIB, 0);
 #endif
@@ -160,14 +164,14 @@ void	ManiSMMHooks::HookVFuncs(void)
 		SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, serverdll, &g_ManiSMMHooks, &ManiSMMHooks::LevelInit, false);
 	}
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	if (engine)
 	{
 		SH_ADD_HOOK_MEMFUNC(IVEngineServer, UserMessageBegin, engine, &g_ManiSMMHooks, &ManiSMMHooks::UserMessageBegin, true );
 	}
 #endif
 
-	if (gpManiGameType->IsGameType(MANI_GAME_CSS))
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
 	{
 		int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_WEAPON_CANUSE);
 		if (offset != -1)
@@ -261,8 +265,13 @@ void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
 	SH_REMOVE_MANUALHOOK_MEMFUNC(Player_Weapon_CanUse, pPlayer, &g_ManiSMMHooks, &ManiSMMHooks::Weapon_CanUse, false);
 }
 
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
+
+#if defined ( GAME_CSGO )
+bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type, const char *msg)
+#else
 bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type)
+#endif
 {
 
 	if ( mani_hint_sounds.GetBool() ) 
@@ -279,14 +288,18 @@ bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type)
 			if ( !FindPlayerByIndex(&player) ) continue;
 
 			//Stop Sound!!!
-			esounds->StopSound( player.index, 6, "UI/hint.wav" );
+#if defined ( GAME_CSGO )
+			esounds->StopSound( player.index, 6, "UI/hint.wav", 0 );
+#else
+			esounds->StopSound( player.index, 6, "UI/hint.wav");
+#endif
 		}
 	}
 	RETURN_META_VALUE(MRES_IGNORED,NULL);
 }
-#endif 
+#endif // GAME_ORANGE
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void RespawnEntities_handler(const CCommand &command)
 #else
 void RespawnEntities_handler()
@@ -296,7 +309,7 @@ void RespawnEntities_handler()
 	RETURN_META(MRES_SUPERCEDE);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void Say_handler(const CCommand &command)
 {
 #else
@@ -314,7 +327,7 @@ void Say_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void TeamSay_handler(const CCommand &command)
 {
 #else
@@ -332,7 +345,7 @@ void TeamSay_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void ChangeLevel_handler(const CCommand &command)
 #else
 void ChangeLevel_handler()
@@ -348,7 +361,7 @@ void ChangeLevel_handler()
 	RETURN_META(MRES_IGNORED);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void AutoBuy_handler(const CCommand &command)
 #else
 void AutoBuy_handler()
@@ -356,7 +369,7 @@ void AutoBuy_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
-#if defined ( ORANGE )
+#if defined ( GAME_ORANGE )
 	SH_CALL(pAutoBuyCmd, &ConCommand::Dispatch)(command);
 #else
 	SH_CALL(SH_GET_CALLCLASS(pAutoBuyCmd), &ConCommand::Dispatch)();
@@ -365,7 +378,7 @@ void AutoBuy_handler()
 	RETURN_META(MRES_SUPERCEDE);
 } 
 
-#ifdef ORANGE
+#ifdef GAME_ORANGE
 void ReBuy_handler(const CCommand &command)
 #else
 void ReBuy_handler()
@@ -373,7 +386,7 @@ void ReBuy_handler()
 {
 	if(ProcessPluginPaused()) RETURN_META(MRES_IGNORED);
 	gpManiWeaponMgr->PreAutoBuyReBuy();
-#ifdef ORANGE 
+#ifdef GAME_ORANGE 
 	SH_CALL(pReBuyCmd, &ConCommand::Dispatch)(command);
 #else
 	SH_CALL(SH_GET_CALLCLASS(pReBuyCmd), &ConCommand::Dispatch)();
@@ -385,7 +398,17 @@ void ReBuy_handler()
 void	ManiSMMHooks::HookConCommands()
 {
 	//find the commands in the server's CVAR list
-	ConCommandBase *pCmd = g_pCVar->GetCommands();
+#if defined (GAME_CSGO)
+	pSayCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("say"));
+	pTeamSayCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("say_team"));
+	pChangeLevelCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("changelevel"));
+	pAutoBuyCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("autobuy"));
+	pReBuyCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("rebuy"));
+	pRespawnEntities = static_cast<ConCommand *>(g_pCVar->FindCommand("respawn_entities"));
+#else
+	ConCommandBase *pCmd = NULL;
+	pCmd = g_pCVar->GetCommands();
+
 	while (pCmd)
 	{
 		if (pCmd->IsCommand())
@@ -406,7 +429,7 @@ void	ManiSMMHooks::HookConCommands()
 
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
 	}
-
+#endif
 	if (pSayCmd) SH_ADD_HOOK(ConCommand, Dispatch, pSayCmd, SH_STATIC(Say_handler), false);
 	if (pRespawnEntities) SH_ADD_HOOK(ConCommand, Dispatch, pRespawnEntities, SH_STATIC(RespawnEntities_handler), false);
 	if (pTeamSayCmd) SH_ADD_HOOK(ConCommand, Dispatch, pTeamSayCmd, SH_STATIC(TeamSay_handler), false);
