@@ -861,8 +861,8 @@ void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr)
 	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index, "HintText" );
 #else
 	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index);
-#endif
 	msg_buffer->WriteByte(1);
+#endif
 	msg_buffer->WriteString(text_out);
 	engine->MessageEnd();	
 }
@@ -1482,8 +1482,10 @@ void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 #else
 	msg_buffer = engine->UserMessageBegin(mrf, text_message_index ); // Show TextMsg type user message
 #endif
+
 	msg_buffer->WriteByte(3); // Say area
-	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))
+
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSS)))
 	{
 		switch (colour)
 		{
@@ -1493,6 +1495,30 @@ void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 			case GREEN_CHAT: msg_buffer->WriteByte(4);break; // Darker Green
 			default :break;
 		}
+	}
+
+	/*
+	\x01 = White
+\x02 = Dark Red
+\x03 = White
+\x04 = Dark Green
+\x05 = Moss Green
+\x06 = Lime Green
+\x07/8/9 = Light Red
+*/
+	if ((gpManiGameType->IsGameType(MANI_GAME_CSGO)))
+	{
+		//switch (colour)
+		//{
+		//	case WHITE_TEXT: break;
+		//	case WHITE2_TEXT:break;
+		//	case RED_TEXT: msg_buffer->WriteByte(2); break;
+		//	case DARK_GREEN_TEXT: msg_buffer->WriteByte(4);break; // Light Green
+		//	case MOSS_GREEN_TEXT: msg_buffer->WriteByte(5);break; // Light Green
+		//	case LIME_GREEN_TEXT: msg_buffer->WriteByte(6);break; // Light Green
+		//	case LIGHT_RED_TEXT: msg_buffer->WriteByte(7);break; // Darker Green
+		//	default :break;
+		//}
 	}
 
 	msg_buffer->WriteString(say_text);

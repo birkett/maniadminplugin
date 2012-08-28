@@ -36,8 +36,10 @@ extern CBaseEntity *EdictToCBE(edict_t *pEdict);
 extern const QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr);
 #if defined ( GAME_CSGO )
 extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool UnkownBoolean = true);
+extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0, bool UnkownBoolean = true);
 #else
 extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity);
+extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0);
 #endif
 extern Vector CBaseEntity_EyePosition (CBaseEntity *pThisPtr);
 extern void CBaseEntity_GetVelocity(CBaseEntity *pThisPtr, Vector *vVelocity, AngularImpulse *vAngVelocity = NULL);
@@ -46,7 +48,6 @@ extern void CBaseEntity_SetModelIndex(CBaseEntity *pThisPtr, short iIndex);
 extern void CBasePlayer_Ignite(CBasePlayer *pThisPtr, float flFlameLifetime, bool bNPCOnly = true, float flSize = 0.0f, bool bCalledByLevelDesigner = false );
 extern bool CBasePlayer_RemovePlayerItem(CBasePlayer *pThisPtr, CBaseCombatWeapon *pItem);
 extern void CBasePlayer_WeaponDrop(CBasePlayer *pThisPtr, CBaseCombatWeapon *pWeapon, const Vector *pvecTarget = NULL, const Vector *pVelocity = NULL);
-extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0 );
 extern int  CBaseCombatWeapon_GetPrimaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern int  CBaseCombatWeapon_GetSecondaryAmmoType(CBaseCombatWeapon *pThisPtr);
 extern const char *CBaseCombatWeapon_GetName(CBaseCombatWeapon *pThisPtr);

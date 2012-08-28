@@ -413,12 +413,12 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 				if (weapon_info)
 				{
 					int cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT,0);
-					cash += weapon_info->dynamic_price;
+					cash += weapon_info->standard_price;
 					if (cash > 16000) cash = 16000;
 					Prop_SetVal(player_ptr->entity, MANI_PROP_ACCOUNT, cash);
 					if (show_refund)
 					{
-						OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3042, "%i", weapon_info->dynamic_price));
+						OutputHelpText(GREEN_CHAT, player_ptr, "%s", Translate(player_ptr, 3042, "%i", weapon_info->standard_price));
 					}
 				}
 			}
@@ -547,7 +547,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 	if (weapon_info)
 	{
 		int cash = Prop_GetVal(player_ptr->entity, MANI_PROP_ACCOUNT,0);
-		if (cash < weapon_info->dynamic_price)
+		if (cash < weapon_info->standard_price)
 		{
 			// Not enough money so continue anyway
 			return PLUGIN_CONTINUE;
@@ -1329,7 +1329,7 @@ CON_COMMAND(ma_listweapons, "Debug Tool")
 			return;
 		}
 
-		MMsg("Weapon name [%s] Price [%i]\n", weapon_info->weapon_name, weapon_info->dynamic_price);
+		MMsg("Weapon name [%s] Price [%i]\n", weapon_info->weapon_name, weapon_info->standard_price);
 	}	
 }
 

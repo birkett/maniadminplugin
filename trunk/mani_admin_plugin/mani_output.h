@@ -43,6 +43,17 @@ enum
 	GREEN_CHAT,
 };
 
+enum
+{
+	WHITE_TEXT = 0,
+	RED_TEXT,
+	WHITE2_TEXT,
+	DARK_GREEN_TEXT,
+	MOSS_GREEN_TEXT,
+	LIME_GREEN_TEXT,
+	LIGHT_RED_TEXT,
+};
+
 extern void	AdminSayToAdmin(const int colour, player_t *player,const char	*fmt, ...);
 extern void	SayToAdmin(const int colour, player_t	*player,const char	*fmt, ...);
 extern void	AdminSayToAll(const int colour, player_t *player,int anonymous, const char	*fmt, ...);
