@@ -6,6 +6,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CSGO Debug|Win32 = CSGO Debug|Win32
 		CSGO Release|Win32 = CSGO Release|Win32
+		CSGO SMM Debug|Win32 = CSGO SMM Debug|Win32
+		CSGO SMM Release|Win32 = CSGO SMM Release|Win32
 		CSS Debug|Win32 = CSS Debug|Win32
 		CSS Release|Win32 = CSS Release|Win32
 		CSS SMM Debug|Win32 = CSS SMM Debug|Win32
@@ -20,6 +22,10 @@ Global
 		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO Debug|Win32.Build.0 = CSGO Debug|Win32
 		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO Release|Win32.ActiveCfg = CSGO Release|Win32
 		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO Release|Win32.Build.0 = CSGO Release|Win32
+		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO SMM Debug|Win32.ActiveCfg = CSGO SMM Debug|Win32
+		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO SMM Debug|Win32.Build.0 = CSGO SMM Debug|Win32
+		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO SMM Release|Win32.ActiveCfg = CSGO SMM Release|Win32
+		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSGO SMM Release|Win32.Build.0 = CSGO SMM Release|Win32
 		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSS Debug|Win32.ActiveCfg = CSS Debug|Win32
 		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSS Debug|Win32.Build.0 = CSS Debug|Win32
 		{B6572CBE-7C7F-4FFF-94DE-AFBBBAB11C64}.CSS Release|Win32.ActiveCfg = CSS Release|Win32

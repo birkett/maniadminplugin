@@ -187,6 +187,13 @@ public:
 #endif
 	virtual PLUGIN_RESULT	NetworkIDValidated( const char *pszUserName, const char *pszNetworkID )  {return PLUGIN_CONTINUE;}
 	virtual int GetCommandIndex() { return m_iClientCommandIndex; }
+
+#if defined ( GAME_CSGO ) // can we use these?
+	virtual void			ClientFullyConnect( edict_t *pEntity ) {};
+	virtual void			OnEdictAllocated( edict_t *edict ) {};
+	virtual void			OnEdictFreed( const edict_t *edict  ) {};
+#endif
+
 private:
 	int m_iClientCommandIndex;
 };

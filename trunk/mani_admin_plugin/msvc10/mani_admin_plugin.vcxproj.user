@@ -30,4 +30,12 @@
     <LocalDebuggerWorkingDirectory>..\..\srcds_1\css\cstrike</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CSGO SMM Debug|Win32'">
+    <LocalDebuggerCommand>..\..\srcds_1\csgo\srcds.exe</LocalDebuggerCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CSGO SMM Debug|Win32'">
+    <LocalDebuggerWorkingDirectory>..\..\srcds_1\csgo\csgo</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>-game csgo -console -usercon +game_type 0 +game_mode 0 +mapgroup mg_bomb +map de_dust -allowdebug +log on</LocalDebuggerCommandArguments>
+  </PropertyGroup>
 </Project>
