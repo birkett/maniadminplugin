@@ -466,7 +466,7 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 {
 	int reason, limit, ratio;
 
-	if  (!((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO)))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 	if (war_mode) return PLUGIN_CONTINUE;
 	if (gpManiWarmupTimer->KnivesOnly()) return PLUGIN_STOP;
 
@@ -838,7 +838,7 @@ bool RestrictWeaponPage::PopulateMenuPage(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShowRestrict(player_t *player_ptr, const char	*command_name, const int	help_id, const int	command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	OutputToConsole(player_ptr, "Current weapons and their restrictions\n\n");
 	OutputToConsole(player_ptr, "Weapon Alias                  Restricted  Limit  Ratio\n");
@@ -870,7 +870,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrict
  const int	command_type
  )
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -929,7 +929,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictRatio
  const int	command_type
  )
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -962,7 +962,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictRatio
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrict(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -991,7 +991,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrict(player_t *player_ptr, const cha
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1013,7 +1013,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaUnRestrictAll(player_t *player_ptr, const 
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictAll(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1036,7 +1036,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaRestrictAll(player_t *player_ptr, const ch
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaKnives(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
 
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1057,7 +1057,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaKnives(player_t *player_ptr, const char *c
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaPistols(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1084,7 +1084,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaPistols(player_t *player_ptr, const char *
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShotguns(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
@@ -1107,7 +1107,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShotguns(player_t *player_ptr, const char 
 //---------------------------------------------------------------------------------
 PLUGIN_RESULT	ManiWeaponMgr::ProcessMaNoSnipers(player_t *player_ptr, const char *command_name, const int help_id, const int command_type)
 {
-	if  ((gpManiGameType->IsGameType(MANI_GAME_CSS)) || (gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
+	if  ((!gpManiGameType->IsGameType(MANI_GAME_CSS)) && (!gpManiGameType->IsGameType(MANI_GAME_CSGO))) return PLUGIN_CONTINUE;
 
 	if (player_ptr)
 	{
