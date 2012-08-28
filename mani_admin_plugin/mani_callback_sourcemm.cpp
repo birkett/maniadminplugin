@@ -124,7 +124,6 @@ typedef unsigned long DWORD;
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
 // 
 // The plugin is a static singleton that is exported as an interface
 //
@@ -576,6 +575,14 @@ bool CSourceMMMAP::RegisterConCommandBase(ConCommandBase *pVar)
 void CSourceMMMAP::HookConCommands()
 {
 	//find the commands in the server's CVAR list
+#if defined (GAME_CSGO)
+	pSayCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("say"));
+	pTeamSayCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("say_team"));
+	pChangeLevelCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("changelevel"));
+	pAutoBuyCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("autobuy"));
+	pReBuyCmd = static_cast<ConCommand *>(g_pCVar->FindCommand("rebuy"));
+	pRespawnEntities = static_cast<ConCommand *>(g_pCVar->FindCommand("respawn_entities"));
+#else
 	ConCommandBase *pCmd = g_pCVar->GetCommands();
 	while (pCmd)
 	{
@@ -597,6 +604,7 @@ void CSourceMMMAP::HookConCommands()
 
 		pCmd = const_cast<ConCommandBase *>(pCmd->GetNext());
 	}
+#endif 
 
 #if !defined GAME_ORANGE && defined SOURCEMM
 	if (pSayCmd) SH_ADD_HOOK_STATICFUNC(ConCommand, Dispatch, pSayCmd, Say_handler, false);
@@ -622,8 +630,6 @@ void CSourceMMMAP::HookConCommands()
 	if (pAutoBuyCmd) SH_ADD_HOOK(ConCommand, Dispatch, pAutoBuyCmd, SH_STATIC(AutoBuy_handler), false);
 	if (pReBuyCmd) SH_ADD_HOOK(ConCommand, Dispatch, pReBuyCmd, SH_STATIC(ReBuy_handler), false);
 #endif
-
-
 }
 
 void *MyListener::OnMetamodQuery(const char *iface, int *ret)
