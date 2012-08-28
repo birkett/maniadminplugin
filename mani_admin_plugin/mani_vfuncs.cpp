@@ -262,7 +262,11 @@ VFUNC_CALL1(MANI_VFUNC_REMOVE_PLAYER_ITEM, bool, CBasePlayer, CBasePlayer_Remove
 VFUNC_CALL3_void(MANI_VFUNC_WEAPON_DROP, CBasePlayer, CBasePlayer_WeaponDrop, CBaseCombatWeapon *, const Vector *, const Vector *)
 
 // virtual CBaseEntity	*GiveNamedItem( const char *szName, int iSubType = 0 );
+#if defined ( GAME_CSGO )
+VFUNC_CALL3(MANI_VFUNC_GIVE_ITEM, CBaseEntity *, CBasePlayer, CBasePlayer_GiveNamedItem, const char *, int, bool)
+#else
 VFUNC_CALL2(MANI_VFUNC_GIVE_ITEM, CBaseEntity *, CBasePlayer, CBasePlayer_GiveNamedItem, const char *, int)
+#endif
 
 // virtual CBaseCombatWeapon *Weapon_GetSlot( int slot ) const;
 VFUNC_CALL1(MANI_VFUNC_GET_WEAPON_SLOT, CBaseCombatWeapon *, CBaseCombatCharacter, CBaseCombatCharacter_Weapon_GetSlot, int)

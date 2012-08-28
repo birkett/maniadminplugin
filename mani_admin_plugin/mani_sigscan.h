@@ -10,8 +10,11 @@ class CCSWeaponInfo
 public:
 	unsigned char dummy1[6];
 	char weapon_name[80];
+#if !defined ( GAME_CSGO )
 	unsigned char dummy2[2222];
-	int	dynamic_price;
+#else
+	unsigned char dummy2[2614];
+#endif
 	int	standard_price;
 };
 

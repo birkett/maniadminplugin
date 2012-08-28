@@ -253,7 +253,9 @@ DECL_MEMBER_DETOUR10_void(ConnectClientDetour, void *, int, int, int, const char
 		}
 	}
 
-#if defined ( GAME_ORANGE )
+#if defined ( GAME_CSGO )
+	return CCD_MEMBER_CALL(p6);
+#elif defined ( GAME_ORANGE )
 	return CCD_MEMBER_CALL(p7);
 #else
 	return CCD_MEMBER_CALL(p6);
