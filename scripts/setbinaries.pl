@@ -19,14 +19,13 @@ $PLUGIN_BASE="VSP";
 
 #Setup possible folders where games exist
 %folder_type = (
-"/"				=> "ep1",
 "/orangebox" 	=> "ob",
-"/cssbeta" 		=> "ob",
-"/css"			=> "ob"
+"/css"			=> "css",
+"/csgo"			=> "csgo"
 );
 
 %option = ();
-getopts("rso", \%option);
+getopts("rsocg", \%option);
 
 $SMM_EXT="";
 if ($option{r})
@@ -47,6 +46,18 @@ if ($option{o})
 {
     print "ORANGE SDK\n";
     $ORANGE="TRUE"
+}
+
+if ($option{c}) 
+{
+	print "CSS SDK\n";
+	$CSS="TRUE"
+}
+
+if ($option{g}) 
+{
+	print "CSGO SDK\n";
+	$CSGO="TRUE"
 }
 
 if ($^O eq "MSWin32")
@@ -80,14 +91,23 @@ foreach $folder_ext ( keys %folder_type )
 			$DO_COPY = "TRUE";
 		}
 	}
-	else
+	
+	if ($CSS)
 	{
-		if ($folder_type{ $folder_ext } eq "ep1")
+		if ($folder_type{ $folder_ext } eq "css")
 		{
 			$DO_COPY = "TRUE";
 		}
 	}
 	
+	if ($CSGO)
+	{
+		if ($folder_type{ $folder_ext } eq "csgo")
+		{
+			$DO_COPY = "TRUE";
+		}
+	}
+
 	if ($DO_COPY eq "TRUE")
 	{
 		$ENGINE_BASE=$DEV_BASE . $ROOT_GAME . $folder_ext;
@@ -130,19 +150,34 @@ if ($RELEASE)
 			"$DEV_BASE/public_build/orange_bin/$PDB_FILE");
 		}
 	}
-	else
+
+	if ($CSS)
 	{
-		print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/legacy_bin/$BIN_FILE\n";
-		copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
-		"$DEV_BASE/public_build/legacy_bin/$BIN_FILE");
+		print "Copying $BIN_FOLDER/css_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/css_bin/$BIN_FILE\n";
+		copy ("$BIN_FOLDER/css_bin/$PLUGIN_BASE/$BIN_FILE",
+		"$DEV_BASE/public_build/css_bin/$BIN_FILE");
 		if ($^O eq "MSWin32")
 		{
-			print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$PDB_FILE to $DEV_BASE/public_build/legacy_bin/$PDB_FILE\n";
-			copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$PDB_FILE",
-			"$DEV_BASE/public_build/legacy_bin/$PDB_FILE");
+			print "Copying $BIN_FOLDER/css_bin/$PLUGIN_BASE/$PDB_FILE to $DEV_BASE/public_build/css_bin/$PDB_FILE\n";
+			copy ("$BIN_FOLDER/css_bin/$PLUGIN_BASE/$PDB_FILE",
+			"$DEV_BASE/public_build/css_bin/$PDB_FILE");
 		}
 	}
-}	
+
+	if ($CSGO)
+	{
+		print "Copying $BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$BIN_FILE to $DEV_BASE/public_build/csgo_bin/$BIN_FILE\n";
+		copy ("$BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$BIN_FILE",
+		"$DEV_BASE/public_build/csgo_bin/$BIN_FILE");
+		if ($^O eq "MSWin32")
+		{
+			print "Copying $BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$PDB_FILE to $DEV_BASE/public_build/csgo_bin/$PDB_FILE\n";
+			copy ("$BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$PDB_FILE",
+			"$DEV_BASE/public_build/csgo_bin/$PDB_FILE");
+		}
+	}
+}
+
 sleep(1);
 
 #### Functions
@@ -160,21 +195,23 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg");
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
-	#Copy Meta Mod Source 1.8.1 binary
-	copy ("$DEV_BASE/sourcemm_bin/server" . $SMM_FILE_EXT,
-		"$mod_dir/addons/metamod/bin/server" . $SMM_FILE_EXT);
-	
-	if ($ORANGE)
+	if ($ORANGE || $CSS)
 	{
+		#Copy Meta Mod Source 1.9.x binary
+		copy ("$DEV_BASE/sourcemm_bin/server" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/server" . $SMM_FILE_EXT);
 		copy ("$DEV_BASE/sourcemm_bin/metamod.2.ep2" . $SMM_FILE_EXT,
 			"$mod_dir/addons/metamod/bin/metamod.2.ep2" . $SMM_FILE_EXT);
 		copy ("$DEV_BASE/sourcemm_bin/metamod.2.ep2v" . $SMM_FILE_EXT,
 			"$mod_dir/addons/metamod/bin/metamod.2.ep2v" . $SMM_FILE_EXT);
 	}
-	else
+
+	if ($CSGO)
 	{
-		copy ("$DEV_BASE/sourcemm_bin/metamod.1.ep1" . $SMM_FILE_EXT,
-			"$mod_dir/addons/metamod/bin/metamod.1.ep1" . $SMM_FILE_EXT);
+		copy ("$DEV_BASE/sourcemm_bin/server" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/server" . $SMM_FILE_EXT);
+		copy ("$DEV_BASE/sourcemm_bin/metamod.2.csgo" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/metamod.2.csgo" . $SMM_FILE_EXT);
 	}
 
 	if ($ORANGE)
@@ -192,18 +229,35 @@ my $search_curly = 0;
 				"$mod_dir/addons/$BIN_FILE");
 		}
 	}
-	else
+
+	if ($CSS)
 	{
 		if ($SMM)
 		{
-			print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE\n";
-			copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
+			print "Copying $BIN_FOLDER/css_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/css_bin/$PLUGIN_BASE/$BIN_FILE",
 				"$mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE");
 		}
 		else
 		{
-			print "Copying $BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/$BIN_FILE\n";
-			copy ("$BIN_FOLDER/legacy_bin/$PLUGIN_BASE/$BIN_FILE",
+			print "Copying $BIN_FOLDER/css_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/css_bin/$PLUGIN_BASE/$BIN_FILE",
+				"$mod_dir/addons/$BIN_FILE");
+		}
+	}
+
+	if ($CSGO)
+	{
+		if ($SMM)
+		{
+			print "Copying $BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$BIN_FILE",
+				"$mod_dir/addons/mani_admin_plugin/bin/$BIN_FILE");
+		}
+		else
+		{
+			print "Copying $BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$BIN_FILE to $mod_dir/addons/$BIN_FILE\n";
+			copy ("$BIN_FOLDER/csgo_bin/$PLUGIN_BASE/$BIN_FILE",
 				"$mod_dir/addons/$BIN_FILE");
 		}
 	}
