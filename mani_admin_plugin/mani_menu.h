@@ -27,8 +27,19 @@
 #ifndef MANI_MENU_H
 #define MANI_MENU_H
 
+#if defined ( GAME_CSGO )
+#define MAX_AMX_MENU (7)
+#define MAX_ESCAPE_MENU (7)
+#define OPTION_NEED_BACK (7)
+#define OPTION_NEED_MORE (8)
+#define OPTION_EXIT (9)
+#else
 #define MAX_AMX_MENU (8)
 #define MAX_ESCAPE_MENU (7)
+#define OPTION_NEED_BACK (8)
+#define OPTION_NEED_MORE (9)
+#define OPTION_EXIT (10)
+#endif
 
 #include <vector>
 #include <algorithm>
