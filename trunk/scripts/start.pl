@@ -40,7 +40,8 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "HL2 Assault" 			=> "-game hl2as -secure +map as_citytension +maxplayers 16",
 "HL2 CTF" 			=> "-game hl2ctf -secure +map ctf_defrost +maxplayers 16",
 "Sourceforts" 			=> "-game sourceforts -secure +map sf_magma +maxplayers 32",
-"Counter-Strike Source Beta"		=> "-game cstrike_beta -tickrate 66 -secure +map de_dust +maxplayers 32"
+"Counter-Strike Source Beta"		=> "-game cstrike_beta -tickrate 66 -secure +map de_dust +maxplayers 32",
+"Counter-Strike Global Offensive"	=> "-game csgo -console -usercon +game_type 0 +game_mode 0 +mapgroup mg_bomb +map de_dust",
 );
 
 %extra_game_path = (
@@ -49,6 +50,7 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "Counter-Strike Source"	=> "/css",
 "Counter-Strike Source Beta"	=> "/cssbeta",
 "Half-Life 2 Deathmatch" 	=> "/orangebox",
+"Counter-Strike Global Offensive" => "/csgo",
 );
 
 print "\n";
