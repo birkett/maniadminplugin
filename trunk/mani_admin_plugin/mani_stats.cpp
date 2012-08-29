@@ -2268,9 +2268,9 @@ bool ShowTopFreePage::OptionSelected(player_t *player_ptr, const int option)
 	}
 
 	if (rp_list_size == 0) return false;
-	if (option == 10) return false;
-	if (option == 9 && more) current_rank += 10;
-	if (option == 8 && back) current_rank -= 10;
+	if (option == OPTION_EXIT) return false;
+	if (option == OPTION_NEED_MORE && more) current_rank += 10;
+	if (option == OPTION_NEED_BACK && back) current_rank -= 10;
 
 	this->SetBackMore(rp_list_size);
 	this->Render(player_ptr);
@@ -3277,7 +3277,7 @@ void HitBoxMeFreePage::Redraw(player_t *player_ptr)
 //---------------------------------------------------------------------------------
 bool WeaponMeFreePage::OptionSelected(player_t *player_ptr, const int option)
 {
-	if (option == 9) return this->Render(player_ptr);
+	if (option == OPTION_NEED_MORE) return this->Render(player_ptr);
 	return false;
 }
 

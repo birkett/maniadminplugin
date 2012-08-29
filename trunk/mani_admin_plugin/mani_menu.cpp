@@ -99,10 +99,15 @@ bool final
 		keys |= (1 << (i-1));
 	}
 
+#if defined ( GAME_CSGO )
+	if (back) keys |= (1<<6); // Key 7
+	if (more) keys |= (1<<7); // Key 8
+	if (cancel)	keys |= (1<<8); // Key 9
+#else
 	if (back) keys |= (1<<7); // Key 8
 	if (more) keys |= (1<<8); // Key 9
 	if (cancel)	keys |= (1<<9); // Key 0
-
+#endif
 	MRecipientFilter mrf; // this is my class, I'll post it later.
 	mrf.MakeReliable();
 	mrf.RemoveAllRecipients();
@@ -625,7 +630,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 	int item_delta = (mani_use_amx_style_menu.GetInt() == 1 && gpManiGameType->IsAMXMenuAllowed()) ? MAX_AMX_MENU - 1:MAX_ESCAPE_MENU - 1;
 
 	// Option has been selected
-	if (option == 9 && menu_page_ptr->need_more)
+	if (option == OPTION_NEED_MORE && menu_page_ptr->need_more)
 	{
 		// Repopulate the menu items
 		menu_page_ptr->menu_items.clear();
@@ -636,7 +641,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 		return;
 	}
 
-	if (option == 8 && menu_page_ptr->need_back)
+	if (option == OPTION_NEED_BACK && menu_page_ptr->need_back)
 	{
 		if (menu_page_ptr->current_index == 0)
 		{
@@ -694,7 +699,7 @@ void MenuTemporal::OptionSelected(player_t *player_ptr, const int option)
 		return;
 	}
 
-	if (option == 10)
+	if (option == OPTION_EXIT)
 	{
 		// Exit pressed
 		this->Kill();
