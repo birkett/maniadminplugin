@@ -121,10 +121,18 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 			CONMSG("  Engine: Left 4 Dead (2008)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOX
 			CONMSG("  Engine: Episode 2 (Orange Box, 2007)\n");
+#elif SOURCE_ENGINE == SE_CSS
+			CONMSG("  Engine: Counter-Strike: Source (Old Valve Orange Box, 2009)\n");
 #elif SOURCE_ENGINE == SE_ORANGEBOXVALVE
 			CONMSG("  Engine: Episode 2 (Valve Orange Box, 2009)\n");
 #elif SOURCE_ENGINE == SE_DARKMESSIAH
 			CONMSG("  Engine: Dark Messiah (2006)\n");
+#elif SOURCE_ENGINE == SE_EYE
+			CONMSG("  Engine: E.Y.E. Divine Cybermancy (2011)\n");
+#elif SOURCE_ENGINE == SE_PORTAL2
+			CONMSG("  Engine: Portal 2 (2011)\n");
+#elif SOURCE_ENGINE == SE_CSGO
+			CONMSG("  Engine: Counter-Strike: Global Offensive (2012)\n");
 #else
 #error "SOURCE_ENGINE not defined to a known value"
 #endif
@@ -425,6 +433,12 @@ bool Command_Meta(IMetamodSourceCommandInfo *info)
 				char error[255]={0};
 				bool already;
 				CPluginManager::CPlugin *pl;
+
+				// If we've recently tried to unload plugins, they might still
+				// be in the unload queue. Force them out now. This is not
+				// lowered to CPluginManager because it's not strictly safe
+				// there.
+				g_SourceHook.ResolvePendingUnloads(true);
 
 				PluginId id = g_PluginMngr.Load(full_path, Pl_Console, already, error, sizeof(error));
 				pl = g_PluginMngr.FindById(id);

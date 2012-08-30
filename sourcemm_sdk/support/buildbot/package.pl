@@ -5,9 +5,10 @@ use Cwd;
 use File::Basename;
 use Net::FTP;
 
-my ($ftp_file, $ftp_host, $ftp_user, $ftp_pass, $ftp_path);
+my ($ftp_file, $ftp_host, $ftp_user, $ftp_pass, $ftp_path, $tag);
 
 $ftp_file = shift;
+$tag = shift;
 
 open(FTP, $ftp_file) or die "Unable to read FTP config file $ftp_file: $!\n";
 $ftp_host = <FTP>;
@@ -49,6 +50,11 @@ else
     $version .= '-' . $^O;
 }
 
+if (defined $tag)
+{
+    $version .= '-' . $tag;
+}
+
 my ($filename);
 $filename = 'mmsource-' . $version;
 if ($^O eq "linux")
@@ -69,7 +75,7 @@ $ftp_path .= "/$major.$minor";
 
 my ($ftp);
 
-$ftp = Net::FTP->new($ftp_host, Debug => 0) 
+$ftp = Net::FTP->new($ftp_host, Debug => 0, Passive => 0) 
     or die "Cannot connect to host $ftp_host: $@";
 
 $ftp->login($ftp_user, $ftp_pass)

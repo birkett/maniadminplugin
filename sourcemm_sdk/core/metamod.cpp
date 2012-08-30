@@ -229,7 +229,7 @@ LoadPluginsFromFile(const char *filepath, int &skipped)
 	}
 
 	char buffer[255], error[255], full_path[PATH_SIZE];
-	const char *file;
+	const char *ptr, *ext, *file;
 	size_t length;
 	while (!feof(fp) && fgets(buffer, sizeof(buffer), fp) != NULL)
 	{
@@ -326,7 +326,7 @@ void InitializeVSP()
 
 	/* Chop off the "engine" file part */
 	len = strlen(engine_file);
-	for (size_t i = len - 1; i >= 0 && i < len; i--)
+	for (size_t i = len - 1; i < len; i--)
 	{
 		if (engine_file[i] == '/' || engine_file[i] == '\\')
 		{
