@@ -122,7 +122,7 @@ ARCH=i486
 ARCH_CFLAGS=-mfpmath=sse -msse -O3 -m32
 
 # -fpermissive is so gcc 3.4.x doesn't complain about some template stuff
-BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
+BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -DMAP1 -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -Wall -fno-stack-protector \
 	-D_LINUX -DLINUX -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
         -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp \
