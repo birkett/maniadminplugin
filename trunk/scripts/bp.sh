@@ -4,12 +4,14 @@ PROG_NAME=$(basename $0)
 BASE_FOLDER=$(dirname $(readlink -f $0))/..
 CLEAN=FALSE
 DEBUG_ON=FALSE
-OUTPUT_DIR="$BASE_FOLDER/plugin_output/legacy_bin"
+OUTPUT_DIR="$BASE_FOLDER/plugin_output/orange_bin"
 
 ##########################################
 dump_vars()
 {
 echo "ORANGE_BUILD = $ORANGE_BUILD"
+echo "CSS_BUILD = $CSS_BUILD"
+echo "CSGO_BUILD = $CSGO_BUILD"
 echo "VSP_BUILD = $VSP_BUILD"
 echo "DEBUG_ON = $DEBUG_ON"
 echo ""
@@ -52,14 +54,17 @@ select_build_type()
 echo ""
 echo "Select build option:"
 echo ""
-echo "Old SDK"
-echo "1 - Build VSP"
-echo "2 - Build SMM"
-echo ""
+echo "OB SDK"
+echo "1 - Build Orange VSP"
+echo "2 - Build Orange SMM" 
 
-echo "Orange SDK"
+echo "CSS SDK"
 echo "3 - Build Orange VSP"
 echo "4 - Build Orange SMM" 
+
+echo "CSGO SDK"
+echo "5 - Build Orange VSP"
+echo "6 - Build Orange SMM" 
 
 echo ""
 echo -e "> \c"
@@ -67,23 +72,45 @@ read REPLY
 
 if [ "$REPLY" = "1" ]
 then
-#Old VSP
-	export ORANGE_BUILD="FALSE"
+#ORANGE VSP
+	export ORANGE_BUILD="TRUE"
+	export CSS_BUILD="FALSE"
+	export CSGO_BUILD="FALSE"
 	export VSP_BUILD="TRUE"
 elif [ "$REPLY" = "2" ]
 then
-#Old SMM
-	export ORANGE_BUILD="FALSE"
+#ORANGE SMM
+	export ORANGE_BUILD="TRUE"
+	export CSS_BUILD="FALSE"
+	export CSGO_BUILD="FALSE"
 	export VSP_BUILD="FALSE"
 elif [ "$REPLY" = "3" ]
 then
-#Orange VSP
-	export ORANGE_BUILD="TRUE"
+#CSS VSP
+	export ORANGE_BUILD="FALSE"
+	export CSS_BUILD="TRUE"
+	export CSGO_BUILD="FALSE"
 	export VSP_BUILD="TRUE"
 elif [ "$REPLY" = "4" ]
 then
-#Orange SMM
-	export ORANGE_BUILD="TRUE"
+#CSS SMM
+	export ORANGE_BUILD="FALSE"
+	export CSS_BUILD="TRUE"
+	export CSGO_BUILD="FALSE"
+	export VSP_BUILD="FALSE"
+elif [ "$REPLY" = "5" ]
+then
+#CSGO VSP
+	export ORANGE_BUILD="FALSE"
+	export CSS_BUILD="FALSE"
+	export CSGO_BUILD="TRUE"
+	export VSP_BUILD="TRUE"
+elif [ "$REPLY" = "6" ]
+then
+#CSGO SMM
+	export ORANGE_BUILD="FALSE"
+	export CSS_BUILD="FALSE"
+	export CSGO_BUILD="TRUE"
 	export VSP_BUILD="FALSE"
 else
 	echo "Unknown selection !!"
@@ -141,71 +168,13 @@ export DEMANGLE_OBJ_DIR="$BUILD_OBJ_DIR/demangle"
 export DEMANGLE_OBJS="$DEMANGLE_OBJ_DIR/cp-demangle.o $DEMANGLE_OBJ_DIR/cp-demint.o $DEMANGLE_OBJ_DIR/cplus-dem.o $DEMANGLE_OBJ_DIR/safe-ctype.o $DEMANGLE_OBJ_DIR/xmalloc.o $DEMANGLE_OBJ_DIR/xstrdup.o"
 export DEMANGLE_SRC_DIR="./demangle"
 
-if [ "$ORANGE_BUILD" = "FALSE" ] && [ "$VSP_BUILD" = "TRUE" ]
-then
-###############################
-# Old VSP Build
-###############################
-	echo "OLD VSP BUILD"
-	export HL2SDK_SRC_DIR="../sdks/map/ep1"
-        export HL2BIN_DIR="../srcds_1/bin"
-	export PLUGIN_SRC_DIR="."
-	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
-	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
-	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
-	export SOURCEHOOK_SRC_DIR="../sourcemm_sdk/core-legacy/sourcehook"
-	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
-	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
-	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
-
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include -I../sourcemm_sdk/core-legacy -I../sourcemm_sdk/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib -I./jit -I./asm -I./Knight -I../sdks/map/ep1/public/steam"
-
-	export NAME="mani_admin_plugin"
-
-	export TIER1_OBJS="$TIER1_OBJ_DIR/convar.o $TIER1_OBJ_DIR/interface.o $TIER1_OBJ_DIR/KeyValues.o $TIER1_OBJ_DIR/bitbuf.o $TIER1_OBJ_DIR/utlbuffer.o"
-
-	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride-vc7.o"
-	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o"
-	export EXTRA_FILES_1="serverplugin_convar.cpp mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
-	export EXTRA_LIBS="../sdks/map/ep1/linux_sdk/tier1_i486.a ../sdks/map/ep1/linux_sdk/mathlib_i486.a"
-	export TIER0_SO="tier0_i486.so"
-	export VSTDLIB_SO="vstdlib_i486.so"
-
-elif [ "$ORANGE_BUILD" = "FALSE" ] && [ "$VSP_BUILD" = "FALSE" ]
-then
-###############################
-# Old SMM Build
-###############################
-	echo "OLD SMM BUILD"
-	export HL2SDK_SRC_DIR="../sdks/map/ep1"
-        export HL2BIN_DIR="../srcds_1/bin"
-
-	export PLUGIN_SRC_DIR="."
-	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
-	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
-	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
-	export SOURCEHOOK_SRC_DIR="../sourcemm_sdk/core-legacy/sourcehook"
-	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
-	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
-
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls  -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core-legacy -I../sourcemm_sdk/core-legacy/sourcehook -I$HL2SDK_SRC_DIR/public/vstdlib -I./jit -I./asm -I./Knight -I../sdks/map/ep1/public/steam"
-
-	export NAME="mani_admin_plugin_mm"
-	export TIER1_OBJS="$TIER1_OBJ_DIR/convar.o $TIER1_OBJ_DIR/KeyValues.o $TIER1_OBJ_DIR/bitbuf.o $TIER1_OBJ_DIR/utlbuffer.o"
-	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride-vc7.o"
-	export SOURCEMM="-DSOURCEMM"
-	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
-	export EXTRA_LIBS="../sdks/map/ep1/linux_sdk/tier1_i486.a ../sdks/map/ep1/linux_sdk/mathlib_i486.a"
-	export TIER0_SO="tier0_i486.so"
-	export VSTDLIB_SO="vstdlib_i486.so"
-
-elif [ "$ORANGE_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
+if [ "$ORANGE_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then
 ###############################
 # Orange VSP Build
 ###############################
 	echo "ORANGE VSP BUILD"
-	export HL2SDK_SRC_DIR="../sdks/map/ob"
+	export HL2SDK_SRC_DIR="../sdks/ob"
         export HL2BIN_DIR="../srcds_1/orangebox/bin"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -217,25 +186,26 @@ then
 	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
 	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I../sdks/map/ob/public/steam"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I$HL2SDK_SRC_DIR/public/steam"
 
 	export NAME="mani_admin_plugin"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
 #	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o $SOURCEHOOK_OBJ_DIR/sourcehook_hookmangen.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookidman.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookmaninfo.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cproto.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cvfnptr.o"
-	export ORANGE="-DORANGE"
+	export ORANGE="-DGAME_ORANGE"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
-	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
+	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
 	export TIER0_SO="libtier0.so"
 	export VSTDLIB_SO="libvstdlib.so"
 
-else
+elif [ "$ORANGE_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "FALSE" ]
+then
 ###############################
 # Orange SMM Build
 ###############################
 	echo "ORANGE SMM BUILD"
-	export HL2SDK_SRC_DIR="../sdks/map/ob"
+	export HL2SDK_SRC_DIR="../sdks/ob"
         export HL2BIN_DIR="../srcds_1/orangebox/bin"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -246,18 +216,142 @@ else
 	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
 	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
 
-	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I../sdks/map/ob/public/steam"
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I$HL2SDK_SRC_DIR/public/steam"
 
 	export NAME="mani_admin_plugin_mm"
 	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
 #	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEMM="-DSOURCEMM"
-	export ORANGE="-DORANGE"
+	export ORANGE="-DGAME_ORANGE"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
-	export EXTRA_LIBS="../sdks/map/ob/lib/linux/tier1_i486.a ../sdks/map/ob/lib/linux/mathlib_i486.a"
+	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
 	export TIER0_SO="libtier0.so"
 	export VSTDLIB_SO="libvstdlib.so"
+
+elif [ "$CSS_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
+then
+###############################
+# CSS VSP Build
+###############################
+	echo "CSS VSP BUILD"
+	export HL2SDK_SRC_DIR="../sdks/css"
+        export HL2BIN_DIR="../srcds_1/css/bin"
+	export PLUGIN_SRC_DIR="."
+	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
+	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
+	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
+#	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
+	export SOURCEHOOK_SRC_DIR="../sourcemm_sdk/core/sourcehook"
+	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
+	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
+	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
+
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I$HL2SDK_SRC_DIR/public/steam"
+
+	export NAME="mani_admin_plugin"
+	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
+#	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
+	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
+	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o $SOURCEHOOK_OBJ_DIR/sourcehook_hookmangen.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookidman.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookmaninfo.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cproto.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cvfnptr.o"
+	export ORANGE="-DGAME_ORANGE -DGAME_CSS"
+	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
+	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
+	export TIER0_SO="libtier0.so"
+	export VSTDLIB_SO="libvstdlib.so"
+
+elif [ "$CSS_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "FALSE" ]
+then
+###############################
+# CSS SMM Build
+###############################
+	echo "CSS SMM BUILD"
+	export HL2SDK_SRC_DIR="../sdks/css"
+        export HL2BIN_DIR="../srcds_1/css/bin"
+	export PLUGIN_SRC_DIR="."
+	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
+	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
+	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
+	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
+	export SOURCEHOOK_SRC_DIR="$SOURCEMM_ROOT/sourcehook"
+	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
+	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
+
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I$HL2SDK_SRC_DIR/public/steam"
+
+	export NAME="mani_admin_plugin_mm"
+	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
+#	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
+	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
+	export SOURCEMM="-DSOURCEMM"
+	export ORANGE="-DGAME_ORANGE -DGAME_CSS"
+	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
+	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
+	export TIER0_SO="libtier0.so"
+	export VSTDLIB_SO="libvstdlib.so"
+
+elif [ "$CSGO_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
+then
+###############################
+# CSS VSP Build
+###############################
+	echo "CSGO VSP BUILD"
+	export HL2SDK_SRC_DIR="../sdks/csgo"
+        export HL2BIN_DIR="../srcds_1/csgo/bin"
+	export PLUGIN_SRC_DIR="."
+	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
+	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
+	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
+#	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
+	export SOURCEHOOK_SRC_DIR="../sourcemm_sdk/core/sourcehook"
+	export SOURCEHOOK_OBJ_DIR="$BUILD_OBJ_DIR/sourcehook"
+	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
+	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
+
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I$HL2SDK_SRC_DIR/public/steam"
+
+	export NAME="mani_admin_plugin"
+	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
+#	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
+	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
+	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o $SOURCEHOOK_OBJ_DIR/sourcehook_hookmangen.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookidman.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookmaninfo.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cproto.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cvfnptr.o"
+	export ORANGE="-DGAME_ORANGE -DGAME_CSGO -DCOMPILER_GCC -DPOSIX"
+	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
+	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a $HL2SDK_SRC_DIR/lib/linux/interfaces_i486.a"
+	export TIER0_SO="libtier0.so"
+	export VSTDLIB_SO="libvstdlib.so"
+
+elif [ "$CSGO_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "FALSE" ]
+then
+###############################
+# CSS SMM Build
+###############################
+	echo "CSGO SMM BUILD"
+	export HL2SDK_SRC_DIR="../sdks/csgo"
+        export HL2BIN_DIR="../srcds_1/csgo/bin"
+	export PLUGIN_SRC_DIR="."
+	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
+	export TIER0_PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public/tier0"
+	export TIER1_SRC_DIR="$HL2SDK_SRC_DIR/tier1"
+	export MATHLIB_SRC_DIR="$HL2SDK_SRC_DIR/mathlib"
+	export SOURCEHOOK_SRC_DIR="$SOURCEMM_ROOT/sourcehook"
+	export ASM_OBJ_DIR="$BUILD_OBJ_DIR/asm"
+	export KNIGHT_OBJ_DIR="$BUILD_OBJ_DIR/Knight"
+
+	export INCLUDEDIRS="-I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier1 -I$PUBLIC_SRC_DIR/engine -I$PUBLIC_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/common -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/public/mathlib -I$HL2SDK_SRC_DIR/public/tier0 -I$HL2SDK_SRC_DIR/../../mani_admin_plugin/mysql5.1/linux_32/include/ -I../sourcemm_sdk/core -I../sourcemm_sdk/core/sourcehook -I$HL2SDK_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/public/game/server -I$HL2SDK_SRC_DIR/game/shared -I./jit -I./asm -I./Knight -I$HL2SDK_SRC_DIR/public/steam"
+
+	export NAME="mani_admin_plugin_mm"
+	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
+#	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
+	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
+	export SOURCEMM="-DSOURCEMM"
+	export ORANGE="-DGAME_ORANGE -DGAME_CSGO -DCOMPILER_GCC -DPOSIX"
+	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
+	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a $HL2SDK_SRC_DIR/lib/linux/interfaces_i486.a"
+	export TIER0_SO="libtier0.so"
+	export VSTDLIB_SO="libvstdlib.so"
+
+
 
 fi
 
@@ -266,7 +360,7 @@ then
 	make clean
 fi
 
-make -j 5
+make
 
 COPY_SMM=""
 COPY_ORANGE=""
@@ -282,6 +376,16 @@ if [ "$ORANGE_BUILD" = "TRUE" ]
 then
 	COPY_ORANGE="-o"
 	OUTPUT_DIR="$BASE_FOLDER/plugin_output/orange_bin"
+
+elif [ "$CSS_BUILD" = "TRUE" ]
+then
+	COPY_ORANGE="-c"
+	OUTPUT_DIR="$BASE_FOLDER/plugin_output/css_bin"
+
+elif [ "$CSGO_BUILD" = "TRUE" ]
+then
+	COPY_ORANGE="-g"
+	OUTPUT_DIR="$BASE_FOLDER/plugin_output/csgo_bin"
 fi
 
 cd -
@@ -291,9 +395,12 @@ create_folder "$BASE_FOLDER/plugin_output"
 create_folder "$BASE_FOLDER/plugin_output/orange_bin"
 create_folder "$BASE_FOLDER/plugin_output/orange_bin/VSP"
 create_folder "$BASE_FOLDER/plugin_output/orange_bin/SourceMM"
-create_folder "$BASE_FOLDER/plugin_output/legacy_bin"
-create_folder "$BASE_FOLDER/plugin_output/legacy_bin/VSP"
-create_folder "$BASE_FOLDER/plugin_output/legacy_bin/SourceMM"
+create_folder "$BASE_FOLDER/plugin_output/css_bin"
+create_folder "$BASE_FOLDER/plugin_output/css_bin/VSP"
+create_folder "$BASE_FOLDER/plugin_output/css_bin/SourceMM"
+create_folder "$BASE_FOLDER/plugin_output/csgo_bin"
+create_folder "$BASE_FOLDER/plugin_output/csgo_bin/VSP"
+create_folder "$BASE_FOLDER/plugin_output/csgo_bin/SourceMM"
 
 if [ "$VSP_BUILD" = "TRUE" ]
 then
