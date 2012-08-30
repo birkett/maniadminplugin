@@ -74,10 +74,14 @@ static const char *backend_names[] =
 	"2.darkm",
 	"2.ep2",
 	"2.bgt",
+	"2.eye",
+	"2.css",
 	"2.ep2v",
 	"2.l4d",
 	"2.l4d2",
-	"2.swarm"
+	"2.swarm",
+	"2.portal2",
+	"2.csgo"
 };
 
 #if defined _WIN32
@@ -266,9 +270,17 @@ MetamodBackend
 mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 {
 	/* Check for L4D */
-	if (engineFactory("VEngineServer022", NULL) != NULL &&
+	if (engineFactory("VEngineServer023", NULL) != NULL)
+	{
+		return MMBackend_CSGO;
+	}
+	else if (engineFactory("VEngineServer022", NULL) != NULL &&
 		engineFactory("VEngineCvar007", NULL) != NULL)
 	{
+		if (strcmp(game_name, "portal2") == 0)
+		{
+			return MMBackend_Portal2;
+		}
 		if (engineFactory("EngineTraceServer004", NULL) != NULL)
 		{
 			return MMBackend_AlienSwarm;
@@ -298,7 +310,18 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 			}
 			else if (engineFactory("VModelInfoServer003", NULL) != NULL)
 			{
-				return MMBackend_Episode2Valve;
+				if (engineFactory("VFileSystem017", NULL) != NULL)
+				{
+					return MMBackend_EYE;
+				}
+				else if (strcmp(game_name, "cstrike") == 0)
+				{
+					return MMBackend_CSS;
+				}
+				else
+				{
+					return MMBackend_Episode2Valve;
+				}
 			}
 		}
 		/* Check for Episode One/Old Engine */
