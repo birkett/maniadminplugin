@@ -293,7 +293,7 @@ then
 elif [ "$CSGO_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then
 ###############################
-# CSS VSP Build
+# CSGO VSP Build
 ###############################
 	echo "CSGO VSP BUILD"
 	export HL2SDK_SRC_DIR="../sdks/csgo"
@@ -315,7 +315,7 @@ then
 #	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEHOOK_OBJS="$SOURCEHOOK_OBJ_DIR/sourcehook.o $SOURCEHOOK_OBJ_DIR/sourcehook_hookmangen.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookidman.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_chookmaninfo.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cproto.o $SOURCEHOOK_OBJ_DIR/sourcehook_impl_cvfnptr.o"
-	export ORANGE="-DGAME_ORANGE -DGAME_CSGO -DCOMPILER_GCC -DPOSIX"
+	export ORANGE="-DGAME_ORANGE -DGAME_CSGO -DCOMPILER_GCC -DPOSIX -DPLATFORM_POSIX"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a $HL2SDK_SRC_DIR/lib/linux/interfaces_i486.a"
 	export TIER0_SO="libtier0.so"
@@ -324,7 +324,7 @@ then
 elif [ "$CSGO_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "FALSE" ]
 then
 ###############################
-# CSS SMM Build
+# CSGO SMM Build
 ###############################
 	echo "CSGO SMM BUILD"
 	export HL2SDK_SRC_DIR="../sdks/csgo"
@@ -345,7 +345,7 @@ then
 #	export MATHLIB_OBJS="$MATHLIB_OBJ_DIR/mathlib_base.o"
 	export TIER0_OBJS="$TIER0_OBJ_DIR/memoverride.o"
 	export SOURCEMM="-DSOURCEMM"
-	export ORANGE="-DGAME_ORANGE -DGAME_CSGO -DCOMPILER_GCC -DPOSIX"
+	export ORANGE="-DGAME_ORANGE -DGAME_CSGO -DCOMPILER_GCC -DPOSIX -DPLATFORM_POSIX"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a $HL2SDK_SRC_DIR/lib/linux/interfaces_i486.a"
 	export TIER0_SO="libtier0.so"
@@ -360,7 +360,7 @@ then
 	make clean
 fi
 
-make
+make -j 2
 
 COPY_SMM=""
 COPY_ORANGE=""
