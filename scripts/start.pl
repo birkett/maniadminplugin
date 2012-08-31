@@ -34,13 +34,6 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "Half-Life 2 Deathmatch" 	=> "-game hl2mp -secure +map dm_lockdown +maxplayers 16",
 "Team Fortress 2" 		=> "-game tf -secure +map cp_dustbowl +maxplayers 16",
 "Day of Defeat Source" 		=> "-game dod -secure +map dod_donner +maxplayers 32",
-"Dystopia" 			=> "-game dystopia -secure +map dys_vaccine +maxplayers 16",
-"Empires" 			=> "-game empires -secure +map emp_canyon +maxplayers 16",
-"The Hidden" 			=> "-game hidden -secure +map hdn_executive +maxplayers 16",
-"HL2 Assault" 			=> "-game hl2as -secure +map as_citytension +maxplayers 16",
-"HL2 CTF" 			=> "-game hl2ctf -secure +map ctf_defrost +maxplayers 16",
-"Sourceforts" 			=> "-game sourceforts -secure +map sf_magma +maxplayers 32",
-"Counter-Strike Source Beta"		=> "-game cstrike_beta -tickrate 66 -secure +map de_dust +maxplayers 32",
 "Counter-Strike Global Offensive"	=> "-game csgo -console -usercon +game_type 0 +game_mode 0 +mapgroup mg_bomb +map de_dust",
 );
 
@@ -48,7 +41,6 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "Team Fortress 2" 		=> "/orangebox",
 "Day of Defeat Source"		=> "/orangebox",
 "Counter-Strike Source"	=> "/css",
-"Counter-Strike Source Beta"	=> "/cssbeta",
 "Half-Life 2 Deathmatch" 	=> "/orangebox",
 "Counter-Strike Global Offensive" => "/csgo",
 );

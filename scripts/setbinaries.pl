@@ -195,7 +195,7 @@ my $search_curly = 0;
 	create_folder("$mod_dir/cfg");
 	create_folder("$mod_dir/cfg/mani_admin_plugin");
 
-	if ($ORANGE || $CSS)
+	if ($ORANGE)
 	{
 		#Copy Meta Mod Source 1.9.x binary
 		copy ("$DEV_BASE/sourcemm_bin/server" . $SMM_FILE_EXT,
@@ -204,6 +204,15 @@ my $search_curly = 0;
 			"$mod_dir/addons/metamod/bin/metamod.2.ep2" . $SMM_FILE_EXT);
 		copy ("$DEV_BASE/sourcemm_bin/metamod.2.ep2v" . $SMM_FILE_EXT,
 			"$mod_dir/addons/metamod/bin/metamod.2.ep2v" . $SMM_FILE_EXT);
+	}
+
+	if ($CSS)
+	{
+		#Copy Meta Mod Source 1.9.x binary
+		copy ("$DEV_BASE/sourcemm_bin/server" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/server" . $SMM_FILE_EXT);
+		copy ("$DEV_BASE/sourcemm_bin/metamod.2.css" . $SMM_FILE_EXT,
+			"$mod_dir/addons/metamod/bin/metamod.2.css" . $SMM_FILE_EXT);
 	}
 
 	if ($CSGO)
@@ -292,14 +301,7 @@ my $search_curly = 0;
 		open(DAT, ">$mod_dir/addons/$CORE_BIN.vdf");
 		print DAT "\"Plugin\"\n";
 		print DAT "{\n";
-		if ($ORANGE)
-		{
-			print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN.$ARCH."\"\n";
-		}
-		else
-		{
-			print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN."\"\n";
-		}
+		print DAT "\t\"file\" \"../$_[0]/addons/".$CORE_BIN.$ARCH."\"\n";
 
 		print DAT "}\n";
 		close(DAT);
