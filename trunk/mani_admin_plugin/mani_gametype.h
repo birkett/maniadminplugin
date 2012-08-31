@@ -133,7 +133,7 @@ struct sigscan_t
 	char	sig_name[64]; // Our header name for the sig
 	int		win_sig_type;     // One of 3 enums DIRECT, CALL or VAR
 	int		linux_sig_type;     // One of 3 enums DIRECT, CALL or VAR
-	char	linux_symbol[128];
+	char	linux_symbol[256];
 	char	sigscan[256];
 	unsigned int win_index;
 	unsigned int linux_index;

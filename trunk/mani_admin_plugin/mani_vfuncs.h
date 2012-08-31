@@ -62,9 +62,4 @@ extern const char *IServerNetworkable_GetClassName(IServerNetworkable *pThisPtr)
 
 // Debug functions
 extern void	VFunc_CallCBaseEntity(player_t *player_ptr);
-
-#ifdef __linux__
-extern void DumpVFuncClass(DWORD *class_ptr, int count);
-#endif
-
 #endif

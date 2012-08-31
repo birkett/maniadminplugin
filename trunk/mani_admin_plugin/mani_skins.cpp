@@ -413,6 +413,7 @@ bool LoadSkinType
 			if (found_index == -1)
 			{
 				// Precache index
+				if ((skin_list_size > 0) && (skin_list[skin_list_size - 1].resource_list_size == 0)) continue;
 				skin_list[skin_list_size - 1].model_index = engine->PrecacheModel(skin_list[skin_list_size - 1].precache_name, true);
 			}
 			else
