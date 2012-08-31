@@ -49,7 +49,11 @@ const int	gametypes_min_version = 3;
 #endif
 
 //majorrelease.minorrealse.patchlevel.buildnumber
+#if defined ( GAME_CSGO )
+#define COMMON_CORE "1.2.22.13a"
+#else
 #define COMMON_CORE "1.2.22.12"
+#endif
 #define COMMON_VERSION "Mani Admin Plugin 2012 V" COMMON_CORE
 
 #ifdef GAME_ORANGE
