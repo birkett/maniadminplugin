@@ -95,14 +95,14 @@ PLUGIN_FILES+= $(EXTRA_FILES_1)
 
 # compiler options (gcc 3.4.1 to 3.4.6 is required)
 # to find the location for the CPP_LIB files use "updatedb" then "locate libstdc++.a"
-COMP_VER=4.1
+COMP_VER=4.6
 #
 CPLUS=g++-$(COMP_VER)
 CLINK=gcc-$(COMP_VER)
 CPP_LIB=../stlport/lib/libstlport.a  \
 	./mysql5.1/linux_32/lib/libmysqlclient.a \
 	./mysql5.1/linux_32/lib/libz.a \
-	/usr/lib/gcc/i486-linux-gnu/$(COMP_VER)/libgcc_eh.a \
+	/usr/lib/gcc/i686-linux-gnu/$(COMP_VER)/libgcc_eh.a \
 	$(EXTRA_LIBS)
 
 #	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
@@ -126,7 +126,7 @@ BASE_CFLAGS=-fpermissive -D_LINUX -DNDEBUG -DMAP1 -Dstricmp=strcasecmp -D_stricm
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_snprintf=snprintf -Wall -fno-stack-protector \
 	-D_LINUX -DLINUX -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
         -D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp \
-	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp $(SOURCEMM) $(ORANGE)
+	-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp -DHAVE_DECL_BASENAME $(SOURCEMM) $(ORANGE)
 SHLIBEXT=so
 SHLIBLDFLAGS=-shared
 
