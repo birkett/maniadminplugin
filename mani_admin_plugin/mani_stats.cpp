@@ -868,7 +868,7 @@ void ManiStats::CalculateStats(bool use_steam_id, bool round_end)
 	//WriteDebug("ManiStats::CalculateStats() In function steam mode [%s] round end [%s]\n" , (use_steam_id ? "TRUE":"FALSE"), (round_end ? "TRUE":"FALSE"));
 	float	timer;
 
-	timer = gpGlobals->curtime;
+	timer = Plat_FloatTime();
 
 	if (use_steam_id)
 	{
@@ -1097,7 +1097,7 @@ void ManiStats::CalculateStats(bool use_steam_id, bool round_end)
 		}
 	}
 
-	MMsg("Calculate Stats total time [%f]\n", gpGlobals->curtime - timer);
+	MMsg("Calculate Stats total time [%f]\n", Plat_FloatTime() - timer);
 	return;
 }
 
@@ -4060,7 +4060,7 @@ void ManiStats::ReadStats(bool use_steam_id)
 		snprintf(core_filename, sizeof (core_filename), "./cfg/%s/data/mani_name_stats.txt", mani_path.GetString());
 	}
 
-	float timer1 = gpGlobals->curtime;
+	float timer1 = Plat_FloatTime();
 
 	kv_ptr->SetKeyPairSize(3,30);
 	kv_ptr->SetKeySize(4, 100);
@@ -4071,9 +4071,9 @@ void ManiStats::ReadStats(bool use_steam_id)
 		return;
 	}
 
-	MMsg("Time for read = [%f]\n", gpGlobals->curtime - timer1);
+	MMsg("Time for read = [%f]\n", Plat_FloatTime() - timer1);
 
-	timer1 = gpGlobals->curtime;
+	timer1 = Plat_FloatTime();
 
 	//////////////////////////////////////////////
 	read_t *rd_ptr = kv_ptr->GetPrimaryKey();
@@ -4175,7 +4175,7 @@ void ManiStats::ReadStats(bool use_steam_id)
 	}
 
     kv_ptr->DeleteThis();
-	MMsg("Time for load into structure = [%f]\n", gpGlobals->curtime - timer1);
+	MMsg("Time for load into structure = [%f]\n", Plat_FloatTime() - timer1);
 
 	if (use_steam_id)
 	{
