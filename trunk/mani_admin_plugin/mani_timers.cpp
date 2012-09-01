@@ -56,7 +56,7 @@ int		ManiGetTimer(void)
 {
 	int temp_index;
 
-	mani_timers[timer_index] = gpGlobals->curtime;
+	mani_timers[timer_index] = Plat_FloatTime();
 	temp_index = timer_index;
 	timer_index ++;
 	if (timer_index == 20)
@@ -72,5 +72,5 @@ int		ManiGetTimer(void)
 //---------------------------------------------------------------------------------
 float	ManiGetTimerDuration(int index)
 {
-	return (gpGlobals->curtime - mani_timers[index]);
+	return (Plat_FloatTime() - mani_timers[index]);
 }
