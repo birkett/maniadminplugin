@@ -2,8 +2,8 @@
 //
 // Mani Admin Plugin 2012
 //
-// Last Update V1.2.22.12
-// 16.08.2012
+// Last Update V1.2.22.13
+// 01.09.2012
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -21,10 +21,269 @@
 //
 //*************************************************
 
-
 "gametypes.txt"
 {
 	"version"	"3"
+
+	//
+	// Options for Counter-Strike : Global Offensive mod
+	//
+	// This should match the description given by the 
+	// server console command ma_game
+	//
+
+	"Counter-Strike: Global Offensive"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"41"
+
+		// Team manager entities pattern string
+		"team_manager" 		"cs_team_"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"armor"		"CCSPlayer.m_ArmorValue"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"account"	"CCSPlayer.m_iAccount"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+			"move_type"	"CBaseEntity.movetype"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"128"
+			"set_model_index"		"9"
+			"teleport"		"112"
+			"eye_position"		"127"
+			"give_item"		"436"
+			"my_combat_character"		"76"
+			"get_velocity"		"137"
+			"map_desc"		"12"
+			"ignite"		"220"
+			"weapon_drop"		"279"
+			"user_cmds"		"455"
+			"set_observer_target"		"409"
+			"weapon_canuse"		"276"
+			"weapon_switch"		"280"
+			"remove_player_item"		"286"
+			"get_weapon_slot"		"284"
+			"give_ammo"		"270"
+			"commit_suicide"		"485"
+			"get_primary_ammo_type"		"339"
+			"get_secondary_ammo_type"		"340"
+			"weapon_get_name"		"331"
+		}
+
+		"vfuncs_windows"
+		{
+			"get_primary_ammo_type"		"334"
+			"get_secondary_ammo_type"		"335"
+			"weapon_get_name"		"326"
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorI22CLC_SplitPlayerConnect10CUtlMemoryIS5_iEEb19CrossPlayPlatform_t"
+				"sigscan"		"55 8B EC 83 EC ? 56 68 ? ? ? ? 8B F1 FF ? ? ? ? ? 8B 06 8B 50"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writebj"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 83 ? ? ? 8B 0D ? ? ? ? 81 F9 ? ? ? ? 75"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_RoundRespawn"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer12RoundRespawnEv"
+				"sigscan"		"55 8B EC 83 EC ? 56 8B F1 8B 0D ? ? ? ? 57 E8 ? ? ? ? 84 C0 75"
+				"win_type"		"Direct"		
+			}
+			
+			"UTIL_Remove"
+			{
+				"linux_symbol"	"_Z11UTIL_RemoveP11CBaseEntity"
+				"sigscan"		"55 8B EC 8B 45 08 85 C0 74 ? 83 C0 0C ? ? 7D FF FF FF"
+				"win_type"		"Direct"
+			}
+			
+			"CEntList_gEntList"
+			{
+				"linux_symbol"	"g_pEntityList"
+				"sigscan"		"53 68 ? ? ? ? 6A 00 B9 ? ? ? ? 32 DB"
+				"win_type"		"Indirect"
+				"linux_type"	"Direct"
+				"win_index"		"9"		
+			}
+			
+			"CGameRules_gGameRules"
+			{
+				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
+				"sigscan"		"8B 0D ? ? ? ? 85 C9 74 ? 8B 01 8B 50 ? 6A 01 FF D2"
+				"win_type"		"Indirect"
+				"linux_type"	"Indirect"
+				"win_index"		"109"
+				"linux_index"	"6"		
+			}
+			
+			"CGlobalEntityList_FindEntityByClassname"
+			{
+				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
+				"sigscan"		"55 8B EC 53 56 8B F1 8B 4D 08 57 85 C9 74 ? 8B 01 8B 50 08 FF D2 8B 00 83 F8 FF 75 ? B8 FF 1F 00 00 8D 04 40 8B 74 C6 ? EB"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_SwitchTeam"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer10SwitchTeamEi"
+				"sigscan"		"55 8B EC 83 EC ? 56 57 8B 7D ? 57 8B F1 E8 ? ? ? ? 83 C4 ? 85 C0"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_SetModelFromClass" 
+			{
+				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
+				"sigscan"		"55 8B EC 51 53 56 8B F1 57 B9 ? ? ? ? E8 ? ? ? ? 8B"
+				"win_type"		"Direct"		
+			}
+			
+			"GetFileWeaponInfoFromHandle"
+			{
+				"linux_symbol"	"_Z27GetFileWeaponInfoFromHandlet"
+				"sigscan"		"55 8B EC ? 8B ? ? ? 3B ? ? ? ? ? 72 ? B8 ? ? ? ? 5D C3"
+				"win_type"		"Direct"		
+			}
+			
+			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
+			{
+				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
+				"sigscan"		"55 8B EC 8B ? ? 56 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 50 8B ? E8 ? ? ? ? 8B F0 83 C4 ? 85 ? 74 43"
+				"win_type"		"Direct"		
+			}
+		}
+		
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle terrorist team
+			"terrorist"
+			{
+				// Terrorist team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_terrorist"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"TERRORIST"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"900"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"901"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#T"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_t"
+				"reserved_skin"	"reserved_t"
+				"public_skin"	"public_t"
+			}
+
+			// Handle terrorist team
+			"counter-terrorist"
+			{
+				// CT team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_counterterrorist"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"CT"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"902"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"903"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#CT"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_ct"
+				"reserved_skin"	"reserved_ct"
+				"public_skin"	"public_ct"
+			}				
+		}
+	}
 
 	//
 	// Options for Counter Strike : Source mod
@@ -110,34 +369,34 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"130"
+			"eye_angles"		"131"
 			"set_model_index"		"9"
-			"teleport"		"107"
-			"eye_position"		"129"
-			"give_item"		"394"
-			"my_combat_character"		"71"
-			"get_velocity"		"139"
+			"teleport"		"108"
+			"eye_position"		"130"
+			"give_item"		"397"
+			"my_combat_character"		"72"
+			"get_velocity"		"140"
 			"map_desc"		"12"
-			"ignite"		"206"
-			"weapon_drop"		"258"
-			"user_cmds"		"411"
-			"set_observer_target"		"368"
-			"weapon_canuse"		"255"
-			"weapon_switch"		"259"
-			"remove_player_item"		"265"
-			"get_weapon_slot"		"263"
-			"give_ammo"		"249"
-			"commit_suicide"		"434"
-			"get_primary_ammo_type"		"333"
-			"get_secondary_ammo_type"		"334"
-			"weapon_get_name"		"326"
+			"ignite"		"208"
+			"weapon_drop"		"260"
+			"user_cmds"		"414"
+			"set_observer_target"		"371"
+			"weapon_canuse"		"257"
+			"weapon_switch"		"261"
+			"remove_player_item"		"267"
+			"get_weapon_slot"		"265"
+			"give_ammo"		"251"
+			"commit_suicide"		"437"
+			"get_primary_ammo_type"		"335"
+			"get_secondary_ammo_type"		"336"
+			"weapon_get_name"		"328"
 		}
 
 		"vfuncs_windows"
 		{
-			"get_primary_ammo_type"		"328"
-			"get_secondary_ammo_type"		"329"
-			"weapon_get_name"		"321"
+			"get_primary_ammo_type"		"330"
+			"get_secondary_ammo_type"		"331"
+			"weapon_get_name"		"323"
 		}
 
 		"sigs"
@@ -657,7 +916,7 @@
 			}				
 		}
 	}
-	
+
 	//
 	// Options for HL2 Deathmatch 
 	//
@@ -1261,4 +1520,84 @@
 			}				
 		}
 	}
+	
+	//
+	// If the mani admin plugin cannot find a template above to match 
+	// the source mod that is running it will try and use this one as a default.
+	//
+	// Core default single team mod.
+	//
+
+	"Unknown Mod"
+	{
+		"spectator_allowed"	"1"
+		"spectator_index"	"1"
+		"spectator_group"	"#SPEC"
+		"hl1_menu_compatible"	"0"
+		"team_play"		"0"
+		"max_messages"		"22"
+
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"
+			"enable_win"	"0"
+			"vfunc_Offset"	"12"
+			"code_Offset"	"59"
+		}
+		
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
+				"win_type"		"Direct"		
+			}
+		}
+		
+		"teams"
+		{
+
+			"Player"
+			{
+				"index"		"0"
+				"translation_index"		"908"
+				"short_translation_index"	"909"
+				"group"				"#R"
+				"admin_skin"	"admin"
+				"reserved_skin"	"reserved"
+				"public_skin"	"public"
+			}				
+		}
+	}
 }
+
+

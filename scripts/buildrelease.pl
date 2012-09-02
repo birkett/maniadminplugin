@@ -12,26 +12,37 @@ sub recursedir($$);
 
 #Setup Vars here
 $BASE_FOLDER=dirname(rel2abs($0)) . "/..";
-
 $RELEASE_BASE=$BASE_FOLDER . "/public_build";
 
-print "Is this an Orange build? ";
+print "Is this an (O)range build, (C)SS build, or CS:(G)O build? ";
 $question_response = <>;
 chomp($question_response);
 
-if ($question_response eq "y" || $question_response eq "Y")
+if ($question_response eq "o" || $question_response eq "O")
 {
 	print "Orange Mode\n";
 	$ORANGE="TRUE";
 	$BINARY_LOC="$RELEASE_BASE/orange_bin";
 }
+elsif ($question_response eq "c" || $question_response eq "C")
+{
+	print "CSS Mode\n";
+	$CSS="TRUE";
+	$BINARY_LOC="$RELEASE_BASE/css_bin";
+}
+elsif ($question_response eq "g" || $question_response eq "G")
+{
+	print "CSGO Mode\n";
+	$CSGO="TRUE";
+	$BINARY_LOC="$RELEASE_BASE/csgo_bin";
+}
 else
 {
-	print "Legacy Mode\n";
-	$BINARY_LOC="$RELEASE_BASE/legacy_bin";
-}	
+	print "ERROR!\n";
+	exit;
+}
 
-print "What is the version, i.e v1_2_beta_s ? ";
+print "What is the version, i.e v1_2_22_13? ";
 $question_response = <>;
 chomp($question_response);
 
@@ -40,10 +51,15 @@ if ($ORANGE)
 	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_orange.zip";
 	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_orange_pdb.zip";
 }
-else
+elsif ($CSS)
 {
-	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . ".zip";
-	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_pdb.zip";
+	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_css.zip";
+	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_css_pdb.zip";
+}
+elsif ($CSGO)
+{
+	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_csgo.zip";
+	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_csgo_pdb.zip";
 }
 
 # Remove any temporary files
@@ -59,7 +75,8 @@ print "$SOURCE_COPY\n";
 print "$TARGET_COPY\n";
 
 $numoffiles = dircopy($SOURCE_COPY,$TARGET_COPY) or die $!;
-print "Copied $numoffiles into /tmp\n";
+print "Copied $numoffiles files into /tmp\n";
+print "Copying binaries from $BINARY_LOC\n";
 
 copy ("$BINARY_LOC/mani_admin_plugin_mm.dll",
 	"$RELEASE_BASE/tmp/addons/mani_admin_plugin/bin/mani_admin_plugin_mm.dll");
@@ -96,9 +113,9 @@ foreach $file (@$filelist) {
 unlink($FINAL_FILE);
 
 if ($obj->writeToFileNamed($FINAL_FILE) != AZ_OK) {  # write to disk
-    print "Error in archive $FINAL_FILE creation!";
+    print "Error in archive $FINAL_FILE creation!\n";
 } else {
-    print "Archive $FINAL_FILE created successfully!";
+    print "Archive $FINAL_FILE created successfully!\n";
 } 
 
 
@@ -132,9 +149,9 @@ foreach $file (@$filelist) {
 unlink($FINAL_FILE_PDB);
 
 if ($obj->writeToFileNamed($FINAL_FILE_PDB) != AZ_OK) {  # write to disk
-    print "Error in archive $FINAL_FILE_PDB creation!";
+    print "Error in archive $FINAL_FILE_PDB creation!\n";
 } else {
-    print "Archive $FINAL_FILE_PDB created successfully!";
+    print "Archive $FINAL_FILE_PDB created successfully!\n";
 } 
 
 
@@ -187,6 +204,6 @@ sub cleanup {
 		cleanup($path) if -d $path;
 	}
 	closedir DIR;
-	rmdir $dir or print "error - $!";
+	rmdir $dir or print "error - $!\n";
 }
 
