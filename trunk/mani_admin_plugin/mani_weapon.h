@@ -30,7 +30,11 @@
 #include <map>
 #include "cbaseentity.h"
 
-
+#if defined ( GAME_CSGO )
+#define MAX_WEAPONS_USED (42)
+#else
+#define MAX_WEAPONS_USED (29)
+#endif
 enum
 {
 	WEAPON_RESTRICT = 0,
@@ -116,7 +120,7 @@ private:
 	int		FindWeaponIndex(const char *search_name);
 
 	std::map <BasicStr, MWeapon *> alias_list;
-	MWeapon *weapons[29];
+	MWeapon *weapons[MAX_WEAPONS_USED];
 	bool	hooked[MANI_MAX_PLAYERS];
 	bool	ignore_hook[MANI_MAX_PLAYERS];
 	float	next_message[MANI_MAX_PLAYERS];
