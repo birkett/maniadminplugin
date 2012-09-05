@@ -420,8 +420,6 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 			//CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
 			if (!pWeapon) continue;
 
-			const char *tmp = CBaseCombatWeapon_GetName(pWeapon);
-
 			if (strcmp(CBaseCombatWeapon_GetName(pWeapon), weapons[i]->GetWeaponName()) != 0)
 			{
 				continue;

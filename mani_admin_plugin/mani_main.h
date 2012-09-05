@@ -50,7 +50,7 @@ const int	gametypes_min_version = 3;
 
 //majorrelease.minorrealse.patchlevel.buildnumber
 #if defined ( GAME_CSGO )
-#define COMMON_CORE "1.2.22.13a"
+#define COMMON_CORE "1.2.22.13b"
 #else
 #define COMMON_CORE "1.2.22.13"
 #endif
