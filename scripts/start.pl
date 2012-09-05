@@ -34,7 +34,7 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 "Half-Life 2 Deathmatch" 	=> "-game hl2mp -secure +map dm_lockdown +maxplayers 16",
 "Team Fortress 2" 		=> "-game tf -secure +map cp_dustbowl +maxplayers 16",
 "Day of Defeat Source" 		=> "-game dod -secure +map dod_donner +maxplayers 32",
-"Counter-Strike Global Offensive"	=> "-game csgo -console -usercon +game_type 0 +game_mode 0 +mapgroup mg_bomb +map de_dust",
+"Counter-Strike Global Offensive"	=> "-game csgo -console -usercon +game_type 0 +game_mode 0 +mapgroup mg_bomb +map de_dust +sv_pure 0",
 );
 
 %extra_game_path = (

@@ -59,12 +59,12 @@ echo "1 - Build Orange VSP"
 echo "2 - Build Orange SMM" 
 
 echo "CSS SDK"
-echo "3 - Build Orange VSP"
-echo "4 - Build Orange SMM" 
+echo "3 - Build CSS VSP"
+echo "4 - Build CSS SMM" 
 
 echo "CSGO SDK"
-echo "5 - Build Orange VSP"
-echo "6 - Build Orange SMM" 
+echo "5 - Build CSGO VSP"
+echo "6 - Build CSGO SMM" 
 
 echo ""
 echo -e "> \c"
