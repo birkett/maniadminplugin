@@ -1,0 +1,52 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin for CS:GO
+//
+//   Filename   : default_weapon_restrict.txt
+//
+// Last Updated : 2012/09/01
+//
+// Description  : Restrict weapons generally for all maps
+// ***************************************************************************** 
+//
+//
+// If you want a weapon to be restriction remove the '//' from the start
+// of the line of the weapons you want restricted so they are not commented
+// out.
+//
+
+//taser		// Zeus x27
+//awp		// Magnum Sniper Rifle
+//g3sg1		// D3/AU-1
+//scar20	// SCAR-20
+//galilar	// IMI Galil ACE22
+//ak47		// CV-47
+//ssg08		// SSG 08	
+//sg556		// SG 553
+//famas		// Clarion 5.56
+//m4a1		// M4A4
+//aug		// Bullpup
+//glock		// 9x19mm Sidearm
+//hkp2000	// Heckler & Koch P2000
+//p250		// SIG Sauer P250 Compact
+//deagle	// Night Hawk .50C
+//elite		// .40 Dual Elites
+//fiveseven	// ES Five//Seven
+//tec9          // Intratec TEC-9
+//nova		// Nova
+//xm1014	// Leone YG1265 Auto Shotgun
+//sawedoff      // Remington 870
+//mag7          // Techno Arms MAG-7M1
+//mac10		// Ingram MAC-10
+//mp9		// Brügger & Thomet MP9
+//mp7	        // MP7
+//bizon         // Izhmash PP-19
+//ump45		// KM UMP45
+//p90		// ES C90
+//m249		// FN M249 PARA
+//negev		// Negev
+//flashbang	// Flashbang	
+//hegrenade 	// HE Grenade
+//smokegrenade 	// Smoke Grenade
+//molotov       // Molotov Cocktail
+//incgrenade    // Incendiary grenade
+//decoy         // Decoy Grenade
