@@ -132,13 +132,6 @@
 			"weapon_get_name"		"331"
 		}
 
-		"vfuncs_windows"
-		{
-			"get_primary_ammo_type"		"334"
-			"get_secondary_ammo_type"		"335"
-			"weapon_get_name"		"326"
-		}
-
 		"sigs"
 		{
 			"CBaseServer_ConnectClient"
@@ -151,7 +144,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writebj"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 83 ? ? ? 8B 0D ? ? ? ? 81 F9 ? ? ? ? 75"
+				"sigscan"		"55 8B EC B8 50 ? ? ? E8 ? ? ? ? 8B 0D ? ? ? ? 81 F9 ? ? ? ? 75"
 				"win_type"		"Direct"		
 			}
 			
@@ -219,7 +212,7 @@
 			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"55 8B EC 8B ? ? 56 57 6A ? 68 ? ? ? ? 68 ? ? ? ? 6A ? 50 8B ? E8 ? ? ? ? 8B F0 83 C4 ? 85 ? 74 43"
+				"sigscan"		"55 8B EC 51 53 56 8B ? ? ? ? ? 57 89 ? ? 33 ? 8D B9 ? ? ? ? 8B ? 83 ? ? 74 ? 8B"
 				"win_type"		"Direct"		
 			}
 		}
@@ -284,6 +277,7 @@
 			}				
 		}
 	}
+
 
 	//
 	// Options for Counter Strike : Source mod

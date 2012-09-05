@@ -23,18 +23,21 @@ if ($question_response eq "o" || $question_response eq "O")
 	print "Orange Mode\n";
 	$ORANGE="TRUE";
 	$BINARY_LOC="$RELEASE_BASE/orange_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/ob";
 }
 elsif ($question_response eq "c" || $question_response eq "C")
 {
 	print "CSS Mode\n";
 	$CSS="TRUE";
 	$BINARY_LOC="$RELEASE_BASE/css_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/css";
 }
 elsif ($question_response eq "g" || $question_response eq "G")
 {
 	print "CSGO Mode\n";
 	$CSGO="TRUE";
 	$BINARY_LOC="$RELEASE_BASE/csgo_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/csgo";
 }
 else
 {
@@ -76,6 +79,11 @@ print "$TARGET_COPY\n";
 
 $numoffiles = dircopy($SOURCE_COPY,$TARGET_COPY) or die $!;
 print "Copied $numoffiles files into /tmp\n";
+
+$numoffiles = 0;
+$numoffiles = dircopy($EXTRA_FILES,$TARGET_COPY) or die $!;
+print "Copied an additional $numoffiles game specific files into /tmp\n";
+
 print "Copying binaries from $BINARY_LOC\n";
 
 copy ("$BINARY_LOC/mani_admin_plugin_mm.dll",
