@@ -182,7 +182,7 @@ void		ManiWarmupTimer::RoundStart(void)
 		CBasePlayer *pBase = (CBasePlayer*) pPlayer;
 		if (!pCombat) continue;
 
-		for (int j = 0; j < 29; j++)
+		for (int j = 0; j < MAX_WEAPONS_USED; j++)
 		{
 			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_OwnsThisType(pCombat, gpManiWeaponMgr->GetWeaponName(j), 0);
 			if (!pWeapon) continue;

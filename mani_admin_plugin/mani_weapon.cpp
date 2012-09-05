@@ -151,7 +151,7 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, 
 		CBaseEntity *pPlayer = EdictToCBE(player.entity);
 		CBaseCombatCharacter *pCombat = CBaseEntity_MyCombatCharacterPointer(pPlayer);
 		if (!pCombat) continue;
-		for (int j = 0; j < 29; j++)
+		for (int j = 0; j < MAX_WEAPONS_USED; j++)
 		{
 			CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_Weapon_OwnsThisType(pCombat, gpManiWeaponMgr->GetWeaponName(j), 0);
 			if (!pWeapon) continue;
@@ -178,7 +178,7 @@ bool	MWeapon::CanBuy(player_t *player_ptr, int offset, int &reason, int &limit, 
 //---------------------------------------------------------------------------------
 ManiWeaponMgr::ManiWeaponMgr()
 {
-	for (int i = 0; i < 29; i ++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i ++)
 	{
 		weapons[i] = NULL;
 	}
@@ -249,7 +249,7 @@ void ManiWeaponMgr::LevelInit()
 
 void ManiWeaponMgr::CleanUp()
 {
-	for (int i = 0; i < 29; i ++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i ++)
 	{
 		if (weapons[i])
 		{
@@ -321,25 +321,50 @@ void ManiWeaponMgr::SetupWeapons()
 {
 	this->CleanUp();
 
-	this->AddWeapon("weapon_xm1014", 3000, "xm1014", "autoshotgun", "weapon_xm1014");
+#if defined ( GAME_CSS )
 	this->AddWeapon("weapon_usp", 3001, "usp", "km45", "weapon_usp");
-	this->AddWeapon("weapon_ump45", 3002, "ump45", "weapon_ump45");
 	this->AddWeapon("weapon_tmp", 3003, "tmp", "mp", "weapon_tmp");
-	this->AddWeapon("weapon_smokegrenade", 3004, "smokegrenade", "sgren", "weapon_smokegrenade");
 	this->AddWeapon("weapon_sg552", 3005, "sg552", "krieg552", "weapon_sg552");
 	this->AddWeapon("weapon_sg550", 3006, "sg550", "krieg550", "weapon_sg550");
 	this->AddWeapon("weapon_scout", 3007, "scout", "weapon_scout");
-	this->AddWeapon("weapon_p90", 3008, "p90", "c90", "weapon_p90");
 	this->AddWeapon("weapon_p228", 3009, "p228", "228compact", "weapon_p228");
 	this->AddWeapon("weapon_mp5navy", 3010, "mp5navy", "mp5", "smg", "weapon_mp5navy");
+	this->AddWeapon("weapon_m3", 3013, "m3", "12gauge", "weapon_m3");
+	this->AddWeapon("weapon_galil", 3017, "galil", "defender", "weapon_galil");
+#elif defined ( GAME_CSGO )
+	this->AddWeapon("weapon_bizon",3200,"bizon","weapon_bizon");
+	this->AddWeapon("weapon_decoy",3201,"decoy","weapon_decoy");
+	this->AddWeapon("weapon_galilar",3017,"defender","weapon_galilar");
+	this->AddWeapon("weapon_hkp2000",3202,"hkp2000","weapon_hkp2000");
+	this->AddWeapon("weapon_incgrenade",3203,"incgrenade","weapon_incgrenade");
+	this->AddWeapon("weapon_knifegg",0);
+	this->AddWeapon("weapon_mag7",3204,"mag7","weapon_mag7");
+	this->AddWeapon("weapon_molotov",3205,"molotov","weapon_molotov");
+	this->AddWeapon("weapon_mp7",3206,"mp7","weapon_mp7");
+	this->AddWeapon("weapon_mp9",3207,"mp9","weapon_mp9");
+	this->AddWeapon("weapon_negev",3208,"negev","weapon_negev");
+	this->AddWeapon("weapon_nova",3209,"nova","weapon_nova");
+	this->AddWeapon("weapon_p250",3210,"p250","weapon_p250");
+	this->AddWeapon("weapon_sawedoff",3211,"sawedoff","weapon_sawedoff");
+	this->AddWeapon("weapon_scar20",3212,"scar20","weapon_scar20");
+	this->AddWeapon("weapon_sg556",3213,"sg556","weapon_sg556");
+	this->AddWeapon("weapon_ssg08",3214,"ssg08","weapon_ssg08");
+	this->AddWeapon("weapon_taser",3215,"taser","weapon_taser");
+	this->AddWeapon("weapon_tec9",3216,"tec9","weapon_tec9");
+	this->AddWeapon("item_assaultsuit",0);
+	this->AddWeapon("item_kevlar",0);
+	this->AddWeapon("item_defuser",0);
+#endif
+	this->AddWeapon("weapon_xm1014", 3000, "xm1014", "autoshotgun", "weapon_xm1014");
+	this->AddWeapon("weapon_ump45", 3002, "ump45", "weapon_ump45");
+	this->AddWeapon("weapon_smokegrenade", 3004, "smokegrenade", "sgren", "weapon_smokegrenade");
+	this->AddWeapon("weapon_p90", 3008, "p90", "c90", "weapon_p90");
 	this->AddWeapon("weapon_mac10", 3011, "mac10", "weapon_mac10");
 	this->AddWeapon("weapon_m4a1", 3012, "m4a1", "weapon_m4a1");
-	this->AddWeapon("weapon_m3", 3013, "m3", "12gauge", "weapon_m3");
 	this->AddWeapon("weapon_m249", 3014, "m249", "weapon_m249");
 	this->AddWeapon("weapon_knife", 0);
 	this->AddWeapon("weapon_hegrenade", 3015, "hegrenade", "hegren", "weapon_hegrenade");
 	this->AddWeapon("weapon_glock", 3016, "glock", "9x19mm", "weapon_glock");
-	this->AddWeapon("weapon_galil", 3017, "galil", "defender", "weapon_galil");
 	this->AddWeapon("weapon_g3sg1", 3018, "g3sg1", "d3au1", "weapon_g3sg1");
 	this->AddWeapon("weapon_flashbang", 3019, "flashbang", "flash", "weapon_flashbang");
 	this->AddWeapon("weapon_fiveseven", 3020, "fiveseven", "fn57", "weapon_fiveseven");
@@ -384,7 +409,7 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 
 	bool knife_mode = gpManiWarmupTimer->KnivesOnly();
 	// Check all weapons
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
@@ -394,6 +419,8 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 
 			//CBaseCombatWeapon *pWeapon = CBaseCombatCharacter_GetWeapon(pCombat, j);
 			if (!pWeapon) continue;
+
+			const char *tmp = CBaseCombatWeapon_GetName(pWeapon);
 
 			if (strcmp(CBaseCombatWeapon_GetName(pWeapon), weapons[i]->GetWeaponName()) != 0)
 			{
@@ -436,7 +463,7 @@ void	ManiWeaponMgr::RemoveWeapons(player_t *player_ptr, bool refund, bool show_r
 void ManiWeaponMgr::RoundStart()
 {
 	if (war_mode) return;
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if ( weapons[i]->GetDisplayID() == 0 ) continue;
@@ -644,7 +671,7 @@ void	ManiWeaponMgr::LoadRestrictions()
 
 void	ManiWeaponMgr::RestrictAll()
 {
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
@@ -656,7 +683,7 @@ void	ManiWeaponMgr::RestrictAll()
 
 void	ManiWeaponMgr::UnRestrictAll()
 {
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
@@ -688,7 +715,7 @@ bool	ManiWeaponMgr::SetWeaponRestriction
 	if (!weapon)
 	{
 		// No weapon found so check other names for weapons
-		for (int i = 0; i < 29; i ++)
+		for (int i = 0; i < MAX_WEAPONS_USED; i ++)
 		{
 			if (stricmp(weapons[i]->GetWeaponName(), weapon_name) == 0)
 			{
@@ -735,7 +762,7 @@ bool	ManiWeaponMgr::SetWeaponRatio
 	if (!weapon)
 	{
 		// No weapon found so check other names for weapons
-		for (int i = 0; i < 29; i ++)
+		for (int i = 0; i < MAX_WEAPONS_USED; i ++)
 		{
 			if (strcmp(weapons[i]->GetWeaponName(), weapon_name) == 0)
 			{
@@ -806,7 +833,7 @@ bool RestrictWeaponPage::PopulateMenuPage(player_t *player_ptr)
 	this->SetTitle("%s", Translate(player_ptr, 531));
 
 	// Setup weapon list
-	for( int i = 0; i < 29; i++ )
+	for( int i = 0; i < MAX_WEAPONS_USED; i++ )
 	{
 		if ( !gpManiWeaponMgr->weapons[i] ) continue;
 		if (gpManiWeaponMgr->weapons[i]->GetDisplayID() == 0) continue;
@@ -844,7 +871,7 @@ PLUGIN_RESULT	ManiWeaponMgr::ProcessMaShowRestrict(player_t *player_ptr, const c
 	OutputToConsole(player_ptr, "Weapon Alias                  Restricted  Limit  Ratio\n");
 	OutputToConsole(player_ptr, "------------------------------------------------------\n");
 
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (weapons[i]->GetDisplayID() == 0) continue;
@@ -1134,13 +1161,13 @@ int ManiWeaponMgr::FindWeaponIndex(const char *search_name)
 {
 	int start = 0;
 
-	for ( start = 0; start < 29; start++ ) {
+	for ( start = 0; start < MAX_WEAPONS_USED; start++ ) {
 		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(start);
 		if (weapon_info && (weapon_info->weapon_name[0] != 0))
 			break;
 	}
 
-	if ( start == 29 ) return -1;
+	if ( start == MAX_WEAPONS_USED ) return -1;
 
 	for (int i = start; i < start+45; i++)
 	{
@@ -1185,7 +1212,7 @@ bool	ManiWeaponMgr::CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 
 	const char *weapon_name = CBaseCombatWeapon_GetName(pWeapon);
 	// Find index
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		if ( !weapons[i] ) break; // for DS tool and listen servers ... order of processing different
 		if (strcmp(weapons[i]->GetWeaponName(), weapon_name) != 0) continue;
@@ -1218,7 +1245,7 @@ bool	ManiWeaponMgr::CanPickUpWeapon(CBasePlayer *pPlayer, CBaseCombatWeapon *pWe
 // Purpose: Find weapon index from search name
 //---------------------------------------------------------------------------------
 const char *ManiWeaponMgr::GetWeaponName( int weapon_index ) {
-	if ( weapon_index < 0 || weapon_index > 29 ) return NULL;
+	if ( weapon_index < 0 || weapon_index > MAX_WEAPONS_USED ) return NULL;
 
 	return weapons[weapon_index]->GetWeaponName();
 }
@@ -1320,7 +1347,7 @@ SCON_COMMAND(ma_restrictratio, 2229, MaRestrictRatio, false);
 
 CON_COMMAND(ma_listweapons, "Debug Tool")
 {
-	for (int i = 0; i < 29; i++)
+	for (int i = 0; i < MAX_WEAPONS_USED; i++)
 	{
 		CCSWeaponInfo *weapon_info = (CCSWeaponInfo *) CCSGetFileWeaponInfoFromHandle(i);
 		if (weapon_info == NULL)
@@ -1329,7 +1356,7 @@ CON_COMMAND(ma_listweapons, "Debug Tool")
 			return;
 		}
 
-		MMsg("Weapon name [%s] Price [%i]\n", weapon_info->weapon_name, weapon_info->standard_price);
+		MMsg("Weapon [%2i] name [%s] Price [%i]\n", i, weapon_info->weapon_name, weapon_info->standard_price);
 	}	
 }
 
