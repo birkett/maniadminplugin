@@ -7364,7 +7364,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth(player_t *player_ptr, const char *co
 			default : new_health = target_health;
 		}
 
-		if (new_health < 0) new_health = 0;
+		if (new_health < 1) new_health = 1;
 		else if (new_health > 999999) new_health = 999999;
 
 		LogCommand (player_ptr, "%s : Player [%s] [%s] had [%i] health, now has [%i] health\n", command_name, target_player_list[i].name, target_player_list[i].steam_id, target_health, new_health);
@@ -7374,15 +7374,7 @@ PLUGIN_RESULT	CAdminPlugin::ProcessMaHealth(player_t *player_ptr, const char *co
 			AdminSayToAll(ORANGE_CHAT, player_ptr, mani_adminhealth_anonymous.GetInt(), "changed player %s health to %i", target_player_list[i].name, new_health);
 		}
 
-		if (new_health <= 0)
-		{
-			SlayPlayer(&(target_player_list[i]), false, false, false);
-		}
-		else
-		{
-			Prop_SetVal(target_player_list[i].entity, MANI_PROP_HEALTH, new_health);
-//			m_pCBaseEntity->SetHealth(new_health);
-		}
+		Prop_SetVal(target_player_list[i].entity, MANI_PROP_HEALTH, new_health);
 	}
 
 	return PLUGIN_STOP;
