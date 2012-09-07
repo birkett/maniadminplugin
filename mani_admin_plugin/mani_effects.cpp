@@ -60,6 +60,7 @@
 #include "mani_vfuncs.h"
 #include "cbaseentity.h"
 #include "beam_flags.h"
+#include "mani_delayed_client_command.h"
 
 extern	IVEngineServer	*engine; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 extern	IFileSystem	*filesystem;
@@ -1584,7 +1585,8 @@ void	SlayPlayer
 		}
 		else
 		{
-			helpers->ClientCommand(player_ptr->entity, "kill");
+			gpManiDelayedClientCommand->AddPlayer(player_ptr->entity, 0.1f, "kill");
+			//helpers->ClientCommand(player_ptr->entity, "kill");
 			//helpers->ClientCommand(player->entity, "kill\n");
 		}
 /*	}
@@ -1630,10 +1632,31 @@ void	ProcessSlapPlayer
  bool slap_angle
 )
 {
+
+	// let's just slap for if mani_tk_team_wound_reflect is set to 1
 	int sound_index = rand() % 3;
 	if (!gpManiGameType->IsTeleportAllowed()) return;
 
 	CBaseEntity *m_pCBaseEntity = player->entity->GetUnknown()->GetBaseEntity(); 
+
+	Vector vVel;
+	CBaseEntity_GetVelocity(m_pCBaseEntity, &vVel, NULL); 
+
+	if (slap_angle)
+	{
+		vVel.x += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
+		vVel.y += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
+		QAngle angle = CBaseEntity_EyeAngles(m_pCBaseEntity);
+		angle.x -= 20;
+		CBaseEntity_Teleport(m_pCBaseEntity, NULL, &angle, &vVel);
+	}
+	else
+	{
+		vVel.x += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
+		vVel.y += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
+		vVel.z += rand() % 200 + 100;
+		CBaseEntity_Teleport(m_pCBaseEntity, NULL, NULL, &vVel);
+	}
 
 	int health = 0;
 
@@ -1654,25 +1677,6 @@ void	ProcessSlapPlayer
 	Prop_SetVal(player->entity, MANI_PROP_HEALTH, health);
 
 //	Vector vVel = m_pCBaseEntity->GetLocalVelocity();
-
-	Vector vVel;
-	CBaseEntity_GetVelocity(m_pCBaseEntity, &vVel, NULL); 
-
-	if (slap_angle)
-	{
-		vVel.x += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
-		vVel.y += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
-		QAngle angle = CBaseEntity_EyeAngles(m_pCBaseEntity);
-		angle.x -= 20;
-		CBaseEntity_Teleport(m_pCBaseEntity, NULL, &angle, &vVel);
-	}
-	else
-	{
-		vVel.x += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
-		vVel.y += ((rand() % 180) + 50) * (((rand() % 2) == 1) ? -1:1);
-		vVel.z += rand() % 200 + 100;
-		CBaseEntity_Teleport(m_pCBaseEntity, NULL, NULL, &vVel);
-	}
 
 	if (health <= 0)
 	{

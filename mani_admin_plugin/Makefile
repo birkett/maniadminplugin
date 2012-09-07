@@ -24,7 +24,7 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_client_interface.cpp \
                 mani_client_sql.cpp \
                 mani_client_util.cpp \
-		mani_command_control.cpp \
+				mani_command_control.cpp \
                 mani_commands.cpp \
                 mani_convar.cpp \
                 mani_crontab.cpp \
@@ -33,63 +33,64 @@ PLUGIN_FILES =  mani_adverts.cpp \
                 mani_css_objectives.cpp \
                 mani_customeffects.cpp \
                 mani_database.cpp \
-		mani_detours.cpp \
+				mani_detours.cpp \
                 mani_downloads.cpp \
                 mani_effects.cpp \
                 mani_file.cpp \
                 mani_gametype.cpp \
                 mani_globals.cpp \
                 mani_ghost.cpp \
-		mani_handlebans.cpp \
+				mani_handlebans.cpp \
                 mani_help.cpp \
                 mani_hlxinterface.cpp \
                 mani_keyvalues.cpp \
                 mani_language.cpp \
-		mani_log_css_stats.cpp \
-		mani_log_dods_stats.cpp \
+				mani_log_css_stats.cpp \
+				mani_log_dods_stats.cpp \
                 mani_main.cpp \
                 mani_mapadverts.cpp \
                 mani_maps.cpp \
                 mani_menu.cpp \
                 mani_memory.cpp \
                 mani_messagemode.cpp \
-		mani_mostdestructive.cpp \
-		mani_mp_restartgame.cpp \
-		mani_mutex.cpp \
+				mani_mostdestructive.cpp \
+				mani_mp_restartgame.cpp \
+				mani_mutex.cpp \
                 mani_mysql.cpp \
-		mani_netidvalid.cpp \
-		mani_observer_track.cpp \
-		mani_output.cpp \
-		mani_panel.cpp \
-		mani_parser.cpp \
-		mani_ping.cpp \
-		mani_player.cpp \
-		mani_playerkick.cpp \
-		mani_quake.cpp \
-		mani_replace.cpp \
-		mani_reservedslot.cpp \
-		mani_save_scores.cpp \
-		mani_sigscan.cpp \
-		mani_skins.cpp \
-		mani_sounds.cpp \
-		mani_spawnpoints.cpp \
-		mani_sprayremove.cpp \
-		mani_stats.cpp \
-		mani_team.cpp \
-		mani_team_join.cpp \
-		mani_teamkill.cpp \
-		mani_timers.cpp \
-		mani_trackuser.cpp \
-		mani_util.cpp \
-		mani_vars.cpp \
-		mani_vfuncs.cpp \
-		mani_victimstats.cpp \
-		mani_voice.cpp \
-		mani_vote.cpp \
-		mani_warmuptimer.cpp \
-		mani_weapon.cpp \
-		mani_linuxutils.cpp \
-		mrecipientfilter.cpp
+				mani_netidvalid.cpp \
+				mani_observer_track.cpp \
+				mani_output.cpp \
+				mani_panel.cpp \
+				mani_parser.cpp \
+				mani_ping.cpp \
+				mani_player.cpp \
+				mani_playerkick.cpp \
+				mani_mani_delayed_client_command.cpp \
+				mani_quake.cpp \
+				mani_replace.cpp \
+				mani_reservedslot.cpp \
+				mani_save_scores.cpp \
+				mani_sigscan.cpp \
+				mani_skins.cpp \
+				mani_sounds.cpp \
+				mani_spawnpoints.cpp \
+				mani_sprayremove.cpp \
+				mani_stats.cpp \
+				mani_team.cpp \
+				mani_team_join.cpp \
+				mani_teamkill.cpp \
+				mani_timers.cpp \
+				mani_trackuser.cpp \
+				mani_util.cpp \
+				mani_vars.cpp \
+				mani_vfuncs.cpp \
+				mani_victimstats.cpp \
+				mani_voice.cpp \
+				mani_vote.cpp \
+				mani_warmuptimer.cpp \
+				mani_weapon.cpp \
+				mani_linuxutils.cpp \
+				mrecipientfilter.cpp
 
 PLUGIN_FILES+= $(EXTRA_FILES_1)
 

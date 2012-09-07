@@ -986,6 +986,7 @@
     <ClCompile Include="..\mani_css_objectives.cpp" />
     <ClCompile Include="..\mani_customeffects.cpp" />
     <ClCompile Include="..\mani_database.cpp" />
+    <ClCompile Include="..\mani_delayed_client_command.cpp" />
     <ClCompile Include="..\mani_detours.cpp" />
     <ClCompile Include="..\mani_downloads.cpp" />
     <ClCompile Include="..\mani_effects.cpp" />
@@ -1178,6 +1179,7 @@
     <ClInclude Include="..\mani_css_objectives.h" />
     <ClInclude Include="..\mani_customeffects.h" />
     <ClInclude Include="..\mani_database.h" />
+    <ClInclude Include="..\mani_delayed_client_command.h" />
     <ClInclude Include="..\mani_detours.h" />
     <ClInclude Include="..\mani_downloads.h" />
     <ClInclude Include="..\mani_effects.h" />
