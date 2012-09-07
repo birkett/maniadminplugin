@@ -553,7 +553,8 @@ PLUGIN_RESULT	ManiWeaponMgr::CanBuy(player_t *player_ptr, const char *alias_name
 				V_stristr( lower_alias, "helmet" ) ||
 				V_stristr( lower_alias, "nightvision" ) ||
 				V_stristr( lower_alias, "defuse" ) ||
-				V_stristr( lower_alias, "kit" ) )
+				V_stristr( lower_alias, "kit" ) ||
+				V_stristr( lower_alias, "assaultsuit" ))
 				return PLUGIN_CONTINUE;
 
 		return PLUGIN_STOP; //obviously not a valid weapon

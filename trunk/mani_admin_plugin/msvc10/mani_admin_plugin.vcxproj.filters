@@ -321,6 +321,9 @@
     <ClCompile Include="..\..\sdks\css\tier1\bitbuf.cpp">
       <Filter>CSS SDK</Filter>
     </ClCompile>
+    <ClCompile Include="..\mani_delayed_client_command.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\detour_macros.h">
@@ -591,6 +594,9 @@
       <Filter>asm</Filter>
     </ClInclude>
     <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\mani_delayed_client_command.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\mani_admin_plugin.rc" />

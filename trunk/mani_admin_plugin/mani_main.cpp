@@ -135,6 +135,7 @@ typedef unsigned long DWORD;
 #include "mani_util.h"
 #include "mani_command_control.h"
 #include "mani_playerkick.h"
+#include "mani_delayed_client_command.h"
 #include "mani_handlebans.h"
 
 #include "shareddefs.h"
@@ -785,6 +786,7 @@ bool CAdminPlugin::Load(void)
 			break;
 	}
 	gpManiPlayerKick->Init();
+	gpManiDelayedClientCommand->Init();
 	return true;
 }
 
@@ -1483,6 +1485,7 @@ void CAdminPlugin::GameFrame( bool simulating )
 	gpManiVote->GameFrame();
 	gpManiAutoMap->GameFrame();
 	gpManiPlayerKick->GameFrame(); // leave this last!
+	gpManiDelayedClientCommand->GameFrame(); // ignore the above comment
 }
 
 //---------------------------------------------------------------------------------
@@ -5019,23 +5022,21 @@ void CAdminPlugin::EvPlayerHurt(IGameEvent *event)
 				Translate(NULL, gpManiGameType->GetTeamShortTranslation(attacker.team)), attacker.name);
 		}
 	}
-
 	if (gpManiWarmupTimer->IgnoreTK()) return;
 
 	// Do out of spawn protection time processing
 	if (gpGlobals->curtime > end_spawn_protection_time)
 	{
-		if (mani_tk_slap_on_team_wound.GetInt() == 1)
-		{
-			// If set then slap them
-			ProcessSlapPlayer(&attacker, mani_tk_slap_on_team_wound_damage.GetInt(), true);
-		}
-
 		if (mani_tk_team_wound_reflect.GetInt() == 1)
 		{
 			ProcessReflectDamagePlayer(&victim, &attacker, event);
 		}
 
+		if (mani_tk_slap_on_team_wound.GetInt() == 1)
+		{
+			// If set then slap them
+			ProcessSlapPlayer(&attacker, mani_tk_slap_on_team_wound_damage.GetInt(), true);
+		}
 		return;
 	}
 
@@ -6182,14 +6183,18 @@ void CAdminPlugin::ProcessReflectDamagePlayer
 		health = 0;
 	}
 
-	Prop_SetVal(attacker->entity, MANI_PROP_HEALTH, health);
-//	m_pCBaseEntity->SetHealth(health);
-
 	if (health <= 0)
 	{
 		// Player dead so slay them
 		SlayPlayer(attacker, true, true, true);
 	}
+	else
+	{
+		Prop_SetVal(attacker->entity, MANI_PROP_HEALTH, health);
+	}
+
+	return;
+//	m_pCBaseEntity->SetHealth(health);
 
 	if (esounds)
 	{

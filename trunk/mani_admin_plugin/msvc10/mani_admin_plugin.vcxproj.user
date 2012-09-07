@@ -20,7 +20,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CSGO Debug|Win32'">
     <LocalDebuggerCommand>..\..\srcds_1\csgo\srcds.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>-game csgo -console -usercon +game_type 0 +game_mode 0 +mapgroup mg_bomb +map de_dust -allowdebug +log on +sv_pure 0</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-game csgo -console -usercon +game_type 0 +game_mode 1 +mapgroup mg_bomb +map de_dust -allowdebug +log on +sv_pure 0</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>..\..\srcds_1\csgo\csgo</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
