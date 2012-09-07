@@ -581,6 +581,17 @@ bool CAdminPlugin::Load(void)
 	}
 
 	next_ping_check = 0.0;
+
+#if defined ( GAME_CSGO )
+	ConCommand *remove_cheat_on_bot_kill = static_cast<ConCommand *>(g_pCVar->FindCommand("bot_kill"));
+
+	if (remove_cheat_on_bot_kill)
+	{
+		if (remove_cheat_on_bot_kill->GetFlags() & FCVAR_CHEAT)
+			remove_cheat_on_bot_kill->RemoveFlags(FCVAR_CHEAT);
+	}
+#endif
+
 	mp_friendlyfire = g_pCVar->FindVar( "mp_friendlyfire");
 	mp_freezetime = g_pCVar->FindVar( "mp_freezetime");
 	mp_winlimit = g_pCVar->FindVar( "mp_winlimit");
