@@ -262,6 +262,17 @@ bool CValveMAP::Load(	CreateInterfaceFn interfaceFactory, CreateInterfaceFn game
 //---------------------------------------------------------------------------------
 void CValveMAP::Unload( void )
 {
+
+#if defined ( GAME_CSGO )
+	ConCommand *remove_cheat_on_bot_kill = static_cast<ConCommand *>(g_pCVar->FindCommand("bot_kill"));
+
+	if (remove_cheat_on_bot_kill)
+	{
+		if (!(remove_cheat_on_bot_kill->GetFlags() & FCVAR_CHEAT))
+			remove_cheat_on_bot_kill->AddFlags(FCVAR_CHEAT);
+	}
+#endif
+
 #if defined ( GAME_ORANGE )
 	// We must unregister ConVars
 	ConVar_Unregister();
