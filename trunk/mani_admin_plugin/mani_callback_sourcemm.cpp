@@ -476,6 +476,16 @@ bool CSourceMMMAP::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, 
 
 bool CSourceMMMAP::Unload(char *error, size_t maxlen)
 {
+#if defined ( GAME_CSGO )
+	ConCommand *remove_cheat_on_bot_kill = static_cast<ConCommand *>(g_pCVar->FindCommand("bot_kill"));
+
+	if (remove_cheat_on_bot_kill)
+	{
+		if (!(remove_cheat_on_bot_kill->GetFlags() & FCVAR_CHEAT))
+			remove_cheat_on_bot_kill->AddFlags(FCVAR_CHEAT);
+	}
+#endif
+
 	if(g_CallBackCount > 0)
 	{
 		for(unsigned int i=0;i<g_CallBackCount;i++)
