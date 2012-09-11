@@ -342,7 +342,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"59"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -404,7 +404,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
 				"win_type"		"Direct"		
 			}
 			
@@ -434,7 +434,7 @@
 			"CGameRules_gGameRules"
 			{
 				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
-				"sigscan"		"55 8B EC 83 EC 38 53 56 8B F1 57 8D 4D C8"
+				"sigscan"		"55 8B EC 83 EC 34 53 56 8B F1 57 8D 4D CC"
 				"win_type"		"Indirect"
 				"linux_type"	"Indirect"
 				"win_index"		"109"
@@ -444,7 +444,7 @@
 			"CGlobalEntityList_FindEntityByClassname"
 			{
 				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
-				"sigscan"		"55 8B EC 53 56 8B F1 8B 4D 08 85 C9 57 74 ? 8B 01 8B 50 08 FF D2"
+				"sigscan"		"55 8B EC 53 56 8B F1 8B 4D 08 57 85 C9 74 ? 8B 01 8B 50 08 FF D2"
 				"win_type"		"Direct"		
 			}
 			
@@ -465,7 +465,7 @@
 			"GetFileWeaponInfoFromHandle"
 			{
 				"linux_symbol"	"_Z27GetFileWeaponInfoFromHandlet"
-				"sigscan"		"55 8B EC 66 8B 45 08 66 3B 05 ? ? ? ? 73 ? 66 3D FF FF"
+				"sigscan"		"55 8B EC 66 8B 45 08 66 3B 05 ? ? ? ? 73 ? B9 FF FF"
 				"win_type"		"Direct"		
 			}
 			
@@ -792,7 +792,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"59"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -844,7 +844,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -909,7 +909,7 @@
 			}				
 		}
 	}
-
+	
 	//
 	// Options for HL2 Deathmatch 
 	//
@@ -1335,7 +1335,7 @@
 			}				
 		}
 	}
-
+	
 	"Team Fortress"
 	{
 		// Set to 1 if spectator is allowed for this mod
