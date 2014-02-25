@@ -100,10 +100,10 @@ COMP_VER=4.6
 #
 CPLUS=g++-$(COMP_VER)
 CLINK=gcc-$(COMP_VER)
-CPP_LIB=../stlport/lib/libstlport.a  \
-	./mysql5.1/linux_32/lib/libmysqlclient.a \
-	./mysql5.1/linux_32/lib/libz.a \
-	$(EXTRA_LIBS)
+#CPP_LIB=../stlport/lib/libstlport.a
+CPP_LIB=./mysql5.1/linux_32/lib/libmysqlclient.a \
+    ./mysql5.1/linux_32/lib/libz.a \
+    $(EXTRA_LIBS)
 
 #	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
 #	/usr/local/gcc-4.6/lib/gcc/i486-linux-gnu/4.6.3/libgcc_eh.a \
@@ -112,7 +112,8 @@ CPP_LIB=../stlport/lib/libstlport.a  \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
+#LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
+LDFLAGS=-static-libgcc -m32 -lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -133,8 +134,8 @@ SHLIBLDFLAGS=-shared
 
 CFLAGS=$(USER_CFLAGS) $(BASE_CFLAGS) $(ARCH_CFLAGS)
 CFLAGS+= $(DEBUG_FLAGS)
-# 
-DO_CC=$(CPLUS) -I../stlport/include/stlport/ -I./demangle/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
+#DO_CC=$(CPLUS) -I../stlport/include/stlport/ -I./demangle/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
+DO_CC=$(CPLUS) -I./demangle/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 
 #####################################################################
 
@@ -152,6 +153,7 @@ dirs:
 	@echo "HL2SDK_SRC_DIR = $(HL2SDK_SRC_DIR)"
 	@echo "HL2BIN_DIR = $(HL2BIN_DIR)"
 	@echo "EXTRA_LIBS = $(EXTRA_LIBS)"
+	@echo "CPP_LIB = $(CPP_LIB)"
 	@echo "EXTRA_FILES_1 = $(EXTRA_FILES_1)"
 	@echo "SOURCEMM_ROOT = $(SOURCEMM_ROOT)"
 	@echo "ORANGE = $(ORANGE)"
@@ -177,6 +179,10 @@ dirs:
 	@echo "DEMANGLE_OBJ_DIR = $(DEMANGLE_OBJ_DIR)"
 	@echo "DEMANGLE_OBJS = $(DEMANGLE_OBJS)"
 	@echo "DEMANGLE_SRC_DIR = $(DEMANGLE_SRC_DIR)"
+	@echo "PROTOBUF_SRC_DIR = $(PROTOBUF_SRC_DIR)"
+	@echo "PROTOBUF_SRC_DIR2 = $(PROTOBUF_SRC_DIR2)"
+	@echo "PROTOBUF_OBJ_DIR = $(PROTOBUF_OBJ_DIR)"
+	@echo "PROTOBUF_OBJS = $(PROTOBUF_OBJS)"
 	@echo ""
 
 	@if [ ! -f $(TIER0_SO) ]; then ln -s $(HL2BIN_DIR)/$(TIER0_SO) .; fi
@@ -192,11 +198,14 @@ dirs:
 	@if [ ! -d $(ASM_OBJ_DIR) ]; then mkdir $(ASM_OBJ_DIR); fi
 	@if [ ! -d $(KNIGHT_OBJ_DIR) ]; then mkdir $(KNIGHT_OBJ_DIR); fi
 	@if [ ! -d $(DEMANGLE_OBJ_DIR) ]; then mkdir $(DEMANGLE_OBJ_DIR); fi
+	@if [ ! -d $(PROTOBUF_OBJ_DIR) ]; then mkdir $(PROTOBUF_OBJ_DIR); fi
+
+VPATH = $(PROTOBUF_SRC_DIR):$(PROTOBUF_SRC_DIR2)
 
 
-$(NAME)_$(ARCH).$(SHLIBEXT): $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) $(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS)
-	$(CLINK) $(DEBUG_FLAGS) -o $(BUILD_DIR)/$@ $(SHLIBLDFLAGS) $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) \
-	$(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS) $(CPP_LIB) $(EXTRA_LIBS) $(LDFLAGS)
+$(NAME)_$(ARCH).$(SHLIBEXT): $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(PROTOBUF_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) $(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS)
+	$(CLINK) $(DEBUG_FLAGS) -o $(BUILD_DIR)/$@ $(SHLIBLDFLAGS) $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(PROTOBUF_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) \
+	$(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS) $(CPP_LIB) $(LDFLAGS)
 
 $(PLUGIN_OBJ_DIR)/%.o: $(PLUGIN_SRC_DIR)/%.cpp
 	$(DO_CC)
@@ -218,6 +227,16 @@ $(SOURCEHOOK_OBJ_DIR)/%.o: $(SOURCEHOOK_SRC_DIR)/%.cpp
 
 $(DEMANGLE_OBJ_DIR)/%.o: $(DEMANGLE_SRC_DIR)/%.cpp
 	$(DO_CC)
+
+$(PROTOBUF_OBJ_DIR)/netmessages.pb.o: netmessages.pb.cc
+	$(DO_CC)
+
+$(PROTOBUF_OBJ_DIR)/cstrike15_usermessages.pb.o: cstrike15_usermessages.pb.cc
+	$(DO_CC)
+
+$(PROTOBUF_OBJ_DIR)/cstrike15_usermessage_helpers.o: cstrike15_usermessage_helpers.cpp
+	$(DO_CC)
+
 clean:
 	-rm -Rf $(PLUGIN_OBJ_DIR)
-	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) libtier0_srv.so libvstdlib_srv.so
+	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) $(TIER0_SO) $(VSTDLIB_SO) 

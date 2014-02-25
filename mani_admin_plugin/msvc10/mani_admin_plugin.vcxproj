@@ -612,7 +612,7 @@
       <AdditionalOptions>/MP4 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;..\..\sdks\csgo\common\protobuf-2.3.0\src;..\..\sdks\csgo\public\engine\protobuf;..\..\sdks\csgo\public\game\shared\csgo\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GAME_ORANGE;GAME_CSGO;WIN32;NDEBUG;COMPILER_MSVC;COMPILER_MSVC32;_WINDOWS;MAP1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -634,10 +634,10 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;mysqlclient.lib;ws2_32.lib;zlib.lib;mysys.lib;tier0.lib;tier1.lib;vstdlib.lib;mathlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;mysqlclient.lib;ws2_32.lib;zlib.lib;mysys.lib;libprotobuf.lib;tier0.lib;tier1.lib;vstdlib.lib;mathlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\plugin_output\csgo_bin\VSP\mani_admin_plugin.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\sdks\csgo\lib\public;..\..\sdks\csgo\lib\common;..\mysql5.1\win_32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\sdks\csgo\lib\public;..\..\sdks\csgo\lib\common;..\mysql5.1\win_32\lib;..\..\sdks\csgo\lib\win32\release\vs2010;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>LIBC;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -669,7 +669,7 @@
       <AdditionalOptions>/MP4 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;..\..\sdks\csgo\common\protobuf-2.3.0\src;..\..\sdks\csgo\public\engine\protobuf;..\..\sdks\csgo\public\game\shared\csgo\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SOURCEMM;GAME_ORANGE;GAME_CSGO;WIN32;NDEBUG;COMPILER_MSVC;COMPILER_MSVC32;_WINDOWS;MAP1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -691,10 +691,10 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>odbc32.lib;odbccp32.lib;mysqlclient.lib;ws2_32.lib;zlib.lib;mysys.lib;tier0.lib;tier1.lib;vstdlib.lib;mathlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;mysqlclient.lib;ws2_32.lib;zlib.lib;mysys.lib;tier0.lib;tier1.lib;vstdlib.lib;mathlib.lib;libprotobuf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\plugin_output\csgo_bin\SourceMM\mani_admin_plugin_mm.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\sdks\csgo\lib\public;..\..\sdks\csgo\lib\common;..\mysql5.1\win_32\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\sdks\csgo\lib\public;..\..\sdks\csgo\lib\common;..\mysql5.1\win_32\lib;..\..\sdks\csgo\lib\win32\release\vs2010;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>LIBC;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -865,6 +865,36 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\sdks\csgo\public\engine\protobuf\netmessages.pb.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS SMM Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS SMM Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB SMM Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB SMM Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\game\shared\csgo\protobuf\cstrike15_usermessages.pb.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS SMM Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS SMM Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB SMM Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB SMM Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\game\shared\csgo\protobuf\cstrike15_usermessage_helpers.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS SMM Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS SMM Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB SMM Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB SMM Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\sdks\csgo\public\networkvar.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OB Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='CSS Debug|Win32'">true</ExcludedFromBuild>

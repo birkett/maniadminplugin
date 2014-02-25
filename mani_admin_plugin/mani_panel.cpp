@@ -38,7 +38,11 @@
 #include "mrecipientfilter.h" 
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else
 #include "bitbuf.h"
+#endif
 #include "mani_main.h"
 #include "mani_convar.h"
 #include "mani_language.h"
@@ -59,7 +63,9 @@ extern	IFileSystem	*filesystem;
 extern	ICvar *g_pCVar;
 
 extern	int	max_players;
+#if !defined ( GAME_CSGO )
 extern	bf_write *msg_buffer;
+#endif
 extern	int	vgui_message_index;
 extern	char *mani_version;
 extern	bool war_mode;
@@ -261,10 +267,27 @@ void	DrawPanel(MRecipientFilter *mrf, char *panel_title, char *network_string, c
 	g_pStringTableManiScreen->SetStringUserData(index, message_length + 1, message);
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index, "VGUIMenu");
+	CCSUsrMsg_VGUIMenu *msg = (CCSUsrMsg_VGUIMenu *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_VGUIMenu)->New(); // Show TextMsg type user message
+	msg->set_name("info"); // menu name
+	msg->set_show(1);
+
+	CCSUsrMsg_VGUIMenu_Subkey *subkey = msg->add_subkeys();
+	subkey->set_name("title");
+	subkey->set_str(panel_title);
+
+	subkey = msg->add_subkeys();
+	subkey->set_name("type");
+	subkey->set_str("1");
+
+	subkey = msg->add_subkeys();
+	subkey->set_name("Msg");
+	subkey->set_str(network_string);
+
+	engine->SendUserMessage(*mrf, CS_UM_VGUIMenu, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
-#endif
+
    
 	msg_buffer->WriteString("info"); // menu name
 	msg_buffer->WriteByte(1);
@@ -280,7 +303,7 @@ void	DrawPanel(MRecipientFilter *mrf, char *panel_title, char *network_string, c
 	msg_buffer->WriteString(network_string);
 
 	engine->MessageEnd();
-
+#endif	
 }
 
 //---------------------------------------------------------------------------------
@@ -292,10 +315,27 @@ void	DrawMOTD(MRecipientFilter *mrf)
 	const char *title = (hostname) ? hostname->GetString() : "MESSAGE OF THE DAY";
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index, "VGUIMenu" );
+	CCSUsrMsg_VGUIMenu *msg = (CCSUsrMsg_VGUIMenu *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_VGUIMenu)->New(); // Show TextMsg type user message
+	msg->set_name("info"); // menu name
+	msg->set_show(1);
+
+	CCSUsrMsg_VGUIMenu_Subkey *subkey = msg->add_subkeys();
+	subkey->set_name("title");
+	subkey->set_str(title);
+
+	subkey = msg->add_subkeys();
+	subkey->set_name("type");
+	subkey->set_str("1");
+
+	subkey = msg->add_subkeys();
+	subkey->set_name("Msg");
+	subkey->set_str("motd");
+
+	engine->SendUserMessage(*mrf, CS_UM_VGUIMenu, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
-#endif
+
    
 	msg_buffer->WriteString("info"); // menu name
 	msg_buffer->WriteByte(1);
@@ -311,7 +351,7 @@ void	DrawMOTD(MRecipientFilter *mrf)
 	msg_buffer->WriteString("motd");
 
 	engine->MessageEnd();
-
+#endif	
 }
 
 inline int url_lower(int _Char)
@@ -328,11 +368,6 @@ inline int url_lower(int _Char)
 //---------------------------------------------------------------------------------
 void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 {
-#if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index, "VGUIMenu" );
-#else
-	msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);
-#endif
 
 	//first strip the ""
 	//then see if it starts with http:  or https:
@@ -367,6 +402,28 @@ void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 	{
 		Q_snprintf(final_url, len, "%s", stripped_url);
 	}
+	
+#if defined ( GAME_CSGO )
+	CCSUsrMsg_VGUIMenu *msg = (CCSUsrMsg_VGUIMenu *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_VGUIMenu)->New(); // Show TextMsg type user message
+	msg->set_name("info"); // menu name
+	msg->set_show(1);
+
+	CCSUsrMsg_VGUIMenu_Subkey *subkey = msg->add_subkeys();
+	subkey->set_name("title");
+	subkey->set_str(title);
+
+	subkey = msg->add_subkeys();
+	subkey->set_name("type");
+	subkey->set_str("2"); // URL
+
+	subkey = msg->add_subkeys();
+	subkey->set_name("Msg");
+	subkey->set_str(final_url);
+
+	engine->SendUserMessage(*mrf, CS_UM_VGUIMenu, *msg);
+	delete msg;
+#else
+   msg_buffer = engine->UserMessageBegin(mrf, vgui_message_index);	
 
 	msg_buffer->WriteString("info"); // menu name
 	msg_buffer->WriteByte(1);
@@ -382,6 +439,7 @@ void	DrawURL(MRecipientFilter *mrf, char *title, const char *url)
 	msg_buffer->WriteString(final_url);
 
 	engine->MessageEnd();
+#endif	
 }
 
 SCON_COMMAND(ma_favourites, 2175, MaFavourites, false);

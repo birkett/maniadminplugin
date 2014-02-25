@@ -324,6 +324,15 @@
     <ClCompile Include="..\mani_delayed_client_command.cpp">
       <Filter>Plugin Code\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\game\shared\csgo\protobuf\cstrike15_usermessage_helpers.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\game\shared\csgo\protobuf\cstrike15_usermessages.pb.cc">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\engine\protobuf\netmessages.pb.cc">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\detour_macros.h">

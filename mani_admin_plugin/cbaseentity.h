@@ -33,8 +33,13 @@
 #include "vcollide_parse.h"
 #include "filters.h"
 #include "te_effect_dispatch.h"
+#if defined ( GAME_CSGO )
+#include "ai_criteria.h"
+#include "ai_responsesystem.h"
+#else
 #include "AI_Criteria.h"
 #include "AI_ResponseSystem.h"
+#endif
 #include "world.h"
 #include "globals.h"
 #include "saverestoretypes.h"

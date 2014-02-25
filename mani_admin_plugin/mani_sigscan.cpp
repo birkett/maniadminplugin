@@ -46,7 +46,6 @@ extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	int	con_command_index;
-extern	bf_write *msg_buffer;
 extern SourceHook::ISourceHook *g_SHPtr;
 
 typedef void (*UTIL_Remove_)(CBaseEntity *);

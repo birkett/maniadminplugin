@@ -59,7 +59,11 @@ typedef unsigned long DWORD;
 //#include "enginecallback.h"
 #include "IEffects.h"
 #include "engine/IEngineSound.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else
 #include "bitbuf.h"
+#endif
 #include "icvar.h"
 #include "inetchannelinfo.h"
 #include "ivoiceserver.h"
@@ -288,7 +292,9 @@ ConVar	*tv_name = NULL;
 ConVar	*mp_allowspectators = NULL;
 //RenderMode_t mani_render_mode = kRenderNormal;
 
+#if !defined ( GAME_CSGO )
 bf_write *msg_buffer;
+#endif
 
 //
 // The plugin is a static singleton that is exported as an interface
@@ -627,7 +633,8 @@ bool CAdminPlugin::Load(void)
 	Q_strcpy(map_type_config,"");
 
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
-
+	
+#if !defined ( GAME_CSGO )
 	char	message_name[1024];
 	int	Msg_size;
 
@@ -694,6 +701,7 @@ bool CAdminPlugin::Load(void)
 //			MMsg("Hooked HintMsg [%i]\n", i);
 		}
 	}
+#endif	
 
 	timeleft_offset = 0;
 	get_new_timeleft_offset = false;
@@ -9499,24 +9507,34 @@ void	CAdminPlugin::TurnOffOverviewMap(void)
 	if (player_found)
 	{
 #if defined ( GAME_CSGO )
-		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index, "VGUIMenu" );
+		CCSUsrMsg_VGUIMenu *msg = (CCSUsrMsg_VGUIMenu *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_VGUIMenu)->New(); // Show TextMsg type user message
+		msg->set_name("overview"); // menu name
+		msg->set_show(0); // Turn off 'overview' map
+		engine->SendUserMessage(mrf, CS_UM_VGUIMenu, *msg);
+		delete msg;
 #else
 		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index );
-#endif
+
 		msg_buffer->WriteString("overview");
 		msg_buffer->WriteByte(0); // Turn off 'overview' map
 		msg_buffer->WriteByte(0); // Count of 0
 		engine->MessageEnd();
+#endif		
 
 #if defined ( GAME_CSGO )
-		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index, "VGUIMenu" );
+		msg = (CCSUsrMsg_VGUIMenu *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_VGUIMenu)->New(); // Show TextMsg type user message
+		msg->set_name("specmenu"); // menu name
+		msg->set_show(0); // Turn off 'overview' map
+		engine->SendUserMessage(mrf, CS_UM_VGUIMenu, *msg);
+		delete msg;
 #else
 		msg_buffer = engine->UserMessageBegin( &mrf, vgui_message_index );
-#endif
+
 		msg_buffer->WriteString("specmenu");
 		msg_buffer->WriteByte(0); // Turn off 'overview' map
 		msg_buffer->WriteByte(0); // Count of 0
 		engine->MessageEnd();
+#endif		
 	}
 
 	return;

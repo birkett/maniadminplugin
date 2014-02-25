@@ -37,7 +37,11 @@
 #include "eiface.h"
 #include "igameevents.h"
 #include "mrecipientfilter.h" 
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else
 #include "bitbuf.h"
+#endif
 #include "engine/IEngineSound.h"
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
@@ -55,7 +59,9 @@ extern	IFileSystem	*filesystem;
 extern	INetworkStringTableContainer *networkstringtable;
 
 extern	int	max_players;
+#if !defined ( GAME_CSGO )
 extern	bf_write *msg_buffer;
+#endif
 extern	int	text_message_index;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
@@ -725,13 +731,23 @@ void ShowQuakeSound (player_t *attacker, player_t *victim, int mode, char *fmt, 
 	}
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+	CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+	msg->set_msg_dst(4); // Center area
+	// Client tries to read all 5 'params' and will crash if less
+	msg->add_params(temp_string);
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(temp_string);
 	engine->MessageEnd();
+#endif	
 }
 
 //---------------------------------------------------------------------------------

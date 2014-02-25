@@ -30,6 +30,10 @@
 
 #include "mani_main.h"
 
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#endif
+
 // This file is used for backwards compatibility testing
 // It allows us to test binary backwards compatibility by using an older include file HERE:
 //#include "sourcehook.h"			// <-- here
@@ -54,7 +58,7 @@ public:
 	void	HookConCommands();
 
 #if defined ( GAME_CSGO )
-	bf_write *UserMessageBegin (IRecipientFilter *filter, int msg_type, const char * msg);
+	void UserMessageBegin (IRecipientFilter &filter, int msg_type, const google::protobuf::Message &msg);
 #elif defined ( GAME_ORANGE )
 	bf_write *UserMessageBegin (IRecipientFilter *filter, int msg_type);
 #endif

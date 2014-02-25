@@ -37,8 +37,12 @@
 #include "eiface.h"
 #include "inetchannelinfo.h"
 #include "igameevents.h"
-#include "mrecipientfilter.h" 
+#include "mrecipientfilter.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else 
 #include "bitbuf.h"
+#endif
 #include "engine/IEngineSound.h"
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
@@ -68,7 +72,9 @@ extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from t
 extern	bool	war_mode;
 
 extern	CGlobalVars *gpGlobals;
-extern	int	max_players;
+#if !defined ( GAME_CSGO )
+extern	bf_write *msg_buffer;
+#endif
 extern	bf_write *msg_buffer;
 extern	int	text_message_index;
 extern	int saytext2_message_index;
@@ -246,13 +252,23 @@ CON_COMMAND(ma_hlx_csay, "ma_hlx_csay <target> <message>)")
 //	snprintf(temp_string, sizeof(temp_string), "%s", say_string);
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+	CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+	msg->set_msg_dst(4); // Center area
+	// Client tries to read all 5 'params' and will crash if less
+	msg->add_params(say_string);
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(say_string);
 	engine->MessageEnd();
+#endif	
 
 	return ;
 }
@@ -404,25 +420,41 @@ CON_COMMAND(ma_hlx_psay, "ma_hlx_psay <target> <message>")
 		{
 			// Do special version for CSS
 #if defined ( GAME_CSGO )
-			msg_buffer = engine->UserMessageBegin( &mrf, saytext_message_index, "SayText" ); 
+			CCSUsrMsg_SayText *msg = (CCSUsrMsg_SayText *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_SayText)->New();
+			msg->set_ent_idx(target_player->index);
+			msg->set_text(temp_string);
+			msg->set_chat(true);
+			engine->SendUserMessage(mrf, CS_UM_SayText, *msg);
+			delete msg; 
 #else
 			msg_buffer = engine->UserMessageBegin( &mrf, saytext_message_index ); 
-#endif
+
 			msg_buffer->WriteByte(target_player->index); // Entity index
 			msg_buffer->WriteString(temp_string);
 			msg_buffer->WriteByte(1); // Chat flag
 			engine->MessageEnd();
+#endif			
 		}
 		else
 		{ 
 #if defined ( GAME_CSGO )
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+			CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+			msg->set_msg_dst(3); // Say area
+			// Client tries to read all 5 'params' and will crash if less
+			msg->add_params(temp_string);
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+			delete msg;
 #else
 			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 			msg_buffer->WriteByte(3); // Say area
 			msg_buffer->WriteString(temp_string);
 			engine->MessageEnd();
+#endif			
 		}	
 	}
 

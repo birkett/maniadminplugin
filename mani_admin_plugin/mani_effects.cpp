@@ -36,8 +36,12 @@
 #include "iplayerinfo.h"
 #include "eiface.h"
 #include "igameevents.h"
-#include "mrecipientfilter.h" 
+#include "mrecipientfilter.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else 
 #include "bitbuf.h"
+#endif
 #include "engine/IEngineSound.h"
 #include "inetchannelinfo.h"
 #include "networkstringtabledefs.h"
@@ -76,7 +80,9 @@ extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	int	con_command_index;
+#if !defined ( GAME_CSGO )
 extern	bf_write *msg_buffer;
+#endif
 extern	int	fade_message_index;
 extern	int	text_message_index;
 // Sprite indexes;
@@ -1438,13 +1444,23 @@ const char	*fmt,
 	}
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg"); // Show TextMsg type user message
+	CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+	msg->set_msg_dst(4);
+	// Client tries to read all 5 'params' and will crash if less
+	msg->add_params(tempString);
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index); // Show TextMsg type user message
-#endif
+
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(tempString);
 	engine->MessageEnd();
+#endif	
 }
 
 //---------------------------------------------------------------------------------
@@ -1460,10 +1476,27 @@ void BlindPlayer( player_t *player, int blind_amount)
 	mrf.AddPlayer(player->index);
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, fade_message_index, "Fade" );
+	CCSUsrMsg_Fade *msg = (CCSUsrMsg_Fade *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_Fade)->New();
+	msg->set_duration(1536);
+	msg->set_hold_time(1536);
+	if (blind_amount == 0)
+	{
+		msg->set_flags(0x0001 | 0x0010); // Purge fade
+	}
+	else
+	{
+		msg->set_flags(0x0002 | 0x0008);
+	}
+	CMsgRGBA * rgba = msg->mutable_clr();
+	rgba->set_r(0);
+	rgba->set_g(0);
+	rgba->set_b(0);
+	rgba->set_a(blind_amount);
+	engine->SendUserMessage(mrf, CS_UM_Fade, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, fade_message_index );
-#endif
+
 
 	msg_buffer->WriteShort(1536);
 	msg_buffer->WriteShort(1536);
@@ -1481,6 +1514,7 @@ void BlindPlayer( player_t *player, int blind_amount)
 	msg_buffer->WriteByte(0);
 	msg_buffer->WriteByte(blind_amount);
 	engine->MessageEnd();
+#endif	
 }
 
 //---------------------------------------------------------------------------------
@@ -1556,8 +1590,12 @@ void	SlayPlayer
 			{
 				temp_ents->Explosion( f, randomStr->RandomFloat( 0.0, 1.0 ), &pos, 
 									explosion_index, randomStr->RandomInt( 4, 10 ), 
-									randomStr->RandomInt( 8, 15 ), 
+									randomStr->RandomInt( 8, 15 ),
+                                    #if defined ( GAME_CSGO )
+									( j < 2 ) ? TE_EXPLFLAG_NOSOUND : TE_EXPLFLAG_NOSOUND | TE_EXPLFLAG_NOPARTICLES | TE_EXPLFLAG_NOFIREBALLSMOKE,
+									#else									
 									( j < 2 ) ? TE_EXPLFLAG_NODLIGHTS | TE_EXPLFLAG_NOSOUND : TE_EXPLFLAG_NOSOUND | TE_EXPLFLAG_NOPARTICLES | TE_EXPLFLAG_NOFIREBALLSMOKE | TE_EXPLFLAG_NODLIGHTS,
+									#endif
 									500, 0 );
 			}	
 		}

@@ -38,7 +38,11 @@
 #include "eiface.h"
 #include "mrecipientfilter.h" 
 #include "inetchannelinfo.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else
 #include "bitbuf.h"
+#endif
 #include "mani_main.h"
 #include "mani_player.h"
 #include "mani_memory.h"
@@ -58,7 +62,9 @@ extern	IFileSystem	*filesystem;
 extern	ICvar *g_pCVar;
 extern	bool war_mode;
 extern	int	max_players;
+#if !defined ( GAME_CSGO )
 extern	bf_write *msg_buffer;
+#endif
 extern	int	text_message_index;
 extern	int hintMsg_message_index;
 
@@ -439,25 +445,45 @@ const char	*fmt,
 		if (found_player)
 		{
 #if defined ( GAME_CSGO )
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+			CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+			msg->set_msg_dst(4); // Center area
+			// Client tries to read all 5 'params' and will crash if less
+			msg->add_params(non_admin_final_string);
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+			delete msg;
 #else
 			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 			msg_buffer->WriteByte(4); // Center area
 			msg_buffer->WriteString(non_admin_final_string);
 			engine->MessageEnd();
+#endif			
 		}
 
 		if (found_admin)
 		{
 #if defined ( GAME_CSGO )
-			msg_buffer = engine->UserMessageBegin( &mrfadmin, text_message_index, "TextMsg" ); // Show TextMsg type user message
+			CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+			msg->set_msg_dst(4); // Center area
+			// Client tries to read all 5 'params' and will crash if less
+			msg->add_params(admin_final_string);
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			engine->SendUserMessage(mrfadmin, CS_UM_TextMsg, *msg);
+			delete msg;
 #else
 			msg_buffer = engine->UserMessageBegin( &mrfadmin, text_message_index ); // Show TextMsg type user message
-#endif
+
 			msg_buffer->WriteByte(4); // Center area
 			msg_buffer->WriteString(admin_final_string);
 			engine->MessageEnd();
+#endif			
 		}
 	}
 	else
@@ -490,13 +516,23 @@ const char	*fmt,
 			mrf.AddAllPlayers(max_players);
 
 #if defined ( GAME_CSGO )
-			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+			CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+			msg->set_msg_dst(4); // Center area
+			// Client tries to read all 5 'params' and will crash if less
+			msg->add_params(admin_final_string);
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			msg->add_params("");
+			engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+			delete msg;
 #else
 			msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 			msg_buffer->WriteByte(4); // Center area
 			msg_buffer->WriteString(admin_final_string);
 			engine->MessageEnd();
+#endif			
 		}
 	}
 }
@@ -522,13 +558,23 @@ const char	*fmt,
 	mrf.AddAllPlayers(max_players);
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+	CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+	msg->set_msg_dst(4); // Center area
+	// Client tries to read all 5 'params' and will crash if less
+	msg->add_params(tempString);
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(tempString);
 	engine->MessageEnd();
+#endif	
 }
 
 //---------------------------------------------------------------------------------
@@ -553,13 +599,23 @@ const char	*fmt,
 	mrf.AddPlayer(player_ptr->index);
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+	CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+	msg->set_msg_dst(4); // Center area
+	// Client tries to read all 5 'params' and will crash if less
+	msg->add_params(tempString);
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	engine->SendUserMessage(mrf, CS_UM_TextMsg, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 	msg_buffer->WriteByte(4); // Center area
 	msg_buffer->WriteString(tempString);
 	engine->MessageEnd();
+#endif	
 }
 
 //---------------------------------------------------------------------------------
@@ -858,13 +914,17 @@ void UTIL_SayHint(MRecipientFilter *mrf_ptr, char *text_ptr)
 	// Copy to restricted size
 	snprintf(text_out, sizeof(text_out), "%s", text_ptr);
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index, "HintText" );
+	CCSUsrMsg_HintText *msg = (CCSUsrMsg_HintText *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_HintText)->New();
+	msg->set_text(text_out);
+	engine->SendUserMessage(*static_cast<IRecipientFilter *>(mrf_ptr), CS_UM_HintText, *msg);
+	delete msg;
 #else
 	msg_buffer = engine->UserMessageBegin(static_cast<IRecipientFilter *>(mrf_ptr), hintMsg_message_index);
 	msg_buffer->WriteByte(1);
-#endif
+
 	msg_buffer->WriteString(text_out);
-	engine->MessageEnd();	
+	engine->MessageEnd();
+#endif	
 }
 
 //---------------------------------------------------------------------------------
@@ -1478,10 +1538,11 @@ void OutputHelpText
 void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 {
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin(mrf, text_message_index, "TextMsg" ); // Show TextMsg type user message
+	CCSUsrMsg_TextMsg *msg = (CCSUsrMsg_TextMsg *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_TextMsg)->New(); // Show TextMsg type user message
+	msg->set_msg_dst(3); // Say area
 #else
 	msg_buffer = engine->UserMessageBegin(mrf, text_message_index ); // Show TextMsg type user message
-#endif
+
 
 	msg_buffer->WriteByte(3); // Say area
 
@@ -1496,7 +1557,7 @@ void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 			default :break;
 		}
 	}
-
+#endif
 	/*
 	\x01 = White
 \x02 = Dark Red
@@ -1521,8 +1582,19 @@ void UTIL_SayText(int colour, MRecipientFilter *mrf, const char *say_text)
 		//}
 	}
 
+#if defined ( GAME_CSGO )
+	// Client tries to read all 5 'params' and will crash if less
+	msg->add_params(say_text);
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	msg->add_params("");
+	engine->SendUserMessage(*mrf, CS_UM_TextMsg, *msg);
+	delete msg;
+#else
 	msg_buffer->WriteString(say_text);
 	engine->MessageEnd();
+#endif	
 }
 
 // Log to srcds core log

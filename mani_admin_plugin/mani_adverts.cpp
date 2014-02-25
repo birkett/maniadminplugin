@@ -159,7 +159,7 @@ void ShowAdvert(const char* advert_text)
 		}
 		else
 		{
-			SayToAll(LIME_GREEN_TEXT, true, "%s", substitute_text2);
+			SayToAll(GREEN_CHAT, true, "%s", substitute_text2);
 		}
 	}
 
