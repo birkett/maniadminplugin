@@ -220,4 +220,4 @@ $(DEMANGLE_OBJ_DIR)/%.o: $(DEMANGLE_SRC_DIR)/%.cpp
 	$(DO_CC)
 clean:
 	-rm -Rf $(PLUGIN_OBJ_DIR)
-	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) libtier0.so libvstdlib.so
+	-rm -f $(NAME)_$(ARCH).$(SHLIBEXT) libtier0_srv.so libvstdlib_srv.so
