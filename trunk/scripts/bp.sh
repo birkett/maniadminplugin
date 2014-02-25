@@ -235,7 +235,7 @@ then
 ###############################
 	echo "CSGO VSP BUILD"
 	export HL2SDK_SRC_DIR="../sdks/csgo"
-        export HL2BIN_DIR="../srcds_1/csgo/bin"
+        export HL2BIN_DIR="../sdks/csgo/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -271,7 +271,7 @@ then
 ###############################
 	echo "CSGO SMM BUILD"
 	export HL2SDK_SRC_DIR="../sdks/csgo"
-        export HL2BIN_DIR="../srcds_1/csgo/bin"
+        export HL2BIN_DIR="../sdks/csgo/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -307,7 +307,7 @@ then
 ###############################
 	echo "CSS VSP BUILD"
 	export HL2SDK_SRC_DIR="../sdks/css"
-        export HL2BIN_DIR="../srcds_1/css/bin"
+        export HL2BIN_DIR="../sdks/css/lib/linux" 
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -339,7 +339,7 @@ then
 ###############################
 	echo "CSS SMM BUILD"
 	export HL2SDK_SRC_DIR="../sdks/css"
-        export HL2BIN_DIR="../srcds_1/css/bin"
+        export HL2BIN_DIR="../sdks/css/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -370,7 +370,7 @@ then
 ###############################
 	echo "DODS VSP BUILD"
 	export HL2SDK_SRC_DIR="../sdks/dods"
-        export HL2BIN_DIR="../srcds_1/dods/bin"
+        export HL2BIN_DIR="../sdks/dods/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -402,7 +402,7 @@ then
 ###############################
 	echo "DODS SMM BUILD"
 	export HL2SDK_SRC_DIR="../sdks/dods"
-        export HL2BIN_DIR="../srcds_1/dods/bin"
+        export HL2BIN_DIR="../sdks/dods/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -433,7 +433,7 @@ then
 ###############################
 	echo "HL2DM VSP BUILD"
 	export HL2SDK_SRC_DIR="../sdks/hl2dm"
-        export HL2BIN_DIR="../srcds_1/hl2dm/bin"
+        export HL2BIN_DIR="../sdks/hl2dm/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -465,7 +465,7 @@ then
 ###############################
 	echo "HL2DM SMM BUILD"
 	export HL2SDK_SRC_DIR="../sdks/hl2dm"
-        export HL2BIN_DIR="../srcds_1/hl2dm/bin"
+        export HL2BIN_DIR="../sdks/hl2dm/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -496,7 +496,7 @@ then
 ###############################
 	echo "TF2 VSP BUILD"
 	export HL2SDK_SRC_DIR="../sdks/tf2"
-        export HL2BIN_DIR="../srcds_1/tf2/bin"
+        export HL2BIN_DIR="../sdks/tf2/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
@@ -528,7 +528,7 @@ then
 ###############################
 	echo "TF2 SMM BUILD"
 	export HL2SDK_SRC_DIR="../sdks/tf2"
-        export HL2BIN_DIR="../srcds_1/tf2/bin"
+        export HL2BIN_DIR="../sdks/tf2/lib/linux"
 	export SOURCEMM_ROOT="../sourcemm_sdk/core"
 	export PLUGIN_SRC_DIR="."
 	export PUBLIC_SRC_DIR="$HL2SDK_SRC_DIR/public"
