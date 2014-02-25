@@ -103,4 +103,3 @@ sub execute_game
 	print "Current path = $dir\n";
 	system($system_command);
 }
-
