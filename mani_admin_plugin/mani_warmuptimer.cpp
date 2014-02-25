@@ -137,6 +137,15 @@ void		ManiWarmupTimer::LevelInit(void)
 	}
 	else
 	{
+#if defined(GAME_CSGO)
+		//Set the default CSGO warmup timer value
+		ConVar *mp_warmuptime = g_pCVar->FindVar("mp_warmuptime");
+		if(mp_warmuptime)
+		{
+			MMsg("Setting warmup timer value\n");
+			mp_warmup_timer.SetValue(mp_warmuptime->GetInt());
+		}
+#endif
 		check_timer = true;
 		fire_restart = true;
 		next_check = -999.0;

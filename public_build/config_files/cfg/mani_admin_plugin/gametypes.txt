@@ -176,7 +176,7 @@
 				"linux_symbol"	"g_pEntityList"
 				"sigscan"		"55 8B EC 83 EC 24 53 56 57 8D 45 FF"	
 				"win_type"		"Indirect"
-				"linux_type"	"Direct"
+				"linux_type"	"Indirect"
 				"win_index"		"9"		
 			}
 			
