@@ -75,7 +75,7 @@ extern	int	max_players;
 extern	CGlobalVars *gpGlobals;
 extern	bool war_mode;
 extern	int	con_command_index;
-extern	bf_write *msg_buffer;
+
 
 inline bool FStruEq(const char *sz1, const char *sz2)
 {

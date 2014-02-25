@@ -38,7 +38,11 @@
 #include "Color.h"
 #include "mrecipientfilter.h" 
 #include "inetchannelinfo.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else
 #include "bitbuf.h"
+#endif
 #include "engine/IEngineSound.h"
 #include "mani_main.h"
 #include "mani_memory.h"
@@ -55,7 +59,9 @@ extern	IVEngineServer	*engine; // helper functions (messaging clients, loading c
 extern	IServerPluginHelpers *helpers; // special 3rd party plugin helpers from the engine
 extern	IServerPluginCallbacks *gpManiISPCCallback;
 extern	IEngineSound *esounds; // sound
+#if !defined ( GAME_CSGO )
 extern	bf_write *msg_buffer;
+#endif
 extern	int	menu_message_index;
 extern	CGlobalVars *gpGlobals;
 extern	int	max_players;
@@ -91,6 +97,18 @@ char *menu_string,
 bool final
 )
 {
+// With the protobuf update of csgo, the ShowMenu message doesn't support partial sending of menu info.
+// We need to send the menu all at once.
+#if defined ( GAME_CSGO )
+	static char player_menus[64][512] = {};
+
+	snprintf(player_menus[player_index], 512, "%s%s", player_menus[player_index], menu_string);
+
+	// If this menu isn't finished yet, don't send anything to the client.
+	if(!final)
+		return;
+#endif
+
 	unsigned int		keys=0;
 	char				menu_string_clamped[512];
 
@@ -114,13 +132,17 @@ bool final
 	mrf.AddPlayer(player_index);
 
 #if defined ( GAME_CSGO )
-	msg_buffer = engine->UserMessageBegin( &mrf, menu_message_index, "ShowMenu" ); // Show Menu message
+	CCSUsrMsg_ShowMenu *msg = (CCSUsrMsg_ShowMenu *)g_Cstrike15UsermessageHelpers.GetPrototype(CS_UM_ShowMenu)->New(); // Show Menu message
 #else
 	msg_buffer = engine->UserMessageBegin( &mrf, menu_message_index ); // Show Menu message
 #endif
 	if (final)
 	{
-		msg_buffer->WriteShort( keys ); // Key bits
+#if defined ( GAME_CSGO )
+		msg->set_bits_valid_slots( keys ); // Key bits
+#else
+ 		msg_buffer->WriteShort( keys ); // Key bits
+#endif
 #if defined ( GAME_ORANGE )
 		if ( !g_menu_mgr.GetMenuShowing ( player_index - 1) ) {
 			g_menu_mgr.ResetMenuShowing ( player_index - 1 , false );
@@ -129,11 +151,21 @@ bool final
 	}
 	else
 	{
+#if defined ( GAME_CSGO )
+		msg->set_bits_valid_slots( (1<<9) ); // Key bits
+#else
 		msg_buffer->WriteShort( (1<<9) ); // Key bits
+#endif
+		
 	}
 
-	msg_buffer->WriteChar( time ); // Time for menu -1 = permanent
-
+#if defined ( GAME_CSGO )
+		msg->set_display_time( (time == -1)? 0 : time ); // // Time for menu 0 = permanent
+#else
+		msg_buffer->WriteChar( time ); // Time for menu -1 = permanent
+#endif
+	
+#if !defined ( GAME_CSGO )
 	if (final)
 	{
 		msg_buffer->WriteByte( 0 ); // Draw immediately
@@ -142,13 +174,21 @@ bool final
 	{
 		msg_buffer->WriteByte( 1 ); // Draw later more info required
 	}
+#endif	
 
 
 	// Ensure string is not more than 512 bytes
+#if defined ( GAME_CSGO )
+	msg->set_menu_string(player_menus[player_index]);
+	engine->SendUserMessage(mrf, CS_UM_ShowMenu, *msg);
+	delete msg;
+	player_menus[player_index][0] = 0;
+#else	
 	snprintf(menu_string_clamped, sizeof(menu_string_clamped), "%s", menu_string);
 	msg_buffer->WriteString (menu_string_clamped);	
 	engine->MessageEnd();
 
+#endif	
 }
 
 //---------------------------------------------------------------------------------

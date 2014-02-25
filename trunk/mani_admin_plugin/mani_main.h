@@ -49,11 +49,7 @@ const int	gametypes_min_version = 3;
 #endif
 
 //majorrelease.minorrealse.patchlevel.buildnumber
-#if defined ( GAME_CSGO )
-#define COMMON_CORE "1.2.22.13c"
-#else
-#define COMMON_CORE "1.2.22.14"
-#endif
+#define COMMON_CORE "1.2.22.15"
 #define COMMON_VERSION "Mani Admin Plugin 2013 V" COMMON_CORE
 
 #ifdef GAME_ORANGE
@@ -64,6 +60,7 @@ const int	gametypes_min_version = 3;
 #define PLUGIN_VERSION COMMON_VERSION " VSP Orange, www.mani-admin-plugin.com"
 #define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
 #endif
+
 #else
 #ifdef SOURCEMM
 #define PLUGIN_VERSION COMMON_VERSION " SMM, www.mani-admin-plugin.com"

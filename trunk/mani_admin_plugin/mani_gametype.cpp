@@ -134,10 +134,13 @@ void GetLinuxBins ( char *game, char *engine ) {
 		Q_strncpy ( engine, "./bin/engine_amd.so", 256 );
 
 	Q_snprintf ( game, 256, "./%s/bin/server_i486.so", gamedir );
+#elif !defined( GAME_CSGO )
+	Q_strncpy ( engine, "./bin/engine.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server.so", gamedir );
 
 #else
-	Q_strncpy ( engine, "./bin/engine_srv.so", 256 );
-	Q_snprintf ( game, 256, "./%s/bin/server_srv.so", gamedir );
+	Q_strncpy ( engine, "./bin/engine.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server.so", gamedir );
 #endif
 }
 #endif

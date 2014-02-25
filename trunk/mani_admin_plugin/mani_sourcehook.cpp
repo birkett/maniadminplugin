@@ -58,7 +58,11 @@ typedef unsigned long DWORD;
 //#include "enginecallback.h"
 #include "IEffects.h"
 #include "engine/IEngineSound.h"
+#if defined ( GAME_CSGO )
+#include <cstrike15_usermessage_helpers.h>
+#else
 #include "bitbuf.h"
+#endif
 #include "icvar.h"
 #include "inetchannelinfo.h"
 #include "ivoiceserver.h"
@@ -126,7 +130,7 @@ SH_DECL_MANUALHOOK1(Player_Weapon_CanUse, 0, 0, 0, bool, CBaseCombatWeapon *);
 #ifdef GAME_ORANGE
 SH_DECL_HOOK1_void(ConCommand, Dispatch, SH_NOATTRIB, 0, const CCommand &);
 #if defined ( GAME_CSGO )
-SH_DECL_HOOK3(IVEngineServer, UserMessageBegin, SH_NOATTRIB, 0, bf_write*, IRecipientFilter *, int, char const *);
+SH_DECL_HOOK3_void(IVEngineServer, SendUserMessage, SH_NOATTRIB, 0, IRecipientFilter &, int, const google::protobuf::Message &);
 #else
 SH_DECL_HOOK2(IVEngineServer, UserMessageBegin, SH_NOATTRIB, 0, bf_write*, IRecipientFilter *, int);
 #endif
@@ -167,7 +171,11 @@ void	ManiSMMHooks::HookVFuncs(void)
 #if defined ( GAME_ORANGE )
 	if (engine)
 	{
+#if defined ( GAME_CSGO )
+		SH_ADD_HOOK_MEMFUNC(IVEngineServer, SendUserMessage, engine, &g_ManiSMMHooks, &ManiSMMHooks::UserMessageBegin, true);
+#else	
 		SH_ADD_HOOK_MEMFUNC(IVEngineServer, UserMessageBegin, engine, &g_ManiSMMHooks, &ManiSMMHooks::UserMessageBegin, true );
+#endif		
 	}
 #endif
 
@@ -268,7 +276,7 @@ void	ManiSMMHooks::UnHookWeapon_CanUse(CBasePlayer *pPlayer)
 #if defined ( GAME_ORANGE )
 
 #if defined ( GAME_CSGO )
-bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type, const char *msg)
+void ManiSMMHooks::UserMessageBegin(IRecipientFilter &filter, int msg_type, const google::protobuf::Message &msg)
 #else
 bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type)
 #endif
@@ -276,15 +284,25 @@ bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type)
 
 	if ( mani_hint_sounds.GetBool() ) 
 	{
+#if defined ( GAME_CSGO )
+		RETURN_META(MRES_IGNORED);
+#else	
 		RETURN_META_VALUE(MRES_IGNORED,NULL);
+#endif		
 	}
 
 	player_t player;
 	if ( msg_type == hintMsg_message_index ) 
 	{
+#if defined ( GAME_CSGO )
+		for ( int i = 0; i < filter.GetRecipientCount(); i++ ) 
+		{
+			player.index = filter.GetRecipientIndex(i);
+#else	
 		for ( int i = 0; i < filter->GetRecipientCount(); i++ ) 
 		{
 			player.index = filter->GetRecipientIndex(i);
+#endif			
 			if ( !FindPlayerByIndex(&player) ) continue;
 
 			//Stop Sound!!!
@@ -295,7 +313,11 @@ bf_write *ManiSMMHooks::UserMessageBegin(IRecipientFilter *filter, int msg_type)
 #endif
 		}
 	}
+#if defined ( GAME_CSGO )
+	RETURN_META(MRES_IGNORED);
+#else	
 	RETURN_META_VALUE(MRES_IGNORED,NULL);
+#endif	
 }
 #endif // GAME_ORANGE
 
