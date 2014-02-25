@@ -529,12 +529,23 @@ bool	ManiKeyValues::ReadFile(char *filename)
 		gpManiFile->Close(fh);
 		return false;
 	}
-
+	
 	if (type != M_KEY)
 	{
-		MMsg("Invalid primary key in %s\n", filename);
-		gpManiFile->Close(fh);
-		return false;
+		//Itterate over any comments at the top of the file
+		while(this->ReadLine(key, &k_length, value, &v_length, &type))
+		{
+			if(type == M_KEY) break;
+			k_length++;
+		} 
+
+		//if we still didnt find a valid entry...
+		if(type != M_KEY)
+		{
+			MMsg("Invalid primary key in %s\n", filename);
+			gpManiFile->Close(fh);
+			return false;
+		}
 	}
 
 	k_length ++;
