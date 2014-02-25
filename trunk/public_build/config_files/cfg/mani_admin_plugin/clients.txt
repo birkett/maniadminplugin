@@ -1,0 +1,66 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : clients.txt
+//
+// Last Updated : 2014/02/23
+//
+// Description  : Describes users who can access the admin functions
+// *****************************************************************************
+//
+//
+// Full description available at:
+// http://mani-admin-plugin.com/cms/index.php/documentation/configuration/26-configuration-of-the-clientstxt
+//
+"clients.txt"
+{
+	"version"	"1"
+
+	//Describes each user with admin access
+	"players"
+	{
+		//Player name - should be unique - does not have to be the in-game name of the player
+		"Your-name-here"
+		{
+			//Access controls. We recommend using more than one (i.e. control by Name and SteamID)
+	
+			//IP address control for this user, more than one can be used
+			"ip"	
+			{
+				//"IP1"	"192.168.0.10"
+				//"IP2"	"62.75.235.136"
+			}
+
+			//In-game name of this user
+			"name"	"Your-name-here"
+
+
+			//SteamID of this user
+			//NOTE: CSGO ID will start with STEAM_0:1, other games STEAM_0:0
+			"steam"	"STEAM_0:0:XXXXXX"
+		
+			//What groups this user is in 
+			"groups"
+			{
+				"Admin"	"ServerOwner"
+				"Immunity"	"ServerOwner"
+			}		
+		}
+	}
+
+
+	//Default set of groups - includes all available tags
+	"groups"
+	{
+		"Immunity"
+		{
+			"ServerOwner"	"a b c d e f g h i j k l m n o p q r s t u v x y afk ping autojoin grav Immunity"
+		}
+
+		"Admin"
+		{
+			"ServerOwner"	"A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e"
+			"ServerOwner"	"f g i k l m o p q q2 q3 r s t v w x y z admin client grav pban spray"
+		}
+	}
+}
