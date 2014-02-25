@@ -296,10 +296,17 @@ void	LoadMaps(const char *map_being_loaded)
 	}
 
 	//Get Map list
-	file_handle = filesystem->Open ("maplist.txt","rt",NULL);
+	
+       //Default to loading the new location
+       if(filesystem->FileExists("cfg/mapcycle.txt",NULL)) { file_handle = filesystem->Open ("cfg/mapcycle.txt","rt",NULL); }
+       //If that failed, load the default file from the new location
+       else if(filesystem->FileExists("cfg/mapcycle_default.txt",NULL)) { file_handle = filesystem->Open ("cfg/mapcycle_default.txt","rt",NULL); }
+       //fall back to the old location
+       else { file_handle = filesystem->Open ("maplist.txt","rt",NULL); }
+	
 	if (file_handle == NULL)
 	{
-		MMsg("Failed to load maplist.txt YOU MUST HAVE A MAPLIST.TXT FILE!\n");
+		MMsg("Failed to load maplist.txt/mapcycle.txt YOU MUST HAVE A MAPLIST.TXT FILE!\n");
 	}
 	else
 	{

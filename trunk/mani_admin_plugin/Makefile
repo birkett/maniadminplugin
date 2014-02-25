@@ -100,8 +100,7 @@ COMP_VER=4.6
 #
 CPLUS=g++-$(COMP_VER)
 CLINK=gcc-$(COMP_VER)
-CPP_LIB=../stlport/lib/libstlport.a  \
-        ./mysql5.1/linux_32/lib/libmysqlclient.a \
+CPP_LIB=./mysql5.1/linux_32/lib/libmysqlclient.a \
         ./mysql5.1/linux_32/lib/libz.a \
     $(EXTRA_LIBS)
 
@@ -112,8 +111,7 @@ CPP_LIB=../stlport/lib/libstlport.a  \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
-#LDFLAGS=-static-libgcc -m32 -lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
+LDFLAGS=-static-libgcc -static-libstdc++ -lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -134,7 +132,6 @@ SHLIBLDFLAGS=-shared
 
 CFLAGS=$(USER_CFLAGS) $(BASE_CFLAGS) $(ARCH_CFLAGS)
 CFLAGS+= $(DEBUG_FLAGS)
-#DO_CC=$(CPLUS) -I../stlport/include/stlport/ -I./demangle/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 DO_CC=$(CPLUS) -I./demangle/ $(INCLUDEDIRS) -w $(CFLAGS) -DARCH=$(ARCH) -o $@ -c $<
 
 #####################################################################

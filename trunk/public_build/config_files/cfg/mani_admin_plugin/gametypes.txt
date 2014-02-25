@@ -1,9 +1,9 @@
 // ************************************************
 //
-// Mani Admin Plugin 2012
+// Mani Admin Plugin 2014
 //
-// Last Update V1.2.22.13
-// 01.09.2012
+// Last Update V1.2.23
+// 21.02.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -87,7 +87,7 @@
 		"advanced_effects"
 		{
 			"enable_linux"	"1"	// Allow linux advanced effects
-			"enable_win"	"1"	// Allow windows advanced effects
+			"enable_win"	"0"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
 			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
 		}
@@ -109,63 +109,72 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"128"
+			"eye_angles"		"129"
 			"set_model_index"		"9"
-			"teleport"		"112"
-			"eye_position"		"127"
-			"give_item"		"436"
-			"my_combat_character"		"76"
-			"get_velocity"		"137"
+			"teleport"		"113"
+			"eye_position"		"128"
+			"give_item"		"444"
+			"my_combat_character"		"77"
+			"get_velocity"		"138"
 			"map_desc"		"12"
-			"ignite"		"220"
-			"weapon_drop"		"279"
-			"user_cmds"		"455"
-			"set_observer_target"		"409"
-			"weapon_canuse"		"276"
-			"weapon_switch"		"280"
-			"remove_player_item"		"286"
-			"get_weapon_slot"		"284"
-			"give_ammo"		"270"
-			"commit_suicide"		"485"
-			"get_primary_ammo_type"		"339"
-			"get_secondary_ammo_type"		"340"
-			"weapon_get_name"		"331"
+			"ignite"		"223"
+			"weapon_drop"		"282"
+			"user_cmds"		"463"
+			"set_observer_target"		"416"
+			"weapon_canuse"		"279"
+			"weapon_switch"		"283"
+			"remove_player_item"		"290"
+			"get_weapon_slot"		"287"
+			"give_ammo"		"273"
+			"commit_suicide"		"493"
+			"get_primary_ammo_type"		"371"
+			"get_secondary_ammo_type"		"372"
+			"weapon_get_name"		"363"
+		}
+		// Those offsets have to be +1.
+		// The code still subtracts 1 when fetching them on windows :D
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"494"
+			"get_primary_ammo_type"		"366"
+			"get_secondary_ammo_type"		"367"
+			"weapon_get_name"		"358"
 		}
 
 		"sigs"
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorI22CLC_SplitPlayerConnect10CUtlMemoryIS5_iEEb19CrossPlayPlatform_t"
-				"sigscan"		"55 8B EC 83 EC ? 56 68 ? ? ? ? 8B F1 FF ? ? ? ? ? 8B 06 8B 50"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorIP13CNetMessagePBILi16E26CCLCMsg_SplitPlayerConnectLi0ELb1EE10CUtlMemoryIS8_iEEb19CrossPlayPlatform_t"
+				"sigscan"		"55 8B EC 83 E4 F8 83 EC 24 53 56 57 8B F9"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writebj"
-				"sigscan"		"55 8B EC B8 50 ? ? ? E8 ? ? ? ? 8B 0D ? ? ? ? 81 F9 ? ? ? ? 75"
+				"sigscan"		"55 8B EC 83 E4 F8 8B 45 08 83 EC 40"
 				"win_type"		"Direct"		
 			}
 			
 			"CCSPlayer_RoundRespawn"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer12RoundRespawnEv"
-				"sigscan"		"55 8B EC 83 EC ? 56 8B F1 8B 0D ? ? ? ? 57 E8 ? ? ? ? 84 C0 75"
+				"sigscan"		"55 8B EC 83 EC 08 56 8B F1 8B 0D ? ? ? ? 57 8B 01 FF 50 ? 83"
 				"win_type"		"Direct"		
 			}
 			
 			"UTIL_Remove"
 			{
 				"linux_symbol"	"_Z11UTIL_RemoveP11CBaseEntity"
-				"sigscan"		"55 8B EC 8B 45 08 85 C0 74 ? 83 C0 0C ? ? 7D FF FF FF"
+				"sigscan"		"55 8B EC 53 8B 5D 08 56 57 8B F9 85 DB 75 49"
 				"win_type"		"Direct"
 			}
 			
 			"CEntList_gEntList"
 			{
 				"linux_symbol"	"g_pEntityList"
-				"sigscan"		"53 68 ? ? ? ? 6A 00 B9 ? ? ? ? 32 DB"
+				"sigscan"		"55 8B EC 83 EC 24 53 56 57 8D 45 FF"	
 				"win_type"		"Indirect"
 				"linux_type"	"Direct"
 				"win_index"		"9"		
@@ -174,7 +183,7 @@
 			"CGameRules_gGameRules"
 			{
 				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
-				"sigscan"		"8B 0D ? ? ? ? 85 C9 74 ? 8B 01 8B 50 ? 6A 01 FF D2"
+				"sigscan"		"8B 0D ? ? ? ? 85 C9 74 ? 8B 01 6A 01 FF 50 30 57"
 				"win_type"		"Indirect"
 				"linux_type"	"Indirect"
 				"win_index"		"109"
@@ -184,35 +193,35 @@
 			"CGlobalEntityList_FindEntityByClassname"
 			{
 				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
-				"sigscan"		"55 8B EC 53 56 8B F1 8B 4D 08 57 85 C9 74 ? 8B 01 8B 50 08 FF D2 8B 00 83 F8 FF 75 ? B8 FF 1F 00 00 8D 04 40 8B 74 C6 ? EB"
+				"sigscan"		"55 8B EC 83 E4 F8 83 EC 2C 53 56 57 8B F9 80 BF 2D 02 00 00 01"
 				"win_type"		"Direct"		
 			}
 			
 			"CCSPlayer_SwitchTeam"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer10SwitchTeamEi"
-				"sigscan"		"55 8B EC 83 EC ? 56 57 8B 7D ? 57 8B F1 E8 ? ? ? ? 83 C4 ? 85 C0"
+				"sigscan"		"55 8B EC 83 EC 0C 56 8B 75 ? 57 8B F9 85 F6 0F 88 ? ? ? ? 3B 35 ? ? ? ? 0F 8D ? ? ? ? A1 ? ? ? ? 83"
 				"win_type"		"Direct"		
 			}
 			
 			"CCSPlayer_SetModelFromClass" 
 			{
 				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
-				"sigscan"		"55 8B EC 51 53 56 8B F1 57 B9 ? ? ? ? E8 ? ? ? ? 8B"
+				"sigscan"		"55 8B EC 83 EC 08 56 57 8B F9 C7 45 ? ? ? ? ? 8B 87"
 				"win_type"		"Direct"		
 			}
 			
 			"GetFileWeaponInfoFromHandle"
 			{
 				"linux_symbol"	"_Z27GetFileWeaponInfoFromHandlet"
-				"sigscan"		"55 8B EC ? 8B ? ? ? 3B ? ? ? ? ? 72 ? B8 ? ? ? ? 5D C3"
+				"sigscan"	"66 3B 0D ? ? ? ? 72 ? A1"
 				"win_type"		"Direct"		
 			}
 			
 			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"55 8B EC 51 53 56 8B ? ? ? ? ? 57 89 ? ? 33 ? 8D B9 ? ? ? ? 8B ? 83 ? ? 74 ? 8B"
+				"sigscan"		"55 8B EC 51 0F 28 C1 F3 0F 10 0D ? ? ? ? 0F 2F C1 F3 0F 11 4D FC 77 ? 0F 28 C8 F3 0F 11 4D FC F3 0F 10 81 DC 03 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -342,7 +351,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -362,34 +371,32 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"397"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"401"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"414"
-			"set_observer_target"		"371"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"437"
-			"get_primary_ammo_type"		"335"
-			"get_secondary_ammo_type"		"336"
-			"weapon_get_name"		"328"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"418" 
+			"set_observer_target"		"375"
+			"weapon_canuse"		"260" 
+			"weapon_switch"		"264" 
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"439" 
+			"get_primary_ammo_type"		"328" 
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321" 
 		}
 
 		"vfuncs_windows"
 		{
-			"get_primary_ammo_type"		"330"
-			"get_secondary_ammo_type"		"331"
-			"weapon_get_name"		"323"
+			"commit_suicide"		"440"
 		}
 
 		"sigs"
@@ -404,7 +411,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 			
@@ -610,7 +617,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -627,27 +634,32 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"396"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"413"
-			"set_observer_target"		"370"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"434"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
 		}
 
 		"sigs"
@@ -662,7 +674,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}
@@ -792,7 +804,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -807,29 +819,35 @@
 			"ang_rotation"	"CBaseEntity.m_angRotation"
 		}
 
+
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"396"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"413"
-			"set_observer_target"		"370"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"434"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
 		}
 
 		"sigs"
@@ -844,7 +862,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}
@@ -909,7 +927,7 @@
 			}				
 		}
 	}
-	
+
 	//
 	// Options for HL2 Deathmatch 
 	//
@@ -969,7 +987,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"props"
@@ -986,28 +1004,33 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"396"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"413"
-			"set_observer_target"		"370"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"434"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
 		}
+		
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
+		}	
 
 		"sigs"
 		{
@@ -1021,7 +1044,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1122,27 +1145,32 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"396"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"413"
-			"set_observer_target"		"370"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"434"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+		
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
 		}
 
 		"sigs"
@@ -1157,7 +1185,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1253,27 +1281,32 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"396"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"413"
-			"set_observer_target"		"370"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"434"
-			"get_primary_ammo_type"		"327"
-			"get_secondary_ammo_type"		"328"
-			"weapon_get_name"		"320"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+		
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
 		}
 
 		"sigs"
@@ -1288,7 +1321,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 56 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1335,7 +1368,7 @@
 			}				
 		}
 	}
-	
+
 	"Team Fortress"
 	{
 		// Set to 1 if spectator is allowed for this mod
@@ -1395,7 +1428,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"104"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -1413,28 +1446,36 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"131"
+			"eye_angles"		"132"
 			"set_model_index"		"9"
-			"teleport"		"108"
-			"eye_position"		"130"
-			"give_item"		"396"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
 			"my_combat_character"		"72"
-			"get_velocity"		"140"
+			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"208"
-			"weapon_drop"		"260"
-			"user_cmds"		"413"
-			"set_observer_target"		"370"
-			"weapon_canuse"		"257"
-			"weapon_switch"		"261"
-			"remove_player_item"		"267"
-			"get_weapon_slot"		"265"
-			"give_ammo"		"251"
-			"commit_suicide"		"437"
-			"get_primary_ammo_type"		"335"
-			"get_secondary_ammo_type"		"336"
-			"weapon_get_name"		"328"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"440"
+			"get_primary_ammo_type"		"336"
+			"get_secondary_ammo_type"		"337"
+			"weapon_get_name"		"329"
 		}
+		
+		vfuncs_windows
+		{
+			"commit_suicide"		"441"
+			"get_primary_ammo_type"		"331"
+			"get_secondary_ammo_type"		"332"
+			"weapon_get_name"		"324"
+		}	
 
 		"sigs"
 		{
@@ -1448,7 +1489,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}		
@@ -1571,7 +1612,7 @@
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? 53 56 8B ? ? 57 8B ? ? ? ? ? ? 57 6A 00"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1592,5 +1633,3 @@
 		}
 	}
 }
-
-
