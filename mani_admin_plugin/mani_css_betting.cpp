@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2013 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2014 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -149,7 +149,7 @@ void ManiCSSBetting::PlayerNotAlive(void)
 		{
 			if (mani_css_betting_dead_only.GetInt() == 1)
 			{
-				SayToDead(LIGHT_GREEN_CHAT, "It is 1 vs 1, place your bets!");
+				SayToDead(LIGHT_GREEN_CHAT, "%s", Translate(NULL, 1300));
 			}
 			else
 			{
