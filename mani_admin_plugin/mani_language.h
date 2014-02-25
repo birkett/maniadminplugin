@@ -97,9 +97,16 @@ extern  void LanguageGameFrame(void);
 #define M_MENU_NO (671)
 #define M_MENU_BACK (672)
 #define M_MENU_MORE (673)
-#define M_MENU_BACK_AMX (674)
-#define M_MENU_MORE_AMX (675)
-#define M_MENU_EXIT_AMX (676)
+
+#if !defined (GAME_CSGO)
+       #define M_MENU_BACK_AMX (674)
+       #define M_MENU_MORE_AMX (675)
+       #define M_MENU_EXIT_AMX (676)
+#else
+       #define M_MENU_BACK_AMX (677)
+       #define M_MENU_MORE_AMX (678)
+       #define M_MENU_EXIT_AMX (679)
+#endif
 
 #define M_STATS_KILL_SINGLE (1000)
 #define M_STATS_KILL_PLURAL (1001)

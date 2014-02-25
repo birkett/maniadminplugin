@@ -351,6 +351,9 @@ void ManiWeaponMgr::SetupWeapons()
 	this->AddWeapon("weapon_ssg08",3214,"ssg08","weapon_ssg08");
 	this->AddWeapon("weapon_taser",3215,"taser","weapon_taser");
 	this->AddWeapon("weapon_tec9",3216,"tec9","weapon_tec9");
+	this->AddWeapon("weapon_m4a1_silencer",3217,"m4a1s","weapon_m4a1_silencer");
+	this->AddWeapon("weapon_usp_silencer",3218,"usps","weapon_usp_silencer");
+	this->AddWeapon("weapon_cz75a",3219,"cz75a","weapon_cz75a");
 	this->AddWeapon("item_assaultsuit",0);
 	this->AddWeapon("item_kevlar",0);
 	this->AddWeapon("item_defuser",0);

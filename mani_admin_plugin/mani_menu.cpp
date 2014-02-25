@@ -102,7 +102,10 @@ bool final
 #if defined ( GAME_CSGO )
 	static char player_menus[64][512] = {};
 
-	snprintf(player_menus[player_index], 512, "%s%s", player_menus[player_index], menu_string);
+	int buffer_len = 0;
+	buffer_len = strlen(player_menus[player_index]);
+
+	snprintf(player_menus[player_index]+buffer_len, 512-buffer_len, "%s", menu_string);
 
 	// If this menu isn't finished yet, don't send anything to the client.
 	if(!final)
@@ -183,6 +186,7 @@ bool final
 	engine->SendUserMessage(mrf, CS_UM_ShowMenu, *msg);
 	delete msg;
 	player_menus[player_index][0] = 0;
+	buffer_len = 0;
 #else	
 	snprintf(menu_string_clamped, sizeof(menu_string_clamped), "%s", menu_string);
 	msg_buffer->WriteString (menu_string_clamped);	
