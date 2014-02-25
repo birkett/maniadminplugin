@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 23.02.2014
+// 24.02.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -176,7 +176,7 @@
 				"linux_symbol"	"g_pEntityList"
 				"sigscan"		"55 8B EC 83 EC 24 53 56 57 8D 45 FF"	
 				"win_type"		"Indirect"
-				"linux_type"	"Indirect"
+				"linux_type"		"Indirect"
 				"win_index"		"9"		
 			}
 			
@@ -1028,8 +1028,12 @@
 		}
 		
 		"vfuncs_windows"
+
 		{
+
 			"commit_suicide"		"439"
+			"weapon_get_name"		"316"
+
 		}	
 
 		"sigs"
@@ -1169,8 +1173,12 @@
 		}
 		
 		"vfuncs_windows"
+
 		{
+
 			"commit_suicide"		"439"
+			"weapon_get_name"		"316"
+
 		}
 
 		"sigs"
@@ -1305,8 +1313,12 @@
 		}
 		
 		"vfuncs_windows"
+
 		{
+
 			"commit_suicide"		"439"
+			"weapon_get_name"		"316"
+
 		}
 
 		"sigs"
@@ -1428,7 +1440,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"104"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
