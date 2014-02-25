@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 21.02.2014
+// 23.02.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -434,7 +434,7 @@
 				"linux_symbol"	"g_pEntityList"
 				"sigscan"		"53 68 ? ? ? ? 6A 00 B9 ? ? ? ? 32 DB"
 				"win_type"		"Indirect"
-				"linux_type"	"Direct"
+				"linux_type"	"Indirect"
 				"win_index"		"9"		
 			}
 			
