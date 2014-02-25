@@ -86,12 +86,17 @@ enum MetamodBackend
 	MMBackend_BloodyGoodTime,
 	MMBackend_EYE,
 	MMBackend_CSS,
-	MMBackend_Episode2Valve,
+	MMBackend_Episode2Valve_OBSOLETE,
 	MMBackend_Left4Dead,
 	MMBackend_Left4Dead2,
 	MMBackend_AlienSwarm,
 	MMBackend_Portal2,
 	MMBackend_CSGO,
+	MMBackend_DOTA,
+	MMBackend_HL2DM,
+	MMBackend_DODS,
+	MMBackend_TF2,
+	MMBackend_NuclearDawn,
 	MMBackend_UNKNOWN
 };
 
@@ -107,8 +112,8 @@ mm_UnloadMetamodLibrary();
 extern void
 mm_LogFatal(const char *message, ...);
 
-extern const char *
-mm_GetGameName();
+extern bool
+mm_GetGameName(char *buffer, size_t size);
 
 extern MetamodBackend
 mm_DetermineBackend(QueryValveInterface qvi, const char *game_name);

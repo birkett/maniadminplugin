@@ -125,18 +125,25 @@ void GetLinuxBins ( char *game, char *engine ) {
 	char gamedir[256];
 	UTIL_GetGamePath ( gamedir );
 
-#if !defined ( GAME_ORANGE )
-	if ( UTIL_ScanFile ( file, "engine_i686.so" ) )
-		Q_strncpy ( engine, "./bin/engine_i686.so", 256 );
-	else if ( UTIL_ScanFile ( file, "engine_i486.so" ) )
-		Q_strncpy ( engine, "./bin/engine_i486.so", 256 );
-	else
-		Q_strncpy ( engine, "./bin/engine_amd.so", 256 );
-
-	Q_snprintf ( game, 256, "./%s/bin/server_i486.so", gamedir );
-#elif !defined( GAME_CSGO )
+#ifdef	GAME_CSGO
 	Q_strncpy ( engine, "./bin/engine.so", 256 );
 	Q_snprintf ( game, 256, "./%s/bin/server.so", gamedir );
+
+#elif 	defined	(GAME_CSS)
+	Q_strncpy ( engine, "./bin/engine_srv.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server_srv.so", gamedir );
+
+#elif 	defined	(GAME_DODS)
+	Q_strncpy ( engine, "./bin/engine_srv.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server_srv.so", gamedir );
+
+#elif 	defined	(GAME_HL2DM)
+	Q_strncpy ( engine, "./bin/engine_srv.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server_srv.so", gamedir );
+
+#elif 	defined	(GAME_TF2)
+	Q_strncpy ( engine, "./bin/engine_srv.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server_srv.so", gamedir );	
 
 #else
 	Q_strncpy ( engine, "./bin/engine.so", 256 );

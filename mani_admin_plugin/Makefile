@@ -100,9 +100,9 @@ COMP_VER=4.6
 #
 CPLUS=g++-$(COMP_VER)
 CLINK=gcc-$(COMP_VER)
-#CPP_LIB=../stlport/lib/libstlport.a
-CPP_LIB=./mysql5.1/linux_32/lib/libmysqlclient.a \
-    ./mysql5.1/linux_32/lib/libz.a \
+CPP_LIB=../stlport/lib/libstlport.a  \
+        ./mysql5.1/linux_32/lib/libmysqlclient.a \
+        ./mysql5.1/linux_32/lib/libz.a \
     $(EXTRA_LIBS)
 
 #	/usr/local/gcc-3.4/lib/gcc/i686-pc-linux-gnu/3.4.6/libgcc_eh.a \
@@ -112,8 +112,8 @@ CPP_LIB=./mysql5.1/linux_32/lib/libmysqlclient.a \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-#LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
-LDFLAGS=-static-libgcc -m32 -lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
+LDFLAGS=-lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
+#LDFLAGS=-static-libgcc -m32 -lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
 
 #############################################################################
 # Things below here shouldn't need to be altered

@@ -57,7 +57,7 @@ ifeq "$(ENGINE)" "css"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.css.so
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
+	LIB_SUFFIX = _srv.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "orangeboxvalve"
@@ -68,7 +68,7 @@ ifeq "$(ENGINE)" "orangeboxvalve"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.ep2v.so
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
+	LIB_SUFFIX = _srv.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead"
@@ -78,7 +78,8 @@ ifeq "$(ENGINE)" "left4dead"
 	CFLAGS += -DSOURCE_ENGINE=8
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.l4d.so
-	LIB_SUFFIX = _i486.so
+	LIB_PREFIX = lib
+	LIB_SUFFIX = .so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "left4dead2"
@@ -89,7 +90,7 @@ ifeq "$(ENGINE)" "left4dead2"
 	INCLUDE += -I$(HL2SDK)/public/game/server
 	BINARY = metamod.2.l4d2.so
 	LIB_PREFIX = lib
-	LIB_SUFFIX = .so
+	LIB_SUFFIX = _srv.so
 	override ENGSET = true
 endif
 ifeq "$(ENGINE)" "csgo"
@@ -108,7 +109,11 @@ CFLAGS += -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_BLOODYGOODT
 	-DSE_CSS=6 -DSE_ORANGEBOXVALVE=7 -DSE_LEFT4DEAD=8 -DSE_LEFT4DEAD2=9 -DSE_ALIENSWARM=10 \
 	-DSE_PORTAL2=11 -DSE_CSGO=12
 
-LINK += $(HL2LIB)/tier1_i486.a $(HL2LIB)/interfaces_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX) \
+ifeq "$(ENGINE)" "csgo"
+	LINK +=  $(HL2LIB)/interfaces_i486.a
+endif
+
+LINK += $(HL2LIB)/tier1_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX) \
 	-static-libgcc
 
 INCLUDE += -I. -I.. -I../public -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \

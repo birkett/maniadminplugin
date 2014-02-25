@@ -30,12 +30,11 @@ $SRCDS_PATH="$ROOT_PATH/srcds_1";
 
 #Add new games here with their Valve game names
 %game_cmd = (
-"Counter-Strike Source"		=> "Counter-Strike Source",
-"Half-Life 2 Deathmatch" 	=> "hl2mp",
-"Team Fortress 2" 		=> "tf",
-"Day of Defeat Source" 		=> "dods"
-#"Left 4 Dead" 			=> "l4d_full",
-#"Counter-Strike Source Beta"		=> "cssbeta"
+"Counter-Strike Source"		=> "232330",
+"Half-Life 2 Deathmatch" 	=> "232370",
+"Team Fortress 2" 		=> "232250",
+"Day of Defeat Source" 		=> "232290"
+#"Left 4 Dead 2" 			=> "222860",
 );
 
 
@@ -90,11 +89,11 @@ sub update_game
 		# No installation found
 		if ($LINUX)
 		{
-			# Download the hlds updater tool and run it
-			system("wget http://www.steampowered.com/download/hldsupdatetool.bin");
-			system("chmod +x hldsupdatetool.bin");
-			system("./hldsupdatetool.bin");
-			system("./steam");
+			# Download the SteamCMD tool and run it
+			system("wget http://media.steampowered.com/client/steamcmd_linux.tar.gz");
+			system(tar -xvzf steamcmd_linux.tar.gz)
+			system("chmod +x steamcmd.sh");
+			system("./steamcmd.sh");
 		}
 		else
 		{

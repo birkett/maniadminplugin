@@ -52,12 +52,48 @@ const int	gametypes_min_version = 3;
 #define COMMON_CORE "1.2.22.15"
 #define COMMON_VERSION "Mani Admin Plugin 2013 V" COMMON_CORE
 
-#ifdef GAME_ORANGE
+#ifdef GAME_CSGO
 #ifdef SOURCEMM
-#define PLUGIN_VERSION COMMON_VERSION " SMM Orange, www.mani-admin-plugin.com"
+#define PLUGIN_VERSION COMMON_VERSION " SMM CS:GO, www.mani-admin-plugin.com"
 #define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
 #else
-#define PLUGIN_VERSION COMMON_VERSION " VSP Orange, www.mani-admin-plugin.com"
+#define PLUGIN_VERSION COMMON_VERSION " VSP CS:GO, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
+#endif
+
+#elif defined (GAME_CSS)
+#ifdef SOURCEMM
+#define PLUGIN_VERSION COMMON_VERSION " SMM CS:S, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
+#else
+#define PLUGIN_VERSION COMMON_VERSION " VSP CS:S, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
+#endif
+
+#elif defined (GAME_DODS)
+#ifdef SOURCEMM
+#define PLUGIN_VERSION COMMON_VERSION " SMM DOD:S, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
+#else
+#define PLUGIN_VERSION COMMON_VERSION " VSP DOD:S, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
+#endif
+
+#elif defined (GAME_HL2DM)
+#ifdef SOURCEMM
+#define PLUGIN_VERSION COMMON_VERSION " SMM HL2:DM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
+#else
+#define PLUGIN_VERSION COMMON_VERSION " VSP HL2:DM, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
+#endif
+
+#elif defined (GAME_TF2)
+#ifdef SOURCEMM
+#define PLUGIN_VERSION COMMON_VERSION " SMM TF2, www.mani-admin-plugin.com"
+#define PLUGIN_CORE_VERSION COMMON_CORE " SMM"
+#else
+#define PLUGIN_VERSION COMMON_VERSION " VSP TF2, www.mani-admin-plugin.com"
 #define PLUGIN_CORE_VERSION COMMON_CORE " VSP"
 #endif
 
