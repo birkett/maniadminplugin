@@ -196,8 +196,8 @@ then
 	export ORANGE="-DGAME_ORANGE"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
-	export TIER0_SO="libtier0.so"
-	export VSTDLIB_SO="libvstdlib.so"
+	export TIER0_SO="libtier0_srv.so"
+	export VSTDLIB_SO="libvstdlib_srv.so"
 
 elif [ "$ORANGE_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "FALSE" ]
 then
@@ -226,8 +226,8 @@ then
 	export ORANGE="-DGAME_ORANGE"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
-	export TIER0_SO="libtier0.so"
-	export VSTDLIB_SO="libvstdlib.so"
+	export TIER0_SO="libtier0_srv.so"
+	export VSTDLIB_SO="libvstdlib_srv.so"
 
 elif [ "$CSS_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then
@@ -257,8 +257,8 @@ then
 	export ORANGE="-DGAME_ORANGE -DGAME_CSS"
 	export EXTRA_FILES_1="mani_callback_valve.cpp mani_sourcehook.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
-	export TIER0_SO="libtier0.so"
-	export VSTDLIB_SO="libvstdlib.so"
+	export TIER0_SO="libtier0_srv.so"
+	export VSTDLIB_SO="libvstdlib_srv.so"
 
 elif [ "$CSS_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "FALSE" ]
 then
@@ -287,8 +287,8 @@ then
 	export ORANGE="-DGAME_ORANGE -DGAME_CSS"
 	export EXTRA_FILES_1="mani_callback_sourcemm.cpp asm/asm.c Knight/KeCodeAllocator.cpp"
 	export EXTRA_LIBS="$HL2SDK_SRC_DIR/lib/linux/tier1_i486.a $HL2SDK_SRC_DIR/lib/linux/mathlib_i486.a"
-	export TIER0_SO="libtier0.so"
-	export VSTDLIB_SO="libvstdlib.so"
+	export TIER0_SO="libtier0_srv.so"
+	export VSTDLIB_SO="libvstdlib_srv.so"
 
 elif [ "$CSGO_BUILD" = "TRUE" ] && [ "$VSP_BUILD" = "TRUE" ]
 then

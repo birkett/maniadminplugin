@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2012 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2013 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -136,8 +136,8 @@ void GetLinuxBins ( char *game, char *engine ) {
 	Q_snprintf ( game, 256, "./%s/bin/server_i486.so", gamedir );
 
 #else
-	Q_strncpy ( engine, "./bin/engine.so", 256 );
-	Q_snprintf ( game, 256, "./%s/bin/server.so", gamedir );
+	Q_strncpy ( engine, "./bin/engine_srv.so", 256 );
+	Q_snprintf ( game, 256, "./%s/bin/server_srv.so", gamedir );
 #endif
 }
 #endif
