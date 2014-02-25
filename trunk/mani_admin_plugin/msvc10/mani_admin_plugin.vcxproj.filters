@@ -19,14 +19,20 @@
     <Filter Include="asm">
       <UniqueIdentifier>{13f6a45c-5619-464a-829f-f91f7d17dd25}</UniqueIdentifier>
     </Filter>
-    <Filter Include="OB SDK">
-      <UniqueIdentifier>{b7f42acf-9c7b-4fe5-865b-89c0249c793d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="CSS SDK">
       <UniqueIdentifier>{0d24595b-d658-4405-a391-51754c5e551c}</UniqueIdentifier>
     </Filter>
     <Filter Include="CSGO SDK">
       <UniqueIdentifier>{39de6f98-14e4-4810-91f5-1dc1080ff307}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TF2 SDK">
+      <UniqueIdentifier>{b7f42acf-9c7b-4fe5-865b-89c0249c793d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DODS SDK">
+      <UniqueIdentifier>{d77076ad-6cb3-4371-b2e3-0eeed9356cc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HL2DM SDK">
+      <UniqueIdentifier>{a4edb965-39d5-4184-81e8-aafafb6fe854}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -294,15 +300,6 @@
     <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookidman.cpp">
       <Filter>MMSource OB</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\sdks\ob\tier1\bitbuf.cpp">
-      <Filter>OB SDK</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\ob\public\networkvar.cpp">
-      <Filter>OB SDK</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\sdks\ob\public\tier0\memoverride.cpp">
-      <Filter>OB SDK</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sdks\csgo\tier1\bitbuf.cpp">
       <Filter>CSGO SDK</Filter>
     </ClCompile>
@@ -332,6 +329,33 @@
     </ClCompile>
     <ClCompile Include="..\..\sdks\csgo\public\engine\protobuf\netmessages.pb.cc">
       <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\tf2\tier1\bitbuf.cpp">
+      <Filter>TF2 SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\tf2\public\tier0\memoverride.cpp">
+      <Filter>TF2 SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\tf2\public\networkvar.cpp">
+      <Filter>TF2 SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\dods\tier1\bitbuf.cpp">
+      <Filter>DODS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\dods\public\tier0\memoverride.cpp">
+      <Filter>DODS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\dods\public\networkvar.cpp">
+      <Filter>DODS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\hl2dm\tier1\bitbuf.cpp">
+      <Filter>HL2DM SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\hl2dm\public\tier0\memoverride.cpp">
+      <Filter>HL2DM SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\hl2dm\public\networkvar.cpp">
+      <Filter>HL2DM SDK</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

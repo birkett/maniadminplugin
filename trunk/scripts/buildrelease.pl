@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Creates a build release of either Orange or Legacy
+# Creates a build release of CSGO, CSS, DOD:S, HL2:DM or TF2
 use File::Copy;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use Archive::Zip;   # imports
@@ -14,16 +14,16 @@ sub recursedir($$);
 $BASE_FOLDER=dirname(rel2abs($0)) . "/..";
 $RELEASE_BASE=$BASE_FOLDER . "/public_build";
 
-print "Is this an (O)range build, (C)SS build, or CS:(G)O build? ";
+print "Is this an CS:(G)O build, (C)SS build, (D)OD:S build, (H)L2:DM build or (T)F2 build? ";
 $question_response = <>;
 chomp($question_response);
 
-if ($question_response eq "o" || $question_response eq "O")
+if ($question_response eq "g" || $question_response eq "G")
 {
-	print "Orange Mode\n";
-	$ORANGE="TRUE";
-	$BINARY_LOC="$RELEASE_BASE/orange_bin";
-	$EXTRA_FILES="$RELEASE_BASE/game_specific/ob";
+	print "CSGO Mode\n";
+	$CSGO="TRUE";
+	$BINARY_LOC="$RELEASE_BASE/csgo_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/csgo";
 }
 elsif ($question_response eq "c" || $question_response eq "C")
 {
@@ -32,12 +32,26 @@ elsif ($question_response eq "c" || $question_response eq "C")
 	$BINARY_LOC="$RELEASE_BASE/css_bin";
 	$EXTRA_FILES="$RELEASE_BASE/game_specific/css";
 }
-elsif ($question_response eq "g" || $question_response eq "G")
+elsif ($question_response eq "d" || $question_response eq "D")
 {
-	print "CSGO Mode\n";
-	$CSGO="TRUE";
-	$BINARY_LOC="$RELEASE_BASE/csgo_bin";
-	$EXTRA_FILES="$RELEASE_BASE/game_specific/csgo";
+	print "DODS Mode\n";
+	$DODS="TRUE";
+	$BINARY_LOC="$RELEASE_BASE/dods_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/dods";
+}
+elsif ($question_response eq "h" || $question_response eq "H")
+{
+	print "HL2DM Mode\n";
+	$DODS="TRUE";
+	$BINARY_LOC="$RELEASE_BASE/hl2dm_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/hl2dm";
+}
+elsif ($question_response eq "t" || $question_response eq "T")
+{
+	print "TF2 Mode\n";
+	$DODS="TRUE";
+	$BINARY_LOC="$RELEASE_BASE/tf2_bin";
+	$EXTRA_FILES="$RELEASE_BASE/game_specific/tf2";
 }
 else
 {
@@ -45,24 +59,34 @@ else
 	exit;
 }
 
-print "What is the version, i.e v1_2_22_13? ";
+print "What is the version, i.e v1_2_22_15? ";
 $question_response = <>;
 chomp($question_response);
 
-if ($ORANGE)
+if ($CSGO)
 {
-	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_orange.zip";
-	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_orange_pdb.zip";
+	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_csgo.zip";
+	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_csgo_pdb.zip";
 }
 elsif ($CSS)
 {
 	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_css.zip";
 	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_css_pdb.zip";
 }
-elsif ($CSGO)
+elsif ($DODS)
 {
-	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_csgo.zip";
-	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_csgo_pdb.zip";
+	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_dods.zip";
+	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_dods_pdb.zip";
+}
+elsif ($HL2DM)
+{
+	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_hl2dm.zip";
+	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_hl2dm_pdb.zip";
+}
+elsif ($TF2)
+{
+	$FINAL_FILE=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_tf2.zip";
+	$FINAL_FILE_PDB=$RELEASE_BASE . "/release_zips/mani_admin_plugin_" . $question_response . "_tf2_pdb.zip";
 }
 
 # Remove any temporary files

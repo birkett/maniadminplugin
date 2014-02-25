@@ -33,11 +33,9 @@
 #include "serverplugin.h"
 #include "gamedll.h"
 #include "utility.h"
-#include "valve_commandline.h"
-
-#undef GetCommandLine
-
-typedef ICommandLine *(*GetCommandLine)();
+#if defined __APPLE__
+#include <crt_externs.h>
+#endif
 
 static HMODULE mm_library = NULL;
 static char mm_fatal_logfile[PLATFORM_MAX_PATH] = "metamod-fatal.log";
@@ -81,7 +79,12 @@ static const char *backend_names[] =
 	"2.l4d2",
 	"2.swarm",
 	"2.portal2",
-	"2.csgo"
+	"2.csgo",
+	"2.dota",
+	"2.hl2dm",
+	"2.dods",	
+	"2.tf2",
+	"2.nd",
 };
 
 #if defined _WIN32
@@ -185,92 +188,91 @@ mm_GetProcAddress(const char *name)
 	return mm_GetLibAddress(mm_library, name);
 }
 
-#if defined _WIN32
-#define TIER0_NAME			"bin\\tier0.dll"
-#define VSTDLIB_NAME		"bin\\vstdlib.dll"
-#define STEAM_API_NAME		"bin\\steam_api.dll"
-#elif defined __APPLE__
-#define TIER0_NAME			"bin/libtier0.dylib"
-#define VSTDLIB_NAME		"bin/libvstdlib.dylib"
-#define STEAM_API_NAME		"bin/libsteam_api.dylib"
-#elif defined __linux__
-#define TIER0_NAME			"bin/" LIB_PREFIX "tier0" LIB_SUFFIX
-#define VSTDLIB_NAME		"bin/" LIB_PREFIX "vstdlib" LIB_SUFFIX
-#define STEAM_API_NAME		"bin/" LIB_PREFIX "steam_api" LIB_SUFFIX
-#endif
-
-const char *
-mm_GetGameName()
+bool
+mm_GetGameName(char *buffer, size_t size)
 {
-	void *lib;
-	char error[255];
-	GetCommandLine valve_cmdline;
-	char lib_path[PLATFORM_MAX_PATH];
-	const char *game_name;
+	buffer[0] = '\0';
 
-	if (!mm_ResolvePath(TIER0_NAME, lib_path, sizeof(lib_path)))
+#if defined _WIN32
+	static char game[128];
+
+	LPWSTR pCmdLine = GetCommandLineW();
+	int argc;
+	LPWSTR *wargv = CommandLineToArgvW(pCmdLine, &argc);
+	for (int i = 0; i < argc; ++i)
 	{
-		mm_LogFatal("Could not find path for: " TIER0_NAME);
-		return NULL;
+		if (wcscmp(wargv[i], L"-game") != 0)
+			continue;
+
+		if (++i >= argc)
+			break;
+
+		wcstombs(buffer, wargv[i], size);
+		buffer[size-1] = '\0';
+		break;
 	}
 
-	if ((lib = mm_LoadLibrary(lib_path, error, sizeof(error))) == NULL)
+	LocalFree(wargv);
+
+	return buffer[0] != 0;
+#elif defined __APPLE__
+	int argc = *_NSGetArgc();
+	char **argv = *_NSGetArgv();
+	for (int i = 0; i < argc; ++i)
 	{
-		mm_LogFatal("Could not load %s: %s", lib_path, error);
-		return NULL;
+		if (strcmp(argv[i], "-game") != 0)
+			continue;
+
+		if (++i >= argc)
+			break;
+
+		strncpy(buffer, argv[i], size);
+		buffer[size-1] = '\0';
+		break;
 	}
 
-	valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine_Tier0");
+	return buffer[0] != 0;
+#elif defined __linux__
+	FILE *pFile = fopen("/proc/self/cmdline", "rb");
+	if (!pFile)
+		return false;
 
-	/* '_Tier0' dropped on Alien Swarm version */
-	if (valve_cmdline == NULL)
-	{
-		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
-	}
+	char *arg = NULL;
+	size_t argsize = 0;
+	bool bNextIsGame = false;
 
-	if (valve_cmdline == NULL)
+	while (getdelim(&arg, &argsize, 0, pFile) != -1)
 	{
-		/* We probably have a Ship engine. */
-		mm_UnloadLibrary(lib);
-		if (!mm_ResolvePath(VSTDLIB_NAME, lib_path, sizeof(lib_path)))
+		if (bNextIsGame)
 		{
-			mm_LogFatal("Could not find path for: " VSTDLIB_NAME);
-			return NULL;
+			strncpy(buffer, arg, size);
+			buffer[size-1] = '\0';
+			break;
 		}
 
-		if ((lib = mm_LoadLibrary(lib_path, error, sizeof(error))) == NULL)
+		if (strcmp(arg, "-game") == 0)
 		{
-			mm_LogFatal("Could not load %s: %s", lib_path, error);
-			return NULL;
+			bNextIsGame = true;
 		}
-
-		valve_cmdline = (GetCommandLine)mm_GetLibAddress(lib, "CommandLine");
 	}
 
-	if (valve_cmdline == NULL)
-	{
-		mm_LogFatal("Could not locate any command line functionality");
-		return NULL;
-	}
+	free(arg);
+	fclose(pFile);
 
-	game_name = valve_cmdline()->ParmValue("-game");
-
-	mm_UnloadLibrary(lib);
-
-	/* This probably means that the game directory is actually the current directory */
-	if (!game_name)
-	{
-		game_name = ".";
-	}
-
-	return game_name;
+	return buffer[0] != 0;
+#else
+#error unsupported platform
+#endif
 }
 
 MetamodBackend
 mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 {
-	/* Check for L4D */
-	if (engineFactory("VEngineServer023", NULL) != NULL)
+	if (engineFactory("VEngineServer024", NULL) != NULL)
+	{
+		return MMBackend_DOTA;
+	}
+	else if (engineFactory("VEngineServer023", NULL) != NULL)
 	{
 		return MMBackend_CSGO;
 	}
@@ -287,7 +289,14 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 		}
 		else if (engineFactory("VPrecacheSystem001", NULL) != NULL)
 		{
-			return MMBackend_Left4Dead2;
+			if (strcmp(game_name, "nucleardawn") == 0)
+			{
+				return MMBackend_NuclearDawn;
+			}
+			else
+			{
+				return MMBackend_Left4Dead2;
+			}
 		}
 		return MMBackend_Left4Dead;
 	}
@@ -318,9 +327,17 @@ mm_DetermineBackend(QueryValveInterface engineFactory, const char *game_name)
 				{
 					return MMBackend_CSS;
 				}
-				else
+				else if (strcmp(game_name, "tf") == 0)
 				{
-					return MMBackend_Episode2Valve;
+					return MMBackend_TF2;
+				}
+				else if (strcmp(game_name, "dod") == 0)
+				{
+					return MMBackend_DODS;
+				}
+				else if (strcmp(game_name, "hl2mp") == 0)
+				{
+					return MMBackend_HL2DM;
 				}
 			}
 		}
