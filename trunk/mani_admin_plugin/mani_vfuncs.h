@@ -36,7 +36,8 @@ extern CBaseEntity *EdictToCBE(edict_t *pEdict);
 extern const QAngle &CBaseEntity_EyeAngles(CBaseEntity *pThisPtr);
 #if defined ( GAME_CSGO )
 extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool UnkownBoolean = true);
-extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0, bool UnkownBoolean = true);
+class CEconItemView;
+extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0, CEconItemView *item = NULL, bool UnkownBoolean = true);
 #else
 extern void CBaseEntity_Teleport(CBaseEntity *pThisPtr, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity);
 extern CBaseEntity *CBasePlayer_GiveNamedItem(CBasePlayer *pThisPtr, const char *szName, int iSubType = 0);

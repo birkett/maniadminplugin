@@ -263,7 +263,7 @@ VFUNC_CALL3_void(MANI_VFUNC_WEAPON_DROP, CBasePlayer, CBasePlayer_WeaponDrop, CB
 
 // virtual CBaseEntity	*GiveNamedItem( const char *szName, int iSubType = 0 );
 #if defined ( GAME_CSGO )
-VFUNC_CALL3(MANI_VFUNC_GIVE_ITEM, CBaseEntity *, CBasePlayer, CBasePlayer_GiveNamedItem, const char *, int, bool)
+VFUNC_CALL4(MANI_VFUNC_GIVE_ITEM, CBaseEntity *, CBasePlayer, CBasePlayer_GiveNamedItem, const char *, int, CEconItemView *, bool)
 #else
 VFUNC_CALL2(MANI_VFUNC_GIVE_ITEM, CBaseEntity *, CBasePlayer, CBasePlayer_GiveNamedItem, const char *, int)
 #endif
