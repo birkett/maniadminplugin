@@ -143,7 +143,7 @@ void		ManiWarmupTimer::LevelInit(void)
 		if(mp_warmuptime)
 		{
 			MMsg("Setting warmup timer value\n");
-			mp_warmup_timer.SetValue(mp_warmuptime->GetInt());
+			mani_warmup_timer.SetValue(mp_warmuptime->GetInt());
 		}
 #endif
 		check_timer = true;
