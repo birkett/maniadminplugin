@@ -1097,7 +1097,9 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 
 	tp_beam_index = engine->PrecacheModel( "sprites/tp_beam001.vmt", true );
 	plasmabeam_index = engine->PrecacheModel( "sprites/plasmabeam.vmt", true );
-	lgtning_index = engine->PrecacheModel( "sprites/lgtning.vmt", true );
+	if(filesystem->FileExists("sprites/lgtning.vmt")) { lgtning_index = engine->PrecacheModel( "sprites/lgtning.vmt");}
+	else lgtning_index = engine->PrecacheModel( "sprites/glow.vmt", true );
+
 	explosion_index = engine->PrecacheModel( "sprites/sprite_fire01.vmt", true );
 	orangelight_index = engine->PrecacheModel( "sprites/orangelight1.vmt", true );
 	bluelight_index = engine->PrecacheModel( "sprites/bluelight1.vmt", true );

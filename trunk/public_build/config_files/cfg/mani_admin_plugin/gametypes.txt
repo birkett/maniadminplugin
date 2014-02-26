@@ -1027,13 +1027,10 @@
 			"weapon_get_name"		"321"
 		}
 		
-		"vfuncs_windows"
-
-		{
-
+		"vfuncs_windows"
+		{
 			"commit_suicide"		"439"
-			"weapon_get_name"		"316"
-
+			"weapon_get_name"		"316"
 		}	
 
 		"sigs"
@@ -1172,13 +1169,10 @@
 			"weapon_get_name"		"321"
 		}
 		
-		"vfuncs_windows"
-
-		{
-
+		"vfuncs_windows"
+		{
 			"commit_suicide"		"439"
-			"weapon_get_name"		"316"
-
+			"weapon_get_name"		"316"
 		}
 
 		"sigs"
@@ -1312,13 +1306,10 @@
 			"weapon_get_name"		"321"
 		}
 		
-		"vfuncs_windows"
-
-		{
-
+		"vfuncs_windows"
+		{
 			"commit_suicide"		"439"
-			"weapon_get_name"		"316"
-
+			"weapon_get_name"		"316"
 		}
 
 		"sigs"
