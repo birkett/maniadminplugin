@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 24.02.2014
+// 05.04.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -146,7 +146,7 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorIP13CNetMessagePBILi16E26CCLCMsg_SplitPlayerConnectLi0ELb1EE10CUtlMemoryIS8_iEEb19CrossPlayPlatform_t"
-				"sigscan"		"55 8B EC 83 E4 F8 83 EC 24 53 56 57 8B F9"
+				"sigscan"		"55 8B EC 83 E4 F8 83 EC 2C 53 56 57 8B F9 C7 44 24 20 00 00 00 00"
 				"win_type"		"Direct"		
 			}
 			
@@ -221,7 +221,7 @@
 			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"55 8B EC 51 0F 28 C1 F3 0F 10 0D ? ? ? ? 0F 2F C1 F3 0F 11 4D FC 77 ? 0F 28 C8 F3 0F 11 4D FC F3 0F 10 81 DC 03 00 00"
+				"sigscan"		"55 8B EC 51 53 8B 5D ? 8B C1 56 57 89 45 FC 33 FF"
 				"win_type"		"Direct"		
 			}
 		}
@@ -451,7 +451,7 @@
 			"CGlobalEntityList_FindEntityByClassname"
 			{
 				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
-				"sigscan"		"55 8B EC 53 56 8B F1 8B 4D 08 57 85 C9 74 ? 8B 01 8B 50 08 FF D2"
+				"sigscan"		"55 8B EC 81 EC 0C 08 00 00 53"
 				"win_type"		"Direct"		
 			}
 			
