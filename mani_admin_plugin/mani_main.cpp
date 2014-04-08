@@ -1095,20 +1095,48 @@ void CAdminPlugin::LevelInit( char const *pMapName )
 	esounds->PrecacheSound(menu_select_sound, true);
 	esounds->PrecacheSound(menu_select_exit_sound, true);
 
-	if(filesystem->FileExists("sprites/tp_beam001.vmt")) { tp_beam_index = engine->PrecacheModel( "sprites/tp_beam001.vmt", true);}
+	if(filesystem->FileExists("sprites/tp_beam001.vmt"))
+	{
+		tp_beam_index = engine->PrecacheModel( "sprites/tp_beam001.vmt", true);
+	}
 	else tp_beam_index = engine->PrecacheModel( "sprites/light_glow04.vmt", true );
-	if(filesystem->FileExists("sprites/plasmabeam.vmt")) { plasmabeam_index = engine->PrecacheModel( "sprites/plasmabeam.vmt", true);}
+	
+	if(filesystem->FileExists("sprites/plasmabeam.vmt"))
+	{
+		plasmabeam_index = engine->PrecacheModel( "sprites/plasmabeam.vmt", true);
+	}
 	else plasmabeam_index = engine->PrecacheModel( "sprites/laserbeam.vmt", true );
-	if(filesystem->FileExists("sprites/lgtning.vmt")) { lgtning_index = engine->PrecacheModel( "sprites/lgtning.vmt", true);}
+	
+	if(filesystem->FileExists("sprites/lgtning.vmt"))
+	{
+		lgtning_index = engine->PrecacheModel( "sprites/lgtning.vmt", true);
+	}
 	else lgtning_index = engine->PrecacheModel( "sprites/glow.vmt", true );
-	if(filesystem->FileExists("sprites/sprite_fire01.vmt")) { explosion_index = engine->PrecacheModel( "sprites/sprite_fire01.vmt", true);}
+	
+	if(filesystem->FileExists("sprites/sprite_fire01.vmt"))
+	{
+		explosion_index = engine->PrecacheModel( "sprites/sprite_fire01.vmt", true);
+	}
 	else explosion_index = engine->PrecacheModel( "sprites/glow07.vmt", true );
-	if(filesystem->FileExists("sprites/orangelight1.vmt")) { orangelight_index = engine->PrecacheModel( "sprites/orangelight1.vmt", true);}
+	
+	if(filesystem->FileExists("sprites/orangelight1.vmt"))
+	{
+		orangelight_index = engine->PrecacheModel( "sprites/orangelight1.vmt", true);
+	}
 	else orangelight_index = engine->PrecacheModel( "sprites/glow07.vmt", true );
-	if(filesystem->FileExists("sprites/bluelight1.vmt")) { bluelight_index = engine->PrecacheModel( "sprites/bluelight1.vmt", true);}
+	
+	if(filesystem->FileExists("sprites/bluelight1.vmt"))
+	{
+		bluelight_index = engine->PrecacheModel( "sprites/bluelight1.vmt", true);
+	}
 	else bluelight_index = engine->PrecacheModel( "sprites/physbeam.vmt", true );
+	
 	purplelaser_index = engine->PrecacheModel( "sprites/purplelaser1.vmt", true );
-	if(filesystem->FileExists("sprites/blueglow2.vmt")) { spray_glow_index = engine->PrecacheModel( "sprites/blueglow2.vmt", true);}
+
+	if(filesystem->FileExists("sprites/blueglow2.vmt"))
+	{
+		spray_glow_index = engine->PrecacheModel( "sprites/blueglow2.vmt", true);
+	}
 	else spray_glow_index = engine->PrecacheModel( "sprites/blueflare1.vmt", true );
 
 	if (!first_map_loaded)
