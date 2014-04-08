@@ -154,7 +154,9 @@ void	ManiSMMHooks::HookVFuncs(void)
 	if (effects && gpManiGameType->GetAdvancedEffectsAllowed())
 	{
 		//MMsg("Hooking decals\n");
+		#if !defined (GAME_CSGO)
 		SH_ADD_HOOK_MEMFUNC(ITempEntsSystem, PlayerDecal, temp_ents, &g_ManiSMMHooks, &ManiSMMHooks::PlayerDecal, false);
+		#endif
 	}
 
 	int offset = gpManiGameType->GetVFuncIndex(MANI_VFUNC_USER_CMDS);
