@@ -75,7 +75,11 @@ void ManiPlayerKick::KickPlayer ( int player_index, const char *reason ) {
 		if ( !reason || reason[0] == 0 )
 			pClient->Disconnect("Kicked by Console");
 		else
+		#if defined ( GAME_CSGO )
+			pClient->Disconnect(reason);
+		#else
 			pClient->Disconnect("%s", reason);
+		#endif
 	}
 }
 
