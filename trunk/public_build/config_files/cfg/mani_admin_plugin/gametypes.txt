@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 05.04.2014
+// 20.04.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -87,7 +87,7 @@
 		"advanced_effects"
 		{
 			"enable_linux"	"1"	// Allow linux advanced effects
-			"enable_win"	"1"	// Allow windows advanced effects
+			"enable_win"	"0"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
 			"code_Offset"	"94"	// Windows code index offset (Lance VOrgin)
 		}
@@ -351,7 +351,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -617,7 +617,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -804,7 +804,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -987,7 +987,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"103"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"props"
