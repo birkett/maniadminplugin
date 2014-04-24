@@ -118,7 +118,7 @@
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"224"
-			"weapon_drop"		"288"
+			"weapon_drop"		"283"
 			"user_cmds"		"464"
 			"set_observer_target"		"417"
 			"weapon_canuse"		"280"
