@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 20.04.2014
+// 24.04.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -109,36 +109,37 @@
 
 		"vfuncs"
 		{
-			"eye_angles"		"129"
+			"eye_angles"		"130"
 			"set_model_index"		"9"
-			"teleport"		"113"
-			"eye_position"		"128"
-			"give_item"		"444"
+			"teleport"		"114"
+			"eye_position"		"129"
+			"give_item"		"445"
 			"my_combat_character"		"77"
-			"get_velocity"		"138"
+			"get_velocity"		"139"
 			"map_desc"		"12"
-			"ignite"		"223"
-			"weapon_drop"		"282"
-			"user_cmds"		"463"
-			"set_observer_target"		"416"
-			"weapon_canuse"		"279"
-			"weapon_switch"		"283"
-			"remove_player_item"		"290"
-			"get_weapon_slot"		"287"
-			"give_ammo"		"273"
-			"commit_suicide"		"493"
-			"get_primary_ammo_type"		"371"
-			"get_secondary_ammo_type"		"372"
-			"weapon_get_name"		"363"
+			"ignite"		"224"
+			"weapon_drop"		"288"
+			"user_cmds"		"464"
+			"set_observer_target"		"417"
+			"weapon_canuse"		"280"
+			"weapon_switch"		"284"
+			"remove_player_item"		"291"
+			"get_weapon_slot"		"288"
+			"give_ammo"		"274"
+			"commit_suicide"		"494"
+			"get_primary_ammo_type"		"372"
+			"get_secondary_ammo_type"		"373"
+			"weapon_get_name"		"364"
 		}
 		// Those offsets have to be +1.
 		// The code still subtracts 1 when fetching them on windows :D
 		"vfuncs_windows"
 		{
-			"commit_suicide"		"494"
-			"get_primary_ammo_type"		"366"
-			"get_secondary_ammo_type"		"367"
-			"weapon_get_name"		"358"
+			"give_item"		"444"
+			"commit_suicide"		"495"
+			"get_primary_ammo_type"		"367"
+			"get_secondary_ammo_type"		"368"
+			"weapon_get_name"		"359"
 		}
 
 		"sigs"
@@ -200,7 +201,7 @@
 			"CCSPlayer_SwitchTeam"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer10SwitchTeamEi"
-				"sigscan"		"55 8B EC 83 EC 0C 56 8B 75 ? 57 8B F9 85 F6 0F 88 ? ? ? ? 3B 35 ? ? ? ? 0F 8D ? ? ? ? A1 ? ? ? ? 83"
+				"sigscan"		"55 8B EC 83 EC 10 53 56 8B 75 08 57 8B"
 				"win_type"		"Direct"		
 			}
 			
