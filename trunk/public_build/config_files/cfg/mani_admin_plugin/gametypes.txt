@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 24.04.2014
+// 16.05.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -222,7 +222,7 @@
 			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"55 8B EC 51 53 8B 5D ? 8B C1 56 57 89 45 FC 33 FF"
+				"sigscan"		"55 8B EC 51 53 8B 5D 08 8B C1 56 57 89 45 FC 33 FF 8D B0 20 07 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -352,7 +352,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -405,14 +405,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 			
@@ -426,7 +426,7 @@
 			"UTIL_Remove"
 			{
 				"linux_symbol"	"_Z11UTIL_RemoveP11CBaseEntity"
-				"sigscan"		"55 8B EC 8B 45 08 85 C0 74 ? 83 C0 0C ? ? 7D FF FF FF"
+				"sigscan"		"55 8B EC 56 57 8B 7D 08 8B F1 57 E8 ? ? ? ? 8B 0D ? ? ? ? 57 56"
 				"win_type"		"Direct"
 			}
 			
@@ -442,7 +442,7 @@
 			"CGameRules_gGameRules"
 			{
 				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
-				"sigscan"		"55 8B EC 83 EC 34 53 56 8B F1 57 8D 4D CC"
+				"sigscan"		"55 8B EC 8B 0D ? ? ? ? 85 C9 74 07"
 				"win_type"		"Indirect"
 				"linux_type"	"Indirect"
 				"win_index"		"109"
@@ -452,7 +452,7 @@
 			"CGlobalEntityList_FindEntityByClassname"
 			{
 				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
-				"sigscan"		"55 8B EC 81 EC 0C 08 00 00 53"
+				"sigscan"		"55 8B EC 53 56 57 8B F9 8B 4D 08 85 C9 74 15"
 				"win_type"		"Direct"		
 			}
 			
@@ -466,7 +466,7 @@
 			"CCSPlayer_SetModelFromClass"
 			{
 				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
-				"sigscan"		"55 8B EC 83 EC ? ? 4D ? 8B 4D ? E8 ? ? ? ? 83 F8"
+				"sigscan"		"55 8B EC 83 EC 34 89 4D FC 8B 4D FC E8 ? ? ? ? 83 F8 02"
 				"win_type"		"Direct"		
 			}
 			
@@ -477,7 +477,7 @@
 				"win_type"		"Direct"		
 			}
 			
-			"CBaseCombatCharacter_Weapon_OwnsThisType"
+		//	"CBaseCombatCharacter_Weapon_OwnsThisType"
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
 				"sigscan"		"55 8B EC 51 53 8B 5D 08 56 57 89 4D FC 33 FF"
@@ -618,7 +618,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -668,14 +668,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -805,7 +805,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -856,14 +856,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -988,7 +988,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
 		}
 		
 		"props"
@@ -1039,14 +1039,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1181,14 +1181,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1318,14 +1318,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 		}
@@ -1432,7 +1432,7 @@
 			"enable_linux"	"1"	// Allow linux advanced effects
 			"enable_win"	"1"	// Allow windows advanced effects
 			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
-			"code_Offset"	"105"	// Windows code index offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
 		}
 
 		"props"
@@ -1486,14 +1486,14 @@
 			"CBaseServer_ConnectClient"
 			{
 				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
-				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
 				"win_type"		"Direct"		
 			}
 			
 			"NET_SendPacket"
 			{
 				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
-				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
 				"win_type"		"Direct"		
 			}
 		}		
