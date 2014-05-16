@@ -222,7 +222,7 @@
 			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"55 8B EC 51 53 8B 5D 08 8B C1 56 57 89 45 FC 33 FF 8D B0 20 07 00 00"
+				"sigscan"		"55 8B EC 51 53 8B 5D ? 8B C1 56 57 89 45 FC 33 FF"
 				"win_type"		"Direct"		
 			}
 		}
@@ -477,10 +477,10 @@
 				"win_type"		"Direct"		
 			}
 			
-		//	"CBaseCombatCharacter_Weapon_OwnsThisType"
+			"CBaseCombatCharacter_Weapon_OwnsThisType"
 			{
 				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
-				"sigscan"		"55 8B EC 51 53 8B 5D 08 56 57 89 4D FC 33 FF"
+				"sigscan"		"55 8B EC 51 53 8B 5D 08 8B C1 56 57 89 45 FC 33 FF 8D B0 20 07 00 00"
 				"win_type"		"Direct"		
 			}
 
@@ -1028,10 +1028,13 @@
 			"weapon_get_name"		"321"
 		}
 		
-		"vfuncs_windows"
-		{
+		"vfuncs_windows"
+
+		{
+
 			"commit_suicide"		"439"
-			"weapon_get_name"		"316"
+			"weapon_get_name"		"316"
+
 		}	
 
 		"sigs"
@@ -1170,10 +1173,13 @@
 			"weapon_get_name"		"321"
 		}
 		
-		"vfuncs_windows"
-		{
+		"vfuncs_windows"
+
+		{
+
 			"commit_suicide"		"439"
-			"weapon_get_name"		"316"
+			"weapon_get_name"		"316"
+
 		}
 
 		"sigs"
@@ -1307,10 +1313,13 @@
 			"weapon_get_name"		"321"
 		}
 		
-		"vfuncs_windows"
-		{
+		"vfuncs_windows"
+
+		{
+
 			"commit_suicide"		"439"
-			"weapon_get_name"		"316"
+			"weapon_get_name"		"316"
+
 		}
 
 		"sigs"
