@@ -1995,10 +1995,6 @@
     <ClInclude Include="..\Knight\KePlatform.h" />
     <ClInclude Include="..\Knight\KeStdTypes.h" />
     <ClInclude Include="..\asm\asm.h" />
-    <ClInclude Include="..\resource.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\mani_admin_plugin.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -626,12 +626,8 @@
     <ClInclude Include="..\asm\asm.h">
       <Filter>asm</Filter>
     </ClInclude>
-    <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\mani_delayed_client_command.h">
       <Filter>Plugin Code\Headers</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\mani_admin_plugin.rc" />
   </ItemGroup>
 </Project>
