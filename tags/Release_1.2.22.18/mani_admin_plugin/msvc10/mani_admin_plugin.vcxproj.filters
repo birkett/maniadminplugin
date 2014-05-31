@@ -1,0 +1,637 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Plugin Code">
+      <UniqueIdentifier>{70f1d115-1ab2-4688-9ec4-194a67f21618}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Plugin Code\Source">
+      <UniqueIdentifier>{adf99fc1-06fb-4eb2-a22d-1836f92de3a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Plugin Code\Headers">
+      <UniqueIdentifier>{bde5cfa0-5357-4999-b7fd-6028699ed914}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MMSource OB">
+      <UniqueIdentifier>{f434d33a-3f94-410f-9846-a15bdf4ce9cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Knight">
+      <UniqueIdentifier>{4fe382fa-f26a-4fa8-a98f-2e815250d4f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="asm">
+      <UniqueIdentifier>{13f6a45c-5619-464a-829f-f91f7d17dd25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CSS SDK">
+      <UniqueIdentifier>{0d24595b-d658-4405-a391-51754c5e551c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CSGO SDK">
+      <UniqueIdentifier>{39de6f98-14e4-4810-91f5-1dc1080ff307}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TF2 SDK">
+      <UniqueIdentifier>{b7f42acf-9c7b-4fe5-865b-89c0249c793d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DODS SDK">
+      <UniqueIdentifier>{d77076ad-6cb3-4371-b2e3-0eeed9356cc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HL2DM SDK">
+      <UniqueIdentifier>{a4edb965-39d5-4184-81e8-aafafb6fe854}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\mani_adverts.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_afk.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_anti_rejoin.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_autokickban.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_automap.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_callback_sourcemm.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_callback_valve.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_chattrigger.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_client.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_client_interface.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_client_sql.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_client_util.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_command_control.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_commands.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_convar.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_crontab.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_css_betting.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_css_bounty.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_css_objectives.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_customeffects.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_database.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_detours.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_downloads.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_effects.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_file.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_gametype.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_ghost.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_globals.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_handlebans.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_help.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_hlxinterface.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_keyvalues.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_language.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_linuxutils.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_log_css_stats.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_log_dods_stats.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_main.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_mapadverts.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_maps.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_memory.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_menu.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_messagemode.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_mostdestructive.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_mp_restartgame.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_mutex.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_mysql.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_netidvalid.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_observer_track.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_output.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_panel.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_parser.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_ping.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_player.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_playerkick.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_quake.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_replace.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_reservedslot.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_save_scores.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_sigscan.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_skins.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_sounds.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_sourcehook.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_spawnpoints.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_sprayremove.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_stats.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_team.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_team_join.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_teamkill.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_timers.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_trackuser.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_util.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_vars.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_vfuncs.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_victimstats.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_voice.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_vote.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_warmuptimer.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_weapon.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_winutils.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mrecipientfilter.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Knight\KeCodeAllocator.cpp">
+      <Filter>Knight</Filter>
+    </ClCompile>
+    <ClCompile Include="..\asm\asm.c">
+      <Filter>asm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookmaninfo.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cproto.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_cvfnptr.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_hookmangen.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sourcemm_sdk\core\sourcehook\sourcehook_impl_chookidman.cpp">
+      <Filter>MMSource OB</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\tier1\bitbuf.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\tier0\memoverride.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\networkvar.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\css\public\networkvar.cpp">
+      <Filter>CSS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\css\public\tier0\memoverride.cpp">
+      <Filter>CSS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\css\tier1\bitbuf.cpp">
+      <Filter>CSS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mani_delayed_client_command.cpp">
+      <Filter>Plugin Code\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\game\shared\csgo\protobuf\cstrike15_usermessage_helpers.cpp">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\game\shared\csgo\protobuf\cstrike15_usermessages.pb.cc">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\csgo\public\engine\protobuf\netmessages.pb.cc">
+      <Filter>CSGO SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\tf2\tier1\bitbuf.cpp">
+      <Filter>TF2 SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\tf2\public\tier0\memoverride.cpp">
+      <Filter>TF2 SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\tf2\public\networkvar.cpp">
+      <Filter>TF2 SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\dods\tier1\bitbuf.cpp">
+      <Filter>DODS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\dods\public\tier0\memoverride.cpp">
+      <Filter>DODS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\dods\public\networkvar.cpp">
+      <Filter>DODS SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\hl2dm\tier1\bitbuf.cpp">
+      <Filter>HL2DM SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\hl2dm\public\tier0\memoverride.cpp">
+      <Filter>HL2DM SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sdks\hl2dm\public\networkvar.cpp">
+      <Filter>HL2DM SDK</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\detour_macros.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_adverts.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_afk.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_anti_rejoin.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_autokickban.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_automap.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_callback_sourcemm.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_callback_valve.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_chattrigger.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_client.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_client_flags.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_client_interface.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_client_sql.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_client_util.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_command_control.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_commands.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_convar.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_crontab.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_css_betting.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_css_bounty.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_css_objectives.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_customeffects.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_database.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_detours.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_downloads.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_effects.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_file.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_gametype.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_ghost.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_globals.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_handlebans.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_help.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_hlxinterface.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_keyvalues.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_language.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_linuxutils.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_log_css_stats.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_log_dods_stats.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_main.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_mainclass.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_mapadverts.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_maps.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_memory.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_menu.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_messagemode.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_mostdestructive.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_mp_restartgame.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_mutex.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_mysql.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_netidvalid.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_observer_track.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_output.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_panel.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_parser.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_ping.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_player.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_playerkick.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_quake.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_replace.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_reservedslot.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_save_scores.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_sigscan.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_skins.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_sounds.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_sourcehook.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_spawnpoints.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_sprayremove.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_stats.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_team.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_team_join.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_teamkill.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_timers.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_trackuser.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_util.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_vars.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_vfuncs.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_victimstats.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_voice.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_vote.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_warmuptimer.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_weapon.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mani_winutils.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meta_hooks.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mrecipientfilter.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Knight\KeCodeAllocator.h">
+      <Filter>Knight</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Knight\KeLinking.h">
+      <Filter>Knight</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Knight\KePlatform.h">
+      <Filter>Knight</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Knight\KeStdTypes.h">
+      <Filter>Knight</Filter>
+    </ClInclude>
+    <ClInclude Include="..\asm\asm.h">
+      <Filter>asm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\mani_delayed_client_command.h">
+      <Filter>Plugin Code\Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\mani_admin_plugin.rc" />
+  </ItemGroup>
+</Project>

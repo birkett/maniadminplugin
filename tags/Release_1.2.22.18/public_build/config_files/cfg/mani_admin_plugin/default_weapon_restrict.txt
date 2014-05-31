@@ -1,0 +1,66 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : default_weapon_restrict.txt
+//
+// Last Updated : 2014/02/21
+//
+// Description  : Restrict weapons generally for all maps
+// ***************************************************************************** 
+//
+//
+// If you want a weapon to be restricted remove the '//' from the start
+// of the line of the weapons you want restricted, so they are not commented out.
+
+
+//CSGO & CSS
+// ***************************************************************************** 
+//ak47			// CV-47
+//aug			// Bullpup
+//awp			// Magnum Sniper Rifle
+//m4a1			// Maverick M4A1 Carbine OR M4A4
+//mac10			// Ingram MAC-10
+//p90			// ES C90
+//smokegrenade 		// Smoke Grenade
+//ump45			// KM UMP45
+//xm1014		// Leone YG1265 Auto Shotgun
+
+//CSGO
+// ***************************************************************************** 
+//bizon     		// Izhmash PP-19
+//cz75a			// CZ75 Auto
+//decoy     		// Decoy Grenade
+//g3sg1			// D3/AU-1
+//galilar		// IMI Galil ACE22
+//hkp2000		// Heckler & Koch P2000
+//incgrenade    	// Incendiary grenade
+//m249			// FN M249 PARA
+//m4a1s			// M4A1-S
+//molotov       	// Molotov Cocktail
+//mp7	        	// MP7
+//mp9			// Brügger & Thomet MP9
+//negev			// Negev
+//nova			// Nova
+//p250			// SIG Sauer P250 Compact
+//sawedoff      	// Remington 870
+//scar20		// SCAR-20
+//sg556			// SG 553
+//ssg08			// SSG 08	
+//taser			// Zeus x27
+//tec9          	// Intratec TEC-9
+//usps			// USP-S
+
+//CSS
+// ***************************************************************************** 
+//deagle		// Night Hawk .50C
+//g3sg1			// D3/AU1
+//galil			// IDF Defender
+//m249			// M249
+//m3			// Leone 12 Gauge Super
+//mp5navy		// KM Sub-Machine Gun
+//p228			// 228 Compact
+//scout			// Schmidt Scout	
+//sg550			// Krieg 550 Commando
+//sg552			// Krieg 552
+//tmp			// Schmidt Machine Pistol
+//usp			// KM .45 Tactical

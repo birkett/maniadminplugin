@@ -1,0 +1,21 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//    Filename   : autokick_pname.txt
+//
+//    Last Updated : 2009/11/24
+//
+//    Description  : list of partial name matches that are autokicked
+// *****************************************************************************
+//
+//
+// This file contains the list of partial names matches that
+// are automatically kicked/banned upon joining
+//
+//
+// The first entry is the partial name in quotes
+// The second entry is K for kick or B for ban
+// The third entry is for the amount of time in minutes you want to ban ( 0 = perma )
+//
+// "spek" k
+// "spek" b 60

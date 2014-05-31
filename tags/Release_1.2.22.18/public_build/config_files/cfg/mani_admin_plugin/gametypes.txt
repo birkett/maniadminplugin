@@ -1,0 +1,1648 @@
+// ************************************************
+//
+// Mani Admin Plugin 2014
+//
+// Last Update V1.2.23
+// 16.05.2014
+//
+// This file contains definitions that allow
+// the plugin to handle different mods a bit
+// more elegantly. Under most circumstances 
+// they will not need to be changed unless
+// the source mod author releases an update
+// that requires changes to some of the offsets.
+//
+// We have also taken the hard coded sigs out of
+// the binaries and placed them in this file.  This
+// will allow simple updates of this file to fix
+// issues with updates breaking the binaries.
+//
+// www.mani-admin-plugin.com
+//
+//*************************************************
+
+"gametypes.txt"
+{
+	"version"	"3"
+
+	//
+	// Options for Counter-Strike : Global Offensive mod
+	//
+	// This should match the description given by the 
+	// server console command ma_game
+	//
+
+	"Counter-Strike: Global Offensive"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"41"
+
+		// Team manager entities pattern string
+		"team_manager" 		"cs_team_"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"0"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"94"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"armor"		"CCSPlayer.m_ArmorValue"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"account"	"CCSPlayer.m_iAccount"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+			"move_type"	"CBaseEntity.movetype"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"130"
+			"set_model_index"		"9"
+			"teleport"		"114"
+			"eye_position"		"129"
+			"give_item"		"445"
+			"my_combat_character"		"77"
+			"get_velocity"		"139"
+			"map_desc"		"12"
+			"ignite"		"224"
+			"weapon_drop"		"283"
+			"user_cmds"		"464"
+			"set_observer_target"		"417"
+			"weapon_canuse"		"280"
+			"weapon_switch"		"284"
+			"remove_player_item"		"291"
+			"get_weapon_slot"		"288"
+			"give_ammo"		"274"
+			"commit_suicide"		"494"
+			"get_primary_ammo_type"		"372"
+			"get_secondary_ammo_type"		"373"
+			"weapon_get_name"		"364"
+		}
+		// Those offsets have to be +1.
+		// The code still subtracts 1 when fetching them on windows :D
+		"vfuncs_windows"
+		{
+			"give_item"		"444"
+			"commit_suicide"		"495"
+			"get_primary_ammo_type"		"367"
+			"get_secondary_ammo_type"		"368"
+			"weapon_get_name"		"359"
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorIP13CNetMessagePBILi16E26CCLCMsg_SplitPlayerConnectLi0ELb1EE10CUtlMemoryIS8_iEEb19CrossPlayPlatform_t"
+				"sigscan"		"55 8B EC 83 E4 F8 83 EC 2C 53 56 57 8B F9 C7 44 24 20 00 00 00 00"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writebj"
+				"sigscan"		"55 8B EC 83 E4 F8 8B 45 08 83 EC 40"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_RoundRespawn"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer12RoundRespawnEv"
+				"sigscan"		"55 8B EC 83 EC 08 56 8B F1 8B 0D ? ? ? ? 57 8B 01 FF 50 ? 83"
+				"win_type"		"Direct"		
+			}
+			
+			"UTIL_Remove"
+			{
+				"linux_symbol"	"_Z11UTIL_RemoveP11CBaseEntity"
+				"sigscan"		"55 8B EC 53 8B 5D 08 56 57 8B F9 85 DB 75 49"
+				"win_type"		"Direct"
+			}
+			
+			"CEntList_gEntList"
+			{
+				"linux_symbol"	"g_pEntityList"
+				"sigscan"		"55 8B EC 83 EC 24 53 56 57 8D 45 FF"	
+				"win_type"		"Indirect"
+				"linux_type"		"Indirect"
+				"win_index"		"9"		
+			}
+			
+			"CGameRules_gGameRules"
+			{
+				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
+				"sigscan"		"8B 0D ? ? ? ? 85 C9 74 ? 8B 01 6A 01 FF 50 30 57"
+				"win_type"		"Indirect"
+				"linux_type"	"Indirect"
+				"win_index"		"109"
+				"linux_index"	"6"		
+			}
+			
+			"CGlobalEntityList_FindEntityByClassname"
+			{
+				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
+				"sigscan"		"55 8B EC 83 E4 F8 83 EC 2C 53 56 57 8B F9 80 BF 2D 02 00 00 01"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_SwitchTeam"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer10SwitchTeamEi"
+				"sigscan"		"55 8B EC 83 EC 10 53 56 8B 75 08 57 8B"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_SetModelFromClass" 
+			{
+				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
+				"sigscan"		"55 8B EC 83 EC 08 56 57 8B F9 C7 45 ? ? ? ? ? 8B 87"
+				"win_type"		"Direct"		
+			}
+			
+			"GetFileWeaponInfoFromHandle"
+			{
+				"linux_symbol"	"_Z27GetFileWeaponInfoFromHandlet"
+				"sigscan"	"66 3B 0D ? ? ? ? 72 ? A1"
+				"win_type"		"Direct"		
+			}
+			
+			"CBaseCombatCharacter_Weapon_OwnsThisType" // move to offset?  For l4d games?
+			{
+				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
+				"sigscan"		"55 8B EC 51 53 8B 5D ? 8B C1 56 57 89 45 FC 33 FF"
+				"win_type"		"Direct"		
+			}
+		}
+		
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle terrorist team
+			"terrorist"
+			{
+				// Terrorist team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_terrorist"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"TERRORIST"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"900"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"901"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#T"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_t"
+				"reserved_skin"	"reserved_t"
+				"public_skin"	"public_t"
+			}
+
+			// Handle terrorist team
+			"counter-terrorist"
+			{
+				// CT team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_counterterrorist"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"CT"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"902"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"903"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#CT"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_ct"
+				"reserved_skin"	"reserved_ct"
+				"public_skin"	"public_ct"
+			}				
+		}
+	}
+
+	//
+	// Options for Counter Strike : Source mod
+	//
+	// This should match the description given by the 
+	// server console command ma_game
+	//
+
+	"Counter-Strike: Source"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"41"
+
+		// Team manager entities pattern string
+		"team_manager" 		"cs_team_"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"armor"		"CCSPlayer.m_ArmorValue"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"account"	"CCSPlayer.m_iAccount"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+			"move_type"	"CBaseEntity.movetype"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"401"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"418" 
+			"set_observer_target"		"375"
+			"weapon_canuse"		"260" 
+			"weapon_switch"		"264" 
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"439" 
+			"get_primary_ammo_type"		"328" 
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321" 
+		}
+
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"440"
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_RoundRespawn"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer12RoundRespawnEv"
+				"sigscan"		"55 8B ? 51 89 4D ? 8B 45 ? 8B 10 8B 4D ? 8B 82 ? ? ? ? FF D0 6A 00 8B 4D ? E8"
+				"win_type"		"Direct"		
+			}
+			
+			"UTIL_Remove"
+			{
+				"linux_symbol"	"_Z11UTIL_RemoveP11CBaseEntity"
+				"sigscan"		"55 8B EC 56 57 8B 7D 08 8B F1 57 E8 ? ? ? ? 8B 0D ? ? ? ? 57 56"
+				"win_type"		"Direct"
+			}
+			
+			"CEntList_gEntList"
+			{
+				"linux_symbol"	"g_pEntityList"
+				"sigscan"		"53 68 ? ? ? ? 6A 00 B9 ? ? ? ? 32 DB"
+				"win_type"		"Indirect"
+				"linux_type"	"Indirect"
+				"win_index"		"9"		
+			}
+			
+			"CGameRules_gGameRules"
+			{
+				"linux_symbol"	"_ZN20CBaseCombatCharacter22SwitchToNextBestWeaponEP17CBaseCombatWeapon"
+				"sigscan"		"55 8B EC 8B 0D ? ? ? ? 85 C9 74 07"
+				"win_type"		"Indirect"
+				"linux_type"	"Indirect"
+				"win_index"		"109"
+				"linux_index"	"6"		
+			}
+			
+			"CGlobalEntityList_FindEntityByClassname"
+			{
+				"linux_symbol"	"_ZN17CGlobalEntityList21FindEntityByClassnameEP11CBaseEntityPKc"
+				"sigscan"		"55 8B EC 53 56 57 8B F9 8B 4D 08 85 C9 74 15"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_SwitchTeam"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer10SwitchTeamEi"
+				"sigscan"		"55 8B EC 83 EC ? 89 4D ? 8B 45 ? 50 E8 ? ? ? ? 83 C4 04 85 ? 74 ? 83"
+				"win_type"		"Direct"		
+			}
+			
+			"CCSPlayer_SetModelFromClass"
+			{
+				"linux_symbol"	"_ZN9CCSPlayer17SetModelFromClassEv"
+				"sigscan"		"55 8B EC 83 EC 34 89 4D FC 8B 4D FC E8 ? ? ? ? 83 F8 02"
+				"win_type"		"Direct"		
+			}
+			
+			"GetFileWeaponInfoFromHandle"
+			{
+				"linux_symbol"	"_Z27GetFileWeaponInfoFromHandlet"
+				"sigscan"		"55 8B EC 66 8B 45 08 66 3B 05 ? ? ? ? 73 ? B9 FF FF"
+				"win_type"		"Direct"		
+			}
+			
+			"CBaseCombatCharacter_Weapon_OwnsThisType"
+			{
+				"linux_symbol"	"_ZNK20CBaseCombatCharacter19Weapon_OwnsThisTypeEPKci"
+				"sigscan"		"55 8B EC 51 53 8B 5D 08 8B C1 56 57 89 45 FC 33 FF 8D B0 20 07 00 00"
+				"win_type"		"Direct"		
+			}
+
+		}
+		
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle terrorist team
+			"terrorist"
+			{
+				// Terrorist team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_terrorist"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"TERRORIST"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"900"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"901"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#T"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_t"
+				"reserved_skin"	"reserved_t"
+				"public_skin"	"public_t"
+			}
+
+			// Handle terrorist team
+			"counter-terrorist"
+			{
+				// CT team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_counterterrorist"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"CT"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"902"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"903"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#CT"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_ct"
+				"reserved_skin"	"reserved_ct"
+				"public_skin"	"public_ct"
+			}				
+		}
+	}
+
+	//
+	// Options for Day of Defeat : Source
+	//
+	// This should match the description given by the 
+	// server console command ma_game
+	//
+
+	"Day of Defeat: Source"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Dod specific restrictions on certain effects, do not change these
+		// or you will get crashes
+
+		"advert_decal_allowed"	"0"
+		"death_beam_allowed"	"0"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"22"
+
+		// Team manager entities pattern string
+		"team_manager" 		"dod_team_"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+		}
+		
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle Allies team
+			"allies"
+			{
+				// Terrorist team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname
+				"spawnpoint_class_name"		"info_player_allies"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Allies"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"918"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"919"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#A"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_a"
+				"reserved_skin"	"reserved_a"
+				"public_skin"	"public_a"
+			}
+
+			// Handle Axis team
+			"axis"
+			{
+				// X team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname
+				"spawnpoint_class_name"		"info_player_axis"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Axis"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"920"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"921"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#X"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_x"
+				"reserved_skin"	"reserved_x"
+				"public_skin"	"public_x"
+			}				
+		}
+	}
+
+	"Day of Defeat"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Dod specific restrictions on certain effects, do not change these
+		// or you will get crashes
+
+		"advert_decal_allowed"	"0"
+		"death_beam_allowed"	"0"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"22"
+
+		// Team manager entities pattern string
+		"team_manager" 		"dod_team_"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+		}
+
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+
+		"vfuncs_windows"
+		{
+			"commit_suicide"		"439"
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+		}
+		
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle Allies team
+			"allies"
+			{
+				// Terrorist team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname
+				"spawnpoint_class_name"		"info_player_allies"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Allies"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"918"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"919"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#A"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_a"
+				"reserved_skin"	"reserved_a"
+				"public_skin"	"public_a"
+			}
+
+			// Handle Axis team
+			"axis"
+			{
+				// X team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname
+				"spawnpoint_class_name"		"info_player_axis"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Axis"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"920"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"921"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#X"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_x"
+				"reserved_skin"	"reserved_x"
+				"public_skin"	"public_x"
+			}				
+		}
+	}
+
+	//
+	// Options for HL2 Deathmatch 
+	//
+	// This one is a bit weird. When the server starts it reports that
+	// the game is called "Half-Life 2 Deathmatch". When the mp_teamplay cvar
+	// is setup in server.cfg the game name changes to either "Deathmatch" or
+	// "Team Deathmatch" which is why there are 3 mod definitions setup for it :/
+	//
+	// When running either it is recommended that you add the command
+	// ma_forcegametype to the end of your server.cfg file or anywhere after the 
+	// mp_teamplay cvar has been set. ma_forcegametype will prompt the plugin to 
+	// reload this file and re-configure itself then reload the skins.
+	//
+
+	"Half-Life 2 Deathmatch"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		"hl1_menu_compatible"	"0"
+		"team_play"		"0"
+		"max_messages"		"34"
+		"cteam_match"		"fo_player_deathmatch"
+
+		// Team manager entities pattern string
+		"team_manager" 		"team_manager"
+
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
+		}
+		
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBasePlayer.m_MoveType"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+		
+		"vfuncs_windows"
+
+		{
+
+			"commit_suicide"		"439"
+			"weapon_get_name"		"316"
+
+		}	
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+		}
+				
+		"teams"
+		{
+			// As this is only a single team mod (until mp_teamplay 1) we only need one team
+
+			"Player"
+			{
+				// Single team mods use 0 as their team index
+				"index"		"0"
+				"translation_index"		"908"
+				"short_translation_index"	"909"
+				"group"				"#R"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_deathmatch"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"REBEL"
+
+				// Only one set of skins name admin.txt, reserved.txt and public.txt 
+				// with directories /admin /reserved and /public
+
+				"admin_skin"	"admin"
+				"reserved_skin"	"reserved"
+				"public_skin"	"public"
+			}				
+		}
+	}
+
+	// For HL2 Deathmatch when mp_teamplay is set to 0 or not set at all the
+	// game type turns to single team deathmatch mode. In which case we have
+	// the same as above for settings
+	//
+
+	"Deathmatch"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		"hl1_menu_compatible"	"0"
+		"team_play"		"0"
+		"max_messages"		"34"
+		"cteam_match"		"fo_player_deathmatch"
+
+		// Team manager entities pattern string
+		"team_manager" 		"team_manager"
+
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"59"	// Windows code index offset (Lance VOrgin)
+		}
+		
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBasePlayer.m_MoveType"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+		
+		"vfuncs_windows"
+
+		{
+
+			"commit_suicide"		"439"
+			"weapon_get_name"		"316"
+
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+		}
+				
+		"teams"
+		{
+
+			"Player"
+			{
+				"index"		"0"
+				"translation_index"		"908"
+				"short_translation_index"	"909"
+				"group"				"#R"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_deathmatch"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"REBEL"
+
+				"admin_skin"	"admin"
+				"reserved_skin"	"reserved"
+				"public_skin"	"public"
+			}				
+		}
+	}
+
+	// For HL2 TEAM Deathmatch when mp_teamplay is set to 1 or not set at all the
+	// game type turns to multi team deathmatch mode. In which case we have
+	// to setup multiple team definitions for Combines and Rebels.
+	//
+
+	"Team Deathmatch"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		"hl1_menu_compatible"	"0"
+		"team_play"		"1"
+		"max_messages"		"34"
+		"cteam_match"		"fo_player_deathmatch"
+
+		// Team manager entities pattern string
+		"team_manager" 		"team_manager"
+
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"59"	// Windows code index offset (Lance VOrgin)
+		}
+		
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBasePlayer.m_MoveType"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"438"
+			"get_primary_ammo_type"		"328"
+			"get_secondary_ammo_type"		"329"
+			"weapon_get_name"		"321"
+		}
+		
+		"vfuncs_windows"
+
+		{
+
+			"commit_suicide"		"439"
+			"weapon_get_name"		"316"
+
+		}
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+		}
+				
+		"teams"
+		{
+
+			"combine"
+			{
+				"index"		"2"
+				"translation_index"		"906"
+				"short_translation_index"	"907"
+				"group"				"#C"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_combine"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"COMBINE"
+
+				"admin_skin"	"admin_c"
+				"reserved_skin"	"reserved_c"
+				"public_skin"	"public_c"
+			}
+
+			"rebel"
+			{
+				"index"		"3"
+				"translation_index"		"908"
+				"short_translation_index"	"909"
+				"group"				"#R"
+
+				// Spawn points classname
+				"spawnpoint_class_name"         "info_player_rebel"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"REBEL"
+
+				"admin_skin"	"admin_r"
+				"reserved_skin"	"reserved_r"
+				"public_skin"	"public_r"
+			}				
+		}
+	}
+
+	"Team Fortress"
+	{
+		// Set to 1 if spectator is allowed for this mod
+		"spectator_allowed"	"1"
+
+		// The internal team index for spectators
+		// You can identify this by running ma_teamindex as a spectator
+		"spectator_index"	"1"
+
+		// The group name to identify spectators when running a ma_ command
+		"spectator_group"	"#SPEC"
+
+		// Set to 1 if amx style menus actually work on the mod
+		"hl1_menu_compatible"	"1"
+
+		// Set to 1 if team play is allowed, 0 if not
+		"team_play"		"1"
+
+		// Number of user messages to scan for. Too high a number will
+		// cause the server to crash. 22 okay for all mods at the moment
+		"max_messages"		"23"
+
+		// Team manager entities pattern string
+		"team_manager" 		"tf_team"
+
+		// Offsets for voice control, do not change
+		// If your mod has no voice server remove the
+		// voice_control section or comment it out
+		//"voice_control"
+		//{
+		//	"linux_offset"	"3"
+		//	"win_offset"	"2"
+		//}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+
+		// Advanced visual effects offsets, linux should work most of the
+		// time depending on how the server binary has been compiled.
+		// The windows version will probably not work on non-valve mods.
+		// The command ma_offset and ma_offsetscan is not applicable here
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"	// Allow linux advanced effects
+			"enable_win"	"1"	// Allow windows advanced effects
+			"vfunc_Offset"	"12"	// Windows virtual function offset (Lance VOrgin)
+			"code_Offset"	"99"	// Windows code index offset (Lance VOrgin)
+		}
+
+		"props"
+		{
+			"health"	"CBasePlayer.m_iHealth"
+			"render_mode"	"CBaseEntity.m_nRenderMode"
+			"render_fx"	"CBaseEntity.m_nRenderFX"
+			"colour"	"CBaseEntity.m_clrRender"
+			"move_type"	"CBaseEntity.movetype"
+			"model_index"	"CBaseEntity.m_nModelIndex"
+			"vec_origin"	"CBaseEntity.m_vecOrigin"
+			"ang_rotation"	"CBaseEntity.m_angRotation"
+			"move_type"	"CBaseEntity.movetype"
+		}
+
+		"vfuncs"
+		{
+			"eye_angles"		"132"
+			"set_model_index"		"9"
+			"teleport"		"109"
+			"eye_position"		"131"
+			"give_item"		"400"
+			"my_combat_character"		"72"
+			"get_velocity"		"141"
+			"map_desc"		"12"
+			"ignite"		"209"
+			"weapon_drop"		"263"
+			"user_cmds"		"417"
+			"set_observer_target"		"374"
+			"weapon_canuse"		"260"
+			"weapon_switch"		"264"
+			"remove_player_item"		"270"
+			"get_weapon_slot"		"268"
+			"give_ammo"		"252"
+			"commit_suicide"		"440"
+			"get_primary_ammo_type"		"336"
+			"get_secondary_ammo_type"		"337"
+			"weapon_get_name"		"329"
+		}
+		
+		vfuncs_windows
+		{
+			"commit_suicide"		"441"
+			"get_primary_ammo_type"		"331"
+			"get_secondary_ammo_type"		"332"
+			"weapon_get_name"		"324"
+		}	
+
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC 04 05 00 00 56 68 ? ? ? ?"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 80 20 00 00"
+				"win_type"		"Direct"		
+			}
+		}		
+		
+		// Setup team structure for mod		
+		"teams"
+		{
+			// Handle Blue team
+			"blue"
+			{
+				// Blue team index (use ma_teamindex to find what team index you are on)
+				"index"		"3"
+
+				// Spawn points classname (These don't work on SourecForts)
+				// "spawnpoint_class_name"		"info_player_teamspawn"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Blue"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"926"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"927"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#B"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_b"
+				"reserved_skin"	"reserved_b"
+				"public_skin"	"public_b"
+			}
+
+			// Handle Red team
+			"red"
+			{
+				// Red team index (use ma_teamindex to find what team index you are on)
+				"index"		"2"
+
+				// Spawn points classname (These don't work on SourecForts)
+				// "spawnpoint_class_name"		"info_player_teamspawn"
+
+				// Log name that is used in your logs for say
+				// events
+				"log_name"			"Red"
+
+				// Translation number found in english.cfg 
+				"translation_index"		"928"
+
+				// Abbrevated translation number found in english.cfg
+				"short_translation_index"	"929"
+
+				// Group ID used when running a ma_ command that affect players
+				"group"				"#R"
+
+				// Setup skin config file names and directories to search under /skins/
+				"admin_skin"	"admin_r"
+				"reserved_skin"	"reserved_r"
+				"public_skin"	"public_r"
+			}				
+		}
+	}
+	
+	//
+	// If the mani admin plugin cannot find a template above to match 
+	// the source mod that is running it will try and use this one as a default.
+	//
+	// Core default single team mod.
+	//
+
+	"Unknown Mod"
+	{
+		"spectator_allowed"	"1"
+		"spectator_index"	"1"
+		"spectator_group"	"#SPEC"
+		"hl1_menu_compatible"	"0"
+		"team_play"		"0"
+		"max_messages"		"22"
+
+		"voice_control"
+		{
+			"linux_offset"	"3"
+			"win_offset"	"2"
+		}
+
+		// Offsets for spray hook control, do not change
+		"spray_hook_control"
+		{
+			"linux_offset"	"29"
+			"win_offset"	"28"
+		}
+
+		// Offsets for extra spawn points hook
+		"spawn_point_control"
+		{
+			"linux_offset"	"2"
+			"win_offset"	"2"
+		}
+
+
+		"advanced_effects"
+		{
+			"enable_linux"	"1"
+			"enable_win"	"0"
+			"vfunc_Offset"	"12"
+			"code_Offset"	"59"
+		}
+		
+		"sigs"
+		{
+			"CBaseServer_ConnectClient"
+			{
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiiPKcS3_S3_i"
+				"sigscan"		"55 8B EC 81 EC ? ? ? ? 56 68 ? ? ? ? 8B F1 FF 15 ? ? ? ? 8B 06 8B 50"
+				"win_type"		"Direct"		
+			}
+			
+			"NET_SendPacket"
+			{
+				"linux_symbol"	"_Z14NET_SendPacketP11INetChanneliRK8netadr_sPKhiP8bf_writeb"
+				"sigscan"		"55 8B EC B8 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 53 56 33 F6 89"
+				"win_type"		"Direct"		
+			}
+		}
+		
+		"teams"
+		{
+
+			"Player"
+			{
+				"index"		"0"
+				"translation_index"		"908"
+				"short_translation_index"	"909"
+				"group"				"#R"
+				"admin_skin"	"admin"
+				"reserved_skin"	"reserved"
+				"public_skin"	"public"
+			}				
+		}
+	}
+}

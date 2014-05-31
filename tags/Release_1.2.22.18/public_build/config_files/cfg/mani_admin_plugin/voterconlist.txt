@@ -1,0 +1,36 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : voterconlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : List to define preset questions which can be answered by
+//                Yes / No via pressing a button in game. If the answer is yes,
+//                a specified RCon Command will get executed
+// *****************************************************************************
+//
+//
+// Place all your Yes/No Rcon vote questions and commands in here
+//
+// This file uses aliases.
+//
+// Aliases are what is shown in the menu system
+// a nice way of presenting the commands.
+// Aliases must be enclosed in quotes
+//
+// E.G. "Low Gravity"
+//
+// Do not put another quote inside like :-
+//
+// "Low "Gravity""
+//
+// The text after the alias is the question that will be asked and must also
+// be enclosed in quotes " "
+//
+// The text after the question string is the actual command that
+// will be run if the result of the vote is 'Yes'
+//
+
+"Low Grav" "Shall we turn on low gravity ?" sv_gravity 150	// Low grav rcon vote
+"All Talk On" "Shall we turn on all talk ?" sv_alltalk 1 	// Turn on all talk vote

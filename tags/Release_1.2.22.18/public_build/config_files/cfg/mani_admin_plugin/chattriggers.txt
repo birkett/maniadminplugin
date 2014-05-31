@@ -1,0 +1,57 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : chattriggers.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Blocking say commands to prevent spam chat
+// *****************************************************************************
+
+
+"chattriggers.txt"
+{
+	// 
+	// Mani Admin Plugin 2005 V1.2 Onwards
+	//
+	// This file is currently used for blocking say commands. This is
+	// useful for things like HLstatsX to block spam from the in game console.
+	// HLstatsX uses commands like /rank, session to get real time data.
+	// 
+	// This file will be expanded over time to provide more functionality other
+	// than just ignoring chat phrases.
+	//
+
+	"Ignore"
+	{
+		// Any triggers in this section will be completely
+		// blocked from being seen in the game. The chat however
+		// will still provide an event for other plugins and still
+		// output to the standard Valve logs. These commands will
+		// block default chat commands in the Mani Admin Plugin from
+		// running at all.
+
+		// Examples shown below that are commented out.
+
+		// "1"	"rank"
+		// "2"	"top10"
+		// "3"	"session"
+	}
+
+	"Ignore X Times"
+	{
+		// Any triggers in this section will block described chat
+		// commands from being shown until the Xth time that the 
+		// number field specifies. For instance having the chattrigger
+		// "rank" "5" would mean that when rank is typed, it is only 
+		// displayed to the user once after 5 attempts. This cuts down
+		// on spam and also allows the command to still be used by the
+		// plugin
+		
+		// Example shown below that are commented out.
+
+		// "weaponme"	"5"
+		// "hitboxme"	"4"
+		// "statsme"	"6"
+	}
+}
