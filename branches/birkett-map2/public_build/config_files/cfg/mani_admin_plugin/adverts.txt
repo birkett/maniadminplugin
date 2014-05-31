@@ -1,0 +1,44 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : adverts.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Adverts played ingame if mani_adverts 1 is
+//                set in the mani_server.cfg
+// *****************************************************************************
+//
+//
+// The following info tokens are available:
+// {NEXTMAP}      = displays the next map that will be played
+// {CURRENTMAP}   = displays the name of the current map
+// {TICKRATE}     = displays the servers tickrate
+// {FF}           = displays the status of Friendly fire
+// {THETIME}      = displays the current server time
+// {SERVERHOST}   = displays the serverhost (if info is available)
+//
+//
+// The following colour tokens are available: (note: They will only work in
+// the top left corner, not in the chat area)
+// {RED}
+// {BLUE}
+// {GREEN}
+// {MAGENTA}
+// {BROWN}
+// {GREY}
+// {CYAN}
+// {YELLOW}
+// {ORANGE}
+// {WHITE}
+// {PINK}
+//
+//
+// Examples:
+
+{RED}http://www.mani-admin-plugin.com
+{GREEN}Current map is {CURRENTMAP}
+{BLUE}Mani Admin Plugin
+Next map is {NEXTMAP}
+{WHITE}Server Tick Rate {TICKRATE}
+

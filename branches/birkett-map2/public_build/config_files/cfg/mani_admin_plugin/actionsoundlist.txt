@@ -1,0 +1,53 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : actionsoundlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Soundfiles played upon specific events like round start
+// *****************************************************************************
+//
+//
+// Place all your action sounds in this file
+//
+// This file uses aliases to define 
+// the sound name, they must not be altered !
+// 
+// The second part on each line is the location
+// and name of the file itself. You can change
+// this to be wherever you want.
+//
+// In the example below I have commented out
+// joinserver, roundstart and roundend. If you
+// uncomment joinserver a sample I made will
+// be played upon connection to a server. You will
+// probably get bored with this quickly so replace
+// it with your own :)
+//
+// Samples "joinserver.mp3", "startyourvoting.mp3" and
+// "endofvote.mp3" were made by me (Mani) using FruityLoops
+// and a nice VST plugin synth. The rest are from the
+// core HL2 server installation.
+//
+
+
+//"joinserver"		admin_plugin/actions/joinserver.mp3
+"votestart"		admin_plugin/actions/startyourvoting.mp3
+"voteend"		admin_plugin/actions/endofvote.mp3
+//"roundstart"		admin_plugin/actions/roundstart.mp3
+//"roundend"		admin_plugin/actions/roundend.mp3
+"restrictedweapon"	admin_plugin/actions/restrictedweapon.wav
+
+
+
+
+
+
+
+
+
+
+
+
+

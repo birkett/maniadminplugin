@@ -1,0 +1,50 @@
+// *****************************************************************************
+//    Plugin    : Mani Admin Plugin
+//
+//   Filename   : soundlist.txt
+//
+// Last Updated : 2009/07/21
+//
+// Description  : Sounds which will get played in game using ma_play <alias>
+// *****************************************************************************
+//
+//
+// This file can use aliases.
+//
+// Aliases are what is shown in the menu system a nice way of presenting
+// the commands. Aliases must be enclosed in quotes.
+//
+// E.G. "Don't just stand there"
+//
+// Do not put another quote inside like :-
+//
+// "See "Ya" Later"
+//
+// You do not have to use aliases but it makes the
+// menu's easier to use if you do.
+//
+// As the source engine doens't support all sound format, they have to be like
+// MPEG-1 layer 3
+// 128kbit
+// 44100Hz Stereo
+//
+// or
+//
+// 8 Bit PCM
+// 2 Channel
+// 11025 Hz
+//
+// in order to work.
+
+
+"Best man won" admin_plugin/bestman.wav
+"Boo!" admin_plugin/boo.wav
+"Cry some more!" admin_plugin/crysomemore.wav
+"Didn't happen" admin_plugin/didnot.wav
+"Evil laugh" admin_plugin/evillaugh.wav
+"Owning You!" admin_plugin/owningyou1.wav
+"Personal" admin_plugin/personal.wav
+"Pffft!" admin_plugin/pfft.wav
+"This sucks!" admin_plugin/thissucks.wav
+"What the... !" admin_plugin/wth.wav
+
