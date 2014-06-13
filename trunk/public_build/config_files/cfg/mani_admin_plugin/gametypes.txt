@@ -3,7 +3,7 @@
 // Mani Admin Plugin 2014
 //
 // Last Update V1.2.23
-// 16.05.2014
+// 13.06.2014
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -1477,17 +1477,17 @@
 			"get_weapon_slot"		"268"
 			"give_ammo"		"252"
 			"commit_suicide"		"440"
-			"get_primary_ammo_type"		"336"
-			"get_secondary_ammo_type"		"337"
-			"weapon_get_name"		"329"
+			"get_primary_ammo_type"		"337"
+			"get_secondary_ammo_type"		"338"
+			"weapon_get_name"		"330"
 		}
 		
 		vfuncs_windows
 		{
 			"commit_suicide"		"441"
-			"get_primary_ammo_type"		"331"
-			"get_secondary_ammo_type"		"332"
-			"weapon_get_name"		"324"
+			"get_primary_ammo_type"		"332"
+			"get_secondary_ammo_type"		"333"
+			"weapon_get_name"		"325"
 		}	
 
 		"sigs"
