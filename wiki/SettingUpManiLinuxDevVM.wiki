@@ -1,6 +1,6 @@
 0. Set up and install a Virtual Machine: https://www.virtualbox.org/wiki/Downloads
 
-1. Install Debian 5 (debian-5010-i386-CD-1.iso).
+1. Install Debian 5 (debian-5010-i386-CD-1.iso) - Using newer distro's will cause compiled bins to be incompatible with older distro's.
 
 2. Update Debian 5 "sources.list"
 
