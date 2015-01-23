@@ -7,8 +7,11 @@
 Replace the contents of the file with:
 
 deb http://archive.debian.org/debian/ lenny main non-free contrib
+
 deb http://archive.debian.org/debian-backports lenny-backports main
+
 deb http://archive.debian.org/debian-backports lenny-backports-sloppy main
+
 
 Save changes and do "apt-get update". Then you need to run "apt-get install build-essential"
 You're installing a compiler to compile the compiler that Mani requires in order to be compiled ;)
