@@ -1,7 +1,7 @@
 //
 // Mani Admin Plugin
 //
-// Copyright © 2009-2014 Giles Millward (Mani). All rights reserved.
+// Copyright © 2009-2015 Giles Millward (Mani). All rights reserved.
 //
 // This file is part of ManiAdminPlugin.
 //
@@ -48,9 +48,9 @@ const int	gametypes_min_version = 3;
 #define snprintf _snprintf
 #endif
 
-//majorrelease.minorrealse.patchlevel
-#define COMMON_CORE "1.2.23"
-#define COMMON_VERSION "Mani Admin Plugin 2014 V" COMMON_CORE
+//majorrelease.minorrealse.patchlevel.buildnumber
+#define COMMON_CORE "1.2.22.19"
+#define COMMON_VERSION "Mani Admin Plugin 2015 V" COMMON_CORE
 
 #ifdef GAME_CSGO
 #ifdef SOURCEMM
