@@ -40,7 +40,9 @@ apt-get install texinfo
 6. Your terminal must still be inside "gcc-4.6.3" (cd /home/your-name/gcc-4.6.3). Type "ls" to see a list of the files your terminal is looking at to be sure.
 
 7. Run the following commands in your terminal as "ROOT".
+
 make
+
 make install
 
 Depending on your computer's hardware, the two commands above will take a while.
