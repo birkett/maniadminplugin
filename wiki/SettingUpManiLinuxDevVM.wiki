@@ -1,4 +1,5 @@
 1. Install Debian 5 (debian-5010-i386-CD-1.iso).
+
 2. Update Debian 5 "sources.list"
 
 "nano /etc/apt/sources.list"
