@@ -1,4 +1,4 @@
-0. Set up and install Virtual Machine: https://www.virtualbox.org/wiki/Downloads
+0. Set up and install a Virtual Machine: https://www.virtualbox.org/wiki/Downloads
 
 1. Install Debian 5 (debian-5010-i386-CD-1.iso).
 
