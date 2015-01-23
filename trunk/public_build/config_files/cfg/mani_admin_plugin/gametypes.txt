@@ -1,9 +1,9 @@
 // ************************************************
 //
-// Mani Admin Plugin 2014
+// Mani Admin Plugin 2015
 //
-// Last Update V1.2.23
-// 13.06.2014
+// Last Update V.1.2.22.19
+// 18.01.2015
 //
 // This file contains definitions that allow
 // the plugin to handle different mods a bit
@@ -113,20 +113,20 @@
 			"set_model_index"		"9"
 			"teleport"		"114"
 			"eye_position"		"129"
-			"give_item"		"445"
+			"give_item"		"446"
 			"my_combat_character"		"77"
 			"get_velocity"		"139"
 			"map_desc"		"12"
 			"ignite"		"224"
 			"weapon_drop"		"283"
-			"user_cmds"		"464"
-			"set_observer_target"		"417"
+			"user_cmds"		"465"
+			"set_observer_target"		"418"
 			"weapon_canuse"		"280"
 			"weapon_switch"		"284"
-			"remove_player_item"		"291"
+			"remove_player_item"		"292"
 			"get_weapon_slot"		"288"
 			"give_ammo"		"274"
-			"commit_suicide"		"494"
+			"commit_suicide"		"495"
 			"get_primary_ammo_type"		"372"
 			"get_secondary_ammo_type"		"373"
 			"weapon_get_name"		"364"
@@ -135,8 +135,8 @@
 		// The code still subtracts 1 when fetching them on windows :D
 		"vfuncs_windows"
 		{
-			"give_item"		"444"
-			"commit_suicide"		"495"
+			"give_item"		"445"
+			"commit_suicide"		"496"
 			"get_primary_ammo_type"		"367"
 			"get_secondary_ammo_type"		"368"
 			"weapon_get_name"		"359"
@@ -146,8 +146,8 @@
 		{
 			"CBaseServer_ConnectClient"
 			{
-				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorIP13CNetMessagePBILi16E26CCLCMsg_SplitPlayerConnectLi0ELb1EE10CUtlMemoryIS8_iEEb19CrossPlayPlatform_t"
-				"sigscan"		"55 8B EC 83 E4 F8 83 EC 2C 53 56 57 8B F9 C7 44 24 20 00 00 00 00"
+				"linux_symbol"	"_ZN11CBaseServer13ConnectClientER8netadr_siiiPKcS3_S3_iR10CUtlVectorIP13CNetMessagePBILi16E26CCLCMsg_SplitPlayerConnectLi0ELb1EE10CUtlMemoryIS8_iEEb19CrossPlayPlatform_tPKhi"
+				"sigscan"		"55 8B EC 83 E4 F8 83 EC 34 53 56 57 8B F9"
 				"win_type"		"Direct"		
 			}
 			
@@ -1463,31 +1463,31 @@
 			"set_model_index"		"9"
 			"teleport"		"109"
 			"eye_position"		"131"
-			"give_item"		"400"
+			"give_item"		"401"
 			"my_combat_character"		"72"
 			"get_velocity"		"141"
 			"map_desc"		"12"
-			"ignite"		"209"
-			"weapon_drop"		"263"
-			"user_cmds"		"417"
-			"set_observer_target"		"374"
-			"weapon_canuse"		"260"
-			"weapon_switch"		"264"
-			"remove_player_item"		"270"
-			"get_weapon_slot"		"268"
-			"give_ammo"		"252"
-			"commit_suicide"		"440"
-			"get_primary_ammo_type"		"337"
-			"get_secondary_ammo_type"		"338"
-			"weapon_get_name"		"330"
+			"ignite"		"210"
+			"weapon_drop"		"264"
+			"user_cmds"		"418"
+			"set_observer_target"		"375"
+			"weapon_canuse"		"261"
+			"weapon_switch"		"265"
+			"remove_player_item"		"271"
+			"get_weapon_slot"		"269"
+			"give_ammo"		"253"
+			"commit_suicide"		"441"
+			"get_primary_ammo_type"		"338"
+			"get_secondary_ammo_type"		"339"
+			"weapon_get_name"		"331"
 		}
 		
 		vfuncs_windows
 		{
-			"commit_suicide"		"441"
-			"get_primary_ammo_type"		"332"
-			"get_secondary_ammo_type"		"333"
-			"weapon_get_name"		"325"
+			"commit_suicide"		"442"
+			"get_primary_ammo_type"		"334"
+			"get_secondary_ammo_type"		"334"
+			"weapon_get_name"		"326"
 		}	
 
 		"sigs"

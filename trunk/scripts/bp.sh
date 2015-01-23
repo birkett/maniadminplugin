@@ -91,6 +91,7 @@ then
 	export HL2DM_BUILD="FALSE"
 	export TF2_BUILD="FALSE"
 	export VSP_BUILD="TRUE"
+	export CSGO_FLAG="-lstdc++"
 elif [ "$REPLY" = "1" ]
 then
 #CSGO SMM
@@ -250,7 +251,7 @@ then
 	export PROTOBUF_SRC_DIR2="$PUBLIC_SRC_DIR/engine/protobuf"
 	export PROTOBUF_OBJ_DIR="$BUILD_OBJ_DIR/protobuf"
 
-	export INCLUDEDIRS=" -I$HL2SDK_SRC_DIR/common/protobuf-2.3.0/src -I$PUBLIC_SRC_DIR/engine/protobuf -I$PUBLIC_SRC_DIR/game/shared/csgo/protobuf -I$HL2SDK_SRC_DIR/public/mathlib -I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier0 -I$PUBLIC_SRC_DIR/tier1 -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/game/server -I$PUBLIC_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/game/shared -I$HL2SDK_SRC_DIR/public/steam -I./mysql5.1/linux_32/include/ -I$SOURCEHOOK_SRC_DIR -I$SOURCEMM_ROOT -I./jit -I./Knight -I./asm"
+	export INCLUDEDIRS=" -I$HL2SDK_SRC_DIR/common/protobuf-2.5.0/src -I$PUBLIC_SRC_DIR/engine/protobuf -I$PUBLIC_SRC_DIR/game/shared/csgo/protobuf -I$HL2SDK_SRC_DIR/public/mathlib -I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier0 -I$PUBLIC_SRC_DIR/tier1 -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/game/server -I$PUBLIC_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/game/shared -I$HL2SDK_SRC_DIR/public/steam -I./mysql5.1/linux_32/include/ -I$SOURCEHOOK_SRC_DIR -I$SOURCEMM_ROOT -I./jit -I./Knight -I./asm"
 
 	export NAME="mani_admin_plugin"
 #	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"
@@ -286,7 +287,7 @@ then
 	export PROTOBUF_SRC_DIR2="$PUBLIC_SRC_DIR/engine/protobuf"
 	export PROTOBUF_OBJ_DIR="$BUILD_OBJ_DIR/protobuf"
 
-	export INCLUDEDIRS=" -I$HL2SDK_SRC_DIR/common/protobuf-2.3.0/src -I$PUBLIC_SRC_DIR/engine/protobuf -I$PUBLIC_SRC_DIR/game/shared/csgo/protobuf -I$HL2SDK_SRC_DIR/public/mathlib -I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier0 -I$PUBLIC_SRC_DIR/tier1 -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/game/server -I$PUBLIC_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/game/shared -I$HL2SDK_SRC_DIR/public/steam -I./mysql5.1/linux_32/include/ -I$SOURCEHOOK_SRC_DIR -I$SOURCEMM_ROOT -I./jit -I./Knight -I./asm"
+	export INCLUDEDIRS=" -I$HL2SDK_SRC_DIR/common/protobuf-2.5.0/src -I$PUBLIC_SRC_DIR/engine/protobuf -I$PUBLIC_SRC_DIR/game/shared/csgo/protobuf -I$HL2SDK_SRC_DIR/public/mathlib -I$PUBLIC_SRC_DIR -I$PUBLIC_SRC_DIR/tier0 -I$PUBLIC_SRC_DIR/tier1 -I$HL2SDK_SRC_DIR/dlls -I$HL2SDK_SRC_DIR/game_shared -I$HL2SDK_SRC_DIR/game/server -I$PUBLIC_SRC_DIR/game/server -I$HL2SDK_SRC_DIR/game/shared -I$HL2SDK_SRC_DIR/public/steam -I./mysql5.1/linux_32/include/ -I$SOURCEHOOK_SRC_DIR -I$SOURCEMM_ROOT -I./jit -I./Knight -I./asm"
 
 	export NAME="mani_admin_plugin_mm"
 #	export TIER1_OBJS="$TIER1_OBJ_DIR/bitbuf.o"

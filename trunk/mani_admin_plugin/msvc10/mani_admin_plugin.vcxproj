@@ -1178,7 +1178,7 @@
       <AdditionalOptions>/MP4 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;..\..\sdks\csgo\common\protobuf-2.3.0\src;..\..\sdks\csgo\public\engine\protobuf;..\..\sdks\csgo\public\game\shared\csgo\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;..\..\sdks\csgo\common\protobuf-2.5.0\src;..\..\sdks\csgo\public\engine\protobuf;..\..\sdks\csgo\public\game\shared\csgo\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GAME_ORANGE;GAME_CSGO;WIN32;NDEBUG;COMPILER_MSVC;COMPILER_MSVC32;_WINDOWS;MAP1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -1235,7 +1235,7 @@
       <AdditionalOptions>/MP4 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;..\..\sdks\csgo\common\protobuf-2.3.0\src;..\..\sdks\csgo\public\engine\protobuf;..\..\sdks\csgo\public\game\shared\csgo\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\sdks\csgo\public\mathlib;..\..\sdks\csgo\public;..\..\sdks\csgo\public\tier0;..\..\sdks\csgo\public\tier1;..\..\sdks\csgo\dlls;..\..\sdks\csgo\game_shared;..\..\sdks\csgo\game\server;..\..\sdks\csgo\public\game\server;..\..\sdks\csgo\game\shared;..\..\sdks\csgo\public\steam;..\mysql5.1\win_32\include\;..\..\sourcemm_sdk\core\sourcehook;..\..\sourcemm_sdk\core;..\jit;..\knight;..\asm;..\..\sdks\csgo\common\protobuf-2.5.0\src;..\..\sdks\csgo\public\engine\protobuf;..\..\sdks\csgo\public\game\shared\csgo\protobuf;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SOURCEMM;GAME_ORANGE;GAME_CSGO;WIN32;NDEBUG;COMPILER_MSVC;COMPILER_MSVC32;_WINDOWS;MAP1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

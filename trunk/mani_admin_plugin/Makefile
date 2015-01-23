@@ -111,7 +111,8 @@ CPP_LIB=./mysql5.1/linux_32/lib/libmysqlclient.a \
 USER_CFLAGS=
 
 # link flags for your mod, make sure to include any special libraries here
-LDFLAGS=-static-libgcc -static-libstdc++ -lm -ldl $(TIER0_SO) $(VSTDLIB_SO)
+# See "scripts/bp.sh" for CSGO compiler flag "lstdc++" (not included on non-csgo builds) 
+LDFLAGS=-static-libgcc -static-libstdc++ -lm -ldl $(CSGO_FLAG) $(TIER0_SO) $(VSTDLIB_SO)
 
 #############################################################################
 # Things below here shouldn't need to be altered
@@ -202,7 +203,7 @@ VPATH = $(PROTOBUF_SRC_DIR):$(PROTOBUF_SRC_DIR2)
 
 $(NAME)_$(ARCH).$(SHLIBEXT): $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(PROTOBUF_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) $(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS)
 	$(CLINK) $(DEBUG_FLAGS) -o $(BUILD_DIR)/$@ $(SHLIBLDFLAGS) $(PLUGIN_OBJS) $(PUBLIC_OBJS) $(PROTOBUF_OBJS) $(TIER0_OBJS) $(TIER1_OBJS) $(MATHLIB_OBJS) \
-	$(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS) $(CPP_LIB) $(LDFLAGS)
+	$(SOURCEHOOK_OBJS) $(DEMANGLE_OBJS) $(CPP_LIB) $(LDFLAGS) $(CSGO_FLAG)
 
 $(PLUGIN_OBJ_DIR)/%.o: $(PLUGIN_SRC_DIR)/%.cpp
 	$(DO_CC)
