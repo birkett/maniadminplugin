@@ -267,7 +267,7 @@ const char * CSteamID::Render() const {
    static char szSteamID[64];
 	_snprintf(szSteamID, sizeof(szSteamID), "STEAM_1:%u:%u", (m_steamid.m_comp.m_unAccountID % 2) ? 1 : 0, (int32)m_steamid.m_comp.m_unAccountID/2);
 #else
-char * CSteamID::Render() const {
+const char * CSteamID::Render() const {
    static char szSteamID[64];
    _snprintf(szSteamID, sizeof(szSteamID), "STEAM_0:%u:%u", (m_unAccountID % 2) ? 1 : 0, (int32)m_unAccountID/2);
 #endif
